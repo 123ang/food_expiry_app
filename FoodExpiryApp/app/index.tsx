@@ -18,7 +18,7 @@ export default function HomeScreen() {
     foodItems, 
     categories, 
     locations, 
-    loading, 
+    isLoading, 
     stats,
     getFoodItems,
     deleteFoodItem,
@@ -92,7 +92,7 @@ export default function HomeScreen() {
 
   // Render empty state
   const renderEmptyState = () => {
-    if (loading) return null;
+    if (isLoading) return null;
     
     if (foodItems.length === 0) {
       return (

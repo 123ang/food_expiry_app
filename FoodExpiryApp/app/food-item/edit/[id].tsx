@@ -16,7 +16,7 @@ export default function EditFoodItemScreen() {
     locations, 
     getFoodItemById, 
     updateFoodItem,
-    loading,
+    isLoading,
   } = useDatabase();
   
   const [foodItem, setFoodItem] = useState<FoodItem | null>(null);
@@ -67,7 +67,7 @@ export default function EditFoodItemScreen() {
   };
 
   // Show loading or error state
-  if (loadingItem || loading) {
+  if (loadingItem || isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Header 

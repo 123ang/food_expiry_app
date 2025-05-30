@@ -133,7 +133,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   selectedCategoryId === category.id && { backgroundColor: colors.primary + '20' },
                 ]}
                 onPress={() => {
-                  onCategoryChange(category.id);
+                  onCategoryChange(category.id ?? null);
                   setShowCategoryModal(false);
                 }}
               >
@@ -209,7 +209,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   selectedLocationId === location.id && { backgroundColor: colors.primary + '20' },
                 ]}
                 onPress={() => {
-                  onLocationChange(location.id);
+                  onLocationChange(location.id ?? null);
                   setShowLocationModal(false);
                 }}
               >

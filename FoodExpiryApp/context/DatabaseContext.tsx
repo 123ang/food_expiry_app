@@ -26,16 +26,20 @@ interface DatabaseContextType {
   addCategory: (category: Category) => Promise<number>;
   updateCategory: (category: Category) => Promise<void>;
   deleteCategory: (id: number) => Promise<void>;
+  getCategoryById: (id: number) => Promise<Category | null>;
   
   // Location operations
   addLocation: (location: Location) => Promise<number>;
   updateLocation: (location: Location) => Promise<void>;
   deleteLocation: (id: number) => Promise<void>;
+  getLocationById: (id: number) => Promise<Location | null>;
   
   // Food item operations
   addFoodItem: (item: FoodItem) => Promise<number>;
   updateFoodItem: (item: FoodItem) => Promise<void>;
   deleteFoodItem: (id: number) => Promise<void>;
+  getFoodItemById: (id: number) => Promise<FoodItemWithDetails | null>;
+  getFoodItemsByCategoryId: (categoryId: number) => Promise<FoodItemWithDetails[]>;
   
   // Refresh data
   refreshData: () => Promise<void>;
@@ -155,6 +159,25 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await refreshData();
   };
 
+  const getFoodItemById = async (id: number) => {
+    return await FoodItemRepository.getById(id);
+  };
+
+  // Category operations
+  const getCategoryById = async (id: number) => {
+    return await CategoryRepository.getById(id);
+  };
+
+  // Location operations
+  const getLocationById = async (id: number) => {
+    return await LocationRepository.getById(id);
+  };
+
+  // Food item operations
+  const getFoodItemsByCategoryId = async (categoryId: number) => {
+    return await FoodItemRepository.getByCategory(categoryId);
+  };
+
   const value = {
     // Data
     categories,
@@ -173,16 +196,20 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     addCategory,
     updateCategory,
     deleteCategory,
+    getCategoryById,
     
     // Location operations
     addLocation,
     updateLocation,
     deleteLocation,
+    getLocationById,
     
     // Food item operations
     addFoodItem,
     updateFoodItem,
     deleteFoodItem,
+    getFoodItemById,
+    getFoodItemsByCategoryId,
     
     // Refresh data
     refreshData

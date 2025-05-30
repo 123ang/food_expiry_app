@@ -5,11 +5,12 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useDatabase } from '../../context/DatabaseContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Header } from '../../components/Header';
-import { Card } from '../../components/Card';
-import { Button } from '../../components/Button';
+import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/EmptyState';
-import { FoodItem, getStatusColor, getStatusName } from '../../database/models';
+import { FoodItemWithDetails } from '../../database/models';
 import { formatDate } from '../../utils/dateUtils';
+import { getStatusColor, getStatusName } from '../../utils/statusUtils';
 
 export default function FoodItemDetailScreen() {
   const { colors } = useTheme();
@@ -19,10 +20,10 @@ export default function FoodItemDetailScreen() {
     getCategoryById, 
     getLocationById, 
     deleteFoodItem,
-    loading,
+    isLoading,
   } = useDatabase();
   
-  const [foodItem, setFoodItem] = useState<FoodItem | null>(null);
+  const [foodItem, setFoodItem] = useState<FoodItemWithDetails | null>(null);
   const [categoryName, setCategoryName] = useState<string>('');
   const [locationName, setLocationName] = useState<string>('');
   const [loadingItem, setLoadingItem] = useState(true);
@@ -87,7 +88,7 @@ export default function FoodItemDetailScreen() {
   };
 
   // Show loading or error state
-  if (loadingItem || loading) {
+  if (loadingItem || isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Header 

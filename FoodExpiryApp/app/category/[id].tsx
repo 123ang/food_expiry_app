@@ -15,8 +15,8 @@ export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { 
     getCategoryById, 
-    getFoodItemsByCategory,
-    loading,
+    getFoodItemsByCategoryId,
+    isLoading,
   } = useDatabase();
   
   const [category, setCategory] = useState<Category | null>(null);
@@ -40,7 +40,7 @@ export default function CategoryDetailScreen() {
         
         if (categoryData) {
           setCategory(categoryData);
-          const items = await getFoodItemsByCategory(categoryId);
+          const items = await getFoodItemsByCategoryId(categoryId);
           setFoodItems(items);
           setFilteredItems(items);
         } else {
@@ -54,7 +54,7 @@ export default function CategoryDetailScreen() {
     };
     
     loadCategoryData();
-  }, [id, getCategoryById, getFoodItemsByCategory]);
+  }, [id, getCategoryById, getFoodItemsByCategoryId]);
 
   // Apply filters
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function CategoryDetailScreen() {
   };
 
   // Show loading or error state
-  if (loadingData || loading) {
+  if (loadingData || isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Header 

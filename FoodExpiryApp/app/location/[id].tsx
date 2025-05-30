@@ -16,7 +16,7 @@ export default function LocationDetailScreen() {
   const { 
     getLocationById, 
     getFoodItemsByLocation,
-    loading,
+    isLoading,
   } = useDatabase();
   
   const [location, setLocation] = useState<Location | null>(null);
@@ -82,7 +82,7 @@ export default function LocationDetailScreen() {
   };
 
   // Show loading or error state
-  if (loadingData || loading) {
+  if (loadingData || isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Header 
