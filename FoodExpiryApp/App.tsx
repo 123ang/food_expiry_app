@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { Slot } from 'expo-router';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { DatabaseProvider } from './context/DatabaseContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -19,9 +20,11 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <DatabaseProvider>
-        <AppContent />
-      </DatabaseProvider>
+      <LanguageProvider>
+        <DatabaseProvider>
+          <AppContent />
+        </DatabaseProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

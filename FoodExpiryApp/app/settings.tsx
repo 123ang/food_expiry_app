@@ -9,18 +9,22 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
+import { Stack } from 'expo-router';
 import { BottomNav } from '../components/BottomNav';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
+      paddingTop: Platform.OS === 'ios' ? 48 : 24,
     },
     header: {
       backgroundColor: theme.cardBackground,
@@ -32,163 +36,123 @@ export default function SettingsScreen() {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme.textColor,
-      marginBottom: 8,
+      textAlign: 'center',
     },
-    subtitle: {
-      fontSize: 16,
-      color: theme.textSecondary,
+    content: {
+      flex: 1,
+      padding: 16,
     },
     section: {
-      marginTop: 24,
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.textColor,
-      marginBottom: 16,
-      paddingHorizontal: 16,
-    },
-    settingItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
       backgroundColor: theme.cardBackground,
+      borderRadius: 12,
+      marginBottom: 24,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    sectionHeader: {
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
     },
-    settingInfo: {
-      flex: 1,
-      marginLeft: 12,
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
     },
-    settingTitle: {
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    optionLast: {
+      borderBottomWidth: 0,
+    },
+    optionTextStyle: {
       fontSize: 16,
       color: theme.textColor,
-      marginBottom: 4,
     },
-    settingDescription: {
-      fontSize: 14,
-      color: theme.textSecondary,
+    optionTextSelected: {
+      color: theme.primaryColor,
     },
-    iconContainer: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: theme.primaryColor + '20',
-      justifyContent: 'center',
+    optionIcon: {
+      width: 24,
+      height: 24,
       alignItems: 'center',
-    },
-    chevron: {
-      marginLeft: 8,
+      justifyContent: 'center',
     },
   });
 
-  const settings = [
-    {
-      id: 'theme',
-      icon: 'moon-o' as IconName,
-      title: 'Dark Mode',
-      description: 'Switch between light and dark theme',
-      type: 'switch' as const,
-      value: isDark,
-      onValueChange: toggleTheme,
-    },
-    {
-      id: 'notifications',
-      icon: 'bell' as IconName,
-      title: 'Notifications',
-      description: 'Manage notification preferences',
-      type: 'link' as const,
-    },
-    {
-      id: 'locations',
-      icon: 'map-marker' as IconName,
-      title: 'Storage Locations',
-      description: 'Manage your storage locations',
-      type: 'link' as const,
-    },
-    {
-      id: 'categories',
-      icon: 'tags' as IconName,
-      title: 'Categories',
-      description: 'Manage food categories',
-      type: 'link' as const,
-    },
-    {
-      id: 'backup',
-      icon: 'cloud' as IconName,
-      title: 'Backup & Sync',
-      description: 'Manage your data backup',
-      type: 'link' as const,
-    },
-    {
-      id: 'about',
-      icon: 'info-circle' as IconName,
-      title: 'About',
-      description: 'App information and help',
-      type: 'link' as const,
-    },
-  ];
-
-  const renderSettingItem = (setting: any) => (
-    <TouchableOpacity
-      key={setting.id}
-      style={styles.settingItem}
-      onPress={() => {
-        if (setting.type === 'link') {
-          // TODO: Navigate to setting detail screen
-        }
-      }}
-    >
-      <View style={styles.iconContainer}>
-        <FontAwesome name={setting.icon} size={16} color={theme.primaryColor} />
-      </View>
-      <View style={styles.settingInfo}>
-        <Text style={styles.settingTitle}>{setting.title}</Text>
-        <Text style={styles.settingDescription}>{setting.description}</Text>
-      </View>
-      {setting.type === 'switch' ? (
-        <Switch
-          value={setting.value}
-          onValueChange={setting.onValueChange}
-          trackColor={{ false: theme.borderColor, true: theme.primaryColor }}
-          thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : setting.value ? '#FFFFFF' : theme.cardBackground}
-        />
-      ) : (
-        <FontAwesome
-          name={'chevron-right' as IconName}
-          size={16}
-          color={theme.textSecondary}
-          style={styles.chevron}
-        />
-      )}
-    </TouchableOpacity>
-  );
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Customize your experience</Text>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('settings')}</Text>
+        </View>
+
+        <ScrollView style={styles.content}>
+          {/* Language Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('language')}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => setLanguage('en')}
+            >
+              <Text style={[
+                styles.optionTextStyle,
+                language === 'en' && styles.optionTextSelected
+              ]}>
+                {t('english')}
+              </Text>
+              {language === 'en' && (
+                <View style={styles.optionIcon}>
+                  <FontAwesome name="check" size={16} color={theme.primaryColor} />
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.option}
+              onPress={() => setLanguage('zh')}
+            >
+              <Text style={[
+                styles.optionTextStyle,
+                language === 'zh' && styles.optionTextSelected
+              ]}>
+                {t('chinese')}
+              </Text>
+              {language === 'zh' && (
+                <View style={styles.optionIcon}>
+                  <FontAwesome name="check" size={16} color={theme.primaryColor} />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Theme Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('theme')}</Text>
+            </View>
+            <View style={styles.option}>
+              <Text style={styles.optionTextStyle}>{t('darkMode')}</Text>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{ false: '#767577', true: `${theme.primaryColor}50` }}
+                thumbColor={isDark ? theme.primaryColor : '#f4f3f4'}
+              />
+            </View>
+          </View>
+        </ScrollView>
+
+        <BottomNav />
       </View>
-
-      <ScrollView>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-          {settings.slice(0, 2).map(renderSettingItem)}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Organization</Text>
-          {settings.slice(2, 4).map(renderSettingItem)}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>System</Text>
-          {settings.slice(4).map(renderSettingItem)}
-        </View>
-      </ScrollView>
-
-      <BottomNav />
-    </View>
+    </>
   );
 } 
