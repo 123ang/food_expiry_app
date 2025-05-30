@@ -74,14 +74,14 @@ export const initDatabase = () => {
         // Insert default categories if they don't exist
         tx.executeSql(
           `INSERT OR IGNORE INTO categories (id, name, icon) VALUES 
-          (1, 'Vegetables', 'carrot'),
-          (2, 'Fruits', 'apple-alt'),
-          (3, 'Dairy', 'egg'),
-          (4, 'Meat', 'drumstick-bite'),
-          (5, 'Snacks', 'cookie'),
-          (6, 'Desserts', 'ice-cream'),
-          (7, 'Seafood', 'fish'),
-          (8, 'Bread', 'bread-slice');`,
+          (1, 'Vegetables', 'leaf'),
+          (2, 'Fruits', 'apple'),
+          (3, 'Dairy', 'glass'),
+          (4, 'Meat', 'cutlery'),
+          (5, 'Snacks', 'coffee'),
+          (6, 'Desserts', 'birthday-cake'),
+          (7, 'Seafood', 'anchor'),
+          (8, 'Bread', 'shopping-basket');`,
           [],
           () => {},
           (_, error): boolean => {
@@ -94,10 +94,10 @@ export const initDatabase = () => {
         // Insert default locations if they don't exist
         tx.executeSql(
           `INSERT OR IGNORE INTO locations (id, name, icon) VALUES 
-          (1, 'Fridge', 'door-closed'),
-          (2, 'Freezer', 'snowflake'),
-          (3, 'Pantry', 'box'),
-          (4, 'Cabinet', 'cabinet-filing');`,
+          (1, 'Fridge', 'building'),
+          (2, 'Freezer', 'snowflake-o'),
+          (3, 'Pantry', 'archive'),
+          (4, 'Cabinet', 'inbox');`,
           [],
           () => {},
           (_, error): boolean => {
@@ -118,7 +118,7 @@ export const initDatabase = () => {
           `INSERT OR IGNORE INTO food_items (
             id, name, category_id, location_id, expiry_date, reminder_days, notes, created_at
           ) VALUES 
-          (1, 'Fresh Milk', 3, 1, ?, 2, 'Full cream milk', ?),
+          (1, 'Milk', 3, 1, ?, 2, 'Fresh whole milk - 1L', ?),
           (2, 'Chicken Breast', 4, 2, ?, 3, 'Raw chicken breast - 500g', ?),
           (3, 'Apples', 2, 1, ?, 2, 'Red apples - 6 pcs', ?),
           (4, 'Bread', 8, 3, ?, 1, 'Whole wheat bread', ?),

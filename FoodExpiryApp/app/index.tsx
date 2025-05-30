@@ -43,11 +43,11 @@ const sampleCategories = [
 ];
 
 // Sample data for food items
-const sampleExpiringItems = [
+const sampleExpiredItems = [
   {
     id: 1,
     name: 'Milk',
-    daysLeft: 2,
+    daysLeft: -2,
     location: 'Fridge',
     locationIcon: 'building' as IconName,
     image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
@@ -55,7 +55,7 @@ const sampleExpiringItems = [
   {
     id: 2,
     name: 'Tomatoes',
-    daysLeft: 4,
+    daysLeft: -4,
     location: 'Fridge',
     locationIcon: 'building' as IconName,
     image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
@@ -610,6 +610,16 @@ export default function DashboardScreen() {
         <View style={styles.quickStats}>
           <View style={styles.statCard}>
             <FontAwesome
+              name={'check-circle' as IconName}
+              size={24}
+              color={theme.successColor}
+              style={styles.statIcon}
+            />
+            <Text style={styles.statLabel}>Fresh</Text>
+            <Text style={styles.statValue}>12</Text>
+          </View>
+          <View style={styles.statCard}>
+            <FontAwesome
               name={'exclamation-circle' as IconName}
               size={24}
               color={theme.warningColor}
@@ -620,13 +630,13 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.statCard}>
             <FontAwesome
-              name={'check-circle' as IconName}
+              name={'times-circle' as IconName}
               size={24}
-              color={theme.successColor}
+              color={theme.dangerColor}
               style={styles.statIcon}
             />
-            <Text style={styles.statLabel}>Fresh</Text>
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statLabel}>Expired</Text>
+            <Text style={styles.statValue}>3</Text>
           </View>
         </View>
 
@@ -662,42 +672,6 @@ export default function DashboardScreen() {
               </View>
             ))}
           </View>
-        </View>
-
-        <View style={styles.foodSection}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitle}>
-              <FontAwesome name={'exclamation-circle' as IconName} size={20} color={theme.warningColor} />
-              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>
-                Expiring Soon
-              </Text>
-              <View style={styles.sectionCount}>
-                <Text style={styles.sectionCountText}>{sampleExpiringItems.length}</Text>
-              </View>
-            </View>
-            <TouchableOpacity>
-              <FontAwesome name={'sort' as IconName} size={20} color={theme.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          {sampleExpiringItems.map(renderFoodItem)}
-        </View>
-
-        <View style={styles.foodSection}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitle}>
-              <FontAwesome name={'check-circle' as IconName} size={20} color={theme.successColor} />
-              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>
-                Fresh
-              </Text>
-              <View style={styles.sectionCount}>
-                <Text style={styles.sectionCountText}>{sampleFreshItems.length}</Text>
-              </View>
-            </View>
-            <TouchableOpacity>
-              <FontAwesome name={'sort' as IconName} size={20} color={theme.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          {sampleFreshItems.map(renderFoodItem)}
         </View>
       </ScrollView>
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,12 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
-import { useDatabase } from '../context/DatabaseContext';
-import { DatePicker } from '../components/DatePicker';
-import { getCurrentDate } from '../database/database';
+import { useTheme } from '../../context/ThemeContext';
+import { useDatabase } from '../../context/DatabaseContext';
+import { DatePicker } from '../../components/DatePicker';
+import { getCurrentDate } from '../../database/database';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -38,10 +38,11 @@ const LOCATIONS = [
   { id: 4, name: 'Cabinet', icon: 'inbox' as IconName },
 ];
 
-export default function AddScreen() {
+export default function EditScreen() {
+  const { id } = useLocalSearchParams();
   const { theme } = useTheme();
   const router = useRouter();
-  const { createFoodItem } = useDatabase();
+  const { foodItems, updateFoodItem, refreshAll } = useDatabase();
   
   const [itemName, setItemName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -49,6 +50,22 @@ export default function AddScreen() {
   const [expiryDate, setExpiryDate] = useState(new Date());
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    const loadItem = async () => {
+      await refreshAll();
+      const item = foodItems.find(item => item.id === Number(id));
+      if (item) {
+        setItemName(item.name);
+        setSelectedCategory(item.category_id);
+        setSelectedLocation(item.location_id);
+        setExpiryDate(new Date(item.expiry_date));
+        setReminderDays(item.reminder_days.toString());
+        setNotes(item.notes || '');
+      }
+    };
+    loadItem();
+  }, [id]);
 
   const handleSave = async () => {
     if (!itemName.trim()) {
@@ -62,18 +79,18 @@ export default function AddScreen() {
     }
 
     try {
-      await createFoodItem({
+      await updateFoodItem({
+        id: Number(id),
         name: itemName.trim(),
         category_id: selectedCategory,
         location_id: selectedLocation,
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 0,
         notes: notes.trim(),
-        created_at: getCurrentDate(),
       });
       router.back();
     } catch (error) {
-      Alert.alert('Error', 'Failed to create item');
+      Alert.alert('Error', 'Failed to update item');
     }
   };
 
@@ -190,7 +207,7 @@ export default function AddScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
           </TouchableOpacity>
-          <Text style={styles.title}>Add Food Item</Text>
+          <Text style={styles.title}>Edit Food Item</Text>
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
