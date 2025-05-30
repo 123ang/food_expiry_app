@@ -52,6 +52,7 @@ export const initDatabase = () => {
           `CREATE TABLE IF NOT EXISTS food_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
+            quantity INTEGER DEFAULT 1,
             category_id INTEGER,
             location_id INTEGER,
             expiry_date TEXT NOT NULL,

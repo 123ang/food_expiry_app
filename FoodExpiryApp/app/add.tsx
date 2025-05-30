@@ -44,6 +44,7 @@ export default function AddScreen() {
   const { createFoodItem } = useDatabase();
   
   const [itemName, setItemName] = useState('');
+  const [quantity, setQuantity] = useState('1');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [expiryDate, setExpiryDate] = useState(new Date());
@@ -64,6 +65,7 @@ export default function AddScreen() {
     try {
       await createFoodItem({
         name: itemName.trim(),
+        quantity: parseInt(quantity) || 1,
         category_id: selectedCategory,
         location_id: selectedLocation,
         expiry_date: expiryDate.toISOString().split('T')[0],
@@ -205,6 +207,18 @@ export default function AddScreen() {
               placeholderTextColor={theme.textSecondary}
               value={itemName}
               onChangeText={setItemName}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Quantity</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter quantity"
+              placeholderTextColor={theme.textSecondary}
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
             />
           </View>
 

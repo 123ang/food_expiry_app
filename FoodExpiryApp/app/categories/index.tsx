@@ -23,14 +23,14 @@ const categories = [
     itemCount: 8,
   },
   {
-    id: 2,
+    id: 3,
     name: 'Dairy',
     icon: 'glass' as IconName,
     color: '#2196F3',
     itemCount: 5,
   },
   {
-    id: 3,
+    id: 2,
     name: 'Fruits',
     icon: 'apple' as IconName,
     color: '#FF9800',

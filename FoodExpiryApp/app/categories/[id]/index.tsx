@@ -43,7 +43,7 @@ const categories = {
       },
     ],
   },
-  2: {
+  3: {
     name: 'Dairy',
     icon: 'glass' as IconName,
     color: '#2196F3',
@@ -70,7 +70,7 @@ const categories = {
       },
     ],
   },
-  3: {
+  2: {
     name: 'Fruits',
     icon: 'apple' as IconName,
     color: '#FF9800',
@@ -91,18 +91,7 @@ const categories = {
     name: 'Meat',
     icon: 'cutlery' as IconName,
     color: '#F44336',
-    items: [
-      {
-        id: 6,
-        name: 'Chicken',
-        quantity: 2,
-        daysLeft: 3,
-        location: 'Freezer',
-        locationIcon: 'snowflake-o' as IconName,
-        image: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=120',
-        status: 'fresh',
-      },
-    ],
+    items: [],  // Empty array for no items
   },
 };
 
@@ -313,7 +302,7 @@ export default function CategoryDetailScreen() {
           <FontAwesome name="arrow-left" size={20} color={theme.textColor} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <FontAwesome name={category.icon} size={24} color={theme.primaryColor} />
+          <FontAwesome name={category.icon} size={24} color={category.color} />
           <Text style={styles.title}>{category.name}</Text>
         </View>
       </View>
@@ -321,27 +310,13 @@ export default function CategoryDetailScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
           <View style={styles.statsIcon}>
-            <FontAwesome name={category.icon} size={24} color={theme.primaryColor} />
+            <FontAwesome name={category.icon} size={24} color={category.color} />
           </View>
           <Text style={styles.statsTitle}>Items in {category.name}</Text>
           <Text style={styles.statsCount}>{items.length}</Text>
         </View>
 
-        {items.length > 0 ? (
-          items.map(renderFoodItem)
-        ) : (
-          <View style={styles.emptyState}>
-            <FontAwesome 
-              name={category.icon}
-              size={48} 
-              color={theme.textSecondary}
-              style={styles.emptyStateIcon}
-            />
-            <Text style={styles.emptyStateText}>
-              No items in {category.name}
-            </Text>
-          </View>
-        )}
+        {items.map(renderFoodItem)}
       </ScrollView>
 
       <BottomNav />

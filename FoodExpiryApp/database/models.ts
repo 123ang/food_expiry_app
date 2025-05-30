@@ -21,9 +21,9 @@ export interface FoodItem {
   location_id: number | null;
   expiry_date: string;
   reminder_days: number;
-  notes?: string;
-  image_uri?: string;
-  created_at?: string;
+  notes: string | null;
+  image_uri: string | null;
+  created_at: string | null;
 }
 
 export interface FoodItemWithDetails extends FoodItem {

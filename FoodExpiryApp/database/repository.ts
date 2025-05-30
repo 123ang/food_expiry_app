@@ -384,24 +384,37 @@ export const FoodItemRepository = {
   },
 
   // Create a new food item
-  create: (item: FoodItem): Promise<number> => {
+  create: (item: Partial<FoodItem>): Promise<number> => {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
+      const foodItem: FoodItem = {
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        category_id: item.category_id || null,
+        location_id: item.location_id || null,
+        expiry_date: item.expiry_date || getCurrentDate(),
+        reminder_days: item.reminder_days || 0,
+        notes: item.notes || null,
+        image_uri: item.image_uri || null,
+        created_at: item.created_at || getCurrentDate()
+      };
+      
       db.transaction(tx => {
         tx.executeSql(
           `INSERT INTO food_items (
-            name, category_id, location_id, expiry_date, 
+            name, quantity, category_id, location_id, expiry_date, 
             reminder_days, notes, image_uri, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            item.name,
-            item.category_id,
-            item.location_id,
-            item.expiry_date,
-            item.reminder_days,
-            item.notes,
-            item.image_uri,
-            item.created_at || getCurrentDate()
+            foodItem.name,
+            foodItem.quantity,
+            foodItem.category_id,
+            foodItem.location_id,
+            foodItem.expiry_date,
+            foodItem.reminder_days,
+            foodItem.notes,
+            foodItem.image_uri,
+            foodItem.created_at
           ],
           (_, { insertId }) => {
             resolve(insertId);
@@ -416,7 +429,7 @@ export const FoodItemRepository = {
   },
 
   // Update an existing food item
-  update: (item: FoodItem): Promise<void> => {
+  update: (item: Partial<FoodItem>): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (!item.id) {
         reject(new Error('Food item ID is required for update'));
@@ -424,10 +437,23 @@ export const FoodItemRepository = {
       }
 
       const db = getDatabase();
+      const foodItem: FoodItem = {
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        category_id: item.category_id || null,
+        location_id: item.location_id || null,
+        expiry_date: item.expiry_date || getCurrentDate(),
+        reminder_days: item.reminder_days || 0,
+        notes: item.notes || null,
+        image_uri: item.image_uri || null,
+        created_at: item.created_at || getCurrentDate()
+      };
+      
       db.transaction(tx => {
         tx.executeSql(
           `UPDATE food_items SET 
             name = ?, 
+            quantity = ?,
             category_id = ?, 
             location_id = ?, 
             expiry_date = ?, 
@@ -436,13 +462,14 @@ export const FoodItemRepository = {
             image_uri = ? 
           WHERE id = ?`,
           [
-            item.name,
-            item.category_id,
-            item.location_id,
-            item.expiry_date,
-            item.reminder_days,
-            item.notes,
-            item.image_uri,
+            foodItem.name,
+            foodItem.quantity,
+            foodItem.category_id,
+            foodItem.location_id,
+            foodItem.expiry_date,
+            foodItem.reminder_days,
+            foodItem.notes,
+            foodItem.image_uri,
             item.id
           ],
           () => {
