@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initDatabase } from '../database/database';
+import { initDatabase, getDatabase } from '../database/database';
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
 
@@ -43,9 +43,29 @@ interface DatabaseContextType {
   refreshFoodItems: () => Promise<void>;
   refreshDashboardCounts: () => Promise<void>;
   refreshAll: () => Promise<void>;
+
+  // New refreshData function
+  refreshData: () => Promise<void>;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
+
+export const useDatabase = () => {
+  const context = useContext(DatabaseContext);
+  if (!context) {
+    throw new Error('useDatabase must be used within a DatabaseProvider');
+  }
+  return context;
+};
+
+const calculateDaysUntilExpiry = (expiryDate: string) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -60,20 +80,98 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     fresh: 0
   });
 
-  // Initialize database and load initial data
+  const loadData = async () => {
+    const db = getDatabase();
+
+    // Load categories
+    const loadCategories = new Promise<Category[]>((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM categories ORDER BY name',
+          [],
+          (_, { rows: { _array } }) => resolve(_array),
+          (_, error) => {
+            console.error('Error loading categories:', error);
+            reject(error);
+            return false;
+          }
+        );
+      });
+    });
+
+    // Load locations
+    const loadLocations = new Promise<Location[]>((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM locations ORDER BY name',
+          [],
+          (_, { rows: { _array } }) => resolve(_array),
+          (_, error) => {
+            console.error('Error loading locations:', error);
+            reject(error);
+            return false;
+          }
+        );
+      });
+    });
+
+    // Load food items with details
+    const loadFoodItems = new Promise<FoodItemWithDetails[]>((resolve, reject) => {
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT 
+            f.*,
+            c.name as category_name,
+            c.icon as category_icon,
+            l.name as location_name,
+            l.icon as location_icon
+          FROM food_items f
+          LEFT JOIN categories c ON f.category_id = c.id
+          LEFT JOIN locations l ON f.location_id = l.id
+          ORDER BY f.expiry_date`,
+          [],
+          (_, { rows: { _array } }) => {
+            const itemsWithDetails = _array.map(item => ({
+              ...item,
+              days_until_expiry: calculateDaysUntilExpiry(item.expiry_date),
+            }));
+            resolve(itemsWithDetails);
+          },
+          (_, error) => {
+            console.error('Error loading food items:', error);
+            reject(error);
+            return false;
+          }
+        );
+      });
+    });
+
+    try {
+      const [categoriesData, locationsData, foodItemsData] = await Promise.all([
+        loadCategories,
+        loadLocations,
+        loadFoodItems,
+      ]);
+
+      setCategories(categoriesData);
+      setLocations(locationsData);
+      setFoodItems(foodItemsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
   useEffect(() => {
-    const initialize = async () => {
+    const setupDatabase = async () => {
       try {
         await initDatabase();
-        await refreshAll();
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to initialize database'));
-      } finally {
-        setIsLoading(false);
+        await loadData();
+      } catch (error) {
+        console.error('Error setting up database:', error);
       }
     };
 
-    initialize();
+    setupDatabase();
   }, []);
 
   // Refresh functions
@@ -120,6 +218,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       refreshFoodItems(),
       refreshDashboardCounts()
     ]);
+  };
+
+  const refreshData = async () => {
+    await loadData();
   };
 
   // Category operations
@@ -208,7 +310,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshLocations,
     refreshFoodItems,
     refreshDashboardCounts,
-    refreshAll
+    refreshAll,
+    refreshData
   };
 
   return (
@@ -216,12 +319,4 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {children}
     </DatabaseContext.Provider>
   );
-};
-
-export const useDatabase = () => {
-  const context = useContext(DatabaseContext);
-  if (context === undefined) {
-    throw new Error('useDatabase must be used within a DatabaseProvider');
-  }
-  return context;
 }; 

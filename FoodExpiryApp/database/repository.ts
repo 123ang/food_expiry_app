@@ -5,16 +5,15 @@ import { Category, Location, FoodItem, FoodItemWithDetails } from './models';
 export const CategoryRepository = {
   // Get all categories
   getAll: (): Promise<Category[]> => {
-    return new Promise((resolve, reject) => {
+    return new Promise<Category[]>((resolve, reject) => {
       const db = getDatabase();
       db.transaction(tx => {
         tx.executeSql(
           'SELECT * FROM categories ORDER BY name',
           [],
-          (_, { rows }) => {
-            resolve(rows._array);
-          },
-          (_, error): boolean => {
+          (_, { rows: { _array } }) => resolve(_array),
+          (_, error) => {
+            console.error('Error getting categories:', error);
             reject(error);
             return false;
           }
@@ -117,16 +116,15 @@ export const CategoryRepository = {
 export const LocationRepository = {
   // Get all locations
   getAll: (): Promise<Location[]> => {
-    return new Promise((resolve, reject) => {
+    return new Promise<Location[]>((resolve, reject) => {
       const db = getDatabase();
       db.transaction(tx => {
         tx.executeSql(
           'SELECT * FROM locations ORDER BY name',
           [],
-          (_, { rows }) => {
-            resolve(rows._array);
-          },
-          (_, error): boolean => {
+          (_, { rows: { _array } }) => resolve(_array),
+          (_, error) => {
+            console.error('Error getting locations:', error);
             reject(error);
             return false;
           }
@@ -229,7 +227,7 @@ export const LocationRepository = {
 export const FoodItemRepository = {
   // Get all food items with details
   getAll: (): Promise<FoodItemWithDetails[]> => {
-    return new Promise((resolve, reject) => {
+    return new Promise<FoodItemWithDetails[]>((resolve, reject) => {
       const db = getDatabase();
       const today = getCurrentDate();
       
@@ -336,7 +334,7 @@ export const FoodItemRepository = {
 
   // Get food item by ID
   getById: (id: number): Promise<FoodItemWithDetails | null> => {
-    return new Promise((resolve, reject) => {
+    return new Promise<FoodItemWithDetails | null>((resolve, reject) => {
       const db = getDatabase();
       const today = getCurrentDate();
       
@@ -375,6 +373,7 @@ export const FoodItemRepository = {
             }
           },
           (_, error): boolean => {
+            console.error('Error getting food item:', error);
             reject(error);
             return false;
           }
@@ -420,6 +419,7 @@ export const FoodItemRepository = {
             resolve(insertId);
           },
           (_, error): boolean => {
+            console.error('Error adding food item:', error);
             reject(error);
             return false;
           }
@@ -476,6 +476,7 @@ export const FoodItemRepository = {
             resolve();
           },
           (_, error): boolean => {
+            console.error('Error updating food item:', error);
             reject(error);
             return false;
           }
@@ -496,6 +497,7 @@ export const FoodItemRepository = {
             resolve();
           },
           (_, error): boolean => {
+            console.error('Error deleting food item:', error);
             reject(error);
             return false;
           }
@@ -528,6 +530,64 @@ export const FoodItemRepository = {
             resolve(rows._array[0]);
           },
           (_, error): boolean => {
+            reject(error);
+            return false;
+          }
+        );
+      });
+    });
+  },
+
+  // Get food items by category
+  getByCategory: (categoryId: number): Promise<FoodItemWithDetails[]> => {
+    return new Promise<FoodItemWithDetails[]>((resolve, reject) => {
+      const db = getDatabase();
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT 
+            f.*,
+            c.name as category_name,
+            c.icon as category_icon,
+            l.name as location_name,
+            l.icon as location_icon
+          FROM food_items f
+          LEFT JOIN categories c ON f.category_id = c.id
+          LEFT JOIN locations l ON f.location_id = l.id
+          WHERE f.category_id = ?
+          ORDER BY f.expiry_date`,
+          [categoryId],
+          (_, { rows: { _array } }) => resolve(_array),
+          (_, error) => {
+            console.error('Error getting food items by category:', error);
+            reject(error);
+            return false;
+          }
+        );
+      });
+    });
+  },
+
+  // Get food items by location
+  getByLocation: (locationId: number): Promise<FoodItemWithDetails[]> => {
+    return new Promise<FoodItemWithDetails[]>((resolve, reject) => {
+      const db = getDatabase();
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT 
+            f.*,
+            c.name as category_name,
+            c.icon as category_icon,
+            l.name as location_name,
+            l.icon as location_icon
+          FROM food_items f
+          LEFT JOIN categories c ON f.category_id = c.id
+          LEFT JOIN locations l ON f.location_id = l.id
+          WHERE f.location_id = ?
+          ORDER BY f.expiry_date`,
+          [locationId],
+          (_, { rows: { _array } }) => resolve(_array),
+          (_, error) => {
+            console.error('Error getting food items by location:', error);
             reject(error);
             return false;
           }

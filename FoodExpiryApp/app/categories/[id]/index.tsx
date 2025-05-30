@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,103 +6,59 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
+import { useDatabase } from '../../../context/DatabaseContext';
+import { FoodItemWithDetails } from '../../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Sample data - in real app, this would come from your database
-const categories = {
-  1: {
-    name: 'Vegetables',
-    icon: 'leaf' as IconName,
-    color: '#4CAF50',
-    items: [
-      {
-        id: 1,
-        name: 'Tomatoes',
-        quantity: 5,
-        daysLeft: 4,
-        location: 'Fridge',
-        locationIcon: 'building' as IconName,
-        image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
-        status: 'expiring_soon',
-      },
-      {
-        id: 2,
-        name: 'Lettuce',
-        quantity: 1,
-        daysLeft: -1,
-        location: 'Fridge',
-        locationIcon: 'building' as IconName,
-        image: 'https://images.unsplash.com/photo-1621844504531-0e5c3cf2b3d7?w=120',
-        status: 'expired',
-      },
-    ],
-  },
-  3: {
-    name: 'Dairy',
-    icon: 'glass' as IconName,
-    color: '#2196F3',
-    items: [
-      {
-        id: 3,
-        name: 'Milk',
-        quantity: 2,
-        daysLeft: 2,
-        location: 'Fridge',
-        locationIcon: 'building' as IconName,
-        image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
-        status: 'expiring_soon',
-      },
-      {
-        id: 4,
-        name: 'Yogurt',
-        quantity: 1,
-        daysLeft: -2,
-        location: 'Fridge',
-        locationIcon: 'building' as IconName,
-        image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
-        status: 'expired',
-      },
-    ],
-  },
-  2: {
-    name: 'Fruits',
-    icon: 'apple' as IconName,
-    color: '#FF9800',
-    items: [
-      {
-        id: 5,
-        name: 'Apples',
-        quantity: 6,
-        daysLeft: 10,
-        location: 'Fridge',
-        locationIcon: 'building' as IconName,
-        image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=120',
-        status: 'fresh',
-      },
-    ],
-  },
-  4: {
-    name: 'Meat',
-    icon: 'cutlery' as IconName,
-    color: '#F44336',
-    items: [],  // Empty array for no items
-  },
-};
-
 export default function CategoryDetailScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  
-  const categoryId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
-  const category = categoryId ? categories[categoryId as keyof typeof categories] : null;
-  const items = category?.items || [];
+  const { foodItems, categories } = useDatabase();
+  const [loading, setLoading] = useState(true);
+  const [categoryItems, setCategoryItems] = useState<FoodItemWithDetails[]>([]);
+  const [category, setCategory] = useState<{ name: string; icon: string; color: string } | null>(null);
+
+  useEffect(() => {
+    const categoryId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
+    
+    if (categoryId) {
+      // Find the category
+      const foundCategory = categories.find(c => c.id === categoryId);
+      if (foundCategory) {
+        // Set category with color based on ID
+        const colors = {
+          1: '#4CAF50', // Vegetables
+          2: '#FF9800', // Fruits
+          3: '#2196F3', // Dairy
+          4: '#F44336', // Meat
+          5: '#795548', // Snacks
+          6: '#E91E63', // Desserts
+          7: '#00BCD4', // Seafood
+          8: '#FFC107', // Bread
+        };
+        setCategory({
+          name: foundCategory.name,
+          icon: foundCategory.icon as IconName,
+          color: colors[categoryId as keyof typeof colors] || '#9E9E9E',
+        });
+      }
+
+      // Filter items by category
+      const items = foodItems.filter(item => item.category_id === categoryId);
+      setCategoryItems(items);
+    }
+    setLoading(false);
+  }, [id, categories, foodItems]);
 
   const styles = StyleSheet.create({
     container: {
@@ -178,6 +134,9 @@ export default function CategoryDetailScreen() {
       height: 80,
       borderRadius: 8,
       marginRight: 12,
+      backgroundColor: `${theme.primaryColor}10`,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     foodInfo: {
       flex: 1,
@@ -239,40 +198,20 @@ export default function CategoryDetailScreen() {
       color: theme.textSecondary,
       textAlign: 'center',
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   });
 
-  const renderFoodItem = (item: any) => (
-    <View key={item.id} style={styles.foodItem}>
-      <Image source={{ uri: item.image }} style={styles.foodImage} />
-      <View style={styles.foodInfo}>
-        <View style={styles.foodNameRow}>
-          <Text style={styles.foodName}>{item.name}</Text>
-          <Text style={styles.quantity}>×{item.quantity}</Text>
-        </View>
-        <View style={styles.foodMeta}>
-          <View style={styles.metaItem}>
-            <FontAwesome name="clock-o" size={16} color={theme.textSecondary} />
-            <Text style={[
-              styles.metaText,
-              styles.daysLeft,
-              item.daysLeft > 7 && styles.fresh,
-              (item.daysLeft <= 7 && item.daysLeft > 0) && styles.expiring,
-              item.daysLeft <= 0 && styles.expired,
-            ]}>
-              {item.daysLeft > 0 
-                ? `${item.daysLeft} days left`
-                : `${Math.abs(item.daysLeft)} days expired`
-              }
-            </Text>
-          </View>
-          <View style={styles.metaItem}>
-            <FontAwesome name={item.locationIcon} size={16} color={theme.textSecondary} />
-            <Text style={styles.metaText}>{item.location}</Text>
-          </View>
-        </View>
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={theme.primaryColor} />
       </View>
-    </View>
-  );
+    );
+  }
 
   if (!category) {
     return (
@@ -285,12 +224,51 @@ export default function CategoryDetailScreen() {
             <FontAwesome name="arrow-left" size={20} color={theme.textColor} />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Category not found</Text>
+            <Text style={styles.title}>{t('categoryNotFound')}</Text>
           </View>
         </View>
       </View>
     );
   }
+
+  const renderFoodItem = (item: FoodItemWithDetails) => (
+    <View key={item.id} style={styles.foodItem}>
+      <View style={styles.foodImage}>
+        <FontAwesome name={category.icon} size={32} color={category.color} />
+      </View>
+      <View style={styles.foodInfo}>
+        <View style={styles.foodNameRow}>
+          <Text style={styles.foodName}>{item.name}</Text>
+          <Text style={styles.quantity}>×{item.quantity}</Text>
+        </View>
+        <View style={styles.foodMeta}>
+          <View style={styles.metaItem}>
+            <FontAwesome name="clock-o" size={16} color={theme.textSecondary} />
+            <Text style={[
+              styles.metaText,
+              styles.daysLeft,
+              item.days_until_expiry > 7 && styles.fresh,
+              (item.days_until_expiry <= 7 && item.days_until_expiry > 0) && styles.expiring,
+              item.days_until_expiry <= 0 && styles.expired,
+            ]}>
+              {item.days_until_expiry > 0 
+                ? `${item.days_until_expiry} ${t('daysLeft')}`
+                : `${Math.abs(item.days_until_expiry)} ${t('daysExpired')}`
+              }
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome 
+              name={item.location_icon as IconName || 'building'} 
+              size={16} 
+              color={theme.textSecondary} 
+            />
+            <Text style={styles.metaText}>{item.location_name}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -309,14 +287,28 @@ export default function CategoryDetailScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
-          <View style={styles.statsIcon}>
+          <View style={[styles.statsIcon, { backgroundColor: `${category.color}20` }]}>
             <FontAwesome name={category.icon} size={24} color={category.color} />
           </View>
-          <Text style={styles.statsTitle}>Items in {category.name}</Text>
-          <Text style={styles.statsCount}>{items.length}</Text>
+          <Text style={styles.statsTitle}>{t('itemsIn')} {category.name}</Text>
+          <Text style={styles.statsCount}>{categoryItems.length}</Text>
         </View>
 
-        {items.map(renderFoodItem)}
+        {categoryItems.length > 0 ? (
+          categoryItems.map(renderFoodItem)
+        ) : (
+          <View style={styles.emptyState}>
+            <FontAwesome 
+              name={category.icon} 
+              size={48} 
+              color={theme.textSecondary}
+              style={styles.emptyStateIcon} 
+            />
+            <Text style={styles.emptyStateText}>
+              {t('noItemsInCategory')}
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       <BottomNav />

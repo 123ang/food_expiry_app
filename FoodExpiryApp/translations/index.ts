@@ -72,6 +72,24 @@ export const translations = {
     errorDeleting: 'Error deleting item',
     pleaseEnterName: 'Please enter an item name',
     pleaseSelectLocation: 'Please select a storage location',
+    
+    // Category Screen
+    categoryNotFound: 'Category not found',
+    itemsIn: 'Items in',
+    noItemsInCategory: 'No items in this category',
+    
+    // Settings Screen
+    languageDescription: 'Change app language',
+    darkModeDescription: 'Switch between light and dark theme',
+    notifications: 'Notifications',
+    notificationsDescription: 'Manage notification preferences',
+    storageLocations: 'Storage Locations',
+    storageLocationsDescription: 'Manage your storage locations',
+    categoriesDescription: 'Manage food categories',
+    backupSync: 'Backup & Sync',
+    backupSyncDescription: 'Manage your data backup',
+    about: 'About',
+    aboutDescription: 'App information and help',
   },
   zh: {
     // Common
@@ -144,5 +162,23 @@ export const translations = {
     errorDeleting: '删除项目时出错',
     pleaseEnterName: '请输入项目名称',
     pleaseSelectLocation: '请选择存储位置',
+    
+    // Category Screen
+    categoryNotFound: '未找到分类',
+    itemsIn: '项目在',
+    noItemsInCategory: '此分类中没有项目',
+    
+    // Settings Screen
+    languageDescription: '更改应用语言',
+    darkModeDescription: '切换浅色和深色主题',
+    notifications: '通知',
+    notificationsDescription: '管理通知首选项',
+    storageLocations: '存储位置',
+    storageLocationsDescription: '管理您的存储位置',
+    categoriesDescription: '管理食品分类',
+    backupSync: '备份和同步',
+    backupSyncDescription: '管理您的数据备份',
+    about: '关于',
+    aboutDescription: '应用信息和帮助',
   }
 }; 

@@ -1,11 +1,16 @@
 import * as SQLite from 'expo-sqlite';
 
+let db: SQLite.WebSQLDatabase;
+
 // Database name
 const DATABASE_NAME = 'foodexpiry.db';
 
 // Open or create the database
 export const getDatabase = () => {
-  return SQLite.openDatabase(DATABASE_NAME);
+  if (!db) {
+    db = SQLite.openDatabase(DATABASE_NAME);
+  }
+  return db;
 };
 
 // Initialize the database with tables
@@ -117,18 +122,18 @@ export const initDatabase = () => {
 
         tx.executeSql(
           `INSERT OR IGNORE INTO food_items (
-            id, name, category_id, location_id, expiry_date, reminder_days, notes, created_at
+            id, name, quantity, category_id, location_id, expiry_date, reminder_days, notes, created_at
           ) VALUES 
-          (1, 'Milk', 3, 1, ?, 2, 'Fresh whole milk - 1L', ?),
-          (2, 'Chicken Breast', 4, 2, ?, 3, 'Raw chicken breast - 500g', ?),
-          (3, 'Apples', 2, 1, ?, 2, 'Red apples - 6 pcs', ?),
-          (4, 'Bread', 8, 3, ?, 1, 'Whole wheat bread', ?),
-          (5, 'Salmon Fillet', 7, 2, ?, 2, 'Fresh salmon - 2 pieces', ?),
-          (6, 'Yogurt', 3, 1, ?, 2, 'Greek yogurt - 500g', ?),
-          (7, 'Carrots', 1, 1, ?, 3, 'Baby carrots', ?),
-          (8, 'Chocolate Cookies', 5, 3, ?, 5, 'Homemade cookies', ?),
-          (9, 'Ice Cream', 6, 2, ?, 7, 'Vanilla flavor', ?),
-          (10, 'Expired Cheese', 3, 1, ?, 2, 'Cheddar cheese block', ?);`,
+          (1, 'Milk', 2, 3, 1, ?, 2, 'Fresh whole milk - 1L bottles', ?),
+          (2, 'Chicken Breast', 4, 4, 2, ?, 3, 'Raw chicken breast - 500g packs', ?),
+          (3, 'Apples', 6, 2, 1, ?, 2, 'Red apples - Fuji variety', ?),
+          (4, 'Bread', 1, 8, 3, ?, 1, 'Whole wheat bread loaf', ?),
+          (5, 'Salmon Fillet', 3, 7, 2, ?, 2, 'Fresh salmon - 200g portions', ?),
+          (6, 'Yogurt', 4, 3, 1, ?, 2, 'Greek yogurt - 500g containers', ?),
+          (7, 'Carrots', 8, 1, 1, ?, 3, 'Baby carrots pack', ?),
+          (8, 'Chocolate Cookies', 2, 5, 3, ?, 5, 'Homemade cookies - 12 per pack', ?),
+          (9, 'Ice Cream', 1, 6, 2, ?, 7, 'Vanilla flavor - 1L tub', ?),
+          (10, 'Expired Cheese', 1, 3, 1, ?, 2, 'Cheddar cheese block - 500g', ?);`,
           [
             tomorrow, today,           // Milk
             nextWeek, today,          // Chicken
@@ -163,12 +168,16 @@ export const initDatabase = () => {
 
 // Helper function to format date as YYYY-MM-DD
 export const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 // Get current date formatted as YYYY-MM-DD
-export const getCurrentDate = (): string => {
-  return formatDate(new Date());
+export const getCurrentDate = () => {
+  const date = new Date();
+  return formatDate(date);
 };
 
 // Calculate days difference between two dates
