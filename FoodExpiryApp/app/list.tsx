@@ -50,13 +50,24 @@ const sampleItems = [
     image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120',
     status: 'fresh',
   },
+  {
+    id: 4,
+    name: 'Yogurt',
+    daysLeft: -2,
+    location: 'Fridge',
+    locationIcon: 'building' as IconName,
+    category: 'Dairy',
+    categoryIcon: 'glass' as IconName,
+    image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
+    status: 'expired',
+  },
 ];
 
 export default function ListScreen() {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'expiry'>('expiry');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'expiring' | 'fresh'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'expiring' | 'fresh' | 'expired'>('all');
 
   const styles = StyleSheet.create({
     container: {
@@ -182,6 +193,7 @@ export default function ListScreen() {
     .filter(item => {
       if (filterStatus === 'expiring') return item.status === 'expiring_soon';
       if (filterStatus === 'fresh') return item.status === 'fresh';
+      if (filterStatus === 'expired') return item.status === 'expired';
       return true;
     })
     .filter(item => 
@@ -268,6 +280,26 @@ export default function ListScreen() {
                 All
               </Text>
             </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.filterButton, filterStatus === 'fresh' && styles.filterButtonActive]}
+              onPress={() => setFilterStatus('fresh')}
+            >
+              <FontAwesome 
+                name={'check-circle' as IconName} 
+                size={14} 
+                color={filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor} 
+              />
+              <Text 
+                style={[
+                  styles.filterButtonText,
+                  filterStatus === 'fresh' && styles.filterButtonTextActive,
+                ]}
+              >
+                Fresh
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.filterButton, filterStatus === 'expiring' && styles.filterButtonActive]}
               onPress={() => setFilterStatus('expiring')}
@@ -286,22 +318,23 @@ export default function ListScreen() {
                 Expiring
               </Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={[styles.filterButton, filterStatus === 'fresh' && styles.filterButtonActive]}
-              onPress={() => setFilterStatus('fresh')}
+              style={[styles.filterButton, filterStatus === 'expired' && styles.filterButtonActive]}
+              onPress={() => setFilterStatus('expired')}
             >
               <FontAwesome 
-                name={'check-circle' as IconName} 
+                name={'times-circle' as IconName} 
                 size={14} 
-                color={filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor} 
+                color={filterStatus === 'expired' ? '#FFFFFF' : theme.dangerColor} 
               />
               <Text 
                 style={[
                   styles.filterButtonText,
-                  filterStatus === 'fresh' && styles.filterButtonTextActive,
+                  filterStatus === 'expired' && styles.filterButtonTextActive,
                 ]}
               >
-                Fresh
+                Expired
               </Text>
             </TouchableOpacity>
           </View>
