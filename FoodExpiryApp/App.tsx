@@ -1,20 +1,27 @@
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Slot } from 'expo-router';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { DatabaseProvider } from './context/DatabaseContext';
 
-export default function App() {
+function AppContent() {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
+    <View style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
       <StatusBar style="auto" />
+      <Slot />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <ThemeProvider>
+      <DatabaseProvider>
+        <AppContent />
+      </DatabaseProvider>
+    </ThemeProvider>
+  );
+}

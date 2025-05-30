@@ -1,0 +1,331 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  Image,
+  TextInput,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { FontAwesome } from '@expo/vector-icons';
+import { BottomNav } from '../components/BottomNav';
+
+type IconName = keyof typeof FontAwesome.glyphMap;
+
+// Sample data
+const sampleItems = [
+  {
+    id: 1,
+    name: 'Milk',
+    daysLeft: 2,
+    location: 'Fridge',
+    locationIcon: 'building' as IconName,
+    category: 'Dairy',
+    categoryIcon: 'glass' as IconName,
+    image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
+    status: 'expiring_soon',
+  },
+  {
+    id: 2,
+    name: 'Tomatoes',
+    daysLeft: 4,
+    location: 'Fridge',
+    locationIcon: 'building' as IconName,
+    category: 'Vegetables',
+    categoryIcon: 'leaf' as IconName,
+    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
+    status: 'expiring_soon',
+  },
+  {
+    id: 3,
+    name: 'Bread',
+    daysLeft: 7,
+    location: 'Pantry',
+    locationIcon: 'archive' as IconName,
+    category: 'Bread',
+    categoryIcon: 'shopping-basket' as IconName,
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120',
+    status: 'fresh',
+  },
+];
+
+export default function ListScreen() {
+  const { theme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'expiry'>('expiry');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'expiring' | 'fresh'>('all');
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.backgroundColor,
+    },
+    header: {
+      backgroundColor: theme.cardBackground,
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundColor,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    searchInput: {
+      flex: 1,
+      height: 40,
+      color: theme.textColor,
+      marginLeft: 8,
+    },
+    filterContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    filterButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundColor,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    filterButtonActive: {
+      backgroundColor: theme.primaryColor,
+      borderColor: theme.primaryColor,
+    },
+    filterButtonText: {
+      color: theme.textColor,
+      marginLeft: 4,
+    },
+    filterButtonTextActive: {
+      color: '#FFFFFF',
+    },
+    content: {
+      flex: 1,
+    },
+    foodItem: {
+      flexDirection: 'row',
+      padding: 16,
+      backgroundColor: theme.cardBackground,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    foodImage: {
+      width: 60,
+      height: 60,
+      borderRadius: 8,
+      marginRight: 12,
+    },
+    foodInfo: {
+      flex: 1,
+    },
+    foodName: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: theme.textColor,
+      marginBottom: 4,
+    },
+    foodMeta: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    metaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    metaText: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      marginLeft: 4,
+    },
+    foodActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    actionButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.cardBackground,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    expiryText: {
+      fontSize: 14,
+    },
+    expiringSoon: {
+      color: theme.warningColor,
+    },
+    expired: {
+      color: theme.dangerColor,
+    },
+    fresh: {
+      color: theme.successColor,
+    },
+  });
+
+  const filteredItems = sampleItems
+    .filter(item => {
+      if (filterStatus === 'expiring') return item.status === 'expiring_soon';
+      if (filterStatus === 'fresh') return item.status === 'fresh';
+      return true;
+    })
+    .filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.location.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return a.daysLeft - b.daysLeft;
+    });
+
+  const renderFoodItem = (item: any) => (
+    <View key={item.id} style={styles.foodItem}>
+      <Image source={{ uri: item.image }} style={styles.foodImage} />
+      <View style={styles.foodInfo}>
+        <Text style={styles.foodName}>{item.name}</Text>
+        <View style={styles.foodMeta}>
+          <View style={styles.metaItem}>
+            <FontAwesome name={'clock-o' as IconName} size={14} color={theme.textSecondary} />
+            <Text 
+              style={[
+                styles.metaText, 
+                styles.expiryText,
+                item.status === 'expiring_soon' && styles.expiringSoon,
+                item.status === 'expired' && styles.expired,
+                item.status === 'fresh' && styles.fresh,
+              ]}
+            >
+              {item.daysLeft} days left
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name={item.locationIcon} size={14} color={theme.textSecondary} />
+            <Text style={styles.metaText}>{item.location}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name={item.categoryIcon} size={14} color={theme.textSecondary} />
+            <Text style={styles.metaText}>{item.category}</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.foodActions}>
+        <TouchableOpacity style={styles.actionButton}>
+          <FontAwesome name={'pencil' as IconName} size={14} color={theme.primaryColor} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton}>
+          <FontAwesome name={'trash' as IconName} size={14} color={theme.dangerColor} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.searchBar}>
+          <FontAwesome name={'search' as IconName} size={16} color={theme.textSecondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search food items..."
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+        <View style={styles.filterContainer}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.filterButton, filterStatus === 'all' && styles.filterButtonActive]}
+              onPress={() => setFilterStatus('all')}
+            >
+              <FontAwesome 
+                name={'list' as IconName} 
+                size={14} 
+                color={filterStatus === 'all' ? '#FFFFFF' : theme.textSecondary} 
+              />
+              <Text 
+                style={[
+                  styles.filterButtonText,
+                  filterStatus === 'all' && styles.filterButtonTextActive,
+                ]}
+              >
+                All
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterButton, filterStatus === 'expiring' && styles.filterButtonActive]}
+              onPress={() => setFilterStatus('expiring')}
+            >
+              <FontAwesome 
+                name={'exclamation-circle' as IconName} 
+                size={14} 
+                color={filterStatus === 'expiring' ? '#FFFFFF' : theme.warningColor} 
+              />
+              <Text 
+                style={[
+                  styles.filterButtonText,
+                  filterStatus === 'expiring' && styles.filterButtonTextActive,
+                ]}
+              >
+                Expiring
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterButton, filterStatus === 'fresh' && styles.filterButtonActive]}
+              onPress={() => setFilterStatus('fresh')}
+            >
+              <FontAwesome 
+                name={'check-circle' as IconName} 
+                size={14} 
+                color={filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor} 
+              />
+              <Text 
+                style={[
+                  styles.filterButtonText,
+                  filterStatus === 'fresh' && styles.filterButtonTextActive,
+                ]}
+              >
+                Fresh
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setSortBy(sortBy === 'name' ? 'expiry' : 'name')}
+          >
+            <FontAwesome 
+              name={'sort' as IconName} 
+              size={14} 
+              color={theme.textSecondary} 
+            />
+            <Text style={styles.filterButtonText}>
+              {sortBy === 'name' ? 'Sort by name' : 'Sort by expiry'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content}>
+        {filteredItems.map(renderFoodItem)}
+      </ScrollView>
+
+      <BottomNav />
+    </View>
+  );
+} 
