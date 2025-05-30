@@ -42,12 +42,20 @@ export const translations = {
     desserts: 'Desserts',
     seafood: 'Seafood',
     bread: 'Bread',
+    addCategory: 'Add Category',
+    editCategory: 'Edit Category',
+    deleteCategory: 'Delete Category',
+    deleteCategoryConfirm: 'Are you sure you want to delete this category?',
     
     // Locations
     fridge: 'Fridge',
     freezer: 'Freezer',
     pantry: 'Pantry',
     cabinet: 'Cabinet',
+    addLocation: 'Add Location',
+    editLocation: 'Edit Location',
+    deleteLocation: 'Delete Location',
+    deleteLocationConfirm: 'Are you sure you want to delete this location?',
     
     // Settings
     language: 'Language',
@@ -132,12 +140,20 @@ export const translations = {
     desserts: '甜点',
     seafood: '海鲜',
     bread: '面包',
+    addCategory: '添加分类',
+    editCategory: '编辑分类',
+    deleteCategory: '删除分类',
+    deleteCategoryConfirm: '确定要删除此分类吗？',
     
     // Locations
     fridge: '冰箱',
     freezer: '冷冻室',
     pantry: '储藏室',
     cabinet: '橱柜',
+    addLocation: '添加位置',
+    editLocation: '编辑位置',
+    deleteLocation: '删除位置',
+    deleteLocationConfirm: '确定要删除此位置吗？',
     
     // Settings
     language: '语言',
