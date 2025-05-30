@@ -32,14 +32,14 @@ const sampleLocations = [
 
 // Sample data for categories
 const sampleCategories = [
-  { id: 1, name: 'Vegetables', icon: 'leaf' as IconName },
-  { id: 2, name: 'Fruits', icon: 'apple' as IconName },
-  { id: 3, name: 'Dairy', icon: 'glass' as IconName },
-  { id: 4, name: 'Meat', icon: 'cutlery' as IconName },
-  { id: 5, name: 'Snacks', icon: 'coffee' as IconName },
-  { id: 6, name: 'Desserts', icon: 'birthday-cake' as IconName },
-  { id: 7, name: 'Seafood', icon: 'anchor' as IconName },
-  { id: 8, name: 'Bread', icon: 'shopping-basket' as IconName },
+  { id: 1, name: 'Vegetables', icon: 'leaf' as IconName, itemCount: 5 },
+  { id: 2, name: 'Fruits', icon: 'apple' as IconName, itemCount: 3 },
+  { id: 3, name: 'Dairy', icon: 'glass' as IconName, itemCount: 4 },
+  { id: 4, name: 'Meat', icon: 'cutlery' as IconName, itemCount: 2 },
+  { id: 5, name: 'Snacks', icon: 'coffee' as IconName, itemCount: 6 },
+  { id: 6, name: 'Desserts', icon: 'birthday-cake' as IconName, itemCount: 1 },
+  { id: 7, name: 'Seafood', icon: 'anchor' as IconName, itemCount: 2 },
+  { id: 8, name: 'Bread', icon: 'shopping-basket' as IconName, itemCount: 3 },
 ];
 
 // Sample data for food items
@@ -340,22 +340,6 @@ export default function DashboardScreen() {
     },
     actionButton: {
       padding: 8,
-    },
-    fab: {
-      position: 'absolute',
-      bottom: 80, // Adjusted to account for bottom nav
-      right: 24,
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: theme.primaryColor,
-      justifyContent: 'center',
-      alignItems: 'center',
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
     },
     modalContainer: {
       flex: 1,
@@ -659,15 +643,6 @@ export default function DashboardScreen() {
               </Text>
             </View>
           ))}
-          <TouchableOpacity
-            style={styles.addLocationCard}
-            onPress={() => {/* TODO: Add location */}}
-          >
-            <View style={[styles.locationIcon, { backgroundColor: 'transparent' }]}>
-              <FontAwesome name={'plus' as IconName} size={20} color={theme.primaryColor} />
-            </View>
-            <Text style={styles.locationName}>Add Location</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.categoryList}>
@@ -681,17 +656,11 @@ export default function DashboardScreen() {
                   <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
                 </View>
                 <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={styles.locationCount}>
+                  {category.itemCount} items
+                </Text>
               </View>
             ))}
-            <TouchableOpacity
-              style={styles.addCategoryCard}
-              onPress={() => {/* TODO: Add category */}}
-            >
-              <View style={[styles.categoryIcon, { backgroundColor: 'transparent' }]}>
-                <FontAwesome name={'plus' as IconName} size={20} color={theme.primaryColor} />
-              </View>
-              <Text style={styles.categoryName}>Add Category</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -731,13 +700,6 @@ export default function DashboardScreen() {
           {sampleFreshItems.map(renderFoodItem)}
         </View>
       </ScrollView>
-
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {/* TODO: Add item */}}
-      >
-        <FontAwesome name={'plus' as IconName} size={24} color="#FFFFFF" />
-      </TouchableOpacity>
 
       <BottomNav />
 

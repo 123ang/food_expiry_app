@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
@@ -50,6 +50,7 @@ export default function AddScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
+      paddingTop: Platform.OS === 'ios' ? 48 : 24,
     },
     header: {
       backgroundColor: theme.cardBackground,
@@ -64,6 +65,8 @@ export default function AddScreen() {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme.textColor,
+      flex: 1,
+      textAlign: 'center',
     },
     content: {
       flex: 1,
@@ -133,22 +136,18 @@ export default function AddScreen() {
     },
     saveButton: {
       backgroundColor: theme.primaryColor,
-      padding: 16,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
       borderRadius: 8,
       alignItems: 'center',
-      marginTop: 24,
     },
     saveButtonText: {
       color: '#FFFFFF',
       fontSize: 16,
       fontWeight: '600',
     },
-    cancelButton: {
+    backButton: {
       padding: 8,
-    },
-    cancelButtonText: {
-      color: theme.dangerColor,
-      fontSize: 16,
     },
   });
 
@@ -158,113 +157,112 @@ export default function AddScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Add Food Item</Text>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Item Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter food item name"
-            placeholderTextColor={theme.textSecondary}
-            value={itemName}
-            onChangeText={setItemName}
-          />
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Add Food Item</Text>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Category</Text>
-          <View style={styles.optionsGrid}>
-            {sampleCategories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.optionCard,
-                  selectedCategory === category.id && styles.optionCardSelected,
-                ]}
-                onPress={() => setSelectedCategory(category.id)}
-              >
-                <View style={styles.optionIcon}>
-                  <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
-                </View>
-                <Text style={styles.optionName}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Storage Location</Text>
-          <View style={styles.optionsGrid}>
-            {sampleLocations.map((location) => (
-              <TouchableOpacity
-                key={location.id}
-                style={[
-                  styles.optionCard,
-                  selectedLocation === location.id && styles.optionCardSelected,
-                ]}
-                onPress={() => setSelectedLocation(location.id)}
-              >
-                <View style={styles.optionIcon}>
-                  <FontAwesome name={location.icon} size={20} color={theme.primaryColor} />
-                </View>
-                <Text style={styles.optionName}>{location.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Expiry Date</Text>
-          <View style={styles.datePickerContainer}>
-            <DatePicker
-              value={expiryDate}
-              onChange={setExpiryDate}
-              theme={theme}
-              minimumDate={new Date()}
+        <ScrollView style={styles.content}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Item Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter food item name"
+              placeholderTextColor={theme.textSecondary}
+              value={itemName}
+              onChangeText={setItemName}
             />
           </View>
-        </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Reminder Days Before Expiry</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter number of days"
-            placeholderTextColor={theme.textSecondary}
-            value={reminderDays}
-            onChangeText={setReminderDays}
-            keyboardType="numeric"
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Category</Text>
+            <View style={styles.optionsGrid}>
+              {sampleCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.optionCard,
+                    selectedCategory === category.id && styles.optionCardSelected,
+                  ]}
+                  onPress={() => setSelectedCategory(category.id)}
+                >
+                  <View style={styles.optionIcon}>
+                    <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
+                  </View>
+                  <Text style={styles.optionName}>{category.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Notes</Text>
-          <TextInput
-            style={[styles.input, styles.notesInput]}
-            placeholder="Add any notes about the item"
-            placeholderTextColor={theme.textSecondary}
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Storage Location</Text>
+            <View style={styles.optionsGrid}>
+              {sampleLocations.map((location) => (
+                <TouchableOpacity
+                  key={location.id}
+                  style={[
+                    styles.optionCard,
+                    selectedLocation === location.id && styles.optionCardSelected,
+                  ]}
+                  onPress={() => setSelectedLocation(location.id)}
+                >
+                  <View style={styles.optionIcon}>
+                    <FontAwesome name={location.icon} size={20} color={theme.primaryColor} />
+                  </View>
+                  <Text style={styles.optionName}>{location.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Item</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Expiry Date</Text>
+            <View style={styles.datePickerContainer}>
+              <DatePicker
+                value={expiryDate}
+                onChange={setExpiryDate}
+                theme={theme}
+                minimumDate={new Date()}
+              />
+            </View>
+          </View>
 
-      <BottomNav />
-    </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Reminder Days Before Expiry</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter number of days"
+              placeholderTextColor={theme.textSecondary}
+              value={reminderDays}
+              onChangeText={setReminderDays}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Notes</Text>
+            <TextInput
+              style={[styles.input, styles.notesInput]}
+              placeholder="Add any notes about the item"
+              placeholderTextColor={theme.textSecondary}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+            />
+          </View>
+        </ScrollView>
+
+        <BottomNav />
+      </View>
+    </>
   );
 } 
