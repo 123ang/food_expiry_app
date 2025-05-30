@@ -47,6 +47,7 @@ const sampleExpiredItems = [
   {
     id: 1,
     name: 'Milk',
+    quantity: 2,
     daysLeft: -2,
     location: 'Fridge',
     locationIcon: 'building' as IconName,
@@ -55,6 +56,7 @@ const sampleExpiredItems = [
   {
     id: 2,
     name: 'Tomatoes',
+    quantity: 5,
     daysLeft: -4,
     location: 'Fridge',
     locationIcon: 'building' as IconName,
@@ -66,6 +68,7 @@ const sampleFreshItems = [
   {
     id: 3,
     name: 'Bread',
+    quantity: 1,
     daysLeft: 7,
     location: 'Pantry',
     locationIcon: 'archive' as IconName,
@@ -94,6 +97,7 @@ export default function DashboardScreen() {
   const [expiryDate, setExpiryDate] = useState(new Date());
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
+  const [quantity, setQuantity] = useState('1');
 
   const handleSave = async () => {
     if (!itemName.trim()) {
@@ -101,9 +105,15 @@ export default function DashboardScreen() {
       return;
     }
 
+    if (!quantity || parseInt(quantity) < 1) {
+      Alert.alert('Error', 'Please enter a valid quantity (minimum 1)');
+      return;
+    }
+
     try {
       const item: FoodItem = {
         name: itemName,
+        quantity: parseInt(quantity),
         category_id: categoryId,
         location_id: locationId,
         expiry_date: expiryDate.toISOString().split('T')[0],
@@ -131,6 +141,7 @@ export default function DashboardScreen() {
     setExpiryDate(new Date(item.expiry_date));
     setReminderDays(item.reminder_days.toString());
     setNotes(item.notes || '');
+    setQuantity(item.quantity.toString());
     setModalVisible(true);
   };
 
@@ -164,6 +175,7 @@ export default function DashboardScreen() {
     setExpiryDate(new Date());
     setReminderDays('3');
     setNotes('');
+    setQuantity('1');
   };
 
   const styles = StyleSheet.create({
@@ -563,6 +575,11 @@ export default function DashboardScreen() {
       flexDirection: 'row',
       gap: 8,
     },
+    quantityContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
   });
 
   const renderFoodItem = (item: any) => (
@@ -608,7 +625,10 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.quickStats}>
-          <View style={styles.statCard}>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/items/fresh')}
+          >
             <FontAwesome
               name={'check-circle' as IconName}
               size={24}
@@ -617,8 +637,11 @@ export default function DashboardScreen() {
             />
             <Text style={styles.statLabel}>Fresh</Text>
             <Text style={styles.statValue}>12</Text>
-          </View>
-          <View style={styles.statCard}>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/items/expiring')}
+          >
             <FontAwesome
               name={'exclamation-circle' as IconName}
               size={24}
@@ -627,8 +650,11 @@ export default function DashboardScreen() {
             />
             <Text style={styles.statLabel}>Expiring Soon</Text>
             <Text style={styles.statValue}>5</Text>
-          </View>
-          <View style={styles.statCard}>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => router.push('/items/expired')}
+          >
             <FontAwesome
               name={'times-circle' as IconName}
               size={24}
@@ -637,13 +663,17 @@ export default function DashboardScreen() {
             />
             <Text style={styles.statLabel}>Expired</Text>
             <Text style={styles.statValue}>3</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Storage Locations</Text>
         <View style={styles.locationGrid}>
           {sampleLocations.map((location) => (
-            <View key={location.id} style={styles.locationCard}>
+            <TouchableOpacity
+              key={location.id}
+              style={styles.locationCard}
+              onPress={() => router.push(`/locations/${location.id}`)}
+            >
               <View style={styles.locationIcon}>
                 <FontAwesome name={location.icon} size={20} color={theme.primaryColor} />
               </View>
@@ -651,7 +681,7 @@ export default function DashboardScreen() {
               <Text style={styles.locationCount}>
                 {location.itemCount} items
               </Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -661,7 +691,11 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.categoriesGrid}>
             {sampleCategories.map((category) => (
-              <View key={category.id} style={styles.categoryCard}>
+              <TouchableOpacity
+                key={category.id}
+                style={styles.categoryCard}
+                onPress={() => router.push(`/categories/${category.id}`)}
+              >
                 <View style={styles.categoryIcon}>
                   <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
                 </View>
@@ -669,7 +703,7 @@ export default function DashboardScreen() {
                 <Text style={styles.locationCount}>
                   {category.itemCount} items
                 </Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
@@ -697,6 +731,17 @@ export default function DashboardScreen() {
                 value={itemName}
                 onChangeText={setItemName}
               />
+
+              <View style={styles.quantityContainer}>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginRight: 8 }]}
+                  placeholder="Quantity"
+                  placeholderTextColor={theme.textSecondary}
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  keyboardType="numeric"
+                />
+              </View>
 
               <View style={styles.pickerContainer}>
                 <Text style={styles.pickerLabel}>Category</Text>

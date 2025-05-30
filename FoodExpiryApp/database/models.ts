@@ -16,6 +16,7 @@ export interface Location {
 export interface FoodItem {
   id?: number;
   name: string;
+  quantity: number;
   category_id: number | null;
   location_id: number | null;
   expiry_date: string;
