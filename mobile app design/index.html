@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh Food Reminder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Fresh Food Reminder</h1>
+        
+        <button class="theme-toggle">
+            <i class="fas fa-moon"></i>
+            <span>Dark Mode</span>
+        </button>
+        
+        <!-- Dashboard -->
+        <div class="prototype-screen">
+            <h2>Dashboard</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content dashboard">
+                    <div class="header">
+                        <h3>Fresh Food</h3>
+                        <div class="header-actions">
+                            <button class="icon-btn"><i class="fas fa-bell"></i></button>
+                            <button class="icon-btn"><i class="fas fa-user-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="welcome-banner">
+                        <div class="welcome-text">
+                            <h4>Welcome Back!</h4>
+                            <p><strong>2</strong> items expiring soon</p>
+                        </div>
+                        <i class="fas fa-utensils banner-icon"></i>
+                    </div>
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <i class="fas fa-exclamation-circle warning"></i>
+                            <span>Expiring Soon</span>
+                            <strong>5</strong>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-check-circle success"></i>
+                            <span>Fresh</span>
+                            <strong>12</strong>
+                        </div>
+                    </div>
+
+                    <!-- Storage Locations -->
+                    <div class="location-list">
+                        <div class="category-actions">
+                            <h4>Storage Locations</h4>
+                        </div>
+                        <div class="locations">
+                            <div class="location-item">
+                                <div class="actions">
+                                    <button class="action-btn" onclick="editLocation(1)"><i class="fas fa-edit"></i></button>
+                                    <button class="action-btn delete" onclick="deleteLocation(1)"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <i class="fas fa-door-closed"></i>
+                                <span>Fridge</span>
+                                <small>8 items</small>
+                            </div>
+                            <div class="location-item">
+                                <i class="fas fa-snowflake"></i>
+                                <span>Freezer</span>
+                                <small>4 items</small>
+                            </div>
+                            <div class="location-item">
+                                <i class="fas fa-box"></i>
+                                <span>Pantry</span>
+                                <small>3 items</small>
+                            </div>
+                            <div class="location-item">
+                                <i class="fas fa-cabinet-filing"></i>
+                                <span>Cabinet</span>
+                                <small>2 items</small>
+                            </div>
+                            <div class="add-location" onclick="showAddLocationModal()">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Location</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-list">
+                        <div class="category-actions">
+                            <h4>Categories</h4>
+                           </div>
+                        <div class="categories">
+                            <div class="category-item">
+                                <div class="actions">
+                                    <button class="action-btn" onclick="editCategory(1)"><i class="fas fa-edit"></i></button>
+                                    <button class="action-btn delete" onclick="deleteCategory(1)"><i class="fas fa-trash"></i></button>
+                                </div>
+                                <i class="fas fa-carrot"></i>
+                                <span>Vegetables</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-apple-alt"></i>
+                                <span>Fruits</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-egg"></i>
+                                <span>Dairy</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-drumstick-bite"></i>
+                                <span>Meat</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-cookie"></i>
+                                <span>Snacks</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-ice-cream"></i>
+                                <span>Desserts</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-fish"></i>
+                                <span>Seafood</span>
+                            </div>
+                            <div class="category-item">
+                                <i class="fas fa-bread-slice"></i>
+                                <span>Bread</span>
+                            </div>
+                            <div class="add-category" onclick="showAddCategoryModal()">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Category</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="food-sections">
+                        <!-- Expiring Soon Section -->
+                        <div class="food-section">
+                            <div class="section-header">
+                                <h4>
+                                    <i class="fas fa-exclamation-circle warning"></i>
+                                    Expiring Soon
+                                    <span class="count">5</span>
+                                </h4>
+                                <button class="action-btn" onclick="sortExpiringItems()">
+                                    <i class="fas fa-sort"></i>
+                                </button>
+                            </div>
+                            <div class="section-content">
+                                <div class="food-item">
+                                    <div class="food-info">
+                                        <img src="https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120" alt="Fresh Milk">
+                                        <div class="food-details">
+                                            <h5>Milk</h5>
+                                            <div class="food-meta">
+                                                <span><i class="fas fa-clock"></i> 2 days left</span>
+                                                <span><i class="fas fa-door-closed"></i> Fridge</span>
+                                            </div>
+                                        </div>
+                                        <div class="food-actions">
+                                            <button class="action-btn" onclick="editFood(1)"><i class="fas fa-edit"></i></button>
+                                            <button class="action-btn delete" onclick="deleteFood(1)"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="food-item">
+                                    <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120" alt="Tomatoes">
+                                    <div class="food-info">
+                                        <h5>Tomatoes</h5>
+                                        <p>4 days left</p>
+                                        <span class="location-tag"><i class="fas fa-door-closed"></i> Fridge</span>
+                                    </div>
+                                    <span class="expiry-tag warning">Warning</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fresh Run Section -->
+                        <div class="food-section">
+                            <div class="section-header">
+                                <h4>
+                                    <i class="fas fa-check-circle success"></i>
+                                    Fresh
+                                    <span class="count">12</span>
+                                </h4>
+                                <button class="action-btn" onclick="sortFreshItems()">
+                                    <i class="fas fa-sort"></i>
+                                </button>
+                            </div>
+                            <div class="section-content">
+                                <div class="food-item">
+                                    <div class="food-info">
+                                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120" alt="Bread">
+                                        <div class="food-details">
+                                            <h5>Bread</h5>
+                                            <div class="food-meta">
+                                                <span><i class="fas fa-clock"></i> 7 days left</span>
+                                                <span><i class="fas fa-box"></i> Pantry</span>
+                                            </div>
+                                        </div>
+                                        <div class="food-actions">
+                                            <button class="action-btn" onclick="editFood(2)"><i class="fas fa-edit"></i></button>
+                                            <button class="action-btn delete" onclick="deleteFood(2)"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <nav class="bottom-nav">
+                        <button class="nav-item active">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
+                        </button>
+                        <button class="nav-item">
+                            <i class="fas fa-list"></i>
+                            <span>List</span>
+                        </button>
+                        <button class="nav-item add-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="nav-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>Calendar</span>
+                        </button>
+                        <button class="nav-item">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Food -->
+        <div class="prototype-screen">
+            <h2>Add/Edit Food</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content add-food">
+                    <div class="header">
+                        <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                        <h3>Add Food</h3>
+                        <button class="save-btn">Save</button>
+                    </div>
+                    <div class="form-content">
+                        <div class="photo-upload">
+                            <i class="fas fa-camera"></i>
+                            <span>Add Food Photo</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" placeholder="Enter food name">
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select>
+                                <option>Vegetables</option>
+                                <option>Fruits</option>
+                                <option>Dairy</option>
+                                <option>Meat</option>
+                                <option>Snacks</option>
+                                <option>Desserts</option>
+                                <option>Seafood</option>
+                                <option>Bread</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Storage Location</label>
+                            <select>
+                                <option>Fridge</option>
+                                <option>Freezer</option>
+                                <option>Pantry</option>
+                                <option>Cabinet</option>
+                                <option>Counter</option>
+                                <option>Other...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Expiry Date</label>
+                            <input type="date">
+                        </div>
+                        <div class="form-group">
+                            <label>Reminder</label>
+                            <select>
+                                <option>On expiry day</option>
+                                <option>1 day before</option>
+                                <option>3 days before</option>
+                                <option>1 week before</option>
+                                <option>Custom...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea placeholder="Add notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="prototype-screen">
+            <h2>Settings</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content settings">
+                    <div class="header">
+                        <h3>Settings</h3>
+                    </div>
+                    <div class="settings-list">
+                        <div class="settings-group">
+                            <h4>Notifications</h4>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-bell"></i>
+                                    <span>Push Notifications</span>
+                                </div>
+                                <div class="toggle-switch"></div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Reminder Time</span>
+                                </div>
+                                <span class="setting-value">9:00 AM</span>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h4>Personalization</h4>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Theme</span>
+                                </div>
+                                <span class="setting-value">Light</span>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-language"></i>
+                                    <span>Language</span>
+                                </div>
+                                <span class="setting-value">English</span>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h4>Cloud Features</h4>
+                            <div class="premium-banner">
+                                <div class="premium-info">
+                                    <h5>Unlock Cloud Sync</h5>
+                                    <p>Backup and sync across devices</p>
+                                    <span class="price">$4.99</span>
+                                </div>
+                                <button class="premium-btn">Unlock</button>
+                            </div>
+                        </div>
+                        <div class="settings-group">
+                            <h4>About</h4>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Version</span>
+                                </div>
+                                <span class="setting-value">1.0.0</span>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <i class="fas fa-star"></i>
+                                    <span>Rate App</span>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal-overlay" id="categoryModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h4>Add Category</h4>
+                <button class="action-btn" onclick="closeModal('categoryModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <label>Category Name</label>
+                    <input type="text" placeholder="Enter category name">
+                </div>
+                <div class="form-group">
+                    <label>Icon</label>
+                    <select>
+                        <option value="carrot">Vegetable</option>
+                        <option value="apple-alt">Fruit</option>
+                        <option value="egg">Dairy</option>
+                        <option value="drumstick-bite">Meat</option>
+                        <!-- ... other icons ... -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeModal('categoryModal')">Cancel</button>
+                <button class="modal-btn confirm">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Location Modal -->
+    <div class="modal-overlay" id="locationModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h4>Add Location</h4>
+                <button class="action-btn" onclick="closeModal('locationModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <label>Location Name</label>
+                    <input type="text" placeholder="Enter location name">
+                </div>
+                <div class="form-group">
+                    <label>Icon</label>
+                    <select>
+                        <option value="door-closed">Fridge</option>
+                        <option value="snowflake">Freezer</option>
+                        <option value="box">Pantry</option>
+                        <option value="cabinet-filing">Cabinet</option>
+                        <!-- ... other icons ... -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn cancel" onclick="closeModal('locationModal')">Cancel</button>
+                <button class="modal-btn confirm">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.querySelector('.theme-toggle');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+        }
+        
+        prefersDarkScheme.addListener((e) => {
+            if (!localStorage.getItem('theme')) {
+                if (e.matches) {
+                    document.body.setAttribute('data-theme', 'dark');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+                } else {
+                    document.body.removeAttribute('data-theme');
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+                }
+            }
+        });
+        
+        themeToggle.addEventListener('click', () => {
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                document.body.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
+            }
+        });
+
+        // Add these functions to your existing script
+        function showAddCategoryModal() {
+            document.getElementById('categoryModal').style.display = 'flex';
+        }
+
+        function showAddLocationModal() {
+            document.getElementById('locationModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function editCategory(id) {
+            // Implement category editing
+            showAddCategoryModal();
+            // Pre-fill the form with category data
+        }
+
+        function deleteCategory(id) {
+            if (confirm('Are you sure you want to delete this category?')) {
+                // Implement category deletion
+            }
+        }
+
+        function editLocation(id) {
+            // Implement location editing
+            showAddLocationModal();
+            // Pre-fill the form with location data
+        }
+
+        function deleteLocation(id) {
+            if (confirm('Are you sure you want to delete this location?')) {
+                // Implement location deletion
+            }
+        }
+
+        function editFood(id) {
+            // Implement food item editing
+        }
+
+        function deleteFood(id) {
+            if (confirm('Are you sure you want to delete this food item?')) {
+                // Implement food item deletion
+            }
+        }
+
+        function sortExpiringItems() {
+            // Implement sorting for expiring items
+        }
+
+        function sortFreshItems() {
+            // Implement sorting for fresh items
+        }
+    </script>
+</body>
+</html> 
