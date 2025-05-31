@@ -23,6 +23,82 @@ const LOCATION_COLORS = {
   'Cabinet': '#FF9800',
 };
 
+// Separate component for food item to avoid hooks violation
+const FoodItemCard: React.FC<{ 
+  item: FoodItemWithDetails; 
+  onPress: () => void; 
+  theme: any;
+  styles: any;
+}> = ({ item, onPress, theme, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Determine status icon and color based on days until expiry
+  const getStatusInfo = () => {
+    if (item.days_until_expiry <= 0) {
+      return { icon: 'warning', color: '#F44336', text: 'Expired' };
+    } else if (item.days_until_expiry <= 5) {
+      return { icon: 'clock-o', color: '#FF9800', text: 'Expiring' };
+    } else {
+      return { icon: 'check-circle', color: '#4CAF50', text: 'Fresh' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+
+  return (
+    <TouchableOpacity style={styles.foodItem} onPress={onPress}>
+      {item.image_uri && !imageError ? (
+        <Image
+          source={{ uri: item.image_uri }}
+          style={styles.foodImage}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <FontAwesome 
+            name={(item.category_icon as IconName) || 'cutlery'} 
+            size={32} 
+            color={theme.primaryColor} 
+          />
+        </View>
+      )}
+      <View style={styles.foodInfo}>
+        <View style={styles.foodNameRow}>
+          <Text style={styles.foodName}>{item.name}</Text>
+          <View style={styles.statusContainer}>
+            <FontAwesome 
+              name={statusInfo.icon as IconName} 
+              size={16} 
+              color={statusInfo.color} 
+            />
+            <Text style={styles.quantity}>x{item.quantity}</Text>
+          </View>
+        </View>
+        <View style={styles.foodMeta}>
+          <View style={styles.metaItem}>
+            <FontAwesome 
+              name={(item.category_icon as IconName) || 'folder'} 
+              size={16} 
+              color={theme.textSecondary} 
+            />
+            <Text style={styles.metaText}>{item.category_name || 'No category'}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
+            <Text style={[styles.metaText, { color: statusInfo.color }]}>
+              {item.days_until_expiry > 0
+                ? `${item.days_until_expiry} days left`
+                : item.days_until_expiry === 0
+                ? 'Expires today'
+                : `Expired ${Math.abs(item.days_until_expiry)} days ago`}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -62,6 +138,7 @@ export default function LocationDetailScreen() {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
     },
     title: {
       fontSize: 20,
@@ -76,30 +153,34 @@ export default function LocationDetailScreen() {
     statsCard: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 16,
+      padding: 20,
       marginBottom: 16,
       alignItems: 'center',
+      justifyContent: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
+      minHeight: 120,
     },
     statsIcon: {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: location ? `${LOCATION_COLORS[location.name as keyof typeof LOCATION_COLORS]}20` : theme.primaryColor,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: 12,
     },
     statsTitle: {
-      fontSize: 16,
+      fontSize: 14,
       color: theme.textSecondary,
-      marginBottom: 4,
+      marginBottom: 8,
+      textAlign: 'center',
+      lineHeight: 18,
     },
     statsCount: {
-      fontSize: 24,
+      fontSize: 28,
       fontWeight: 'bold',
       color: theme.textColor,
+      textAlign: 'center',
     },
     foodItem: {
       flexDirection: 'row',
@@ -158,19 +239,6 @@ export default function LocationDetailScreen() {
       fontSize: 14,
       color: theme.textSecondary,
     },
-    expiryText: {
-      marginLeft: 8,
-      fontSize: 14,
-    },
-    expiringSoon: {
-      color: theme.warningColor,
-    },
-    expired: {
-      color: theme.dangerColor,
-    },
-    fresh: {
-      color: theme.successColor,
-    },
     emptyState: {
       flex: 1,
       alignItems: 'center',
@@ -183,74 +251,40 @@ export default function LocationDetailScreen() {
       textAlign: 'center',
       marginTop: 16,
     },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
   });
-
-  const renderFoodItem = (item: FoodItemWithDetails) => (
-    <View key={item.id} style={styles.foodItem}>
-      {item.image_uri ? (
-        <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
-      ) : (
-        <View style={styles.placeholderImage}>
-          <FontAwesome name={item.category_icon as IconName} size={32} color={theme.primaryColor} />
-        </View>
-      )}
-      <View style={styles.foodInfo}>
-        <View style={styles.foodNameRow}>
-          <Text style={styles.foodName}>{item.name}</Text>
-          <Text style={styles.quantity}>x{item.quantity}</Text>
-        </View>
-        <View style={styles.foodMeta}>
-          <View style={styles.metaItem}>
-            <FontAwesome name={item.category_icon as IconName} size={14} color={theme.textSecondary} />
-            <Text style={styles.metaText}>{item.category_name}</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <FontAwesome name="clock-o" size={14} color={theme.textSecondary} />
-            <Text 
-              style={[
-                styles.expiryText,
-                item.days_until_expiry <= 0 && styles.expired,
-                item.days_until_expiry > 0 && item.days_until_expiry <= 5 && styles.expiringSoon,
-                item.days_until_expiry > 5 && styles.fresh,
-              ]}
-            >
-              {item.days_until_expiry} days left
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
 
   if (!location) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Location not found</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Location not found</Text>
+          </View>
         </View>
       </View>
     );
   }
 
+  const locationColor = LOCATION_COLORS[location.name as keyof typeof LOCATION_COLORS] || theme.primaryColor;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
-        </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <FontAwesome name={location.icon as IconName} size={24} color={theme.textColor} />
+          <FontAwesome name={location.icon as IconName} size={24} color={locationColor} />
           <Text style={styles.title}>{location.name}</Text>
         </View>
       </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
-          <View style={styles.statsIcon}>
-            <FontAwesome name={location.icon as IconName} size={24} color={LOCATION_COLORS[location.name as keyof typeof LOCATION_COLORS]} />
+          <View style={[styles.statsIcon, { backgroundColor: `${locationColor}20` }]}>
+            <FontAwesome name={location.icon as IconName} size={24} color={locationColor} />
           </View>
           <Text style={styles.statsTitle}>Items in {location.name}</Text>
           <Text style={styles.statsCount}>{locationItems.length}</Text>
@@ -265,7 +299,15 @@ export default function LocationDetailScreen() {
             </Text>
           </View>
         ) : (
-          locationItems.map(renderFoodItem)
+          locationItems.map((item) => (
+            <FoodItemCard 
+              key={item.id} 
+              item={item} 
+              onPress={() => router.push(`/item/${item.id}`)}
+              theme={theme}
+              styles={styles}
+            />
+          ))
         )}
       </ScrollView>
 

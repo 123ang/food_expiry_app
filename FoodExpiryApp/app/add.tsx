@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { DatePicker } from '../components/DatePicker';
 import { getCurrentDate } from '../database/database';
+import { BottomNav } from '../components/BottomNav';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -22,6 +23,7 @@ export default function AddScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const { createFoodItem, refreshFoodItems, refreshAll, locations, categories } = useDatabase();
+  const { prefilledDate } = useLocalSearchParams();
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -30,6 +32,14 @@ export default function AddScreen() {
   const [expiryDate, setExpiryDate] = useState(new Date());
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (prefilledDate && typeof prefilledDate === 'string') {
+      // Parse the date string manually to avoid timezone issues
+      const [year, month, day] = prefilledDate.split('-').map(Number);
+      setExpiryDate(new Date(year, month - 1, day)); // month is 0-indexed
+    }
+  }, [prefilledDate]);
 
   const handleSave = async () => {
     if (!itemName.trim()) {
@@ -87,6 +97,7 @@ export default function AddScreen() {
     header: {
       backgroundColor: theme.cardBackground,
       padding: 16,
+      paddingTop: 50,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
       flexDirection: 'row',
@@ -345,6 +356,7 @@ export default function AddScreen() {
           </View>
         </ScrollView>
       </View>
+      <BottomNav />
     </>
   );
-} 
+}

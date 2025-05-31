@@ -11,6 +11,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
@@ -19,15 +20,10 @@ import { useRouter, useFocusEffect } from 'expo-router';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
-
 export default function CalendarScreen() {
   const { theme } = useTheme();
-  const { foodItems, refreshFoodItems } = useDatabase();
+  const { t } = useLanguage();
+  const { foodItems, refreshAll } = useDatabase();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -35,10 +31,21 @@ export default function CalendarScreen() {
   const windowHeight = Dimensions.get('window').height;
   const isWeb = Platform.OS === 'web';
 
+  const months = [
+    t('month.january'), t('month.february'), t('month.march'), t('month.april'),
+    t('month.may'), t('month.june'), t('month.july'), t('month.august'),
+    t('month.september'), t('month.october'), t('month.november'), t('month.december')
+  ];
+
+  const weekDays = [
+    t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'),
+    t('weekday.thu'), t('weekday.fri'), t('weekday.sat')
+  ];
+
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      refreshFoodItems();
+      refreshAll();
     }, [])
   );
 
@@ -174,6 +181,11 @@ export default function CalendarScreen() {
       shadowRadius: 4,
       elevation: 3,
     },
+    listHeaderLeft: {
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      flex: 1,
+    },
     listTitle: {
       fontSize: 16,
       fontWeight: '600',
@@ -257,6 +269,25 @@ export default function CalendarScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    customHeader: {
+      backgroundColor: theme.cardBackground,
+      padding: 16,
+      paddingTop: 50,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      textAlign: 'center',
+    },
+    addButton: {
+      padding: 8,
+      borderRadius: 16,
+      backgroundColor: theme.primaryColor,
+      marginLeft: 8,
+    },
   });
 
   const getDaysInMonth = (date: Date) => {
@@ -339,7 +370,11 @@ export default function CalendarScreen() {
   };
 
   const renderFoodItem = (item: FoodItemWithDetails) => (
-    <View key={item.id} style={styles.foodItem}>
+    <TouchableOpacity 
+      key={item.id} 
+      style={styles.foodItem}
+      onPress={() => router.push(`/item/${item.id}`)}
+    >
       <Image 
         source={{ uri: item.image_uri || 'https://via.placeholder.com/50' }} 
         style={styles.foodImage} 
@@ -366,13 +401,34 @@ export default function CalendarScreen() {
             <FontAwesome name={item.category_icon as IconName} size={14} color={theme.textSecondary} />
             <Text style={styles.metaText}>{item.category_name}</Text>
           </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name="cubes" size={14} color={theme.textSecondary} />
+            <Text style={styles.metaText}>{item.quantity}</Text>
+            <FontAwesome 
+              name={
+                item.status === 'expired' ? 'warning' :
+                item.status === 'expiring_soon' ? 'clock-o' : 'check-circle'
+              } 
+              size={14} 
+              color={
+                item.status === 'expired' ? '#F44336' :
+                item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
+              }
+              style={{ marginLeft: 8 }}
+            />
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Custom Header */}
+      <View style={styles.customHeader}>
+        <Text style={styles.headerTitle}>{t('nav.calendar')}</Text>
+      </View>
+      
       <View style={styles.calendarSection}>
         <View style={styles.calendarContainer}>
           <View style={styles.header}>
@@ -415,16 +471,29 @@ export default function CalendarScreen() {
 
       <View style={styles.listSection}>
         <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>
-            {selectedDate.toLocaleDateString('en-US', { 
-              month: 'long', 
-              day: 'numeric',
-              year: 'numeric'
+          <View style={styles.listHeaderLeft}>
+            <Text style={styles.listTitle}>
+              {selectedDate.toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </Text>
+            <Text style={styles.listCount}>
+              {filteredItems.length} {t('calendar.items')}
+            </Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => router.push({
+              pathname: '/add',
+              params: { 
+                prefilledDate: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+              }
             })}
-          </Text>
-          <Text style={styles.listCount}>
-            {filteredItems.length} items
-          </Text>
+          >
+            <FontAwesome name="plus" size={16} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
         <ScrollView 
           style={styles.listContent}
@@ -437,7 +506,7 @@ export default function CalendarScreen() {
             <View>
               <FontAwesome name="calendar-o" size={48} color={theme.textSecondary} />
               <Text style={styles.emptyListText}>
-                No items expiring on this date
+                {t('calendar.noItems')}
               </Text>
             </View>
           ) : (

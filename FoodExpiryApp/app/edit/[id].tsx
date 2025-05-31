@@ -16,6 +16,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { DatePicker } from '../../components/DatePicker';
 import { getCurrentDate } from '../../database/database';
+import { BottomNav } from '../../components/BottomNav';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -115,6 +116,7 @@ export default function EditScreen() {
     header: {
       backgroundColor: theme.cardBackground,
       padding: 16,
+      paddingTop: 50,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
       flexDirection: 'row',
@@ -348,6 +350,7 @@ export default function EditScreen() {
           </View>
         </ScrollView>
       </View>
+      <BottomNav />
     </>
   );
 } 

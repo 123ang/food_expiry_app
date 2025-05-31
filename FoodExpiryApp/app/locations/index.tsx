@@ -12,6 +12,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
+import { BottomNav } from '../../components/BottomNav';
 import IconSelector, { LOCATION_ICONS } from '../../components/IconSelector';
 import { Location } from '../../database/models';
 
@@ -288,6 +289,8 @@ export default function LocationsScreen() {
         title="Select Location Icon"
         selectedIcon={selectedIcon}
       />
+      
+      <BottomNav />
     </View>
   );
 } 

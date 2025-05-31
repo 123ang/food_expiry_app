@@ -13,6 +13,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
@@ -23,7 +24,8 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function ListScreen() {
   const { theme } = useTheme();
-  const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus } = useDatabase();
+  const { t } = useLanguage();
+  const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable } = useDatabase();
   const router = useRouter();
   
   // Ensure we have a theme before rendering
@@ -75,13 +77,21 @@ export default function ListScreen() {
   }, [filterStatus]);
 
   const loadInitialData = async () => {
+    // Check if data is already available from cache
+    if (isDataAvailable()) {
+      console.log('Data available from cache, loading items directly');
+      setIsLoading(false);
+      await loadItems();
+      return;
+    }
+    
     setIsLoading(true);
     try {
       await refreshAll();
       await loadItems();
     } catch (error) {
       console.error('Error loading initial data:', error);
-      Alert.alert('Error', 'Failed to load initial data');
+      Alert.alert(t('alert.error'), t('alert.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +106,7 @@ export default function ListScreen() {
       await loadItems();
     } catch (error) {
       console.error('Error refreshing data:', error);
-      Alert.alert('Error', 'Failed to refresh data');
+      Alert.alert(t('alert.error'), t('alert.loadFailed'));
     } finally {
       setIsRefreshing(false);
     }
@@ -136,7 +146,7 @@ export default function ListScreen() {
       console.log('Items loaded:', items.length);
     } catch (error) {
       console.error('Error loading items:', error);
-      Alert.alert('Error', 'Failed to load items');
+      Alert.alert(t('alert.error'), t('alert.loadFailed'));
       setFilteredItems([]);
     }
   };
@@ -158,7 +168,7 @@ export default function ListScreen() {
       console.log('Item deleted and list refreshed');
     } catch (error) {
       console.error('Error deleting item:', error);
-      Alert.alert('Error', 'Failed to delete item');
+      Alert.alert(t('alert.error'), t('alert.deleteFailed'));
     } finally {
       setIsRefreshing(false);
     }
@@ -191,6 +201,19 @@ export default function ListScreen() {
     container: {
       flex: 1,
       backgroundColor: colors.backgroundColor,
+    },
+    customHeader: {
+      backgroundColor: colors.cardBackground,
+      padding: 16,
+      paddingTop: 50,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.borderColor,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.textColor,
+      textAlign: 'center',
     },
     header: {
       backgroundColor: colors.cardBackground,
@@ -339,7 +362,7 @@ export default function ListScreen() {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryColor} />
-          <Text style={[styles.emptyStateText, { marginTop: 16 }]}>Loading items...</Text>
+          <Text style={[styles.emptyStateText, { marginTop: 16 }]}>{t('list.loading')}</Text>
         </View>
       );
     }
@@ -350,10 +373,10 @@ export default function ListScreen() {
           <FontAwesome name="inbox" size={48} color={colors.textSecondary} />
           <Text style={styles.emptyStateText}>
             {searchQuery
-              ? 'No items match your search'
+              ? t('list.noSearch')
               : filterStatus === 'all'
-              ? 'No items found. Add some items to get started!'
-              : 'No items found in this category.'}
+              ? t('list.noItems')
+              : t('list.noCategory')}
           </Text>
         </View>
       );
@@ -363,7 +386,7 @@ export default function ListScreen() {
       <TouchableOpacity
         key={item.id}
         style={styles.foodItem}
-        onPress={() => router.push(`/items/${item.id}`)}
+        onPress={() => router.push(`/item/${item.id}`)}
       >
         {item.image_uri ? (
           <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
@@ -399,6 +422,22 @@ export default function ListScreen() {
               />
               <Text style={styles.metaText}>{item.location_name}</Text>
             </View>
+            <View style={styles.metaItem}>
+              <FontAwesome name="cubes" size={14} color={colors.textSecondary} />
+              <Text style={styles.metaText}>{item.quantity}</Text>
+              <FontAwesome 
+                name={
+                  item.status === 'expired' ? 'warning' :
+                  item.status === 'expiring_soon' ? 'clock-o' : 'check-circle'
+                } 
+                size={14} 
+                color={
+                  item.status === 'expired' ? '#F44336' :
+                  item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
+                }
+                style={{ marginLeft: 8 }}
+              />
+            </View>
           </View>
         </View>
         <View style={styles.foodActions}>
@@ -426,12 +465,17 @@ export default function ListScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Custom Header */}
+      <View style={styles.customHeader}>
+        <Text style={styles.headerTitle}>{t('nav.list')}</Text>
+      </View>
+      
       <View style={styles.header}>
         <View style={styles.searchBar}>
           <FontAwesome name="search" size={20} color={colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search items..."
+            placeholder={t('list.search')}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -445,7 +489,7 @@ export default function ListScreen() {
               disabled={isLoading || isRefreshing}
             >
               <FontAwesome name="list" size={16} color={filterStatus === 'all' ? '#FFFFFF' : colors.textColor} />
-              <Text style={[styles.filterButtonText, filterStatus === 'all' && styles.filterButtonTextActive]}>All</Text>
+              <Text style={[styles.filterButtonText, filterStatus === 'all' && styles.filterButtonTextActive]}>{t('list.all')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.filterButton, filterStatus === 'expired' && styles.filterButtonActive]}
@@ -453,7 +497,7 @@ export default function ListScreen() {
               disabled={isLoading || isRefreshing}
             >
               <FontAwesome name="warning" size={16} color={filterStatus === 'expired' ? '#FFFFFF' : theme.dangerColor || '#FF3B30'} />
-              <Text style={[styles.filterButtonText, filterStatus === 'expired' && styles.filterButtonTextActive]}>Expired</Text>
+              <Text style={[styles.filterButtonText, filterStatus === 'expired' && styles.filterButtonTextActive]}>{t('list.expired')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.filterButton, filterStatus === 'expiring_soon' && styles.filterButtonActive]}
@@ -461,7 +505,7 @@ export default function ListScreen() {
               disabled={isLoading || isRefreshing}
             >
               <FontAwesome name="clock-o" size={16} color={filterStatus === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500'} />
-              <Text style={[styles.filterButtonText, filterStatus === 'expiring_soon' && styles.filterButtonTextActive]}>Expiring</Text>
+              <Text style={[styles.filterButtonText, filterStatus === 'expiring_soon' && styles.filterButtonTextActive]}>{t('list.expiring')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.filterButton, filterStatus === 'fresh' && styles.filterButtonActive]}
@@ -469,7 +513,7 @@ export default function ListScreen() {
               disabled={isLoading || isRefreshing}
             >
               <FontAwesome name="check" size={16} color={filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759'} />
-              <Text style={[styles.filterButtonText, filterStatus === 'fresh' && styles.filterButtonTextActive]}>Fresh</Text>
+              <Text style={[styles.filterButtonText, filterStatus === 'fresh' && styles.filterButtonTextActive]}>{t('list.fresh')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

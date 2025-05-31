@@ -191,6 +191,17 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: 16,
     width: '80%',
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  closeButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: `${theme.textSecondary}20`,
+  },
   languageOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,6 +216,19 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   languageSelected: {
     color: theme.primaryColor,
+  },
+  customHeader: {
+    backgroundColor: theme.cardBackground,
+    padding: 16,
+    paddingTop: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.borderColor,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.textColor,
+    textAlign: 'center',
   },
 });
 
@@ -302,16 +326,16 @@ export default function SettingsScreen() {
     {
       id: 'language',
       icon: 'language',
-      title: t('language'),
-      description: t('languageDescription'),
+      title: t('settings.language'),
+      description: t('settings.languageDescription'),
       type: 'language',
       onPress: () => setShowLanguageModal(true),
     },
     {
       id: 'theme',
       icon: 'moon-o',
-      title: t('darkMode'),
-      description: t('darkModeDescription'),
+      title: t('settings.darkMode'),
+      description: t('settings.darkModeDescription'),
       type: 'switch',
       value: isDark,
       onValueChange: toggleTheme,
@@ -319,40 +343,40 @@ export default function SettingsScreen() {
     {
       id: 'categories',
       icon: 'tags',
-      title: t('categories'),
-      description: t('categoriesDescription'),
+      title: t('settings.categories'),
+      description: t('settings.categoriesDescription'),
       type: 'navigation',
       onPress: () => router.push('/categories'),
     },
     {
       id: 'locations',
       icon: 'map-marker',
-      title: t('storageLocations'),
-      description: t('storageLocationsDescription'),
+      title: t('settings.storageLocations'),
+      description: t('settings.storageLocationsDescription'),
       type: 'navigation',
       onPress: () => router.push('/locations'),
     },
     {
       id: 'notifications',
       icon: 'bell',
-      title: t('notifications'),
-      description: t('notificationsDescription'),
+      title: t('settings.notifications'),
+      description: t('settings.notificationsDescription'),
       type: 'navigation',
       onPress: () => router.push('/notifications'),
     },
     {
       id: 'backup',
       icon: 'cloud',
-      title: t('backupSync'),
-      description: t('backupSyncDescription'),
+      title: t('settings.backupSync'),
+      description: t('settings.backupSyncDescription'),
       type: 'navigation',
       onPress: () => router.push('/backup'),
     },
     {
       id: 'about',
       icon: 'info-circle',
-      title: t('about'),
-      description: t('aboutDescription'),
+      title: t('settings.about'),
+      description: t('settings.aboutDescription'),
       type: 'navigation',
       onPress: () => router.push('/about'),
     },
@@ -435,11 +459,27 @@ export default function SettingsScreen() {
       animationType="fade"
       onRequestClose={() => setShowLanguageModal(false)}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.languageModal}>
-          <Text style={[styles.modalTitle, { color: theme.textColor }]}>
-            {t('language')}
-          </Text>
+      <TouchableOpacity 
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowLanguageModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.languageModal}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+              {t('settings.language')}
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowLanguageModal(false)}
+            >
+              <FontAwesome name="times" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             style={styles.languageOption}
             onPress={() => {
@@ -451,14 +491,14 @@ export default function SettingsScreen() {
               styles.languageText,
               language === 'en' && styles.languageSelected
             ]}>
-              {t('english')}
+              {t('language.english')}
             </Text>
             {language === 'en' && (
               <FontAwesome name="check" size={16} color={theme.primaryColor} />
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            style={styles.languageOption}
             onPress={() => {
               setLanguage('zh');
               setShowLanguageModal(false);
@@ -468,31 +508,42 @@ export default function SettingsScreen() {
               styles.languageText,
               language === 'zh' && styles.languageSelected
             ]}>
-              {t('chinese')}
+              {t('language.chinese')}
             </Text>
             {language === 'zh' && (
               <FontAwesome name="check" size={16} color={theme.primaryColor} />
             )}
           </TouchableOpacity>
-        </View>
-      </View>
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setLanguage('ja');
+              setShowLanguageModal(false);
+            }}
+          >
+            <Text style={[
+              styles.languageText,
+              language === 'ja' && styles.languageSelected
+            ]}>
+              {t('language.japanese')}
+            </Text>
+            {language === 'ja' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: 'Settings',
-          headerStyle: {
-            backgroundColor: theme.cardBackground,
-          },
-          headerTintColor: theme.textColor,
-          headerShadowVisible: false,
-        }}
-      />
-      
       <View style={styles.container}>
+        {/* Custom Header */}
+        <View style={styles.customHeader}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
+        
         <ScrollView style={styles.content}>
           <View style={styles.section}>
             {settings.map((item, index) => renderSettingItem(item, index, settings.length))}

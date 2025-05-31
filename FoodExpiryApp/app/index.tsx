@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const {
     foodItems,
@@ -35,6 +37,7 @@ export default function DashboardScreen() {
     updateFoodItem,
     deleteFoodItem,
     refreshAll,
+    isDataAvailable,
   } = useDatabase();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -52,6 +55,13 @@ export default function DashboardScreen() {
   useFocusEffect(
     React.useCallback(() => {
       const loadData = async () => {
+        // Check if data is already available from cache
+        if (isDataAvailable()) {
+          console.log('Data available from cache, skipping loading state');
+          setIsLoading(false);
+          return;
+        }
+        
         setIsLoading(true);
         try {
           await refreshAll();
@@ -62,7 +72,7 @@ export default function DashboardScreen() {
         }
       };
       loadData();
-    }, [])
+    }, [isDataAvailable, refreshAll])
   );
 
   // Calculate location item counts
@@ -89,12 +99,12 @@ export default function DashboardScreen() {
 
   const handleSave = async () => {
     if (!itemName.trim()) {
-      Alert.alert('Error', 'Please enter a name for the item');
+      Alert.alert(t('alert.error'), t('alert.nameRequired'));
       return;
     }
 
     if (!quantity || parseInt(quantity) < 1) {
-      Alert.alert('Error', 'Please enter a valid quantity (minimum 1)');
+      Alert.alert(t('alert.error'), t('alert.quantityRequired'));
       return;
     }
 
@@ -120,7 +130,7 @@ export default function DashboardScreen() {
       // Refresh data after saving
       await refreshAll();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save food item');
+      Alert.alert(t('alert.error'), t('alert.saveFailed'));
     }
   };
 
@@ -138,18 +148,18 @@ export default function DashboardScreen() {
 
   const handleDelete = (item: FoodItem) => {
     Alert.alert(
-      'Delete Item',
-      `Are you sure you want to delete "${item.name}"?`,
+      t('alert.deleteTitle'),
+      `${t('alert.deleteMessage')} "${item.name}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('form.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('action.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteFoodItem(item.id!);
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete item');
+              Alert.alert(t('alert.error'), t('alert.deleteFailed'));
             }
           },
         },
@@ -582,6 +592,19 @@ export default function DashboardScreen() {
       fontWeight: 'bold',
       marginTop: 16,
     },
+    header: {
+      backgroundColor: theme.cardBackground,
+      padding: 16,
+      paddingTop: 50,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    headerTitle: {
+      color: theme.textColor,
+      fontSize: 20,
+      fontWeight: 'bold',
+      textAlign: 'center',
+    },
   });
 
   const renderFoodItem = (item: any) => (
@@ -613,18 +636,23 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Fresh Food</Text>
+      </View>
+      
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primaryColor} />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
+          <Text style={styles.loadingText}>{t('home.loading')}</Text>
         </View>
       ) : (
         <ScrollView style={styles.content}>
           <View style={styles.welcomeBanner}>
             <View style={styles.welcomeText}>
-              <Text style={styles.welcomeTitle}>Welcome Back!</Text>
+              <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
               <Text style={styles.welcomeSubtitle}>
-                {dashboardCounts.expiring_soon} {dashboardCounts.expiring_soon === 1 ? 'item' : 'items'} expiring
+                {dashboardCounts.expiring_soon} {dashboardCounts.expiring_soon === 1 ? t('home.item') : t('home.items')} {t('home.expiring')}
               </Text>
             </View>
             <View style={styles.bannerIcon}>
@@ -640,10 +668,10 @@ export default function DashboardScreen() {
               <FontAwesome
                 name={'check-circle' as IconName}
                 size={24}
-                color={theme.successColor}
+                color={'#4CAF50'}
                 style={styles.statIcon}
               />
-              <Text style={styles.statLabel}>Fresh</Text>
+              <Text style={styles.statLabel}>{t('home.fresh')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -651,12 +679,12 @@ export default function DashboardScreen() {
               onPress={() => router.push('/items/expiring')}
             >
               <FontAwesome
-                name={'exclamation-circle' as IconName}
+                name={'clock-o' as IconName}
                 size={24}
-                color={theme.warningColor}
+                color={'#FF9800'}
                 style={styles.statIcon}
               />
-              <Text style={styles.statLabel}>Expiring</Text>
+              <Text style={styles.statLabel}>{t('list.expiring')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.expiring_soon}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
@@ -664,17 +692,17 @@ export default function DashboardScreen() {
               onPress={() => router.push('/items/expired')}
             >
               <FontAwesome
-                name={'times-circle' as IconName}
+                name={'warning' as IconName}
                 size={24}
-                color={theme.dangerColor}
+                color={'#F44336'}
                 style={styles.statIcon}
               />
-              <Text style={styles.statLabel}>Expired</Text>
+              <Text style={styles.statLabel}>{t('home.expired')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.expired}</Text>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sectionTitle}>Storage Locations</Text>
+          <Text style={styles.sectionTitle}>{t('home.storageLocations')}</Text>
           <View style={styles.locationGrid}>
             {locations.map((location) => (
               <TouchableOpacity
@@ -687,7 +715,7 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
-                  {location.id ? getLocationItemCounts()[location.id] || 0 : 0} items
+                  {location.id ? getLocationItemCounts()[location.id] || 0 : 0} {t('home.items')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -695,7 +723,7 @@ export default function DashboardScreen() {
 
           <View style={styles.categoryList}>
             <View style={styles.categoryHeader}>
-              <Text style={styles.sectionTitle}>Categories</Text>
+              <Text style={styles.sectionTitle}>{t('home.categories')}</Text>
             </View>
             <View style={styles.categoriesGrid}>
               {categories.map((category) => (
@@ -709,7 +737,7 @@ export default function DashboardScreen() {
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>
-                    {category.id ? getCategoryItemCounts()[category.id] || 0 : 0} items
+                    {category.id ? getCategoryItemCounts()[category.id] || 0 : 0} {t('home.items')}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -730,12 +758,12 @@ export default function DashboardScreen() {
           <View style={styles.modalContent}>
             <ScrollView contentContainerStyle={styles.modalScrollContent}>
               <Text style={styles.modalTitle}>
-                {editingItem ? 'Edit Food Item' : 'New Food Item'}
+                {editingItem ? t('form.edit') : t('form.new')}
               </Text>
 
               <TextInput
                 style={styles.input}
-                placeholder="Item Name"
+                placeholder={t('form.itemName')}
                 placeholderTextColor={theme.textSecondary}
                 value={itemName}
                 onChangeText={setItemName}
@@ -744,7 +772,7 @@ export default function DashboardScreen() {
               <View style={styles.quantityContainer}>
                 <TextInput
                   style={[styles.input, { flex: 1, marginRight: 8 }]}
-                  placeholder="Quantity"
+                  placeholder={t('form.quantity')}
                   placeholderTextColor={theme.textSecondary}
                   value={quantity}
                   onChangeText={setQuantity}
@@ -753,7 +781,7 @@ export default function DashboardScreen() {
               </View>
 
               <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Category</Text>
+                <Text style={styles.pickerLabel}>{t('form.category')}</Text>
                 <View style={styles.pickerOptions}>
                   {categories.map((category) => (
                     <TouchableOpacity
@@ -778,7 +806,7 @@ export default function DashboardScreen() {
               </View>
 
               <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Storage Location</Text>
+                <Text style={styles.pickerLabel}>{t('form.location')}</Text>
                 <View style={styles.pickerOptions}>
                   {locations.map((location) => (
                     <TouchableOpacity
@@ -803,7 +831,7 @@ export default function DashboardScreen() {
               </View>
 
               <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Expiry Date</Text>
+                <Text style={styles.pickerLabel}>{t('form.expiryDate')}</Text>
                 <DatePicker
                   value={expiryDate}
                   onChange={setExpiryDate}
@@ -814,7 +842,7 @@ export default function DashboardScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Reminder Days Before Expiry"
+                placeholder={t('form.reminderDays')}
                 placeholderTextColor={theme.textSecondary}
                 value={reminderDays}
                 onChangeText={setReminderDays}
@@ -823,7 +851,7 @@ export default function DashboardScreen() {
 
               <TextInput
                 style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                placeholder="Notes"
+                placeholder={t('form.notes')}
                 placeholderTextColor={theme.textSecondary}
                 value={notes}
                 onChangeText={setNotes}
@@ -835,13 +863,13 @@ export default function DashboardScreen() {
                   style={[styles.button, styles.cancelButton]}
                   onPress={handleCloseModal}
                 >
-                  <Text style={styles.buttonText}>Cancel</Text>
+                  <Text style={styles.buttonText}>{t('form.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.button, styles.saveButton]}
                   onPress={handleSave}
                 >
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={styles.saveButtonText}>{t('form.save')}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

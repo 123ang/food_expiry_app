@@ -44,6 +44,19 @@ const FoodItemCard: React.FC<{
 }> = ({ item, onPress, theme, styles }) => {
   const [imageError, setImageError] = useState(false);
 
+  // Determine status icon and color based on days until expiry
+  const getStatusInfo = () => {
+    if (item.days_until_expiry <= 0) {
+      return { icon: 'warning', color: '#F44336', text: 'Expired' };
+    } else if (item.days_until_expiry <= 5) {
+      return { icon: 'clock-o', color: '#FF9800', text: 'Expiring' };
+    } else {
+      return { icon: 'check-circle', color: '#4CAF50', text: 'Fresh' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+
   return (
     <TouchableOpacity style={styles.foodItem} onPress={onPress}>
       {item.image_uri && !imageError ? (
@@ -64,7 +77,14 @@ const FoodItemCard: React.FC<{
       <View style={styles.foodInfo}>
         <View style={styles.foodNameRow}>
           <Text style={styles.foodName}>{item.name}</Text>
-          <Text style={styles.quantity}>x{item.quantity}</Text>
+          <View style={styles.statusContainer}>
+            <FontAwesome 
+              name={statusInfo.icon as IconName} 
+              size={16} 
+              color={statusInfo.color} 
+            />
+            <Text style={styles.quantity}>x{item.quantity}</Text>
+          </View>
         </View>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
@@ -85,7 +105,7 @@ const FoodItemCard: React.FC<{
           </View>
           <View style={styles.metaItem}>
             <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
-            <Text style={styles.metaText}>
+            <Text style={[styles.metaText, { color: statusInfo.color }]}>
               {item.days_until_expiry > 0
                 ? `${item.days_until_expiry} days left`
                 : item.days_until_expiry === 0
@@ -216,7 +236,6 @@ export default function ItemStatusScreen() {
       marginBottom: 8,
       textAlign: 'center',
       lineHeight: 18,
-      numberOfLines: 2,
     },
     statsCount: {
       fontSize: 28,
@@ -281,6 +300,11 @@ export default function ItemStatusScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
   });
 
   // Dynamic styles
@@ -295,7 +319,7 @@ export default function ItemStatusScreen() {
       <FoodItemCard 
         key={item.id} 
         item={item} 
-        onPress={() => router.push(`/items/${item.id}`)}
+        onPress={() => router.push(`/item/${item.id}`)}
         theme={theme}
         styles={styles}
       />

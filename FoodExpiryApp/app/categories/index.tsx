@@ -13,6 +13,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
+import { BottomNav } from '../../components/BottomNav';
 import IconSelector, { CATEGORY_ICONS } from '../../components/IconSelector';
 import { Category } from '../../database/models';
 
@@ -312,6 +313,8 @@ export default function CategoriesScreen() {
         title="Select Category Icon"
         selectedIcon={selectedIcon}
       />
+      
+      <BottomNav />
     </View>
   );
 } 

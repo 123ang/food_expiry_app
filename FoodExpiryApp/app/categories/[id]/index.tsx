@@ -18,6 +18,82 @@ import { FoodItemWithDetails } from '../../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
+// Separate component for food item to avoid hooks violation
+const FoodItemCard: React.FC<{ 
+  item: FoodItemWithDetails; 
+  onPress: () => void; 
+  theme: any;
+  styles: any;
+}> = ({ item, onPress, theme, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // Determine status icon and color based on days until expiry
+  const getStatusInfo = () => {
+    if (item.days_until_expiry <= 0) {
+      return { icon: 'warning', color: '#F44336', text: 'Expired' };
+    } else if (item.days_until_expiry <= 5) {
+      return { icon: 'clock-o', color: '#FF9800', text: 'Expiring' };
+    } else {
+      return { icon: 'check-circle', color: '#4CAF50', text: 'Fresh' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+
+  return (
+    <TouchableOpacity style={styles.foodItem} onPress={onPress}>
+      {item.image_uri && !imageError ? (
+        <Image
+          source={{ uri: item.image_uri }}
+          style={styles.foodImage}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <FontAwesome 
+            name={(item.category_icon as IconName) || 'cutlery'} 
+            size={32} 
+            color={theme.primaryColor} 
+          />
+        </View>
+      )}
+      <View style={styles.foodInfo}>
+        <View style={styles.foodNameRow}>
+          <Text style={styles.foodName}>{item.name}</Text>
+          <View style={styles.statusContainer}>
+            <FontAwesome 
+              name={statusInfo.icon as IconName} 
+              size={16} 
+              color={statusInfo.color} 
+            />
+            <Text style={styles.quantity}>x{item.quantity}</Text>
+          </View>
+        </View>
+        <View style={styles.foodMeta}>
+          <View style={styles.metaItem}>
+            <FontAwesome 
+              name={(item.location_icon as IconName) || 'map-marker'} 
+              size={16} 
+              color={theme.textSecondary} 
+            />
+            <Text style={styles.metaText}>{item.location_name || 'No location'}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
+            <Text style={[styles.metaText, { color: statusInfo.color }]}>
+              {item.days_until_expiry > 0
+                ? `${item.days_until_expiry} days left`
+                : item.days_until_expiry === 0
+                ? 'Expires today'
+                : `Expired ${Math.abs(item.days_until_expiry)} days ago`}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
 export default function CategoryDetailScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -94,66 +170,110 @@ export default function CategoryDetailScreen() {
       padding: 8,
       marginRight: 8,
     },
-    headerTitle: {
+    titleContainer: {
       flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: {
       fontSize: 20,
       fontWeight: 'bold',
       color: theme.textColor,
+      marginLeft: 8,
     },
     content: {
       flex: 1,
       padding: 16,
     },
-    header: {
-      flexDirection: 'row',
+    statsCard: {
+      backgroundColor: theme.cardBackground,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 16,
       alignItems: 'center',
-      marginBottom: 24,
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      minHeight: 120,
     },
-    categoryIcon: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: category?.color || theme.primaryColor,
+    statsIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 16,
+      marginBottom: 12,
     },
-    categoryName: {
-      fontSize: 24,
+    statsTitle: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginBottom: 8,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    statsCount: {
+      fontSize: 28,
       fontWeight: 'bold',
       color: theme.textColor,
+      textAlign: 'center',
     },
-    itemCount: {
-      fontSize: 16,
-      color: theme.textSecondary,
-      marginTop: 4,
-    },
-    itemList: {
-      flex: 1,
-    },
-    itemCard: {
+    foodItem: {
+      flexDirection: 'row',
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: theme.borderColor,
+    },
+    foodImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 12,
+    },
+    foodInfo: {
+      flex: 1,
+    },
+    foodNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    foodName: {
+      flex: 1,
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
+    },
+    quantity: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: theme.textSecondary,
+      marginLeft: 8,
+    },
+    foodMeta: {
+      flexDirection: 'column',
+      gap: 8,
+    },
+    metaItem: {
       flexDirection: 'row',
       alignItems: 'center',
     },
-    itemInfo: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    itemName: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.textColor,
-      marginBottom: 4,
-    },
-    itemDetails: {
-      fontSize: 14,
+    metaText: {
+      marginLeft: 8,
       color: theme.textSecondary,
+      fontSize: 14,
+    },
+    placeholderImage: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 12,
+      backgroundColor: `${theme.primaryColor}20`,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     emptyState: {
       flex: 1,
@@ -166,6 +286,11 @@ export default function CategoryDetailScreen() {
       color: theme.textSecondary,
       textAlign: 'center',
       marginTop: 16,
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
     },
   });
 
@@ -180,68 +305,47 @@ export default function CategoryDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{category?.name || 'Unknown Category'}</Text>
+        <View style={styles.titleContainer}>
+          <FontAwesome name={(category?.icon || 'question-circle') as IconName} size={24} color={category?.color || theme.primaryColor} />
+          <Text style={styles.title}>{category?.name || 'Unknown Category'}</Text>
+        </View>
       </View>
       
       <ScrollView style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.categoryIcon}>
+        <View style={styles.statsCard}>
+          <View style={[styles.statsIcon, { backgroundColor: `${category?.color || theme.primaryColor}20` }]}>
             <FontAwesome
               name={(category?.icon || 'question-circle') as IconName}
-              size={30}
-              color="#FFFFFF"
+              size={24}
+              color={category?.color || theme.primaryColor}
             />
           </View>
-          <View>
-            <Text style={styles.categoryName}>{category?.name || 'Unknown Category'}</Text>
-            <Text style={styles.itemCount}>
-              {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'items'}
-            </Text>
-          </View>
+          <Text style={styles.statsTitle}>Items in {category?.name || 'Category'}</Text>
+          <Text style={styles.statsCount}>{categoryItems.length}</Text>
         </View>
 
-        <View style={styles.itemList}>
-          {categoryItems.length > 0 ? (
-            categoryItems.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.itemCard}
-                onPress={() => router.push(`/items/${item.id}`)}
-              >
-                <FontAwesome
-                  name={(item.category_icon || 'circle') as IconName}
-                  size={24}
-                  color={category?.color || theme.primaryColor}
-                />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemDetails}>
-                    Expires in {item.days_until_expiry} days
-                  </Text>
-                </View>
-                <FontAwesome
-                  name="chevron-right"
-                  size={16}
-                  color={theme.textSecondary}
-                />
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <FontAwesome
-                name="inbox"
-                size={48}
-                color={theme.textSecondary}
-              />
-              <Text style={styles.emptyStateText}>
-                No items in this category yet
-              </Text>
-            </View>
-          )}
-        </View>
+        {categoryItems.length > 0 ? (
+          categoryItems.map((item) => (
+            <FoodItemCard 
+              key={item.id} 
+              item={item} 
+              onPress={() => router.push(`/item/${item.id}`)}
+              theme={theme}
+              styles={styles}
+            />
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <FontAwesome
+              name="inbox"
+              size={48}
+              color={theme.textSecondary}
+            />
+            <Text style={styles.emptyStateText}>
+              No items in this category yet
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       <BottomNav />

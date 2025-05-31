@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, BackHandler } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 
@@ -10,20 +11,50 @@ export function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const handleNavigation = (path: string) => {
+    console.log('BottomNav - Current pathname:', pathname);
+    console.log('BottomNav - Navigating to:', path);
+    
     if (path === '/') {
       // If we're already on the home screen, exit the app
       if (pathname === '/') {
+        console.log('BottomNav - Already on home, exiting app');
         BackHandler.exitApp();
         return;
       }
-      // Otherwise, navigate to home and reset the navigation stack
+      
+      // Special handling for location detail screens
+      if (pathname.startsWith('/locations/')) {
+        console.log('BottomNav - Navigating from location detail to home');
+        // First go back to clear the location detail, then navigate to home
+        router.back();
+        setTimeout(() => {
+          router.replace('/');
+        }, 200);
+        return;
+      }
+      
+      // Special handling for category detail screens
+      if (pathname.startsWith('/categories/')) {
+        console.log('BottomNav - Navigating from category detail to home');
+        // First go back to clear the category detail, then navigate to home
+        router.back();
+        setTimeout(() => {
+          router.replace('/');
+        }, 200);
+        return;
+      }
+      
+      // For other screens, direct navigation to home
+      console.log('BottomNav - Direct navigation to home from:', pathname);
       router.replace('/');
       return;
     }
 
     // For other screens, just push to the navigation stack
+    console.log('BottomNav - Pushing to:', path);
     router.push(path);
   };
 
@@ -74,10 +105,10 @@ export function BottomNav() {
   });
 
   const navItems = [
-    { name: 'Home', icon: 'home', path: '/' },
-    { name: 'List', icon: 'list', path: '/list' },
+    { name: t('nav.home'), icon: 'home', path: '/' },
+    { name: t('nav.list'), icon: 'list', path: '/list' },
     { name: 'Add', icon: 'plus', path: '/add' },
-    { name: 'Calendar', icon: 'calendar', path: '/calendar' },
+    { name: t('nav.calendar'), icon: 'calendar', path: '/calendar' },
     { name: 'Settings', icon: 'cog', path: '/settings' },
   ];
 
