@@ -21,6 +21,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { FoodItem } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
+import { getSafeIconName } from '../utils/iconUtils';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -618,7 +619,7 @@ export default function DashboardScreen() {
             <Text style={styles.metaText}>{item.daysLeft} days left</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name={item.locationIcon} size={14} color={theme.textSecondary} />
+            <FontAwesome name={getSafeIconName(item.locationIcon, 'home')} size={14} color={theme.textSecondary} />
             <Text style={styles.metaText}>{item.location}</Text>
           </View>
         </View>
@@ -711,7 +712,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push(`/locations/${location.id}`)}
               >
                 <View style={styles.locationIcon}>
-                  <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />
+                  <FontAwesome name={getSafeIconName(location.icon, 'home')} size={20} color={theme.primaryColor} />
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
@@ -733,7 +734,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push(`/categories/${category.id}`)}
                 >
                   <View style={styles.categoryIcon}>
-                    <FontAwesome name={category.icon as IconName} size={20} color={theme.primaryColor} />
+                    <FontAwesome name={getSafeIconName(category.icon, 'circle')} size={20} color={theme.primaryColor} />
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>

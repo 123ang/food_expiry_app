@@ -12,7 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Predefined icons for food categories
+// Predefined icons for food categories (all valid FontAwesome icons)
 export const CATEGORY_ICONS: IconName[] = [
   'apple',
   'coffee',
@@ -31,7 +31,13 @@ export const CATEGORY_ICONS: IconName[] = [
   'square',
   'diamond',
   'cube',
-  'gift'
+  'gift',
+  'flask',      // Instead of "cookie" - use chemistry flask
+  'envira',     // Instead of "carrot" - use leaf icon  
+  'tint',       // Use droplet for drinks
+  'fire',       // Use fire for spicy foods
+  'snowflake-o', // Use snowflake for frozen items
+  'sun-o'       // Use sun for fresh items
 ];
 
 // Predefined icons for storage locations
