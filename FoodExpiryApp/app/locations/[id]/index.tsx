@@ -8,81 +8,37 @@ import {
   Image,
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { useDatabase } from '../../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
+import { FoodItemWithDetails } from '../../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Sample data - replace with your actual data
-const locations = {
-  1: {
-    name: 'Fridge',
-    icon: 'building' as IconName,
-    color: '#2196F3',
-    items: [
-      {
-        id: 1,
-        name: 'Milk',
-        quantity: 2,
-        daysLeft: 5,
-        category: 'Dairy',
-        categoryIcon: 'glass' as IconName,
-        image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
-      },
-      {
-        id: 2,
-        name: 'Tomatoes',
-        quantity: 5,
-        daysLeft: 4,
-        category: 'Vegetables',
-        categoryIcon: 'leaf' as IconName,
-        image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
-      },
-    ],
-  },
-  2: {
-    name: 'Pantry',
-    icon: 'archive' as IconName,
-    color: '#9C27B0',
-    items: [
-      {
-        id: 3,
-        name: 'Rice',
-        quantity: 1,
-        daysLeft: 60,
-        category: 'Grains',
-        categoryIcon: 'cutlery' as IconName,
-        image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=120',
-      },
-    ],
-  },
-  3: {
-    name: 'Freezer',
-    icon: 'snowflake-o' as IconName,
-    color: '#00BCD4',
-    items: [
-      {
-        id: 4,
-        name: 'Frozen Peas',
-        quantity: 2,
-        daysLeft: 90,
-        category: 'Vegetables',
-        categoryIcon: 'leaf' as IconName,
-        image: 'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?w=120',
-      },
-    ],
-  },
+const LOCATION_COLORS = {
+  'Fridge': '#2196F3',
+  'Pantry': '#9C27B0',
+  'Freezer': '#00BCD4',
+  'Cabinet': '#FF9800',
 };
 
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { locations, foodItems, refreshAll } = useDatabase();
   
   const locationId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
-  const location = locationId ? locations[locationId as keyof typeof locations] : null;
-  const items = location?.items || [];
+  const location = locations.find(loc => loc.id === locationId);
+  const locationItems = foodItems.filter(item => item.location_id === locationId);
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshAll();
+    }, [])
+  );
 
   const styles = StyleSheet.create({
     container: {
@@ -129,7 +85,7 @@ export default function LocationDetailScreen() {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: `${location?.color}20`,
+      backgroundColor: location ? `${LOCATION_COLORS[location.name as keyof typeof LOCATION_COLORS]}20` : theme.primaryColor,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
@@ -198,52 +154,72 @@ export default function LocationDetailScreen() {
     },
     metaText: {
       marginLeft: 8,
-      color: theme.textSecondary,
       fontSize: 14,
+      color: theme.textSecondary,
+    },
+    expiryText: {
+      marginLeft: 8,
+      fontSize: 14,
+    },
+    expiringSoon: {
+      color: theme.warningColor,
+    },
+    expired: {
+      color: theme.dangerColor,
+    },
+    fresh: {
+      color: theme.successColor,
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 32,
+    },
+    emptyStateText: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      marginTop: 16,
     },
   });
 
-  const renderFoodItem = (item: any) => {
-    const [imageError, setImageError] = useState(false);
-
-    return (
-      <View key={item.id} style={styles.foodItem}>
-        {!imageError ? (
-          <Image
-            source={{ uri: item.image }}
-            style={styles.foodImage}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <FontAwesome name="cutlery" size={32} color={theme.primaryColor} />
+  const renderFoodItem = (item: FoodItemWithDetails) => (
+    <View key={item.id} style={styles.foodItem}>
+      {item.image_uri ? (
+        <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <FontAwesome name={item.category_icon as IconName} size={32} color={theme.primaryColor} />
+        </View>
+      )}
+      <View style={styles.foodInfo}>
+        <View style={styles.foodNameRow}>
+          <Text style={styles.foodName}>{item.name}</Text>
+          <Text style={styles.quantity}>x{item.quantity}</Text>
+        </View>
+        <View style={styles.foodMeta}>
+          <View style={styles.metaItem}>
+            <FontAwesome name={item.category_icon as IconName} size={14} color={theme.textSecondary} />
+            <Text style={styles.metaText}>{item.category_name}</Text>
           </View>
-        )}
-        <View style={styles.foodInfo}>
-          <View style={styles.foodNameRow}>
-            <Text style={styles.foodName}>{item.name}</Text>
-            <Text style={styles.quantity}>x{item.quantity}</Text>
-          </View>
-          <View style={styles.foodMeta}>
-            <View style={styles.metaItem}>
-              <FontAwesome name={item.categoryIcon} size={16} color={theme.textSecondary} />
-              <Text style={styles.metaText}>{item.category}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
-              <Text style={styles.metaText}>
-                {item.daysLeft > 0
-                  ? `${item.daysLeft} days left`
-                  : item.daysLeft === 0
-                  ? 'Expires today'
-                  : `Expired ${Math.abs(item.daysLeft)} days ago`}
-              </Text>
-            </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name="clock-o" size={14} color={theme.textSecondary} />
+            <Text 
+              style={[
+                styles.expiryText,
+                item.days_until_expiry <= 0 && styles.expired,
+                item.days_until_expiry > 0 && item.days_until_expiry <= 5 && styles.expiringSoon,
+                item.days_until_expiry > 5 && styles.fresh,
+              ]}
+            >
+              {item.days_until_expiry} days left
+            </Text>
           </View>
         </View>
       </View>
-    );
-  };
+    </View>
+  );
 
   if (!location) {
     return (
@@ -265,23 +241,33 @@ export default function LocationDetailScreen() {
           <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <FontAwesome name={location.icon} size={24} color={location.color} />
+          <FontAwesome name={location.icon as IconName} size={24} color={theme.textColor} />
           <Text style={styles.title}>{location.name}</Text>
         </View>
       </View>
-      
+
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
           <View style={styles.statsIcon}>
-            <FontAwesome name={location.icon} size={24} color={location.color} />
+            <FontAwesome name={location.icon as IconName} size={24} color={LOCATION_COLORS[location.name as keyof typeof LOCATION_COLORS]} />
           </View>
-          <Text style={styles.statsTitle}>Total Items</Text>
-          <Text style={styles.statsCount}>{items.length}</Text>
+          <Text style={styles.statsTitle}>Items in {location.name}</Text>
+          <Text style={styles.statsCount}>{locationItems.length}</Text>
         </View>
-        
-        {items.map(renderFoodItem)}
+
+        {locationItems.length === 0 ? (
+          <View style={styles.emptyState}>
+            <FontAwesome name="inbox" size={48} color={theme.textSecondary} />
+            <Text style={styles.emptyStateText}>
+              No items in {location.name} yet.{'\n'}
+              Add some items to see them here!
+            </Text>
+          </View>
+        ) : (
+          locationItems.map(renderFoodItem)
+        )}
       </ScrollView>
-      
+
       <BottomNav />
     </View>
   );

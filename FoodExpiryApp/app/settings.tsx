@@ -26,9 +26,10 @@ type SettingItem = {
   icon: IconName;
   title: string;
   description: string;
-  type: 'switch' | 'language' | 'categories' | 'locations' | 'link';
+  type: 'switch' | 'language' | 'navigation';
   value?: boolean;
   onValueChange?: (value: boolean) => void;
+  onPress?: () => void;
 };
 
 type EditModalProps = {
@@ -45,6 +46,11 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     backgroundColor: theme.backgroundColor,
     paddingTop: Platform.OS === 'ios' ? 48 : 24,
+    ...(Platform.OS === 'web' && {
+      maxWidth: 800,
+      alignSelf: 'center',
+      height: '100vh',
+    }),
   },
   header: {
     backgroundColor: theme.cardBackground,
@@ -299,6 +305,7 @@ export default function SettingsScreen() {
       title: t('language'),
       description: t('languageDescription'),
       type: 'language',
+      onPress: () => setShowLanguageModal(true),
     },
     {
       id: 'theme',
@@ -314,35 +321,40 @@ export default function SettingsScreen() {
       icon: 'tags',
       title: t('categories'),
       description: t('categoriesDescription'),
-      type: 'categories',
+      type: 'navigation',
+      onPress: () => router.push('/categories'),
     },
     {
       id: 'locations',
       icon: 'map-marker',
       title: t('storageLocations'),
       description: t('storageLocationsDescription'),
-      type: 'locations',
+      type: 'navigation',
+      onPress: () => router.push('/locations'),
     },
     {
       id: 'notifications',
       icon: 'bell',
       title: t('notifications'),
       description: t('notificationsDescription'),
-      type: 'link',
+      type: 'navigation',
+      onPress: () => router.push('/notifications'),
     },
     {
       id: 'backup',
       icon: 'cloud',
       title: t('backupSync'),
       description: t('backupSyncDescription'),
-      type: 'link',
+      type: 'navigation',
+      onPress: () => router.push('/backup'),
     },
     {
       id: 'about',
       icon: 'info-circle',
       title: t('about'),
       description: t('aboutDescription'),
-      type: 'link',
+      type: 'navigation',
+      onPress: () => router.push('/about'),
     },
   ];
 
@@ -387,185 +399,100 @@ export default function SettingsScreen() {
   const renderSettingItem = (item: SettingItem, index: number, total: number) => {
     const isLast = index === total - 1;
 
-    const renderLanguageModal = () => (
-      <Modal
-        visible={showLanguageModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowLanguageModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.languageModal}>
-            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
-              {t('language')}
-            </Text>
-            <TouchableOpacity
-              style={styles.languageOption}
-              onPress={() => {
-                setLanguage('en');
-                setShowLanguageModal(false);
-              }}
-            >
-              <Text style={[
-                styles.languageText,
-                language === 'en' && styles.languageSelected
-              ]}>
-                {t('english')}
-              </Text>
-              {language === 'en' && (
-                <FontAwesome name="check" size={16} color={theme.primaryColor} />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.languageOption, { borderBottomWidth: 0 }]}
-              onPress={() => {
-                setLanguage('zh');
-                setShowLanguageModal(false);
-              }}
-            >
-              <Text style={[
-                styles.languageText,
-                language === 'zh' && styles.languageSelected
-              ]}>
-                {t('chinese')}
-              </Text>
-              {language === 'zh' && (
-                <FontAwesome name="check" size={16} color={theme.primaryColor} />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
-
-    const renderCategoriesList = () => (
-      <View style={styles.listContent}>
-        {categories.map((category) => (
-          <View 
-            key={category.id} 
-            style={[styles.listItem, { borderBottomColor: theme.borderColor }]}
-          >
-            <FontAwesome 
-              name={category.icon as IconName || 'circle'} 
-              size={20} 
-              color={theme.primaryColor} 
-            />
-            <Text style={[styles.listItemText, { color: theme.textColor }]}>
-              {category.name}
-            </Text>
-            <View style={styles.listItemActions}>
-              <TouchableOpacity onPress={() => {
-                setEditItem(category);
-                setShowCategoryModal(true);
-              }}>
-                <FontAwesome name="edit" size={20} color={theme.primaryColor} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteCategory(category.id)}>
-                <FontAwesome name="trash" size={20} color={theme.dangerColor} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => {
-            setEditItem(null);
-            setShowCategoryModal(true);
-          }}
-        >
-          <Text style={styles.addButtonText}>{t('addCategory')}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-
-    const renderLocationsList = () => (
-      <View style={styles.listContent}>
-        {locations.map((location) => (
-          <View 
-            key={location.id} 
-            style={[styles.listItem, { borderBottomColor: theme.borderColor }]}
-          >
-            <FontAwesome 
-              name={location.icon as IconName || 'circle'} 
-              size={20} 
-              color={theme.primaryColor} 
-            />
-            <Text style={[styles.listItemText, { color: theme.textColor }]}>
-              {location.name}
-            </Text>
-            <View style={styles.listItemActions}>
-              <TouchableOpacity onPress={() => {
-                setEditItem(location);
-                setShowLocationModal(true);
-              }}>
-                <FontAwesome name="edit" size={20} color={theme.primaryColor} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteLocation(location.id)}>
-                <FontAwesome name="trash" size={20} color={theme.dangerColor} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => {
-            setEditItem(null);
-            setShowLocationModal(true);
-          }}
-        >
-          <Text style={styles.addButtonText}>{t('addLocation')}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-
     return (
-      <View key={item.id}>
-        <TouchableOpacity
-          style={[
-            styles.settingItem,
-            isLast && styles.settingItemLast,
-          ]}
-          onPress={() => {
-            if (item.type === 'language') {
-              setShowLanguageModal(true);
-            }
-          }}
-        >
-          <View style={styles.settingIcon}>
-            <FontAwesome name={item.icon} size={16} color={theme.primaryColor} />
-          </View>
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingTitle}>{item.title}</Text>
-            <Text style={styles.settingDescription}>{item.description}</Text>
-          </View>
-          {item.type === 'switch' ? (
-            <Switch
-              value={item.value}
-              onValueChange={item.onValueChange}
-              trackColor={{ false: '#767577', true: `${theme.primaryColor}50` }}
-              thumbColor={item.value ? theme.primaryColor : '#f4f3f4'}
-            />
-          ) : item.type === 'language' && (
-            <Text style={[styles.languageText, { color: theme.primaryColor }]}>
-              {language === 'en' ? t('english') : t('chinese')}
-            </Text>
-          )}
-        </TouchableOpacity>
-        {item.type === 'categories' && renderCategoriesList()}
-        {item.type === 'locations' && renderLocationsList()}
-        {item.type === 'language' && renderLanguageModal()}
-      </View>
+      <TouchableOpacity
+        key={item.id}
+        style={[styles.settingItem, isLast && styles.settingItemLast]}
+        onPress={item.onPress}
+        disabled={item.type === 'switch'}
+      >
+        <View style={styles.settingIcon}>
+          <FontAwesome name={item.icon} size={16} color={theme.primaryColor} />
+        </View>
+        <View style={styles.settingInfo}>
+          <Text style={styles.settingTitle}>{item.title}</Text>
+          <Text style={styles.settingDescription}>{item.description}</Text>
+        </View>
+        {item.type === 'switch' && (
+          <Switch
+            value={item.value}
+            onValueChange={item.onValueChange}
+            trackColor={{ false: theme.borderColor, true: theme.primaryColor }}
+            thumbColor={theme.cardBackground}
+          />
+        )}
+        {item.type === 'navigation' && (
+          <FontAwesome name="chevron-right" size={16} color={theme.textSecondary} />
+        )}
+      </TouchableOpacity>
     );
   };
 
+  const renderLanguageModal = () => (
+    <Modal
+      visible={showLanguageModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowLanguageModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.languageModal}>
+          <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+            {t('language')}
+          </Text>
+          <TouchableOpacity
+            style={styles.languageOption}
+            onPress={() => {
+              setLanguage('en');
+              setShowLanguageModal(false);
+            }}
+          >
+            <Text style={[
+              styles.languageText,
+              language === 'en' && styles.languageSelected
+            ]}>
+              {t('english')}
+            </Text>
+            {language === 'en' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setLanguage('zh');
+              setShowLanguageModal(false);
+            }}
+          >
+            <Text style={[
+              styles.languageText,
+              language === 'zh' && styles.languageSelected
+            ]}>
+              {t('chinese')}
+            </Text>
+            {language === 'zh' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen
+        options={{
+          title: 'Settings',
+          headerStyle: {
+            backgroundColor: theme.cardBackground,
+          },
+          headerTintColor: theme.textColor,
+          headerShadowVisible: false,
+        }}
+      />
+      
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('settings')}</Text>
-        </View>
-
         <ScrollView style={styles.content}>
           <View style={styles.section}>
             {settings.map((item, index) => renderSettingItem(item, index, settings.length))}
@@ -608,6 +535,7 @@ export default function SettingsScreen() {
           initialIcon={editItem?.icon}
         />
 
+        {renderLanguageModal()}
         <BottomNav />
       </View>
     </>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, BackHandler } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
@@ -10,6 +10,22 @@ export function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const { theme } = useTheme();
+
+  const handleNavigation = (path: string) => {
+    if (path === '/') {
+      // If we're already on the home screen, exit the app
+      if (pathname === '/') {
+        BackHandler.exitApp();
+        return;
+      }
+      // Otherwise, navigate to home and reset the navigation stack
+      router.replace('/');
+      return;
+    }
+
+    // For other screens, just push to the navigation stack
+    router.push(path);
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -76,7 +92,7 @@ export function BottomNav() {
             <TouchableOpacity
               key={item.name}
               style={styles.navItem}
-              onPress={() => router.push(item.path)}
+              onPress={() => handleNavigation(item.path)}
             >
               <View style={styles.addButton}>
                 <FontAwesome name={item.icon as IconName} size={24} color="#FFFFFF" />
@@ -89,7 +105,7 @@ export function BottomNav() {
           <TouchableOpacity
             key={item.name}
             style={styles.navItem}
-            onPress={() => router.push(item.path)}
+            onPress={() => handleNavigation(item.path)}
           >
             <FontAwesome
               name={item.icon as IconName}

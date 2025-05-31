@@ -30,18 +30,10 @@ const CATEGORIES = [
   { id: 8, name: 'Bread', icon: 'shopping-basket' as IconName },
 ];
 
-// Predefined locations with icons
-const LOCATIONS = [
-  { id: 1, name: 'Fridge', icon: 'building' as IconName },
-  { id: 2, name: 'Freezer', icon: 'snowflake-o' as IconName },
-  { id: 3, name: 'Pantry', icon: 'archive' as IconName },
-  { id: 4, name: 'Cabinet', icon: 'inbox' as IconName },
-];
-
 export default function AddScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { createFoodItem, refreshFoodItems } = useDatabase();
+  const { createFoodItem, refreshFoodItems, refreshAll, locations } = useDatabase();
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -88,7 +80,10 @@ export default function AddScreen() {
       });
 
       console.log('Food item created with ID:', id);
-      await refreshFoodItems();
+      
+      // Refresh all data to ensure consistency across the app
+      await refreshAll();
+      
       router.back();
     } catch (error) {
       console.error('Error creating food item:', error);
@@ -315,7 +310,7 @@ export default function AddScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Storage Location</Text>
             <View style={styles.optionsGrid}>
-              {LOCATIONS.map((location) => (
+              {locations.map((location) => (
                 <TouchableOpacity
                   key={location.id}
                   style={[
@@ -325,7 +320,7 @@ export default function AddScreen() {
                   onPress={() => setSelectedLocation(location.id)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={location.icon} size={20} color={theme.primaryColor} />
+                    <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />
                   </View>
                   <Text style={styles.optionName}>{location.name}</Text>
                 </TouchableOpacity>

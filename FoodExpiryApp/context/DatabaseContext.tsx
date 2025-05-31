@@ -28,6 +28,7 @@ interface DatabaseContextType {
   createFoodItem: (item: FoodItem) => Promise<number>;
   updateFoodItem: (item: FoodItem) => Promise<void>;
   deleteFoodItem: (id: number) => Promise<void>;
+  getByStatus: (status: 'expired' | 'expiring_soon' | 'fresh') => Promise<FoodItemWithDetails[]>;
 
   // Dashboard Data
   dashboardCounts: {
@@ -197,6 +198,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const data = await FoodItemRepository.getAll();
       setFoodItems(data);
+      // Also refresh dashboard counts when food items are updated
+      await refreshDashboardCounts();
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch food items'));
     }
@@ -212,16 +215,36 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const refreshAll = async () => {
-    await Promise.all([
-      refreshCategories(),
-      refreshLocations(),
-      refreshFoodItems(),
-      refreshDashboardCounts()
-    ]);
+    try {
+      setIsLoading(true);
+      
+      // First refresh the base data
+      await refreshCategories();
+      await refreshLocations();
+      
+      // Then load all food items with fresh data
+      const data = await FoodItemRepository.getAll();
+      setFoodItems(data);
+      
+      // Finally update dashboard counts
+      await refreshDashboardCounts();
+      
+      console.log('All data refreshed successfully');
+    } catch (err) {
+      console.error('Failed to refresh all data:', err);
+      setError(err instanceof Error ? err : new Error('Failed to refresh all data'));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const refreshData = async () => {
-    await loadData();
+    try {
+      await loadData();
+      await refreshDashboardCounts();
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to refresh data'));
+    }
   };
 
   // Category operations
@@ -231,13 +254,13 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const createCategory = async (category: Category) => {
     const id = await CategoryRepository.create(category);
-    await refreshCategories();
+    await Promise.all([refreshCategories(), refreshFoodItems()]);
     return id;
   };
 
   const updateCategory = async (category: Category) => {
     await CategoryRepository.update(category);
-    await refreshCategories();
+    await Promise.all([refreshCategories(), refreshFoodItems()]);
   };
 
   const deleteCategory = async (id: number) => {
@@ -287,6 +310,17 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
   };
 
+  // Add getByStatus function
+  const getByStatus = async (status: 'expired' | 'expiring_soon' | 'fresh') => {
+    try {
+      const data = await FoodItemRepository.getByStatus(status);
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch items by status'));
+      return [];
+    }
+  };
+
   const value: DatabaseContextType = {
     isLoading,
     error,
@@ -306,6 +340,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     createFoodItem,
     updateFoodItem,
     deleteFoodItem,
+    getByStatus,
     refreshCategories,
     refreshLocations,
     refreshFoodItems,

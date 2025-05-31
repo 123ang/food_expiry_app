@@ -1,133 +1,286 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useDatabase } from '../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { BottomNav } from '../../components/BottomNav';
+import { Stack, useRouter } from 'expo-router';
+import IconSelector, { CATEGORY_ICONS } from '../../components/IconSelector';
+import { Category } from '../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Sample data - replace with your actual data
-const categories = [
-  {
-    id: 1,
-    name: 'Vegetables',
-    icon: 'leaf' as IconName,
-    color: '#4CAF50',
-    itemCount: 8,
-  },
-  {
-    id: 3,
-    name: 'Dairy',
-    icon: 'glass' as IconName,
-    color: '#2196F3',
-    itemCount: 5,
-  },
-  {
-    id: 2,
-    name: 'Fruits',
-    icon: 'apple' as IconName,
-    color: '#FF9800',
-    itemCount: 6,
-  },
-  {
-    id: 4,
-    name: 'Meat',
-    icon: 'cutlery' as IconName,
-    color: '#F44336',
-    itemCount: 3,
-  },
-];
-
 export default function CategoriesScreen() {
   const { theme } = useTheme();
+  const { categories, createCategory, updateCategory, deleteCategory, refreshCategories } = useDatabase();
   const router = useRouter();
+  const [showIconSelector, setShowIconSelector] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [newName, setNewName] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState<IconName>('circle');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    refreshCategories();
+  }, []);
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
     },
-    header: {
-      backgroundColor: theme.cardBackground,
+    content: {
+      flex: 1,
       padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.borderColor,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
     },
     title: {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme.textColor,
     },
-    content: {
-      flex: 1,
-      padding: 16,
+    addButton: {
+      backgroundColor: theme.primaryColor,
+      borderRadius: 8,
+      padding: 8,
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
-    card: {
+    inputContainer: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
       padding: 16,
       marginBottom: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
     },
-    iconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+    input: {
+      fontSize: 16,
+      color: theme.textColor,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+      paddingVertical: 8,
+      marginBottom: 16,
+    },
+    iconSelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    iconPreview: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: `${theme.primaryColor}20`,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 16,
+      marginRight: 12,
     },
-    cardContent: {
+    iconText: {
+      color: theme.textColor,
+      fontSize: 16,
+    },
+    saveButton: {
+      backgroundColor: theme.primaryColor,
+      borderRadius: 8,
+      padding: 12,
+      alignItems: 'center',
+    },
+    saveButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    categoryList: {
       flex: 1,
     },
-    cardTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme.textColor,
-      marginBottom: 4,
+    categoryItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.cardBackground,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
     },
-    cardSubtitle: {
-      fontSize: 14,
-      color: theme.textSecondary,
+    categoryIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 8,
+      backgroundColor: `${theme.primaryColor}20`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    categoryName: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.textColor,
+    },
+    actionButton: {
+      padding: 8,
     },
   });
 
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      if (!newName.trim()) {
+        Alert.alert('Error', 'Please enter a category name');
+        return;
+      }
+
+      if (editingCategory) {
+        await updateCategory({
+          ...editingCategory,
+          name: newName.trim(),
+          icon: selectedIcon,
+        });
+      } else {
+        await createCategory({
+          name: newName.trim(),
+          icon: selectedIcon,
+        });
+      }
+
+      setNewName('');
+      setSelectedIcon('circle');
+      setEditingCategory(null);
+      await refreshCategories();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save category');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category);
+    setNewName(category.name);
+    setSelectedIcon(category.icon as IconName);
+  };
+
+  const handleDelete = async (category: Category) => {
+    if (!category.id) return;
+
+    Alert.alert(
+      'Delete Category',
+      `Are you sure you want to delete "${category.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await deleteCategory(category.id!);
+              await refreshCategories();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete category');
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Categories</Text>
-      </View>
-      
       <ScrollView style={styles.content}>
-        {categories.map((category) => (
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Category Name"
+            placeholderTextColor={theme.textSecondary}
+            value={newName}
+            onChangeText={setNewName}
+          />
+          
           <TouchableOpacity
-            key={category.id}
-            style={styles.card}
-            onPress={() => router.push(`/categories/${category.id}`)}
+            style={styles.iconSelector}
+            onPress={() => setShowIconSelector(true)}
           >
-            <View style={[styles.iconContainer, { backgroundColor: `${category.color}20` }]}>
-              <FontAwesome name={category.icon} size={24} color={category.color} />
+            <View style={styles.iconPreview}>
+              <FontAwesome name={selectedIcon} size={20} color={theme.primaryColor} />
             </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{category.name}</Text>
-              <Text style={styles.cardSubtitle}>{category.itemCount} items</Text>
-            </View>
-            <FontAwesome name="chevron-right" size={16} color={theme.textSecondary} />
+            <Text style={styles.iconText}>Select Icon</Text>
           </TouchableOpacity>
-        ))}
+
+          <TouchableOpacity 
+            style={[styles.saveButton, isLoading && { opacity: 0.7 }]} 
+            onPress={handleSave}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>
+                {editingCategory ? 'Update Category' : 'Add Category'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.categoryList}>
+          {categories.map((category) => (
+            <View key={category.id} style={styles.categoryItem}>
+              <View style={styles.categoryIcon}>
+                <FontAwesome
+                  name={category.icon as IconName}
+                  size={20}
+                  color={theme.primaryColor}
+                />
+              </View>
+              <Text style={styles.categoryName}>{category.name}</Text>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => handleEdit(category)}
+                disabled={isLoading}
+              >
+                <FontAwesome name="pencil" size={20} color={theme.primaryColor} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => handleDelete(category)}
+                disabled={isLoading}
+              >
+                <FontAwesome name="trash" size={20} color={theme.dangerColor} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
       </ScrollView>
-      
-      <BottomNav />
+
+      <IconSelector
+        visible={showIconSelector}
+        onClose={() => setShowIconSelector(false)}
+        onSelect={(icon) => {
+          setSelectedIcon(icon);
+          setShowIconSelector(false);
+        }}
+        icons={CATEGORY_ICONS}
+        title="Select Category Icon"
+        selectedIcon={selectedIcon}
+      />
     </View>
   );
 } 

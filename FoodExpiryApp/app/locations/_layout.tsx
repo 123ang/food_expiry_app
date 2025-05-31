@@ -7,9 +7,19 @@ export default function LocationsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: theme.backgroundColor },
+        headerStyle: {
+          backgroundColor: theme.cardBackground,
+        },
+        headerTintColor: theme.textColor,
+        headerShadowVisible: false,
       }}
-    />
+    >
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Storage Locations',
+        }}
+      />
+    </Stack>
   );
 } 

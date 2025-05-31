@@ -1,5 +1,5 @@
 import { getDatabase, getCurrentDate, daysDifference } from './database';
-import { Category, Location, FoodItem, FoodItemWithDetails } from './models';
+import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './models';
 
 // Category Repository
 export const CategoryRepository = {
@@ -11,7 +11,11 @@ export const CategoryRepository = {
         tx.executeSql(
           'SELECT * FROM categories ORDER BY name',
           [],
-          (_, { rows: { _array } }) => resolve(_array),
+          (_, { rows: { _array } }) => resolve(_array.map(row => ({
+            id: row.id,
+            name: row.name,
+            icon: row.icon
+          }))),
           (_, error) => {
             console.error('Error getting categories:', error);
             reject(error);
@@ -32,7 +36,12 @@ export const CategoryRepository = {
           [id],
           (_, { rows }) => {
             if (rows.length > 0) {
-              resolve(rows._array[0]);
+              const row = rows._array[0];
+              resolve({
+                id: row.id,
+                name: row.name,
+                icon: row.icon
+              });
             } else {
               resolve(null);
             }
@@ -47,7 +56,7 @@ export const CategoryRepository = {
   },
 
   // Create a new category
-  create: (category: Category): Promise<number> => {
+  create: (category: Omit<Category, 'id'>): Promise<number> => {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
       db.transaction(tx => {
@@ -69,7 +78,7 @@ export const CategoryRepository = {
   // Update an existing category
   update: (category: Category): Promise<void> => {
     return new Promise((resolve, reject) => {
-      if (!category.id) {
+      if (!hasId(category)) {
         reject(new Error('Category ID is required for update'));
         return;
       }
@@ -94,6 +103,11 @@ export const CategoryRepository = {
   // Delete a category
   delete: (id: number): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (typeof id !== 'number') {
+        reject(new Error('Invalid category ID'));
+        return;
+      }
+
       const db = getDatabase();
       db.transaction(tx => {
         tx.executeSql(
@@ -122,7 +136,11 @@ export const LocationRepository = {
         tx.executeSql(
           'SELECT * FROM locations ORDER BY name',
           [],
-          (_, { rows: { _array } }) => resolve(_array),
+          (_, { rows: { _array } }) => resolve(_array.map(row => ({
+            id: row.id,
+            name: row.name,
+            icon: row.icon
+          }))),
           (_, error) => {
             console.error('Error getting locations:', error);
             reject(error);
@@ -143,7 +161,12 @@ export const LocationRepository = {
           [id],
           (_, { rows }) => {
             if (rows.length > 0) {
-              resolve(rows._array[0]);
+              const row = rows._array[0];
+              resolve({
+                id: row.id,
+                name: row.name,
+                icon: row.icon
+              });
             } else {
               resolve(null);
             }
@@ -158,7 +181,7 @@ export const LocationRepository = {
   },
 
   // Create a new location
-  create: (location: Location): Promise<number> => {
+  create: (location: Omit<Location, 'id'>): Promise<number> => {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
       db.transaction(tx => {
@@ -180,7 +203,7 @@ export const LocationRepository = {
   // Update an existing location
   update: (location: Location): Promise<void> => {
     return new Promise((resolve, reject) => {
-      if (!location.id) {
+      if (!hasId(location)) {
         reject(new Error('Location ID is required for update'));
         return;
       }
@@ -205,6 +228,11 @@ export const LocationRepository = {
   // Delete a location
   delete: (id: number): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (typeof id !== 'number') {
+        reject(new Error('Invalid location ID'));
+        return;
+      }
+
       const db = getDatabase();
       db.transaction(tx => {
         tx.executeSql(
@@ -238,15 +266,17 @@ export const FoodItemRepository = {
             c.name as category_name, 
             c.icon as category_icon,
             l.name as location_name, 
-            l.icon as location_icon
+            l.icon as location_icon,
+            CAST(ROUND(JULIANDAY(f.expiry_date) - JULIANDAY(?)) AS INTEGER) as days_until_expiry
           FROM food_items f
           LEFT JOIN categories c ON f.category_id = c.id
           LEFT JOIN locations l ON f.location_id = l.id
           ORDER BY f.expiry_date ASC`,
-          [],
+          [today],
           (_, { rows }) => {
             const items: FoodItemWithDetails[] = rows._array.map(item => {
-              const daysUntil = daysDifference(today, item.expiry_date);
+              // Ensure days_until_expiry is a number
+              const daysUntil = typeof item.days_until_expiry === 'number' ? item.days_until_expiry : 0;
               let status: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
               
               if (daysUntil < 0) {
@@ -257,65 +287,7 @@ export const FoodItemRepository = {
               
               return {
                 ...item,
-                days_until_expiry: daysUntil,
-                status
-              };
-            });
-            
-            resolve(items);
-          },
-          (_, error): boolean => {
-            reject(error);
-            return false;
-          }
-        );
-      });
-    });
-  },
-
-  // Get food items by status
-  getByStatus: (status: 'expired' | 'expiring_soon' | 'fresh'): Promise<FoodItemWithDetails[]> => {
-    return new Promise((resolve, reject) => {
-      const db = getDatabase();
-      const today = getCurrentDate();
-      let whereClause = '';
-      
-      if (status === 'expired') {
-        whereClause = `WHERE f.expiry_date < '${today}'`;
-      } else if (status === 'expiring_soon') {
-        // Items expiring in the next 5 days
-        const fiveDaysLater = new Date();
-        fiveDaysLater.setDate(fiveDaysLater.getDate() + 5);
-        const fiveDaysLaterStr = fiveDaysLater.toISOString().split('T')[0];
-        whereClause = `WHERE f.expiry_date >= '${today}' AND f.expiry_date <= '${fiveDaysLaterStr}'`;
-      } else {
-        // Fresh items (expiring in more than 5 days)
-        const fiveDaysLater = new Date();
-        fiveDaysLater.setDate(fiveDaysLater.getDate() + 5);
-        const fiveDaysLaterStr = fiveDaysLater.toISOString().split('T')[0];
-        whereClause = `WHERE f.expiry_date > '${fiveDaysLaterStr}'`;
-      }
-      
-      db.transaction(tx => {
-        tx.executeSql(
-          `SELECT 
-            f.*, 
-            c.name as category_name, 
-            c.icon as category_icon,
-            l.name as location_name, 
-            l.icon as location_icon
-          FROM food_items f
-          LEFT JOIN categories c ON f.category_id = c.id
-          LEFT JOIN locations l ON f.location_id = l.id
-          ${whereClause}
-          ORDER BY f.expiry_date ASC`,
-          [],
-          (_, { rows }) => {
-            const items: FoodItemWithDetails[] = rows._array.map(item => {
-              const daysUntil = daysDifference(today, item.expiry_date);
-              
-              return {
-                ...item,
+                id: Number(item.id),
                 days_until_expiry: daysUntil,
                 status
               };
@@ -345,16 +317,18 @@ export const FoodItemRepository = {
             c.name as category_name, 
             c.icon as category_icon,
             l.name as location_name, 
-            l.icon as location_icon
+            l.icon as location_icon,
+            CAST(ROUND(JULIANDAY(f.expiry_date) - JULIANDAY(?)) AS INTEGER) as days_until_expiry
           FROM food_items f
           LEFT JOIN categories c ON f.category_id = c.id
           LEFT JOIN locations l ON f.location_id = l.id
           WHERE f.id = ?`,
-          [id],
+          [today, id],
           (_, { rows }) => {
             if (rows.length > 0) {
               const item = rows._array[0];
-              const daysUntil = daysDifference(today, item.expiry_date);
+              // Ensure days_until_expiry is a number
+              const daysUntil = typeof item.days_until_expiry === 'number' ? item.days_until_expiry : 0;
               let status: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
               
               if (daysUntil < 0) {
@@ -365,6 +339,7 @@ export const FoodItemRepository = {
               
               resolve({
                 ...item,
+                id: Number(item.id),
                 days_until_expiry: daysUntil,
                 status
               });
@@ -383,10 +358,10 @@ export const FoodItemRepository = {
   },
 
   // Create a new food item
-  create: (item: Partial<FoodItem>): Promise<number> => {
+  create: (item: Omit<FoodItem, 'id'>): Promise<number> => {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
-      const foodItem: FoodItem = {
+      const foodItem = {
         name: item.name || '',
         quantity: item.quantity || 1,
         category_id: item.category_id || null,
@@ -429,15 +404,15 @@ export const FoodItemRepository = {
   },
 
   // Update an existing food item
-  update: (item: Partial<FoodItem>): Promise<void> => {
+  update: (item: FoodItem): Promise<void> => {
     return new Promise((resolve, reject) => {
-      if (!item.id) {
+      if (!hasId(item)) {
         reject(new Error('Food item ID is required for update'));
         return;
       }
 
       const db = getDatabase();
-      const foodItem: FoodItem = {
+      const foodItem = {
         name: item.name || '',
         quantity: item.quantity || 1,
         category_id: item.category_id || null,
@@ -488,6 +463,11 @@ export const FoodItemRepository = {
   // Delete a food item
   delete: (id: number): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (typeof id !== 'number') {
+        reject(new Error('Invalid food item ID'));
+        return;
+      }
+
       const db = getDatabase();
       db.transaction(tx => {
         tx.executeSql(
@@ -506,30 +486,82 @@ export const FoodItemRepository = {
     });
   },
 
+  // Get food items by status
+  getByStatus: (status: 'expired' | 'expiring_soon' | 'fresh'): Promise<FoodItemWithDetails[]> => {
+    return new Promise<FoodItemWithDetails[]>((resolve, reject) => {
+      const db = getDatabase();
+      const today = getCurrentDate();
+      let whereClause = '';
+      
+      if (status === 'expired') {
+        whereClause = `WHERE CAST(ROUND(JULIANDAY(f.expiry_date) - JULIANDAY(?)) AS INTEGER) < 0`;
+      } else if (status === 'expiring_soon') {
+        whereClause = `WHERE CAST(ROUND(JULIANDAY(f.expiry_date) - JULIANDAY(?)) AS INTEGER) BETWEEN 0 AND 5`;
+      } else {
+        whereClause = `WHERE CAST(ROUND(JULIANDAY(f.expiry_date) - JULIANDAY(?)) AS INTEGER) > 5`;
+      }
+      
+      db.transaction(tx => {
+        tx.executeSql(
+          `SELECT 
+            f.*, 
+            c.name as category_name, 
+            c.icon as category_icon,
+            l.name as location_name, 
+            l.icon as location_icon,
+            CAST(ROUND(JULIANDAY(f.expiry_date) - JULIANDAY(?)) AS INTEGER) as days_until_expiry
+          FROM food_items f
+          LEFT JOIN categories c ON f.category_id = c.id
+          LEFT JOIN locations l ON f.location_id = l.id
+          ${whereClause}
+          ORDER BY f.expiry_date ASC`,
+          [today, today],
+          (_, { rows }) => {
+            const items: FoodItemWithDetails[] = rows._array.map(item => ({
+              ...item,
+              id: Number(item.id),
+              days_until_expiry: typeof item.days_until_expiry === 'number' ? item.days_until_expiry : 0,
+              status
+            }));
+            resolve(items);
+          },
+          (_, error): boolean => {
+            console.error('Error getting food items by status:', error);
+            reject(error);
+            return false;
+          }
+        );
+      });
+    });
+  },
+
   // Get counts for dashboard
   getCounts: (): Promise<{ total: number, expiring_soon: number, expired: number, fresh: number }> => {
     return new Promise((resolve, reject) => {
       const db = getDatabase();
       const today = getCurrentDate();
       
-      // Calculate date 5 days from now
-      const fiveDaysLater = new Date();
-      fiveDaysLater.setDate(fiveDaysLater.getDate() + 5);
-      const fiveDaysLaterStr = fiveDaysLater.toISOString().split('T')[0];
-      
       db.transaction(tx => {
         tx.executeSql(
           `SELECT 
             COUNT(*) as total,
-            SUM(CASE WHEN expiry_date < ? THEN 1 ELSE 0 END) as expired,
-            SUM(CASE WHEN expiry_date >= ? AND expiry_date <= ? THEN 1 ELSE 0 END) as expiring_soon,
-            SUM(CASE WHEN expiry_date > ? THEN 1 ELSE 0 END) as fresh
+            SUM(CASE WHEN CAST(ROUND(JULIANDAY(expiry_date) - JULIANDAY(?)) AS INTEGER) < 0 THEN 1 ELSE 0 END) as expired,
+            SUM(CASE WHEN CAST(ROUND(JULIANDAY(expiry_date) - JULIANDAY(?)) AS INTEGER) BETWEEN 0 AND 5 THEN 1 ELSE 0 END) as expiring_soon,
+            SUM(CASE WHEN CAST(ROUND(JULIANDAY(expiry_date) - JULIANDAY(?)) AS INTEGER) > 5 THEN 1 ELSE 0 END) as fresh
           FROM food_items`,
-          [today, today, fiveDaysLaterStr, fiveDaysLaterStr],
+          [today, today, today],
           (_, { rows }) => {
-            resolve(rows._array[0]);
+            const result = rows._array[0];
+            // Ensure all values are numbers, defaulting to 0 if null/undefined
+            resolve({
+              total: Number(result.total) || 0,
+              expired: Number(result.expired) || 0,
+              expiring_soon: Number(result.expiring_soon) || 0,
+              fresh: Number(result.fresh) || 0
+            });
           },
           (_, error): boolean => {
+            console.error('Error getting counts:', error);
             reject(error);
             return false;
           }

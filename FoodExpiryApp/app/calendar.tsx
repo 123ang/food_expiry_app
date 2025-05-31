@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,50 +11,13 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useDatabase } from '../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
+import { FoodItemWithDetails } from '../database/models';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
-
-// Sample data
-const sampleItems = [
-  {
-    id: 1,
-    name: 'Milk',
-    daysLeft: 2,
-    location: 'Fridge',
-    locationIcon: 'building' as IconName,
-    category: 'Dairy',
-    categoryIcon: 'glass' as IconName,
-    image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
-    expiryDate: '2024-03-20',
-    status: 'expiring_soon',
-  },
-  {
-    id: 2,
-    name: 'Tomatoes',
-    daysLeft: 4,
-    location: 'Fridge',
-    locationIcon: 'building' as IconName,
-    category: 'Vegetables',
-    categoryIcon: 'leaf' as IconName,
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
-    expiryDate: '2024-03-22',
-    status: 'expiring_soon',
-  },
-  {
-    id: 3,
-    name: 'Bread',
-    daysLeft: 7,
-    location: 'Pantry',
-    locationIcon: 'archive' as IconName,
-    category: 'Bread',
-    categoryIcon: 'shopping-basket' as IconName,
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120',
-    expiryDate: '2024-03-25',
-    status: 'fresh',
-  },
-];
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const months = [
@@ -64,10 +27,26 @@ const months = [
 
 export default function CalendarScreen() {
   const { theme } = useTheme();
+  const { foodItems, refreshFoodItems } = useDatabase();
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
   const windowHeight = Dimensions.get('window').height;
   const isWeb = Platform.OS === 'web';
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshFoodItems();
+    }, [])
+  );
+
+  // Update filtered items when selected date or food items change
+  useEffect(() => {
+    const items = getItemsForDate(selectedDate);
+    setFilteredItems(items);
+  }, [selectedDate, foodItems]);
 
   const styles = StyleSheet.create({
     container: {
@@ -88,6 +67,13 @@ export default function CalendarScreen() {
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
       paddingBottom: 16,
+      marginBottom: 8,
+      borderRadius: 12,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     header: {
       padding: 16,
@@ -169,6 +155,7 @@ export default function CalendarScreen() {
     listSection: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
+      marginTop: 8,
     },
     listHeader: {
       flexDirection: 'row',
@@ -176,8 +163,16 @@ export default function CalendarScreen() {
       alignItems: 'center',
       padding: 16,
       backgroundColor: theme.cardBackground,
+      borderTopWidth: 1,
       borderBottomWidth: 1,
-      borderBottomColor: theme.borderColor,
+      borderColor: theme.borderColor,
+      borderRadius: 12,
+      marginBottom: 8,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     listTitle: {
       fontSize: 16,
@@ -272,33 +267,32 @@ export default function CalendarScreen() {
     const daysInMonth = lastDay.getDate();
     const startingDay = firstDay.getDay();
     
-    const previousMonth = new Date(year, month, 0);
-    const daysInPreviousMonth = previousMonth.getDate();
+    const days: { date: Date; isCurrentMonth: boolean }[] = [];
     
-    const days = [];
-    
-    // Previous month days
+    // Add days from previous month
+    const prevMonth = new Date(year, month - 1, 1);
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
     for (let i = startingDay - 1; i >= 0; i--) {
       days.push({
-        date: new Date(year, month - 1, daysInPreviousMonth - i),
-        isCurrentMonth: false,
+        date: new Date(prevMonth.getFullYear(), prevMonth.getMonth(), daysInPrevMonth - i),
+        isCurrentMonth: false
       });
     }
     
-    // Current month days
+    // Add days from current month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push({
         date: new Date(year, month, i),
-        isCurrentMonth: true,
+        isCurrentMonth: true
       });
     }
     
-    // Next month days
+    // Add days from next month
     const remainingDays = 42 - days.length; // 6 rows * 7 days = 42
     for (let i = 1; i <= remainingDays; i++) {
       days.push({
         date: new Date(year, month + 1, i),
-        isCurrentMonth: false,
+        isCurrentMonth: false
       });
     }
     
@@ -306,45 +300,36 @@ export default function CalendarScreen() {
   };
 
   const getItemsForDate = (date: Date) => {
-    return sampleItems.filter(item => {
-      const itemDate = new Date(item.expiryDate);
-      return (
-        itemDate.getDate() === date.getDate() &&
-        itemDate.getMonth() === date.getMonth() &&
-        itemDate.getFullYear() === date.getFullYear()
-      );
-    });
+    if (!foodItems) return [];
+    
+    const dateStr = date.toISOString().split('T')[0];
+    return foodItems.filter(item => item.expiry_date === dateStr);
+  };
+
+  const hasItemsOnDate = (date: Date) => {
+    return getItemsForDate(date).length > 0;
   };
 
   const renderDay = (dayInfo: { date: Date; isCurrentMonth: boolean }) => {
-    const isSelected = 
-      selectedDate.getDate() === dayInfo.date.getDate() &&
-      selectedDate.getMonth() === dayInfo.date.getMonth() &&
-      selectedDate.getFullYear() === dayInfo.date.getFullYear();
+    const isSelected = dayInfo.date.toDateString() === selectedDate.toDateString();
+    const hasItems = hasItemsOnDate(dayInfo.date);
     
-    const items = getItemsForDate(dayInfo.date);
-    const hasItems = items.length > 0;
-
     return (
       <TouchableOpacity
         key={dayInfo.date.toISOString()}
         style={styles.dayCell}
         onPress={() => setSelectedDate(dayInfo.date)}
       >
-        <View
-          style={[
-            styles.dayContent,
-            isSelected && styles.dayContentSelected,
-            hasItems && !isSelected && styles.dayContentHasItems,
-          ]}
-        >
-          <Text
-            style={[
-              styles.dayText,
-              !dayInfo.isCurrentMonth && styles.dayTextOtherMonth,
-              isSelected && styles.dayTextSelected,
-            ]}
-          >
+        <View style={[
+          styles.dayContent,
+          isSelected && styles.dayContentSelected,
+          hasItems && !isSelected && styles.dayContentHasItems
+        ]}>
+          <Text style={[
+            styles.dayText,
+            !dayInfo.isCurrentMonth && styles.dayTextOtherMonth,
+            isSelected && styles.dayTextSelected
+          ]}>
             {dayInfo.date.getDate()}
           </Text>
           {hasItems && !isSelected && <View style={styles.itemsDot} />}
@@ -353,34 +338,38 @@ export default function CalendarScreen() {
     );
   };
 
-  const renderFoodItem = (item: any) => (
+  const renderFoodItem = (item: FoodItemWithDetails) => (
     <View key={item.id} style={styles.foodItem}>
-      <Image source={{ uri: item.image }} style={styles.foodImage} />
+      <Image 
+        source={{ uri: item.image_uri || 'https://via.placeholder.com/50' }} 
+        style={styles.foodImage} 
+      />
       <View style={styles.foodInfo}>
         <Text style={styles.foodName}>{item.name}</Text>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <FontAwesome name={'clock-o' as IconName} size={14} color={theme.textSecondary} />
-            <Text style={styles.metaText}>{item.daysLeft} days left</Text>
+            <Text style={[
+              styles.metaText,
+              item.days_until_expiry < 0 && { color: theme.dangerColor },
+              item.days_until_expiry >= 0 && item.days_until_expiry <= 5 && { color: theme.warningColor },
+              item.days_until_expiry > 5 && { color: theme.successColor }
+            ]}>
+              {item.days_until_expiry} days left
+            </Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name={item.locationIcon} size={14} color={theme.textSecondary} />
-            <Text style={styles.metaText}>{item.location}</Text>
+            <FontAwesome name={item.location_icon as IconName} size={14} color={theme.textSecondary} />
+            <Text style={styles.metaText}>{item.location_name}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name={item.category_icon as IconName} size={14} color={theme.textSecondary} />
+            <Text style={styles.metaText}>{item.category_name}</Text>
           </View>
         </View>
       </View>
-      <View style={styles.foodActions}>
-        <TouchableOpacity style={styles.actionButton}>
-          <FontAwesome name={'pencil' as IconName} size={14} color={theme.primaryColor} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <FontAwesome name={'trash' as IconName} size={14} color={theme.dangerColor} />
-        </TouchableOpacity>
-      </View>
     </View>
   );
-
-  const selectedItems = getItemsForDate(selectedDate);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -390,30 +379,34 @@ export default function CalendarScreen() {
             <View style={styles.monthSelector}>
               <TouchableOpacity
                 style={styles.monthButton}
-                onPress={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))}
+                onPress={() => {
+                  const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
+                  setCurrentMonth(newDate);
+                }}
               >
-                <FontAwesome name={'chevron-left' as IconName} size={20} color={theme.textColor} />
+                <FontAwesome name="chevron-left" size={20} color={theme.textColor} />
               </TouchableOpacity>
               <Text style={styles.monthText}>
                 {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
               </Text>
               <TouchableOpacity
                 style={styles.monthButton}
-                onPress={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))}
+                onPress={() => {
+                  const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
+                  setCurrentMonth(newDate);
+                }}
               >
-                <FontAwesome name={'chevron-right' as IconName} size={20} color={theme.textColor} />
+                <FontAwesome name="chevron-right" size={20} color={theme.textColor} />
               </TouchableOpacity>
             </View>
-
             <View style={styles.weekDaysRow}>
-              {weekDays.map((day) => (
+              {weekDays.map(day => (
                 <View key={day} style={styles.weekDay}>
                   <Text style={styles.weekDayText}>{day}</Text>
                 </View>
               ))}
             </View>
           </View>
-
           <View style={styles.calendarGrid}>
             {getDaysInMonth(currentMonth).map(renderDay)}
           </View>
@@ -423,28 +416,34 @@ export default function CalendarScreen() {
       <View style={styles.listSection}>
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>
-            Expiring on {selectedDate.toLocaleDateString()}
+            {selectedDate.toLocaleDateString('en-US', { 
+              month: 'long', 
+              day: 'numeric',
+              year: 'numeric'
+            })}
           </Text>
           <Text style={styles.listCount}>
-            {selectedItems.length} items
+            {filteredItems.length} items
           </Text>
         </View>
-
-        {selectedItems.length > 0 ? (
-          <ScrollView 
-            style={styles.listContent}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {selectedItems.map(renderFoodItem)}
-          </ScrollView>
-        ) : (
-          <View style={styles.emptyList}>
-            <FontAwesome name={'calendar-check-o' as IconName} size={40} color={theme.textSecondary} />
-            <Text style={styles.emptyListText}>
-              No items expiring on this date
-            </Text>
-          </View>
-        )}
+        <ScrollView 
+          style={styles.listContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            filteredItems.length === 0 && styles.emptyList
+          ]}
+        >
+          {filteredItems.length === 0 ? (
+            <View>
+              <FontAwesome name="calendar-o" size={48} color={theme.textSecondary} />
+              <Text style={styles.emptyListText}>
+                No items expiring on this date
+              </Text>
+            </View>
+          ) : (
+            filteredItems.map(renderFoodItem)
+          )}
+        </ScrollView>
       </View>
 
       <BottomNav />

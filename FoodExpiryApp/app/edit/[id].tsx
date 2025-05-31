@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
@@ -44,24 +45,46 @@ export default function EditScreen() {
   const router = useRouter();
   const { foodItems, updateFoodItem, refreshAll } = useDatabase();
   
+  // Ensure we have a theme before rendering
+  if (!theme) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+  
   const [itemName, setItemName] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [expiryDate, setExpiryDate] = useState(new Date());
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadItem = async () => {
-      await refreshAll();
-      const item = foodItems.find(item => item.id === Number(id));
-      if (item) {
-        setItemName(item.name);
-        setSelectedCategory(item.category_id);
-        setSelectedLocation(item.location_id);
-        setExpiryDate(new Date(item.expiry_date));
-        setReminderDays(item.reminder_days.toString());
-        setNotes(item.notes || '');
+      setIsLoading(true);
+      try {
+        await refreshAll();
+        const item = foodItems.find(item => item.id === Number(id));
+        if (item) {
+          setItemName(item.name);
+          setSelectedCategory(item.category_id);
+          setSelectedLocation(item.location_id);
+          setExpiryDate(new Date(item.expiry_date));
+          setReminderDays(item.reminder_days.toString());
+          setNotes(item.notes || '');
+        } else {
+          Alert.alert('Error', 'Item not found');
+          router.back();
+        }
+      } catch (error) {
+        console.error('Error loading item:', error);
+        Alert.alert('Error', 'Failed to load item');
+      } finally {
+        setIsLoading(false);
       }
     };
     loadItem();
@@ -78,19 +101,35 @@ export default function EditScreen() {
       return;
     }
 
+    setIsSaving(true);
     try {
+      // First update the food item
       await updateFoodItem({
         id: Number(id),
         name: itemName.trim(),
+        quantity: 1,
         category_id: selectedCategory,
         location_id: selectedLocation,
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 0,
         notes: notes.trim(),
+        image_uri: null,
+        created_at: getCurrentDate(),
       });
+      
+      // Ensure all data is refreshed in the database context
+      await refreshAll();
+      
+      // Add a small delay to ensure database operations are complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate back
       router.back();
     } catch (error) {
+      console.error('Error saving item:', error);
       Alert.alert('Error', 'Failed to update item');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -98,7 +137,6 @@ export default function EditScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
-      paddingTop: Platform.OS === 'ios' ? 48 : 24,
     },
     header: {
       backgroundColor: theme.cardBackground,
@@ -119,6 +157,17 @@ export default function EditScreen() {
     content: {
       flex: 1,
       padding: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundColor,
+    },
+    loadingText: {
+      marginTop: 12,
+      color: theme.textColor,
+      fontSize: 16,
     },
     inputContainer: {
       marginBottom: 24,
@@ -199,21 +248,42 @@ export default function EditScreen() {
     },
   });
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.primaryColor} />
+        <Text style={styles.loadingText}>Loading item details...</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            disabled={isSaving}
+          >
             <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
           </TouchableOpacity>
           <Text style={styles.title}>Edit Food Item</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, isSaving && { opacity: 0.7 }]} 
+            onPress={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Save</Text>
+            )}
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content}>
+        <ScrollView style={styles.content} scrollEnabled={!isSaving}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Item Name</Text>
             <TextInput

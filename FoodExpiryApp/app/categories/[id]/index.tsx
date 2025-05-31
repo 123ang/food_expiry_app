@@ -23,295 +23,200 @@ export default function CategoryDetailScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { foodItems, categories } = useDatabase();
+  const { foodItems, categories, getCategory } = useDatabase();
   const [loading, setLoading] = useState(true);
   const [categoryItems, setCategoryItems] = useState<FoodItemWithDetails[]>([]);
   const [category, setCategory] = useState<{ name: string; icon: string; color: string } | null>(null);
 
-  useEffect(() => {
-    const categoryId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
-    
-    if (categoryId) {
-      // Find the category
-      const foundCategory = categories.find(c => c.id === categoryId);
-      if (foundCategory) {
-        // Set category with color based on ID
-        const colors = {
-          1: '#4CAF50', // Vegetables
-          2: '#FF9800', // Fruits
-          3: '#2196F3', // Dairy
-          4: '#F44336', // Meat
-          5: '#795548', // Snacks
-          6: '#E91E63', // Desserts
-          7: '#00BCD4', // Seafood
-          8: '#FFC107', // Bread
-        };
-        setCategory({
-          name: foundCategory.name,
-          icon: foundCategory.icon as IconName,
-          color: colors[categoryId as keyof typeof colors] || '#9E9E9E',
-        });
-      }
+  const colors = {
+    1: '#4CAF50', // Vegetables
+    2: '#FF9800', // Fruits
+    3: '#2196F3', // Dairy
+    4: '#F44336', // Meat
+    5: '#795548', // Snacks
+    6: '#E91E63', // Desserts
+    7: '#00BCD4', // Seafood
+    8: '#FFC107', // Bread
+  };
 
-      // Filter items by category
-      const items = foodItems.filter(item => item.category_id === categoryId);
-      setCategoryItems(items);
-    }
-    setLoading(false);
-  }, [id, categories, foodItems]);
+  useEffect(() => {
+    const loadCategoryData = async () => {
+      try {
+        setLoading(true);
+        const categoryId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
+        
+        if (categoryId) {
+          // Find the category
+          const foundCategory = await getCategory(categoryId);
+          if (foundCategory) {
+            setCategory({
+              name: foundCategory.name,
+              icon: foundCategory.icon as IconName,
+              color: colors[categoryId as keyof typeof colors] || '#9E9E9E',
+            });
+          }
+
+          // Filter items by category
+          const items = foodItems.filter(item => item.category_id === categoryId);
+          setCategoryItems(items);
+        }
+      } catch (error) {
+        console.error('Error loading category data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategoryData();
+  }, [id, foodItems]);
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
     },
-    header: {
-      backgroundColor: theme.cardBackground,
-      padding: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderBottomWidth: 1,
-      borderBottomColor: theme.borderColor,
-    },
-    backButton: {
-      padding: 8,
-      marginRight: 8,
-    },
-    titleContainer: {
+    loadingContainer: {
       flex: 1,
-      flexDirection: 'row',
+      justifyContent: 'center',
       alignItems: 'center',
-    },
-    title: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.textColor,
-      marginLeft: 8,
+      backgroundColor: theme.backgroundColor,
     },
     content: {
       flex: 1,
       padding: 16,
     },
-    statsCard: {
-      backgroundColor: theme.cardBackground,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+    header: {
+      flexDirection: 'row',
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: theme.borderColor,
+      marginBottom: 24,
     },
-    statsIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: `${theme.primaryColor}20`,
+    categoryIcon: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: category?.color || theme.primaryColor,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      marginRight: 16,
     },
-    statsTitle: {
-      fontSize: 16,
-      color: theme.textSecondary,
-      marginBottom: 4,
-    },
-    statsCount: {
+    categoryName: {
       fontSize: 24,
       fontWeight: 'bold',
       color: theme.textColor,
     },
-    foodItem: {
-      flexDirection: 'row',
+    itemCount: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      marginTop: 4,
+    },
+    itemList: {
+      flex: 1,
+    },
+    itemCard: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: theme.borderColor,
-    },
-    foodImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
-      marginRight: 12,
-      backgroundColor: `${theme.primaryColor}10`,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    foodInfo: {
-      flex: 1,
-    },
-    foodNameRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 4,
     },
-    foodName: {
+    itemInfo: {
       flex: 1,
-      fontSize: 18,
+      marginLeft: 12,
+    },
+    itemName: {
+      fontSize: 16,
       fontWeight: '600',
       color: theme.textColor,
+      marginBottom: 4,
     },
-    quantity: {
-      fontSize: 16,
-      fontWeight: '500',
-      color: theme.textSecondary,
-      marginLeft: 8,
-    },
-    foodMeta: {
-      flexDirection: 'column',
-      gap: 8,
-    },
-    metaItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    metaText: {
-      color: theme.textSecondary,
+    itemDetails: {
       fontSize: 14,
-      marginLeft: 8,
-    },
-    daysLeft: {
-      fontSize: 14,
-      fontWeight: '500',
-    },
-    fresh: {
-      color: theme.successColor,
-    },
-    expiring: {
-      color: theme.warningColor,
-    },
-    expired: {
-      color: theme.dangerColor,
+      color: theme.textSecondary,
     },
     emptyState: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 24,
-    },
-    emptyStateIcon: {
-      marginBottom: 16,
+      paddingVertical: 32,
     },
     emptyStateText: {
       fontSize: 16,
       color: theme.textSecondary,
       textAlign: 'center',
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      marginTop: 16,
     },
   });
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.primaryColor} />
       </View>
     );
   }
 
-  if (!category) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <FontAwesome name="arrow-left" size={20} color={theme.textColor} />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>{t('categoryNotFound')}</Text>
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  const renderFoodItem = (item: FoodItemWithDetails) => (
-    <View key={item.id} style={styles.foodItem}>
-      <View style={styles.foodImage}>
-        <FontAwesome name={category.icon} size={32} color={category.color} />
-      </View>
-      <View style={styles.foodInfo}>
-        <View style={styles.foodNameRow}>
-          <Text style={styles.foodName}>{item.name}</Text>
-          <Text style={styles.quantity}>×{item.quantity}</Text>
-        </View>
-        <View style={styles.foodMeta}>
-          <View style={styles.metaItem}>
-            <FontAwesome name="clock-o" size={16} color={theme.textSecondary} />
-            <Text style={[
-              styles.metaText,
-              styles.daysLeft,
-              item.days_until_expiry > 7 && styles.fresh,
-              (item.days_until_expiry <= 7 && item.days_until_expiry > 0) && styles.expiring,
-              item.days_until_expiry <= 0 && styles.expired,
-            ]}>
-              {item.days_until_expiry > 0 
-                ? `${item.days_until_expiry} ${t('daysLeft')}`
-                : `${Math.abs(item.days_until_expiry)} ${t('daysExpired')}`
-              }
-            </Text>
-          </View>
-          <View style={styles.metaItem}>
-            <FontAwesome 
-              name={item.location_icon as IconName || 'building'} 
-              size={16} 
-              color={theme.textSecondary} 
-            />
-            <Text style={styles.metaText}>{item.location_name}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <FontAwesome name="arrow-left" size={20} color={theme.textColor} />
-        </TouchableOpacity>
-        <View style={styles.titleContainer}>
-          <FontAwesome name={category.icon} size={24} color={category.color} />
-          <Text style={styles.title}>{category.name}</Text>
-        </View>
-      </View>
-
       <ScrollView style={styles.content}>
-        <View style={styles.statsCard}>
-          <View style={[styles.statsIcon, { backgroundColor: `${category.color}20` }]}>
-            <FontAwesome name={category.icon} size={24} color={category.color} />
-          </View>
-          <Text style={styles.statsTitle}>{t('itemsIn')} {category.name}</Text>
-          <Text style={styles.statsCount}>{categoryItems.length}</Text>
-        </View>
-
-        {categoryItems.length > 0 ? (
-          categoryItems.map(renderFoodItem)
-        ) : (
-          <View style={styles.emptyState}>
-            <FontAwesome 
-              name={category.icon} 
-              size={48} 
-              color={theme.textSecondary}
-              style={styles.emptyStateIcon} 
+        <View style={styles.header}>
+          <View style={styles.categoryIcon}>
+            <FontAwesome
+              name={(category?.icon || 'question-circle') as IconName}
+              size={30}
+              color="#FFFFFF"
             />
-            <Text style={styles.emptyStateText}>
-              {t('noItemsInCategory')}
+          </View>
+          <View>
+            <Text style={styles.categoryName}>{category?.name || 'Unknown Category'}</Text>
+            <Text style={styles.itemCount}>
+              {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'items'}
             </Text>
           </View>
-        )}
-      </ScrollView>
+        </View>
 
-      <BottomNav />
+        <View style={styles.itemList}>
+          {categoryItems.length > 0 ? (
+            categoryItems.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.itemCard}
+                onPress={() => router.push(`/items/${item.id}`)}
+              >
+                <FontAwesome
+                  name={(item.category_icon || 'circle') as IconName}
+                  size={24}
+                  color={category?.color || theme.primaryColor}
+                />
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemDetails}>
+                    Expires in {item.days_until_expiry} days
+                  </Text>
+                </View>
+                <FontAwesome
+                  name="chevron-right"
+                  size={16}
+                  color={theme.textSecondary}
+                />
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <FontAwesome
+                name="inbox"
+                size={48}
+                color={theme.textSecondary}
+              />
+              <Text style={styles.emptyStateText}>
+                No items in this category yet
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 } 
