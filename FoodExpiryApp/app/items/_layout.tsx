@@ -1,10 +1,5 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
-import { ParamListBase } from '@react-navigation/native';
-
-type ItemStatusParams = {
-  status: string;
-}
 
 export default function ItemsLayout() {
   const { theme } = useTheme();
@@ -12,19 +7,20 @@ export default function ItemsLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
+        headerShown: false, // Hide all headers by default
         contentStyle: { backgroundColor: theme.backgroundColor },
-        headerStyle: {
-          backgroundColor: theme.cardBackground,
-        },
-        headerTintColor: theme.textColor,
       }}
     >
       <Stack.Screen 
+        name="index"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
         name="[status]/index"
         options={{
-          title: 'Items',
-          headerShown: false, // We're handling the header in the component
+          headerShown: false, // Completely hide navigation header
         }}
       />
     </Stack>

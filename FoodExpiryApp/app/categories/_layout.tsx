@@ -7,19 +7,14 @@ export default function CategoriesLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.backgroundColor,
-        },
-        headerTintColor: theme.textColor,
-        headerTitleStyle: {
-          color: theme.textColor,
-        },
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.backgroundColor },
       }}
     >
       <Stack.Screen
         name="index"
         options={{
-          title: 'Categories',
+          headerShown: false,
         }}
       />
     </Stack>

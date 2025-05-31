@@ -81,6 +81,25 @@ export default function CategoryDetailScreen() {
       alignItems: 'center',
       backgroundColor: theme.backgroundColor,
     },
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      paddingTop: 50,
+      backgroundColor: theme.cardBackground,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.textColor,
+    },
     content: {
       flex: 1,
       padding: 16,
@@ -160,6 +179,13 @@ export default function CategoryDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{category?.name || 'Unknown Category'}</Text>
+      </View>
+      
       <ScrollView style={styles.content}>
         <View style={styles.header}>
           <View style={styles.categoryIcon}>
@@ -217,6 +243,8 @@ export default function CategoryDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      <BottomNav />
     </View>
   );
 } 

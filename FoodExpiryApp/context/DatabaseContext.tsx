@@ -301,8 +301,21 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const updateFoodItem = async (item: FoodItem) => {
-    await FoodItemRepository.update(item);
-    await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
+    try {
+      console.log('Updating food item:', item.id);
+      await FoodItemRepository.update(item);
+      
+      // Force refresh of all related data
+      await Promise.all([
+        refreshFoodItems(), 
+        refreshDashboardCounts()
+      ]);
+      
+      console.log('Food item updated and data refreshed');
+    } catch (error) {
+      console.error('Error updating food item:', error);
+      throw error;
+    }
   };
 
   const deleteFoodItem = async (id: number) => {

@@ -18,22 +18,10 @@ import { getCurrentDate } from '../database/database';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Predefined categories with icons
-const CATEGORIES = [
-  { id: 1, name: 'Vegetables', icon: 'leaf' as IconName },
-  { id: 2, name: 'Fruits', icon: 'apple' as IconName },
-  { id: 3, name: 'Dairy', icon: 'glass' as IconName },
-  { id: 4, name: 'Meat', icon: 'cutlery' as IconName },
-  { id: 5, name: 'Snacks', icon: 'coffee' as IconName },
-  { id: 6, name: 'Desserts', icon: 'birthday-cake' as IconName },
-  { id: 7, name: 'Seafood', icon: 'anchor' as IconName },
-  { id: 8, name: 'Bread', icon: 'shopping-basket' as IconName },
-];
-
 export default function AddScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { createFoodItem, refreshFoodItems, refreshAll, locations } = useDatabase();
+  const { createFoodItem, refreshFoodItems, refreshAll, locations, categories } = useDatabase();
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -95,7 +83,6 @@ export default function AddScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
-      paddingTop: Platform.OS === 'ios' ? 48 : 24,
     },
     header: {
       backgroundColor: theme.cardBackground,
@@ -256,13 +243,6 @@ export default function AddScreen() {
         </View>
 
         <ScrollView style={styles.content}>
-          <TouchableOpacity style={styles.photoUpload}>
-            <View style={styles.photoUploadIcon}>
-              <FontAwesome name="camera" size={24} color={theme.primaryColor} />
-            </View>
-            <Text style={styles.photoUploadText}>Add Photo</Text>
-          </TouchableOpacity>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Item Name</Text>
             <TextInput
@@ -289,17 +269,17 @@ export default function AddScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Category</Text>
             <View style={styles.optionsGrid}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
                     styles.optionCard,
                     selectedCategory === category.id && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedCategory(category.id)}
+                  onPress={() => setSelectedCategory(category.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
+                    <FontAwesome name={category.icon as IconName} size={20} color={theme.primaryColor} />
                   </View>
                   <Text style={styles.optionName}>{category.name}</Text>
                 </TouchableOpacity>
@@ -317,7 +297,7 @@ export default function AddScreen() {
                     styles.optionCard,
                     selectedLocation === location.id && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedLocation(location.id)}
+                  onPress={() => setSelectedLocation(location.id!)}
                 >
                   <View style={styles.optionIcon}>
                     <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />

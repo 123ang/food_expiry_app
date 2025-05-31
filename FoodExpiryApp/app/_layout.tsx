@@ -39,19 +39,19 @@ export default function RootLayout() {
               <Stack.Screen
                 name="items"
                 options={{
-                  title: 'Items',
+                  headerShown: false,
                 }}
               />
               <Stack.Screen
                 name="locations"
                 options={{
-                  title: 'Locations',
+                  headerShown: false,
                 }}
               />
               <Stack.Screen
                 name="categories"
                 options={{
-                  title: 'Categories',
+                  headerShown: false,
                 }}
               />
               <Stack.Screen

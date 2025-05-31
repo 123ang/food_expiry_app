@@ -133,6 +133,7 @@ export default function ListScreen() {
         );
 
       setFilteredItems(items);
+      console.log('Items loaded:', items.length);
     } catch (error) {
       console.error('Error loading items:', error);
       Alert.alert('Error', 'Failed to load items');
@@ -154,6 +155,7 @@ export default function ListScreen() {
       // Refresh data after delete
       await refreshAll();
       await loadItems();
+      console.log('Item deleted and list refreshed');
     } catch (error) {
       console.error('Error deleting item:', error);
       Alert.alert('Error', 'Failed to delete item');
@@ -165,18 +167,24 @@ export default function ListScreen() {
   // Listen for navigation events to refresh after edit
   useFocusEffect(
     React.useCallback(() => {
-      // Only check if we need to refresh after an edit operation
-      const checkForUpdates = async () => {
-        // Small delay to allow edit screen to complete its save operation
-        setTimeout(async () => {
-          if (!isLoading && !isRefreshing) {
-            await loadItems(); // Just reload current data, don't refresh from DB
+      // Only refresh if this is a return from another screen (not initial load)
+      if (!isLoading) {
+        const refreshAfterEdit = async () => {
+          setIsRefreshing(true);
+          try {
+            console.log('Screen focused - refreshing data after edit');
+            await refreshAll(); // Force database refresh
+            await loadItems(); // Reload items with fresh data
+          } catch (error) {
+            console.error('Error refreshing after edit:', error);
+          } finally {
+            setIsRefreshing(false);
           }
-        }, 100);
-      };
-      
-      checkForUpdates();
-    }, [])
+        };
+        
+        refreshAfterEdit();
+      }
+    }, [isLoading])
   );
 
   const styles = StyleSheet.create({
@@ -453,7 +461,7 @@ export default function ListScreen() {
               disabled={isLoading || isRefreshing}
             >
               <FontAwesome name="clock-o" size={16} color={filterStatus === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500'} />
-              <Text style={[styles.filterButtonText, filterStatus === 'expiring_soon' && styles.filterButtonTextActive]}>Expiring Soon</Text>
+              <Text style={[styles.filterButtonText, filterStatus === 'expiring_soon' && styles.filterButtonTextActive]}>Expiring</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.filterButton, filterStatus === 'fresh' && styles.filterButtonActive]}

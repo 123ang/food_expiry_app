@@ -48,6 +48,7 @@ export default function LocationDetailScreen() {
     header: {
       backgroundColor: theme.cardBackground,
       padding: 16,
+      paddingTop: 50,
       flexDirection: 'row',
       alignItems: 'center',
       borderBottomWidth: 1,

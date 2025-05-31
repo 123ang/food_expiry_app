@@ -19,31 +19,11 @@ import { getCurrentDate } from '../../database/database';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Predefined categories with icons
-const CATEGORIES = [
-  { id: 1, name: 'Vegetables', icon: 'leaf' as IconName },
-  { id: 2, name: 'Fruits', icon: 'apple' as IconName },
-  { id: 3, name: 'Dairy', icon: 'glass' as IconName },
-  { id: 4, name: 'Meat', icon: 'cutlery' as IconName },
-  { id: 5, name: 'Snacks', icon: 'coffee' as IconName },
-  { id: 6, name: 'Desserts', icon: 'birthday-cake' as IconName },
-  { id: 7, name: 'Seafood', icon: 'anchor' as IconName },
-  { id: 8, name: 'Bread', icon: 'shopping-basket' as IconName },
-];
-
-// Predefined locations with icons
-const LOCATIONS = [
-  { id: 1, name: 'Fridge', icon: 'building' as IconName },
-  { id: 2, name: 'Freezer', icon: 'snowflake-o' as IconName },
-  { id: 3, name: 'Pantry', icon: 'archive' as IconName },
-  { id: 4, name: 'Cabinet', icon: 'inbox' as IconName },
-];
-
 export default function EditScreen() {
   const { id } = useLocalSearchParams();
   const { theme } = useTheme();
   const router = useRouter();
-  const { foodItems, updateFoodItem, refreshAll } = useDatabase();
+  const { foodItems, updateFoodItem, refreshAll, categories, locations } = useDatabase();
   
   // Ensure we have a theme before rendering
   if (!theme) {
@@ -117,13 +97,7 @@ export default function EditScreen() {
         created_at: getCurrentDate(),
       });
       
-      // Ensure all data is refreshed in the database context
-      await refreshAll();
-      
-      // Add a small delay to ensure database operations are complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Navigate back
+      // Navigate back - the list will refresh automatically via useFocusEffect
       router.back();
     } catch (error) {
       console.error('Error saving item:', error);
@@ -298,17 +272,17 @@ export default function EditScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Category</Text>
             <View style={styles.optionsGrid}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
                     styles.optionCard,
                     selectedCategory === category.id && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedCategory(category.id)}
+                  onPress={() => setSelectedCategory(category.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
+                    <FontAwesome name={category.icon as IconName} size={20} color={theme.primaryColor} />
                   </View>
                   <Text style={styles.optionName}>{category.name}</Text>
                 </TouchableOpacity>
@@ -319,17 +293,17 @@ export default function EditScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Storage Location</Text>
             <View style={styles.optionsGrid}>
-              {LOCATIONS.map((location) => (
+              {locations.map((location) => (
                 <TouchableOpacity
                   key={location.id}
                   style={[
                     styles.optionCard,
                     selectedLocation === location.id && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedLocation(location.id)}
+                  onPress={() => setSelectedLocation(location.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={location.icon} size={20} color={theme.primaryColor} />
+                    <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />
                   </View>
                   <Text style={styles.optionName}>{location.name}</Text>
                 </TouchableOpacity>

@@ -130,6 +130,29 @@ export default function LocationsScreen() {
     actionButton: {
       padding: 8,
     },
+    headerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      paddingTop: 50,
+      backgroundColor: theme.cardBackground,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      textAlign: 'center',
+    },
+    headerSpacer: {
+      width: 40,
+    },
   });
 
   const handleSave = async () => {
@@ -191,6 +214,14 @@ export default function LocationsScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Storage Locations</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+      
       <ScrollView style={styles.content}>
         <View style={styles.inputContainer}>
           <TextInput

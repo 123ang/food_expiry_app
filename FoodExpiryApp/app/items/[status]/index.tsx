@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { useDatabase } from '../../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
+import { FoodItemWithDetails } from '../../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -21,7 +24,7 @@ const statusInfo = {
     color: '#4CAF50',
   },
   expiring: {
-    name: 'Expiring Soon',
+    name: 'Expiring',
     icon: 'clock-o' as IconName,
     color: '#FF9800',
   },
@@ -32,57 +35,128 @@ const statusInfo = {
   },
 };
 
-// Sample data - replace with your actual data
-const items = {
-  fresh: [
-    {
-      id: 1,
-      name: 'Apples',
-      quantity: 6,
-      daysLeft: 10,
-      location: 'Fridge',
-      locationIcon: 'building' as IconName,
-      category: 'Fruits',
-      categoryIcon: 'apple' as IconName,
-      image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=120',
-    },
-  ],
-  expiring: [
-    {
-      id: 2,
-      name: 'Tomatoes',
-      quantity: 5,
-      daysLeft: 4,
-      location: 'Fridge',
-      locationIcon: 'building' as IconName,
-      category: 'Vegetables',
-      categoryIcon: 'leaf' as IconName,
-      image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
-    },
-  ],
-  expired: [
-    {
-      id: 3,
-      name: 'Yogurt',
-      quantity: 1,
-      daysLeft: -2,
-      location: 'Fridge',
-      locationIcon: 'building' as IconName,
-      category: 'Dairy',
-      categoryIcon: 'glass' as IconName,
-      image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
-    },
-  ],
+// Separate component for food item to avoid hooks violation
+const FoodItemCard: React.FC<{ 
+  item: FoodItemWithDetails; 
+  onPress: () => void; 
+  theme: any;
+  styles: any;
+}> = ({ item, onPress, theme, styles }) => {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <TouchableOpacity style={styles.foodItem} onPress={onPress}>
+      {item.image_uri && !imageError ? (
+        <Image
+          source={{ uri: item.image_uri }}
+          style={styles.foodImage}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <FontAwesome 
+            name={(item.category_icon as IconName) || 'cutlery'} 
+            size={32} 
+            color={theme.primaryColor} 
+          />
+        </View>
+      )}
+      <View style={styles.foodInfo}>
+        <View style={styles.foodNameRow}>
+          <Text style={styles.foodName}>{item.name}</Text>
+          <Text style={styles.quantity}>x{item.quantity}</Text>
+        </View>
+        <View style={styles.foodMeta}>
+          <View style={styles.metaItem}>
+            <FontAwesome 
+              name={(item.category_icon as IconName) || 'folder'} 
+              size={16} 
+              color={theme.textSecondary} 
+            />
+            <Text style={styles.metaText}>{item.category_name || 'No category'}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome 
+              name={(item.location_icon as IconName) || 'map-marker'} 
+              size={16} 
+              color={theme.textSecondary} 
+            />
+            <Text style={styles.metaText}>{item.location_name || 'No location'}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
+            <Text style={styles.metaText}>
+              {item.days_until_expiry > 0
+                ? `${item.days_until_expiry} days left`
+                : item.days_until_expiry === 0
+                ? 'Expires today'
+                : `Expired ${Math.abs(item.days_until_expiry)} days ago`}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 };
 
 export default function ItemStatusScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const { status } = useLocalSearchParams();
+  const { getByStatus, refreshAll } = useDatabase();
+  
+  const [currentItems, setCurrentItems] = useState<FoodItemWithDetails[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const currentStatus = typeof status === 'string' ? status : Array.isArray(status) ? status[0] : 'fresh';
-  const statusData = statusInfo[currentStatus as keyof typeof statusInfo];
-  const currentItems = items[currentStatus as keyof typeof items] || [];
+  const statusData = statusInfo[currentStatus as keyof typeof statusInfo] || statusInfo.fresh;
+
+  console.log('ItemStatusScreen - currentStatus:', currentStatus);
+  console.log('ItemStatusScreen - statusData:', statusData);
+
+  // Safety check for theme
+  if (!theme) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Load items when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadItems = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          await refreshAll();
+          // Map the status parameter to the database enum
+          let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
+          if (currentStatus === 'expired') {
+            dbStatus = 'expired';
+          } else if (currentStatus === 'expiring') {
+            dbStatus = 'expiring_soon';
+          } else {
+            dbStatus = 'fresh';
+          }
+          
+          console.log('Loading items with dbStatus:', dbStatus);
+          const items = await getByStatus(dbStatus);
+          console.log('Loaded items count:', items.length);
+          setCurrentItems(items || []);
+        } catch (error) {
+          console.error('Error loading items:', error);
+          setError(error instanceof Error ? error.message : 'Failed to load items');
+          setCurrentItems([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadItems();
+    }, [currentStatus])
+  );
 
   const styles = StyleSheet.create({
     container: {
@@ -92,6 +166,7 @@ export default function ItemStatusScreen() {
     header: {
       backgroundColor: theme.cardBackground,
       padding: 16,
+      paddingTop: 50,
       flexDirection: 'row',
       alignItems: 'center',
       borderBottomWidth: 1,
@@ -119,30 +194,35 @@ export default function ItemStatusScreen() {
     statsCard: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 16,
+      padding: 20,
       marginBottom: 16,
       alignItems: 'center',
+      justifyContent: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
+      minHeight: 120,
     },
     statsIcon: {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: `${statusData.color}20`,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: 12,
     },
     statsTitle: {
-      fontSize: 16,
+      fontSize: 14,
       color: theme.textSecondary,
-      marginBottom: 4,
+      marginBottom: 8,
+      textAlign: 'center',
+      lineHeight: 18,
+      numberOfLines: 2,
     },
     statsCount: {
-      fontSize: 24,
+      fontSize: 28,
       fontWeight: 'bold',
       color: theme.textColor,
+      textAlign: 'center',
     },
     foodItem: {
       flexDirection: 'row',
@@ -203,49 +283,22 @@ export default function ItemStatusScreen() {
     },
   });
 
-  const renderFoodItem = (item: any) => {
-    const [imageError, setImageError] = useState(false);
+  // Dynamic styles
+  const dynamicStyles = {
+    statsIconBackground: {
+      backgroundColor: `${statusData?.color || '#4CAF50'}20`,
+    },
+  };
 
+  const renderFoodItem = (item: FoodItemWithDetails) => {
     return (
-      <View key={item.id} style={styles.foodItem}>
-        {!imageError ? (
-          <Image
-            source={{ uri: item.image }}
-            style={styles.foodImage}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <FontAwesome name="cutlery" size={32} color={theme.primaryColor} />
-          </View>
-        )}
-        <View style={styles.foodInfo}>
-          <View style={styles.foodNameRow}>
-            <Text style={styles.foodName}>{item.name}</Text>
-            <Text style={styles.quantity}>x{item.quantity}</Text>
-          </View>
-          <View style={styles.foodMeta}>
-            <View style={styles.metaItem}>
-              <FontAwesome name={item.categoryIcon} size={16} color={theme.textSecondary} />
-              <Text style={styles.metaText}>{item.category}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <FontAwesome name={item.locationIcon} size={16} color={theme.textSecondary} />
-              <Text style={styles.metaText}>{item.location}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
-              <Text style={styles.metaText}>
-                {item.daysLeft > 0
-                  ? `${item.daysLeft} days left`
-                  : item.daysLeft === 0
-                  ? 'Expires today'
-                  : `Expired ${Math.abs(item.daysLeft)} days ago`}
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
+      <FoodItemCard 
+        key={item.id} 
+        item={item} 
+        onPress={() => router.push(`/items/${item.id}`)}
+        theme={theme}
+        styles={styles}
+      />
     );
   };
 
@@ -263,14 +316,68 @@ export default function ItemStatusScreen() {
       
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
-          <View style={styles.statsIcon}>
-            <FontAwesome name={statusData.icon} size={24} color={statusData.color} />
+          <View style={[styles.statsIcon, dynamicStyles.statsIconBackground]}>
+            <FontAwesome name={statusData?.icon || 'check-circle'} size={24} color={statusData?.color || '#4CAF50'} />
           </View>
-          <Text style={styles.statsTitle}>Total Items</Text>
+          <Text style={styles.statsTitle}>Items</Text>
           <Text style={styles.statsCount}>{currentItems.length}</Text>
         </View>
         
-        {currentItems.map(renderFoodItem)}
+        {error ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <FontAwesome name="exclamation-triangle" size={48} color={theme.dangerColor || '#FF3B30'} />
+            <Text style={{ color: theme.textColor, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
+              {error}
+            </Text>
+            <TouchableOpacity 
+              style={{ 
+                backgroundColor: theme.primaryColor, 
+                paddingHorizontal: 20, 
+                paddingVertical: 10, 
+                borderRadius: 8, 
+                marginTop: 16 
+              }}
+              onPress={() => {
+                setError(null);
+                // Trigger reload
+                const loadItems = async () => {
+                  setIsLoading(true);
+                  try {
+                    await refreshAll();
+                    let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
+                    if (currentStatus === 'expired') {
+                      dbStatus = 'expired';
+                    } else if (currentStatus === 'expiring') {
+                      dbStatus = 'expiring_soon';
+                    } else {
+                      dbStatus = 'fresh';
+                    }
+                    const items = await getByStatus(dbStatus);
+                    setCurrentItems(items || []);
+                  } catch (error) {
+                    setError(error instanceof Error ? error.message : 'Failed to load items');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                };
+                loadItems();
+              }}
+            >
+              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isLoading ? (
+          <ActivityIndicator size="large" color={theme.primaryColor} />
+        ) : currentItems.length === 0 ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <FontAwesome name="inbox" size={48} color={theme.textSecondary} />
+            <Text style={{ color: theme.textSecondary, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
+              No {statusData?.name?.toLowerCase() || 'items'} found
+            </Text>
+          </View>
+        ) : (
+          currentItems.map(renderFoodItem)
+        )}
       </ScrollView>
       
       <BottomNav />

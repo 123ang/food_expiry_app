@@ -22,7 +22,7 @@ const statusCategories = [
   },
   {
     id: 'expiring',
-    name: 'Expiring Soon',
+    name: 'Expiring',
     icon: 'clock-o' as IconName,
     color: '#FF9800',
   },

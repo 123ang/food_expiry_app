@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,70 +11,17 @@ import {
   ScrollView,
   Platform,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useDatabase } from '../context/DatabaseContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { FoodItem } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
-
-// Sample data for locations
-const sampleLocations = [
-  { id: 1, name: 'Fridge', icon: 'building' as IconName, itemCount: 8 },
-  { id: 2, name: 'Freezer', icon: 'snowflake-o' as IconName, itemCount: 4 },
-  { id: 3, name: 'Pantry', icon: 'archive' as IconName, itemCount: 3 },
-  { id: 4, name: 'Cabinet', icon: 'inbox' as IconName, itemCount: 2 },
-];
-
-// Sample data for categories
-const sampleCategories = [
-  { id: 1, name: 'Vegetables', icon: 'leaf' as IconName, itemCount: 5 },
-  { id: 2, name: 'Fruits', icon: 'apple' as IconName, itemCount: 3 },
-  { id: 3, name: 'Dairy', icon: 'glass' as IconName, itemCount: 4 },
-  { id: 4, name: 'Meat', icon: 'cutlery' as IconName, itemCount: 2 },
-  { id: 5, name: 'Snacks', icon: 'coffee' as IconName, itemCount: 6 },
-  { id: 6, name: 'Desserts', icon: 'birthday-cake' as IconName, itemCount: 1 },
-  { id: 7, name: 'Seafood', icon: 'anchor' as IconName, itemCount: 2 },
-  { id: 8, name: 'Bread', icon: 'shopping-basket' as IconName, itemCount: 3 },
-];
-
-// Sample data for food items
-const sampleExpiredItems = [
-  {
-    id: 1,
-    name: 'Milk',
-    quantity: 2,
-    daysLeft: -2,
-    location: 'Fridge',
-    locationIcon: 'building' as IconName,
-    image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120',
-  },
-  {
-    id: 2,
-    name: 'Tomatoes',
-    quantity: 5,
-    daysLeft: -4,
-    location: 'Fridge',
-    locationIcon: 'building' as IconName,
-    image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120',
-  },
-];
-
-const sampleFreshItems = [
-  {
-    id: 3,
-    name: 'Bread',
-    quantity: 1,
-    daysLeft: 7,
-    location: 'Pantry',
-    locationIcon: 'archive' as IconName,
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120',
-  },
-];
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
@@ -87,6 +34,7 @@ export default function DashboardScreen() {
     createFoodItem,
     updateFoodItem,
     deleteFoodItem,
+    refreshAll,
   } = useDatabase();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -98,6 +46,46 @@ export default function DashboardScreen() {
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadData = async () => {
+        setIsLoading(true);
+        try {
+          await refreshAll();
+        } catch (error) {
+          console.error('Error refreshing dashboard data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadData();
+    }, [])
+  );
+
+  // Calculate location item counts
+  const getLocationItemCounts = () => {
+    const counts: { [key: number]: number } = {};
+    foodItems.forEach(item => {
+      if (item.location_id) {
+        counts[item.location_id] = (counts[item.location_id] || 0) + 1;
+      }
+    });
+    return counts;
+  };
+
+  // Calculate category item counts
+  const getCategoryItemCounts = () => {
+    const counts: { [key: number]: number } = {};
+    foodItems.forEach(item => {
+      if (item.category_id) {
+        counts[item.category_id] = (counts[item.category_id] || 0) + 1;
+      }
+    });
+    return counts;
+  };
 
   const handleSave = async () => {
     if (!itemName.trim()) {
@@ -118,8 +106,9 @@ export default function DashboardScreen() {
         location_id: locationId,
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 0,
-        notes: notes.trim() || undefined,
+        notes: notes.trim() || null,
         created_at: new Date().toISOString().split('T')[0],
+        image_uri: null,
       };
 
       if (editingItem) {
@@ -128,6 +117,8 @@ export default function DashboardScreen() {
         await createFoodItem(item);
       }
       handleCloseModal();
+      // Refresh data after saving
+      await refreshAll();
     } catch (error) {
       Alert.alert('Error', 'Failed to save food item');
     }
@@ -580,6 +571,17 @@ export default function DashboardScreen() {
       alignItems: 'center',
       marginBottom: 16,
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      color: theme.textColor,
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginTop: 16,
+    },
   });
 
   const renderFoodItem = (item: any) => (
@@ -611,103 +613,110 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content}>
-        <View style={styles.welcomeBanner}>
-          <View style={styles.welcomeText}>
-            <Text style={styles.welcomeTitle}>Welcome Back!</Text>
-            <Text style={styles.welcomeSubtitle}>
-              2 items expiring soon
-            </Text>
-          </View>
-          <View style={styles.bannerIcon}>
-            <FontAwesome name={'cutlery' as IconName} size={24} color="#FFFFFF" />
-          </View>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primaryColor} />
+          <Text style={styles.loadingText}>Loading dashboard...</Text>
         </View>
-
-        <View style={styles.quickStats}>
-          <TouchableOpacity 
-            style={styles.statCard}
-            onPress={() => router.push('/items/fresh')}
-          >
-            <FontAwesome
-              name={'check-circle' as IconName}
-              size={24}
-              color={theme.successColor}
-              style={styles.statIcon}
-            />
-            <Text style={styles.statLabel}>Fresh</Text>
-            <Text style={styles.statValue}>12</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.statCard}
-            onPress={() => router.push('/items/expiring')}
-          >
-            <FontAwesome
-              name={'exclamation-circle' as IconName}
-              size={24}
-              color={theme.warningColor}
-              style={styles.statIcon}
-            />
-            <Text style={styles.statLabel}>Expiring Soon</Text>
-            <Text style={styles.statValue}>5</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.statCard}
-            onPress={() => router.push('/items/expired')}
-          >
-            <FontAwesome
-              name={'times-circle' as IconName}
-              size={24}
-              color={theme.dangerColor}
-              style={styles.statIcon}
-            />
-            <Text style={styles.statLabel}>Expired</Text>
-            <Text style={styles.statValue}>3</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.sectionTitle}>Storage Locations</Text>
-        <View style={styles.locationGrid}>
-          {sampleLocations.map((location) => (
-            <TouchableOpacity
-              key={location.id}
-              style={styles.locationCard}
-              onPress={() => router.push(`/locations/${location.id}`)}
-            >
-              <View style={styles.locationIcon}>
-                <FontAwesome name={location.icon} size={20} color={theme.primaryColor} />
-              </View>
-              <Text style={styles.locationName}>{location.name}</Text>
-              <Text style={styles.locationCount}>
-                {location.itemCount} items
+      ) : (
+        <ScrollView style={styles.content}>
+          <View style={styles.welcomeBanner}>
+            <View style={styles.welcomeText}>
+              <Text style={styles.welcomeTitle}>Welcome Back!</Text>
+              <Text style={styles.welcomeSubtitle}>
+                {dashboardCounts.expiring_soon} {dashboardCounts.expiring_soon === 1 ? 'item' : 'items'} expiring
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.categoryList}>
-          <View style={styles.categoryHeader}>
-            <Text style={styles.sectionTitle}>Categories</Text>
+            </View>
+            <View style={styles.bannerIcon}>
+              <FontAwesome name={'cutlery' as IconName} size={24} color="#FFFFFF" />
+            </View>
           </View>
-          <View style={styles.categoriesGrid}>
-            {sampleCategories.map((category) => (
+
+          <View style={styles.quickStats}>
+            <TouchableOpacity 
+              style={styles.statCard}
+              onPress={() => router.push('/items/fresh')}
+            >
+              <FontAwesome
+                name={'check-circle' as IconName}
+                size={24}
+                color={theme.successColor}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statLabel}>Fresh</Text>
+              <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.statCard}
+              onPress={() => router.push('/items/expiring')}
+            >
+              <FontAwesome
+                name={'exclamation-circle' as IconName}
+                size={24}
+                color={theme.warningColor}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statLabel}>Expiring</Text>
+              <Text style={styles.statValue}>{dashboardCounts.expiring_soon}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.statCard}
+              onPress={() => router.push('/items/expired')}
+            >
+              <FontAwesome
+                name={'times-circle' as IconName}
+                size={24}
+                color={theme.dangerColor}
+                style={styles.statIcon}
+              />
+              <Text style={styles.statLabel}>Expired</Text>
+              <Text style={styles.statValue}>{dashboardCounts.expired}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.sectionTitle}>Storage Locations</Text>
+          <View style={styles.locationGrid}>
+            {locations.map((location) => (
               <TouchableOpacity
-                key={category.id}
-                style={styles.categoryCard}
-                onPress={() => router.push(`/categories/${category.id}`)}
+                key={location.id}
+                style={styles.locationCard}
+                onPress={() => router.push(`/locations/${location.id}`)}
               >
-                <View style={styles.categoryIcon}>
-                  <FontAwesome name={category.icon} size={20} color={theme.primaryColor} />
+                <View style={styles.locationIcon}>
+                  <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />
                 </View>
-                <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
-                  {category.itemCount} items
+                  {location.id ? getLocationItemCounts()[location.id] || 0 : 0} items
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-        </View>
-      </ScrollView>
+
+          <View style={styles.categoryList}>
+            <View style={styles.categoryHeader}>
+              <Text style={styles.sectionTitle}>Categories</Text>
+            </View>
+            <View style={styles.categoriesGrid}>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={styles.categoryCard}
+                  onPress={() => router.push(`/categories/${category.id}`)}
+                >
+                  <View style={styles.categoryIcon}>
+                    <FontAwesome name={category.icon as IconName} size={20} color={theme.primaryColor} />
+                  </View>
+                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.locationCount}>
+                    {category.id ? getCategoryItemCounts()[category.id] || 0 : 0} items
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      )}
 
       <BottomNav />
 
