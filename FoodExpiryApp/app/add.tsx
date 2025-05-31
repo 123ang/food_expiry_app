@@ -53,18 +53,6 @@ export default function AddScreen() {
     }
 
     try {
-      console.log('Creating food item:', {
-        name: itemName.trim(),
-        quantity: parseInt(quantity) || 1,
-        category_id: selectedCategory,
-        location_id: selectedLocation,
-        expiry_date: expiryDate.toISOString().split('T')[0],
-        reminder_days: parseInt(reminderDays) || 0,
-        notes: notes.trim(),
-        created_at: getCurrentDate(),
-        image_uri: null,
-      });
-
       const id = await createFoodItem({
         name: itemName.trim(),
         quantity: parseInt(quantity) || 1,
@@ -76,8 +64,6 @@ export default function AddScreen() {
         created_at: getCurrentDate(),
         image_uri: null,
       });
-
-      console.log('Food item created with ID:', id);
       
       // Refresh all data to ensure consistency across the app
       await refreshAll();

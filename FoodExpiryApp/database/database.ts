@@ -112,54 +112,12 @@ export const initDatabase = () => {
             return false;
           }
         );
-
-        // Insert default food items if they don't exist
-        const today = getCurrentDate();
-        const tomorrow = formatDate(new Date(Date.now() + 86400000)); // +1 day
-        const nextWeek = formatDate(new Date(Date.now() + 7 * 86400000)); // +7 days
-        const lastWeek = formatDate(new Date(Date.now() - 7 * 86400000)); // -7 days
-        const nextMonth = formatDate(new Date(Date.now() + 30 * 86400000)); // +30 days
-
-        tx.executeSql(
-          `INSERT OR IGNORE INTO food_items (
-            id, name, quantity, category_id, location_id, expiry_date, reminder_days, notes, created_at
-          ) VALUES 
-          (1, 'Milk', 2, 3, 1, ?, 2, 'Fresh whole milk - 1L bottles', ?),
-          (2, 'Chicken Breast', 4, 4, 2, ?, 3, 'Raw chicken breast - 500g packs', ?),
-          (3, 'Apples', 6, 2, 1, ?, 2, 'Red apples - Fuji variety', ?),
-          (4, 'Bread', 1, 8, 3, ?, 1, 'Whole wheat bread loaf', ?),
-          (5, 'Salmon Fillet', 3, 7, 2, ?, 2, 'Fresh salmon - 200g portions', ?),
-          (6, 'Yogurt', 4, 3, 1, ?, 2, 'Greek yogurt - 500g containers', ?),
-          (7, 'Carrots', 8, 1, 1, ?, 3, 'Baby carrots pack', ?),
-          (8, 'Chocolate Cookies', 2, 5, 3, ?, 5, 'Homemade cookies - 12 per pack', ?),
-          (9, 'Ice Cream', 1, 6, 2, ?, 7, 'Vanilla flavor - 1L tub', ?),
-          (10, 'Expired Cheese', 1, 3, 1, ?, 2, 'Cheddar cheese block - 500g', ?);`,
-          [
-            tomorrow, today,           // Milk
-            nextWeek, today,          // Chicken
-            nextWeek, today,          // Apples
-            tomorrow, today,          // Bread
-            nextMonth, today,         // Salmon
-            nextWeek, today,          // Yogurt
-            nextWeek, today,          // Carrots
-            nextMonth, today,         // Cookies
-            nextMonth, today,         // Ice Cream
-            lastWeek, today,          // Expired Cheese
-          ],
-          () => {},
-          (_, error): boolean => {
-            console.error('Error inserting default food items:', error);
-            reject(error);
-            return false;
-          }
-        );
       },
       (error) => {
         console.error('Transaction error:', error);
         reject(error);
       },
       () => {
-        console.log('Database initialized successfully');
         resolve();
       }
     );
