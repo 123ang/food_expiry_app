@@ -7,64 +7,62 @@ import { useRouter, usePathname } from 'expo-router';
 type IconName = keyof typeof FontAwesome.glyphMap;
 
 export function BottomNav() {
-  const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   const styles = StyleSheet.create({
     container: {
       backgroundColor: theme.cardBackground,
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-      paddingTop: 16,
       borderTopWidth: 1,
       borderTopColor: theme.borderColor,
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+      paddingTop: 12,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 8,
     },
     navItem: {
       alignItems: 'center',
-      minWidth: 64,
+      flex: 1,
     },
     navItemActive: {
-      transform: [{ scale: 1.1 }],
+      color: theme.primaryColor,
+    },
+    addButton: {
+      backgroundColor: theme.primaryColor,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: -28,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 8,
     },
     navText: {
-      color: theme.textSecondary,
       fontSize: 12,
+      color: theme.textSecondary,
       marginTop: 4,
     },
     navTextActive: {
       color: theme.primaryColor,
-      fontWeight: '500',
-    },
-    addButton: {
-      backgroundColor: theme.primaryColor,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginTop: -32,
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.shadowColor,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-        },
-        android: {
-          elevation: 5,
-        },
-      }),
     },
   });
 
   const navItems = [
-    { name: 'Home', icon: 'home' as IconName, path: '/' },
-    { name: 'List', icon: 'list' as IconName, path: '/list' },
-    { name: 'Add', icon: 'plus' as IconName, path: '/add' },
-    { name: 'Calendar', icon: 'calendar' as IconName, path: '/calendar' },
-    { name: 'Settings', icon: 'cog' as IconName, path: '/settings' },
+    { name: 'Home', icon: 'home', path: '/' },
+    { name: 'List', icon: 'list', path: '/list' },
+    { name: 'Add', icon: 'plus', path: '/add' },
+    { name: 'Calendar', icon: 'calendar', path: '/calendar' },
+    { name: 'Settings', icon: 'cog', path: '/settings' },
   ];
 
   return (
@@ -81,7 +79,7 @@ export function BottomNav() {
               onPress={() => router.push(item.path)}
             >
               <View style={styles.addButton}>
-                <FontAwesome name={item.icon} size={24} color="#FFFFFF" />
+                <FontAwesome name={item.icon as IconName} size={24} color="#FFFFFF" />
               </View>
             </TouchableOpacity>
           );
@@ -90,12 +88,12 @@ export function BottomNav() {
         return (
           <TouchableOpacity
             key={item.name}
-            style={[styles.navItem, isActive && styles.navItemActive]}
+            style={styles.navItem}
             onPress={() => router.push(item.path)}
           >
             <FontAwesome
-              name={item.icon}
-              size={24}
+              name={item.icon as IconName}
+              size={20}
               color={isActive ? theme.primaryColor : theme.textSecondary}
             />
             <Text style={[styles.navText, isActive && styles.navTextActive]}>

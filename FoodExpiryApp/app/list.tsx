@@ -8,10 +8,13 @@ import {
   Platform,
   Image,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useDatabase } from '../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
+import { useRouter } from 'expo-router';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -65,6 +68,8 @@ const sampleItems = [
 
 export default function ListScreen() {
   const { theme } = useTheme();
+  const { deleteFoodItem } = useDatabase();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'expiry'>('expiry');
   const [filterStatus, setFilterStatus] = useState<'all' | 'expiring' | 'fresh' | 'expired'>('all');
@@ -83,18 +88,23 @@ export default function ListScreen() {
     searchBar: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.backgroundColor,
-      borderRadius: 8,
-      paddingHorizontal: 12,
+      backgroundColor: theme.cardBackground,
+      borderRadius: theme.borderRadius,
+      padding: 12,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: theme.borderColor,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     searchInput: {
       flex: 1,
-      height: 40,
-      color: theme.textColor,
       marginLeft: 8,
+      fontSize: 16,
+      color: theme.textColor,
     },
     filterContainer: {
       flexDirection: 'row',
@@ -104,7 +114,7 @@ export default function ListScreen() {
     filterButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.backgroundColor,
+      backgroundColor: theme.cardBackground,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 16,
@@ -131,6 +141,7 @@ export default function ListScreen() {
       backgroundColor: theme.cardBackground,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
+      alignItems: 'center',
     },
     foodImage: {
       width: 60,
@@ -187,6 +198,31 @@ export default function ListScreen() {
     fresh: {
       color: theme.successColor,
     },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: theme.cardBackground,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    sectionTitle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    sectionTitleText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginLeft: 8,
+    },
+    sectionCount: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      marginLeft: 8,
+    },
   });
 
   const filteredItems = sampleItems
@@ -237,10 +273,29 @@ export default function ListScreen() {
         </View>
       </View>
       <View style={styles.foodActions}>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => router.push(`/edit/${item.id}`)}
+        >
           <FontAwesome name={'pencil' as IconName} size={14} color={theme.primaryColor} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => {
+            Alert.alert(
+              'Delete Item',
+              `Are you sure you want to delete "${item.name}"?`,
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => deleteFoodItem(item.id),
+                },
+              ]
+            );
+          }}
+        >
           <FontAwesome name={'trash' as IconName} size={14} color={theme.dangerColor} />
         </TouchableOpacity>
       </View>
@@ -251,7 +306,7 @@ export default function ListScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.searchBar}>
-          <FontAwesome name={'search' as IconName} size={16} color={theme.textSecondary} />
+          <FontAwesome name="search" size={16} color={theme.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search food items..."
@@ -267,7 +322,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('all')}
             >
               <FontAwesome 
-                name={'list' as IconName} 
+                name="list" 
                 size={14} 
                 color={filterStatus === 'all' ? '#FFFFFF' : theme.textSecondary} 
               />
@@ -286,7 +341,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('fresh')}
             >
               <FontAwesome 
-                name={'check-circle' as IconName} 
+                name="check-circle" 
                 size={14} 
                 color={filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor} 
               />
@@ -305,7 +360,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('expiring')}
             >
               <FontAwesome 
-                name={'exclamation-circle' as IconName} 
+                name="exclamation-circle" 
                 size={14} 
                 color={filterStatus === 'expiring' ? '#FFFFFF' : theme.warningColor} 
               />
@@ -324,7 +379,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('expired')}
             >
               <FontAwesome 
-                name={'times-circle' as IconName} 
+                name="times-circle" 
                 size={14} 
                 color={filterStatus === 'expired' ? '#FFFFFF' : theme.dangerColor} 
               />
@@ -343,7 +398,7 @@ export default function ListScreen() {
             onPress={() => setSortBy(sortBy === 'name' ? 'expiry' : 'name')}
           >
             <FontAwesome 
-              name={'sort' as IconName} 
+              name="sort" 
               size={14} 
               color={theme.textSecondary} 
             />
@@ -355,6 +410,33 @@ export default function ListScreen() {
       </View>
 
       <ScrollView style={styles.content}>
+        {filterStatus !== 'all' && (
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitle}>
+              <FontAwesome 
+                name={
+                  filterStatus === 'fresh' ? 'check-circle' :
+                  filterStatus === 'expiring' ? 'exclamation-circle' :
+                  'times-circle'
+                }
+                size={20}
+                color={
+                  filterStatus === 'fresh' ? theme.successColor :
+                  filterStatus === 'expiring' ? theme.warningColor :
+                  theme.dangerColor
+                }
+              />
+              <Text style={styles.sectionTitleText}>
+                {filterStatus === 'fresh' ? 'Fresh Items' :
+                 filterStatus === 'expiring' ? 'Expiring Soon' :
+                 'Expired Items'}
+              </Text>
+              <Text style={styles.sectionCount}>
+                {filteredItems.length}
+              </Text>
+            </View>
+          </View>
+        )}
         {filteredItems.map(renderFoodItem)}
       </ScrollView>
 

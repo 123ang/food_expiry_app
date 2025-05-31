@@ -3,13 +3,15 @@ export interface Theme {
   cardBackground: string;
   textColor: string;
   textSecondary: string;
-  borderColor: string;
   primaryColor: string;
   secondaryColor: string;
-  dangerColor: string;
-  warningColor: string;
-  successColor: string;
+  tertiaryColor: string;
+  borderColor: string;
   shadowColor: string;
+  successColor: string;
+  warningColor: string;
+  dangerColor: string;
+  borderRadius: number;
 }
 
 export const lightTheme: Theme = {
@@ -17,13 +19,15 @@ export const lightTheme: Theme = {
   cardBackground: '#FFFFFF',
   textColor: '#333333',
   textSecondary: '#666666',
-  borderColor: '#E0E0E0',
   primaryColor: '#4CAF50',
   secondaryColor: '#FFA726',
-  dangerColor: '#FF5252',
-  warningColor: '#FFA726',
-  successColor: '#4CAF50',
+  tertiaryColor: '#8D6E63',
+  borderColor: '#E0E0E0',
   shadowColor: 'rgba(0, 0, 0, 0.08)',
+  successColor: '#4CAF50',
+  warningColor: '#FFA726',
+  dangerColor: '#FF5252',
+  borderRadius: 16,
 };
 
 export const darkTheme: Theme = {
@@ -31,11 +35,13 @@ export const darkTheme: Theme = {
   cardBackground: '#2D2F34',
   textColor: '#FFFFFF',
   textSecondary: '#A0A0A0',
-  borderColor: 'rgba(255, 255, 255, 0.1)',
   primaryColor: '#4CAF50',
   secondaryColor: '#FFA726',
-  dangerColor: '#FF5252',
-  warningColor: '#FFA726',
-  successColor: '#4CAF50',
+  tertiaryColor: '#8D6E63',
+  borderColor: 'rgba(255, 255, 255, 0.1)',
   shadowColor: 'rgba(0, 0, 0, 0.2)',
+  successColor: '#4CAF50',
+  warningColor: '#FFA726',
+  dangerColor: '#FF5252',
+  borderRadius: 16,
 }; 

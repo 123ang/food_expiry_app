@@ -11,7 +11,7 @@ export interface Location {
 }
 
 export interface FoodItem {
-  id: number;
+  id?: number;
   name: string;
   quantity: number;
   category_id: number | null;

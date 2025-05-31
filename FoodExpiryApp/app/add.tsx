@@ -41,7 +41,7 @@ const LOCATIONS = [
 export default function AddScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { createFoodItem } = useDatabase();
+  const { createFoodItem, refreshFoodItems } = useDatabase();
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -63,7 +63,7 @@ export default function AddScreen() {
     }
 
     try {
-      await createFoodItem({
+      console.log('Creating food item:', {
         name: itemName.trim(),
         quantity: parseInt(quantity) || 1,
         category_id: selectedCategory,
@@ -72,9 +72,26 @@ export default function AddScreen() {
         reminder_days: parseInt(reminderDays) || 0,
         notes: notes.trim(),
         created_at: getCurrentDate(),
+        image_uri: null,
       });
+
+      const id = await createFoodItem({
+        name: itemName.trim(),
+        quantity: parseInt(quantity) || 1,
+        category_id: selectedCategory,
+        location_id: selectedLocation,
+        expiry_date: expiryDate.toISOString().split('T')[0],
+        reminder_days: parseInt(reminderDays) || 0,
+        notes: notes.trim(),
+        created_at: getCurrentDate(),
+        image_uri: null,
+      });
+
+      console.log('Food item created with ID:', id);
+      await refreshFoodItems();
       router.back();
     } catch (error) {
+      console.error('Error creating food item:', error);
       Alert.alert('Error', 'Failed to create item');
     }
   };
@@ -117,10 +134,15 @@ export default function AddScreen() {
     input: {
       backgroundColor: theme.cardBackground,
       padding: 12,
-      borderRadius: 8,
+      borderRadius: theme.borderRadius,
       color: theme.textColor,
       borderWidth: 1,
       borderColor: theme.borderColor,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     optionsGrid: {
       flexDirection: 'row',
@@ -131,21 +153,26 @@ export default function AddScreen() {
     optionCard: {
       width: '48%',
       backgroundColor: theme.cardBackground,
-      borderRadius: 8,
+      borderRadius: theme.borderRadius,
       padding: 16,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     optionCardSelected: {
       borderColor: theme.primaryColor,
-      backgroundColor: theme.primaryColor + '10',
+      backgroundColor: `${theme.primaryColor}10`,
     },
     optionIcon: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.primaryColor + '20',
+      backgroundColor: `${theme.primaryColor}20`,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
@@ -157,11 +184,16 @@ export default function AddScreen() {
     },
     datePickerContainer: {
       backgroundColor: theme.cardBackground,
-      borderRadius: 8,
+      borderRadius: theme.borderRadius,
       padding: 16,
       borderWidth: 1,
       borderColor: theme.borderColor,
       marginBottom: 24,
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     notesInput: {
       height: 100,
@@ -171,8 +203,13 @@ export default function AddScreen() {
       backgroundColor: theme.primaryColor,
       paddingVertical: 8,
       paddingHorizontal: 16,
-      borderRadius: 8,
+      borderRadius: theme.borderRadius / 2,
       alignItems: 'center',
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     saveButtonText: {
       color: '#FFFFFF',
@@ -181,6 +218,31 @@ export default function AddScreen() {
     },
     backButton: {
       padding: 8,
+    },
+    photoUpload: {
+      width: '100%',
+      height: 200,
+      backgroundColor: theme.cardBackground,
+      borderRadius: theme.borderRadius,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      borderStyle: 'dashed',
+    },
+    photoUploadIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: `${theme.primaryColor}20`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    photoUploadText: {
+      color: theme.textSecondary,
+      fontSize: 14,
     },
   });
 
@@ -199,6 +261,13 @@ export default function AddScreen() {
         </View>
 
         <ScrollView style={styles.content}>
+          <TouchableOpacity style={styles.photoUpload}>
+            <View style={styles.photoUploadIcon}>
+              <FontAwesome name="camera" size={24} color={theme.primaryColor} />
+            </View>
+            <Text style={styles.photoUploadText}>Add Photo</Text>
+          </TouchableOpacity>
+
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Item Name</Text>
             <TextInput
