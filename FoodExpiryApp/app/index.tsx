@@ -22,6 +22,8 @@ import { FoodItem } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
 import { getSafeIconName } from '../utils/iconUtils';
+import { CategoryIcon } from '../components/CategoryIcon';
+import { LocationIcon } from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -712,7 +714,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push(`/locations/${location.id}`)}
               >
                 <View style={styles.locationIcon}>
-                  <FontAwesome name={getSafeIconName(location.icon, 'home')} size={20} color={theme.primaryColor} />
+                  <LocationIcon iconName={location.icon} size={40} backgroundColor="rgba(76, 175, 80, 0.1)" borderRadius={20} />
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
@@ -734,7 +736,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push(`/categories/${category.id}`)}
                 >
                   <View style={styles.categoryIcon}>
-                    <FontAwesome name={getSafeIconName(category.icon, 'circle')} size={20} color={theme.primaryColor} />
+                    <CategoryIcon iconName={category.icon} size={40} backgroundColor="rgba(76, 175, 80, 0.1)" borderRadius={20} />
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>
