@@ -16,6 +16,7 @@ import { BottomNav } from '../../../components/BottomNav';
 import { FoodItemWithDetails } from '../../../database/models';
 import CategoryIcon from '../../../components/CategoryIcon';
 import LocationIcon from '../../../components/LocationIcon';
+import { useLanguage } from '../../../context/LanguageContext';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -107,16 +108,26 @@ const FoodItemCard: React.FC<{
 
 export default function ItemStatusScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { status } = useLocalSearchParams();
-  const { getByStatus, refreshAll } = useDatabase();
+  const { getByStatus, refreshAll, foodItems } = useDatabase();
   
   const [currentItems, setCurrentItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Ensure status is a string and map to our expected values
+  const currentStatus = Array.isArray(status) ? status[0] : status || 'fresh';
   
-  const currentStatus = typeof status === 'string' ? status : Array.isArray(status) ? status[0] : 'fresh';
-  const statusData = statusInfo[currentStatus as keyof typeof statusInfo] || statusInfo.fresh;
+  // Map status to display information
+  const statusConfig = {
+    fresh: { title: 'Fresh Items', color: '#4CAF50', icon: '✅' },
+    expiring: { title: 'Expiring Soon', color: '#FF9800', icon: '⏰' },
+    expired: { title: 'Expired Items', color: '#F44336', icon: '⚠️' }
+  };
+  
+  const statusData = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.fresh;
 
   console.log('ItemStatusScreen - currentStatus:', currentStatus);
   console.log('ItemStatusScreen - statusData:', statusData);
@@ -137,7 +148,15 @@ export default function ItemStatusScreen() {
         setIsLoading(true);
         setError(null);
         try {
-          await refreshAll();
+          // Try to use cached data first if available
+          const hasData = foodItems && foodItems.length > 0;
+          if (!hasData) {
+            console.log('Items status: No cached data, refreshing...');
+            await refreshAll();
+          } else {
+            console.log('Items status: Using cached data');
+          }
+          
           // Map the status parameter to the database enum
           let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
           if (currentStatus === 'expired') {
@@ -161,7 +180,7 @@ export default function ItemStatusScreen() {
         }
       };
       loadItems();
-    }, [currentStatus])
+    }, [currentStatus, foodItems?.length]) // Only refresh when status changes or no cached data
   );
 
   const styles = StyleSheet.create({
@@ -320,7 +339,7 @@ export default function ItemStatusScreen() {
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={[styles.title, { color: statusData.color }]}>{statusData.icon}</Text>
-          <Text style={styles.title}>{statusData.name}</Text>
+          <Text style={styles.title}>{statusData.title}</Text>
         </View>
       </View>
       
@@ -382,7 +401,7 @@ export default function ItemStatusScreen() {
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ fontSize: 48, color: theme.textSecondary }}>📦</Text>
             <Text style={{ color: theme.textSecondary, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
-              No {statusData?.name?.toLowerCase() || 'items'} found
+              No {statusData?.title?.toLowerCase() || 'items'} found
             </Text>
           </View>
         ) : (

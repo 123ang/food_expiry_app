@@ -27,7 +27,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 export default function ListScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable } = useDatabase();
+  const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable, dataVersion } = useDatabase();
   const router = useRouter();
   
   // Ensure we have a theme before rendering
@@ -45,6 +45,7 @@ export default function ListScreen() {
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastDataVersion, setLastDataVersion] = useState(0);
 
   // Default colors for fallback
   const defaultColors = {
@@ -179,24 +180,39 @@ export default function ListScreen() {
   // Listen for navigation events to refresh after edit
   useFocusEffect(
     React.useCallback(() => {
-      // Only refresh if this is a return from another screen (not initial load)
-      if (!isLoading) {
-        const refreshAfterEdit = async () => {
-          setIsRefreshing(true);
+      console.log('List screen focused, dataVersion:', dataVersion, 'lastDataVersion:', lastDataVersion);
+      
+      // Check if data version has changed (indicating edits/deletes) or if we have no data
+      const dataHasChanged = dataVersion !== lastDataVersion;
+      const hasNoData = !foodItems || foodItems.length === 0;
+      
+      if (!isLoading && (dataHasChanged || hasNoData)) {
+        console.log('List: Data has changed or no data available, refreshing...');
+        setLastDataVersion(dataVersion);
+        
+        const refreshAfterChange = async () => {
           try {
-            console.log('Screen focused - refreshing data after edit');
-            await refreshAll(); // Force database refresh
-            await loadItems(); // Reload items with fresh data
+            // Force refresh all data from database
+            await refreshAll();
+            console.log('List: Database refreshed successfully');
+            
+            // Reload items with fresh data
+            await loadItems();
+            console.log('List: Items reloaded successfully');
           } catch (error) {
-            console.error('Error refreshing after edit:', error);
-          } finally {
-            setIsRefreshing(false);
+            console.error('List: Error refreshing after change:', error);
           }
         };
         
-        refreshAfterEdit();
+        refreshAfterChange();
+      } else {
+        console.log('List: No changes detected, skipping refresh');
+        // Update lastDataVersion even if we don't refresh to avoid false positives
+        if (dataVersion !== lastDataVersion) {
+          setLastDataVersion(dataVersion);
+        }
       }
-    }, [isLoading])
+    }, [dataVersion, isLoading, foodItems?.length]) // Depend on dataVersion to detect changes
   );
 
   const styles = StyleSheet.create({

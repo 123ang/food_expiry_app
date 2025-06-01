@@ -18,6 +18,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../components/BottomNav';
 import { Category, Location } from '../database/models';
+import CategoryIcon from '../components/CategoryIcon';
+import LocationIcon from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -26,10 +28,11 @@ type SettingItem = {
   icon: IconName;
   title: string;
   description: string;
-  type: 'switch' | 'language' | 'navigation';
+  type: 'switch' | 'language' | 'navigation' | 'expandable';
   value?: boolean;
   onValueChange?: (value: boolean) => void;
   onPress?: () => void;
+  expandedContent?: React.ReactNode;
 };
 
 type EditModalProps = {
@@ -199,14 +202,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   closeButton: {
     padding: 8,
-    borderRadius: 20,
-    backgroundColor: `${theme.textSecondary}20`,
   },
   languageOption: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: theme.borderColor,
   },
@@ -216,6 +218,64 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   languageSelected: {
     color: theme.primaryColor,
+    fontWeight: '600',
+  },
+  expandableContent: {
+    backgroundColor: theme.backgroundColor,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  managementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.cardBackground,
+    marginBottom: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+  },
+  managementItemIcon: {
+    marginRight: 12,
+  },
+  managementItemText: {
+    flex: 1,
+    fontSize: 16,
+    color: theme.textColor,
+  },
+  managementItemActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.backgroundColor,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addNewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.primaryColor,
+    marginTop: 8,
+    borderRadius: 8,
+  },
+  addNewButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  expandIcon: {
+    marginLeft: 8,
   },
   customHeader: {
     backgroundColor: theme.cardBackground,

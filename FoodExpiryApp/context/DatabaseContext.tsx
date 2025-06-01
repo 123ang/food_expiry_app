@@ -83,6 +83,9 @@ interface DatabaseContextType {
     dashboardCounts: { cached: boolean; age: number };
   };
   isDataAvailable: () => boolean;
+
+  // Data version tracking for detecting changes
+  dataVersion: number;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | undefined>(undefined);
@@ -105,9 +108,6 @@ const calculateDaysUntilExpiry = (expiryDate: string) => {
 };
 
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [foodItems, setFoodItems] = useState<FoodItemWithDetails[]>([]);
@@ -115,10 +115,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     total: 0,
     expiring_soon: 0,
     expired: 0,
-    fresh: 0
+    fresh: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [dataVersion, setDataVersion] = useState(1);
 
-  // Individual cache refs for each data type
+  // Cache refs with proper typing
   const categoriesCache = useRef<CacheEntry<Category[]> | null>(null);
   const locationsCache = useRef<CacheEntry<Location[]> | null>(null);
   const foodItemsCache = useRef<CacheEntry<FoodItemWithDetails[]> | null>(null);
@@ -128,6 +132,12 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     expired: number;
     fresh: number;
   }> | null>(null);
+
+  // Function to increment data version when data changes
+  const incrementDataVersion = () => {
+    setDataVersion(prev => prev + 1);
+    console.log('Data version incremented to:', dataVersion + 1);
+  };
 
   // Cache utility functions
   const isCacheValid = (cacheRef: React.MutableRefObject<CacheEntry<any> | null>): boolean => {
@@ -508,6 +518,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Refresh data
       await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
+      
+      // Increment data version to notify screens of changes
+      incrementDataVersion();
+      
       return id;
     } catch (err) {
       console.error('Error in createFoodItem:', err);
@@ -530,6 +544,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         refreshDashboardCounts()
       ]);
       
+      // Increment data version to notify screens of changes
+      incrementDataVersion();
+      
       console.log('Food item updated and data refreshed');
     } catch (error) {
       console.error('Error updating food item:', error);
@@ -545,6 +562,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     // Refresh data
     await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
+    
+    // Increment data version to notify screens of changes
+    incrementDataVersion();
   };
 
   // Add getByStatus function with caching
@@ -652,7 +672,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const hasCachedFoodItems = isCacheValid(foodItemsCache) || foodItems.length > 0;
       
       return hasCachedCategories && hasCachedLocations && hasCachedFoodItems;
-    }
+    },
+    dataVersion: dataVersion
   };
 
   return (

@@ -60,11 +60,12 @@ export default function DashboardScreen() {
       const loadData = async () => {
         // Check if data is already available from cache
         if (isDataAvailable()) {
-          console.log('Data available from cache, skipping loading state');
+          console.log('Dashboard: Data available from cache, skipping loading state');
           setIsLoading(false);
           return;
         }
         
+        console.log('Dashboard: No cached data available, refreshing...');
         setIsLoading(true);
         try {
           await refreshAll();
@@ -75,7 +76,7 @@ export default function DashboardScreen() {
         }
       };
       loadData();
-    }, [isDataAvailable, refreshAll])
+    }, [isDataAvailable]) // Only depend on data availability function
   );
 
   // Calculate location item counts

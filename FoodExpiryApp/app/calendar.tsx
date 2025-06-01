@@ -25,11 +25,12 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 export default function CalendarScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { foodItems, refreshAll } = useDatabase();
+  const { foodItems, refreshAll, dataVersion } = useDatabase();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
+  const [lastDataVersion, setLastDataVersion] = useState(0);
   const windowHeight = Dimensions.get('window').height;
   const isWeb = Platform.OS === 'web';
 
@@ -47,12 +48,35 @@ export default function CalendarScreen() {
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('Calendar screen focused, refreshing data...');
-      refreshAll();
-      // Force update filtered items
-      const items = getItemsForDate(selectedDate);
-      setFilteredItems(items);
-    }, [selectedDate, refreshAll])
+      console.log('Calendar screen focused, checking if refresh needed...');
+      console.log('Calendar dataVersion:', dataVersion, 'lastDataVersion:', lastDataVersion);
+      
+      // Check if data version has changed or if we have no data
+      const dataHasChanged = dataVersion !== lastDataVersion;
+      const hasNoData = !foodItems || foodItems.length === 0;
+      
+      if (dataHasChanged || hasNoData) {
+        console.log('Calendar: Data has changed or no data available, refreshing...');
+        setLastDataVersion(dataVersion);
+        
+        const refreshData = async () => {
+          try {
+            await refreshAll();
+            console.log('Calendar: Database refreshed successfully');
+          } catch (error) {
+            console.error('Calendar: Error refreshing data:', error);
+          }
+        };
+        
+        refreshData();
+      } else {
+        console.log('Calendar: No changes detected, using existing data');
+        // Update lastDataVersion to avoid false positives
+        if (dataVersion !== lastDataVersion) {
+          setLastDataVersion(dataVersion);
+        }
+      }
+    }, [dataVersion, foodItems?.length]) // Depend on dataVersion to detect changes
   );
 
   // Update filtered items when selected date or food items change

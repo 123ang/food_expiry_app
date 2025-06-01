@@ -102,8 +102,14 @@ export default function LocationDetailScreen() {
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      refreshAll();
-    }, [])
+      // Only refresh if we don't have data available
+      if (!locations || locations.length === 0 || !foodItems || foodItems.length === 0) {
+        console.log('Location detail: No cached data, refreshing...');
+        refreshAll();
+      } else {
+        console.log('Location detail: Using cached data');
+      }
+    }, [locations?.length, foodItems?.length])
   );
 
   const styles = StyleSheet.create({
