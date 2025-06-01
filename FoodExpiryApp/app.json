@@ -1,31 +1,31 @@
 {
   "expo": {
-    "name": "FoodExpiryApp",
-    "slug": "food-expiry-app",
+    "name": "Expiry Alert",
+    "slug": "expiry-alert-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "foodexpiryapp",
+    "scheme": "expiryalert",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#228B22"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foodexpiry.app",
+      "bundleIdentifier": "com.expiryalert.app",
       "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#228B22"
       },
-      "package": "com.foodexpiry.app"
+      "package": "com.expiryalert.app"
     },
     "web": {
       "favicon": "./assets/favicon.png",
