@@ -25,7 +25,17 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#228B22"
       },
-      "package": "com.expiryalert.app"
+      "package": "com.expiryalert.app",
+      "versionCode": 1,
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "permissions": [
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -34,6 +44,25 @@
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true
-    }
+    },
+    "plugins": [
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cb2a08f8-33c5-4312-8a50-44c6e71f0778"
+      }
+    },
+    "owner": "123ang"
   }
 }
