@@ -320,12 +320,13 @@ export default function DashboardScreen() {
     },
     locationIcon: {
       backgroundColor: 'rgba(76, 175, 80, 0.1)',
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
+      overflow: 'hidden',
     },
     locationName: {
       color: theme.textColor,
@@ -525,12 +526,13 @@ export default function DashboardScreen() {
     },
     categoryIcon: {
       backgroundColor: 'rgba(76, 175, 80, 0.1)',
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 60,
+      height: 60,
+      borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
+      overflow: 'hidden',
     },
     categoryName: {
       color: theme.textColor,
@@ -749,7 +751,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push(`/locations/${location.id}`)}
               >
                 <View style={styles.locationIcon}>
-                  <LocationIcon iconName={location.icon} size={40} />
+                  <LocationIcon iconName={location.icon} size={32} />
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
@@ -771,7 +773,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push(`/categories/${category.id}`)}
                 >
                   <View style={styles.categoryIcon}>
-                    <CategoryIcon iconName={category.icon} size={40} />
+                    <CategoryIcon iconName={category.icon} size={32} />
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>

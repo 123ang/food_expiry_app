@@ -6,10 +6,10 @@ interface CategoryIconProps {
   size?: number;
 }
 
-// Category emoji mapping with more variety
+// Category emoji mapping
 const CATEGORY_EMOJIS: { [key: string]: string } = {
   apple: '🍎',
-  dairy: '🥛', 
+  dairy: '🥛',
   fruits: '🍇',
   vegetables: '🥕',
   meat: '🥩',
@@ -18,13 +18,14 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   snacks: '🍿',
   frozen: '🧊',
   canned: '🥫',
-  // Alternative mappings
-  fruit: '🍊',
-  vegetable: '🥬',
-  grains: '🌾',
   seafood: '🐟',
   spices: '🌶️',
   dessert: '🍰',
+  grains: '🌾',
+  // Additional mappings for existing data
+  vegetable: '🥕', // Map singular form
+  fruit: '🍇',     // Map singular form
+  beverage: '🥤',  // Map singular form
   default: '🍎',
 };
 
@@ -33,6 +34,9 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
   let emoji = CATEGORY_EMOJIS.default;
   
   if (iconName) {
+    // Debug logging
+    console.log('CategoryIcon received iconName:', iconName);
+    
     // Try exact match first
     if (CATEGORY_EMOJIS[iconName]) {
       emoji = CATEGORY_EMOJIS[iconName];
@@ -60,6 +64,8 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
     else if (iconName.toLowerCase().includes('drink') || iconName.toLowerCase().includes('beverage')) {
       emoji = '🥤';
     }
+    
+    console.log('CategoryIcon final emoji:', emoji, 'for iconName:', iconName);
   }
   
   return (

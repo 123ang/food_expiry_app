@@ -21,9 +21,41 @@ import { BottomNav } from '../components/BottomNav';
 import { Category, Location } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
-import IconSelector, { CATEGORY_ICONS, LOCATION_ICONS } from '../components/IconSelector';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
+
+// Category emojis for selection
+const CATEGORY_EMOJIS = [
+  { key: 'apple', emoji: '🍎', label: 'Apple' },
+  { key: 'dairy', emoji: '🥛', label: 'Dairy' },
+  { key: 'fruits', emoji: '🍇', label: 'Fruits' },
+  { key: 'vegetables', emoji: '🥕', label: 'Vegetables' },
+  { key: 'meat', emoji: '🥩', label: 'Meat' },
+  { key: 'bread', emoji: '🍞', label: 'Bread' },
+  { key: 'beverages', emoji: '🥤', label: 'Beverages' },
+  { key: 'snacks', emoji: '🍿', label: 'Snacks' },
+  { key: 'frozen', emoji: '🧊', label: 'Frozen' },
+  { key: 'canned', emoji: '🥫', label: 'Canned' },
+  { key: 'seafood', emoji: '🐟', label: 'Seafood' },
+  { key: 'spices', emoji: '🌶️', label: 'Spices' },
+  { key: 'dessert', emoji: '🍰', label: 'Dessert' },
+  { key: 'grains', emoji: '🌾', label: 'Grains' },
+];
+
+// Location emojis for selection
+const LOCATION_EMOJIS = [
+  { key: 'fridge', emoji: '❄️', label: 'Fridge' },
+  { key: 'freezer', emoji: '🧊', label: 'Freezer' },
+  { key: 'pantry', emoji: '🏠', label: 'Pantry' },
+  { key: 'cabinet', emoji: '🗄️', label: 'Cabinet' },
+  { key: 'counter', emoji: '🍽️', label: 'Counter' },
+  { key: 'basement', emoji: '⬇️', label: 'Basement' },
+  { key: 'garage', emoji: '🏢', label: 'Garage' },
+  { key: 'kitchen', emoji: '🍳', label: 'Kitchen' },
+  { key: 'cupboard', emoji: '🗃️', label: 'Cupboard' },
+  { key: 'shelf', emoji: '📚', label: 'Shelf' },
+  { key: 'storage', emoji: '📦', label: 'Storage' },
+];
 
 type SettingItem = {
   id: string;
@@ -44,6 +76,132 @@ type EditModalProps = {
   initialName?: string;
   initialIcon?: string;
   isCategory?: boolean;
+};
+
+type EmojiSelectorProps = {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (emoji: string) => void;
+  isCategory: boolean;
+  selectedEmoji?: string;
+};
+
+const EmojiSelector: React.FC<EmojiSelectorProps> = ({
+  visible,
+  onClose,
+  onSelect,
+  isCategory,
+  selectedEmoji,
+}) => {
+  const { theme } = useTheme();
+  const emojis = isCategory ? CATEGORY_EMOJIS : LOCATION_EMOJIS;
+  
+  console.log('EmojiSelector - isCategory:', isCategory, 'emojis count:', emojis.length);
+  console.log('Available emojis:', emojis.map(e => `${e.key}:${e.emoji}`).join(', '));
+
+  const styles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+      width: '90%',
+      maxHeight: '80%',
+      backgroundColor: theme.cardBackground,
+      borderRadius: 16,
+      padding: 20,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    scrollContainer: {
+      maxHeight: 400,
+    },
+    emojiGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      paddingVertical: 8,
+    },
+    emojiButton: {
+      width: '22%',
+      aspectRatio: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+      borderRadius: 12,
+      backgroundColor: theme.backgroundColor,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    selectedEmoji: {
+      borderColor: theme.primaryColor,
+      backgroundColor: `${theme.primaryColor}20`,
+    },
+    emojiText: {
+      fontSize: 28,
+      marginBottom: 4,
+      textAlign: 'center',
+    },
+    emojiLabel: {
+      fontSize: 10,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+    closeButton: {
+      marginTop: 16,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: theme.primaryColor,
+      alignItems: 'center',
+    },
+    closeButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>
+            Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
+          </Text>
+          <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+            <View style={styles.emojiGrid}>
+              {emojis.map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.emojiButton,
+                    selectedEmoji === item.key && styles.selectedEmoji,
+                  ]}
+                  onPress={() => {
+                    console.log('Emoji selected:', item.key, item.emoji);
+                    onSelect(item.key);
+                  }}
+                >
+                  <Text style={styles.emojiText}>{item.emoji}</Text>
+                  <Text style={styles.emojiLabel}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 };
 
 const createStyles = (theme: any) => StyleSheet.create({
@@ -411,9 +569,17 @@ const EditModal: React.FC<EditModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const [name, setName] = useState(initialName);
-  const [icon, setIcon] = useState<IconName>((initialIcon as IconName) || 'circle');
-  const [showIconSelector, setShowIconSelector] = useState(false);
+  const [icon, setIcon] = useState(initialIcon || (isCategory ? 'apple' : 'fridge'));
+  const [showEmojiSelector, setShowEmojiSelector] = useState(false);
   const styles = createStyles(theme);
+
+  // Reset state when modal opens/closes or when initial values change
+  React.useEffect(() => {
+    if (visible) {
+      setName(initialName);
+      setIcon(initialIcon || (isCategory ? 'apple' : 'fridge'));
+    }
+  }, [visible, initialName, initialIcon, isCategory]);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -421,8 +587,12 @@ const EditModal: React.FC<EditModalProps> = ({
       return;
     }
     onSave(name.trim(), icon);
+    onClose();
+  };
+
+  const handleClose = () => {
     setName('');
-    setIcon('circle');
+    setIcon(isCategory ? 'apple' : 'fridge');
     onClose();
   };
 
@@ -432,7 +602,7 @@ const EditModal: React.FC<EditModalProps> = ({
         visible={visible}
         transparent
         animationType="fade"
-        onRequestClose={onClose}
+        onRequestClose={handleClose}
       >
         <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
           <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
@@ -455,25 +625,25 @@ const EditModal: React.FC<EditModalProps> = ({
                 borderColor: theme.borderColor,
                 backgroundColor: theme.backgroundColor
               }]}
-              onPress={() => setShowIconSelector(true)}
+              onPress={() => setShowEmojiSelector(true)}
             >
               <View style={styles.iconPreview}>
                 {isCategory ? (
-                  <CategoryIcon iconName={icon} size={20} />
+                  <CategoryIcon iconName={icon} size={24} />
                 ) : (
-                  <LocationIcon iconName={icon} size={20} />
+                  <LocationIcon iconName={icon} size={24} />
                 )}
               </View>
               <Text style={[styles.iconText, { color: theme.textColor }]}>
-                Select Icon ({icon})
+                Select Icon (Current: {icon})
               </Text>
-              <FontAwesome name="chevron-right" size={16} color={theme.textSecondary} />
+              <Text style={{ color: theme.textSecondary, fontSize: 16 }}>▶</Text>
             </TouchableOpacity>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.dangerColor }]}
-                onPress={onClose}
+                onPress={handleClose}
               >
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -488,16 +658,16 @@ const EditModal: React.FC<EditModalProps> = ({
         </View>
       </Modal>
 
-      <IconSelector
-        visible={showIconSelector}
-        onClose={() => setShowIconSelector(false)}
+      <EmojiSelector
+        visible={showEmojiSelector}
+        onClose={() => setShowEmojiSelector(false)}
         onSelect={(selectedIcon) => {
+          console.log('Selected icon:', selectedIcon, 'for', isCategory ? 'category' : 'location');
           setIcon(selectedIcon);
-          setShowIconSelector(false);
+          setShowEmojiSelector(false);
         }}
-        icons={isCategory ? CATEGORY_ICONS : LOCATION_ICONS}
-        title={`Select ${isCategory ? 'Category' : 'Location'} Icon`}
-        selectedIcon={icon}
+        isCategory={isCategory}
+        selectedEmoji={icon}
       />
     </>
   );

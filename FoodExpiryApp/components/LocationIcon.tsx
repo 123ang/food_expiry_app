@@ -15,14 +15,15 @@ const LOCATION_EMOJIS: { [key: string]: string } = {
   counter: '🍽️',
   basement: '⬇️',
   garage: '🏢',
-  office: '🏢',
-  // Alternative mappings
-  refrigerator: '❄️',
   kitchen: '🍳',
   cupboard: '🗃️',
   shelf: '📚',
-  room: '🏠',
   storage: '📦',
+  // Additional mappings to match settings and existing data
+  cube: '📦', // Map cube to storage box emoji
+  office: '🏢',
+  refrigerator: '❄️',
+  room: '🏠',
   default: '📍',
 };
 
@@ -31,6 +32,9 @@ const LocationIcon: React.FC<LocationIconProps> = ({ iconName, size = 24 }) => {
   let emoji = LOCATION_EMOJIS.default;
   
   if (iconName) {
+    // Debug logging
+    console.log('LocationIcon received iconName:', iconName);
+    
     // Try exact match first
     if (LOCATION_EMOJIS[iconName]) {
       emoji = LOCATION_EMOJIS[iconName];
@@ -58,6 +62,8 @@ const LocationIcon: React.FC<LocationIconProps> = ({ iconName, size = 24 }) => {
     else if (iconName.toLowerCase().includes('storage') || iconName.toLowerCase().includes('room')) {
       emoji = '📦';
     }
+    
+    console.log('LocationIcon final emoji:', emoji, 'for iconName:', iconName);
   }
   
   return (

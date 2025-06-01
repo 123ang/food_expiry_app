@@ -8,17 +8,140 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Modal,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useDatabase } from '../../context/DatabaseContext';
-import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../../components/BottomNav';
-import IconSelector, { CATEGORY_ICONS } from '../../components/IconSelector';
 import CategoryIcon from '../../components/CategoryIcon';
 import { Category } from '../../database/models';
+import { useLanguage } from '../../context/LanguageContext';
 
-type IconName = keyof typeof FontAwesome.glyphMap;
+// Category emojis for selection (same as settings)
+const CATEGORY_EMOJIS = [
+  { key: 'apple', emoji: '🍎', label: 'Apple' },
+  { key: 'dairy', emoji: '🥛', label: 'Dairy' },
+  { key: 'fruits', emoji: '🍇', label: 'Fruits' },
+  { key: 'vegetables', emoji: '🥕', label: 'Vegetables' },
+  { key: 'meat', emoji: '🥩', label: 'Meat' },
+  { key: 'bread', emoji: '🍞', label: 'Bread' },
+  { key: 'beverages', emoji: '🥤', label: 'Beverages' },
+  { key: 'snacks', emoji: '🍿', label: 'Snacks' },
+  { key: 'frozen', emoji: '🧊', label: 'Frozen' },
+  { key: 'canned', emoji: '🥫', label: 'Canned' },
+  { key: 'seafood', emoji: '🐟', label: 'Seafood' },
+  { key: 'spices', emoji: '🌶️', label: 'Spices' },
+  { key: 'dessert', emoji: '🍰', label: 'Dessert' },
+  { key: 'grains', emoji: '🌾', label: 'Grains' },
+];
+
+// Emoji Selector Component
+const EmojiSelector: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (emoji: string) => void;
+  selectedEmoji?: string;
+}> = ({ visible, onClose, onSelect, selectedEmoji }) => {
+  const { theme } = useTheme();
+
+  const styles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+      width: '90%',
+      maxHeight: '80%',
+      backgroundColor: theme.cardBackground,
+      borderRadius: 16,
+      padding: 20,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    emojiGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      paddingVertical: 8,
+    },
+    emojiButton: {
+      width: '22%',
+      aspectRatio: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+      borderRadius: 12,
+      backgroundColor: theme.backgroundColor,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    selectedEmoji: {
+      borderColor: theme.primaryColor,
+      backgroundColor: `${theme.primaryColor}20`,
+    },
+    emojiText: {
+      fontSize: 28,
+      marginBottom: 4,
+      textAlign: 'center',
+    },
+    emojiLabel: {
+      fontSize: 10,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+    closeButton: {
+      marginTop: 16,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: theme.primaryColor,
+      alignItems: 'center',
+    },
+    closeButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>Select Category Icon</Text>
+          <ScrollView showsVerticalScrollIndicator={true}>
+            <View style={styles.emojiGrid}>
+              {CATEGORY_EMOJIS.map((item) => (
+                <TouchableOpacity
+                  key={item.key}
+                  style={[
+                    styles.emojiButton,
+                    selectedEmoji === item.key && styles.selectedEmoji,
+                  ]}
+                  onPress={() => onSelect(item.key)}
+                >
+                  <Text style={styles.emojiText}>{item.emoji}</Text>
+                  <Text style={styles.emojiLabel}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function CategoriesScreen() {
   const { theme } = useTheme();
@@ -27,7 +150,7 @@ export default function CategoriesScreen() {
   const [showIconSelector, setShowIconSelector] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newName, setNewName] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState<IconName>('circle');
+  const [selectedIcon, setSelectedIcon] = useState<string>('apple');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -185,7 +308,7 @@ export default function CategoriesScreen() {
       }
 
       setNewName('');
-      setSelectedIcon('circle');
+      setSelectedIcon('apple');
       setEditingCategory(null);
       await refreshCategories();
     } catch (error) {
@@ -198,7 +321,7 @@ export default function CategoriesScreen() {
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setNewName(category.name);
-    setSelectedIcon(category.icon as IconName);
+    setSelectedIcon(category.icon);
   };
 
   const handleDelete = async (category: Category) => {
@@ -232,7 +355,7 @@ export default function CategoriesScreen() {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
+          <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Categories</Text>
         <View style={styles.headerSpacer} />
@@ -285,32 +408,30 @@ export default function CategoriesScreen() {
                 onPress={() => handleEdit(category)}
                 disabled={isLoading}
               >
-                <FontAwesome name="pencil" size={20} color={theme.primaryColor} />
+                <Text style={{ fontSize: 20, color: theme.primaryColor }}>✏️</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => handleDelete(category)}
                 disabled={isLoading}
               >
-                <FontAwesome name="trash" size={20} color={theme.dangerColor} />
+                <Text style={{ fontSize: 20, color: theme.dangerColor }}>🗑️</Text>
               </TouchableOpacity>
             </View>
           ))}
         </View>
       </ScrollView>
 
-      <IconSelector
+      <EmojiSelector
         visible={showIconSelector}
         onClose={() => setShowIconSelector(false)}
         onSelect={(icon) => {
           setSelectedIcon(icon);
           setShowIconSelector(false);
         }}
-        icons={CATEGORY_ICONS}
-        title="Select Category Icon"
-        selectedIcon={selectedIcon}
+        selectedEmoji={selectedIcon}
       />
-      
+
       <BottomNav />
     </View>
   );
