@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { FoodItemWithDetails } from '../database/models';
+import CategoryIcon from '../components/CategoryIcon';
+import LocationIcon from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -370,7 +372,7 @@ export default function ListScreen() {
     if (!filteredItems || filteredItems.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <FontAwesome name="inbox" size={48} color={colors.textSecondary} />
+          <Text style={{ fontSize: 48, color: colors.textSecondary }}>📦</Text>
           <Text style={styles.emptyStateText}>
             {searchQuery
               ? t('list.noSearch')
@@ -392,51 +394,36 @@ export default function ListScreen() {
           <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
         ) : (
           <View style={[styles.foodImage, { backgroundColor: `${colors.primaryColor}20` }]}>
-            <FontAwesome
-              name={(item.category_icon as IconName) || 'question-circle'}
-              size={24}
-              color={colors.primaryColor}
-            />
+            <CategoryIcon iconName={item.category_icon} size={24} />
           </View>
         )}
         <View style={styles.foodInfo}>
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.foodMeta}>
             <View style={styles.metaItem}>
-              <FontAwesome name="calendar" size={14} color={colors.textSecondary} />
+              <Text style={{ fontSize: 14, color: colors.textSecondary }}>📅</Text>
               <Text style={styles.metaText}>{item.expiry_date}</Text>
             </View>
             <View style={styles.metaItem}>
-              <FontAwesome
-                name={(item.category_icon as IconName) || 'folder'}
-                size={14}
-                color={colors.textSecondary}
-              />
+              <CategoryIcon iconName={item.category_icon} size={14} />
               <Text style={styles.metaText}>{item.category_name}</Text>
             </View>
             <View style={styles.metaItem}>
-              <FontAwesome
-                name={(item.location_icon as IconName) || 'map-marker'}
-                size={14}
-                color={colors.textSecondary}
-              />
+              <LocationIcon iconName={item.location_icon} size={14} />
               <Text style={styles.metaText}>{item.location_name}</Text>
             </View>
             <View style={styles.metaItem}>
-              <FontAwesome name="cubes" size={14} color={colors.textSecondary} />
+              <Text style={{ fontSize: 14, color: colors.textSecondary }}>📦</Text>
               <Text style={styles.metaText}>{item.quantity}</Text>
-              <FontAwesome 
-                name={
-                  item.status === 'expired' ? 'warning' :
-                  item.status === 'expiring_soon' ? 'clock-o' : 'check-circle'
-                } 
-                size={14} 
-                color={
-                  item.status === 'expired' ? '#F44336' :
-                  item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
-                }
-                style={{ marginLeft: 8 }}
-              />
+              <Text style={{ 
+                fontSize: 14, 
+                marginLeft: 8,
+                color: item.status === 'expired' ? '#F44336' :
+                       item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
+              }}>
+                {item.status === 'expired' ? '⚠️' :
+                 item.status === 'expiring_soon' ? '⏰' : '✅'}
+              </Text>
             </View>
           </View>
         </View>
@@ -449,14 +436,14 @@ export default function ListScreen() {
             })}
             disabled={isRefreshing}
           >
-            <FontAwesome name="pencil" size={16} color={colors.primaryColor} />
+            <Text style={{ fontSize: 16, color: colors.primaryColor }}>✏️</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => handleDelete(item)}
             disabled={isRefreshing}
           >
-            <FontAwesome name="trash" size={16} color={theme.dangerColor || '#FF3B30'} />
+            <Text style={{ fontSize: 16, color: theme.dangerColor || '#FF3B30' }}>🗑️</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -472,7 +459,7 @@ export default function ListScreen() {
       
       <View style={styles.header}>
         <View style={styles.searchBar}>
-          <FontAwesome name="search" size={20} color={colors.textSecondary} />
+          <Text style={{ fontSize: 20, color: colors.textSecondary }}>🔍</Text>
           <TextInput
             style={styles.searchInput}
             placeholder={t('list.search')}
@@ -488,7 +475,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('all')}
               disabled={isLoading || isRefreshing}
             >
-              <FontAwesome name="list" size={16} color={filterStatus === 'all' ? '#FFFFFF' : colors.textColor} />
+              <Text style={{ fontSize: 16, color: filterStatus === 'all' ? '#FFFFFF' : colors.textColor }}>📝</Text>
               <Text style={[styles.filterButtonText, filterStatus === 'all' && styles.filterButtonTextActive]}>{t('list.all')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -496,7 +483,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('expired')}
               disabled={isLoading || isRefreshing}
             >
-              <FontAwesome name="warning" size={16} color={filterStatus === 'expired' ? '#FFFFFF' : theme.dangerColor || '#FF3B30'} />
+              <Text style={{ fontSize: 16, color: filterStatus === 'expired' ? '#FFFFFF' : theme.dangerColor || '#FF3B30' }}>⚠️</Text>
               <Text style={[styles.filterButtonText, filterStatus === 'expired' && styles.filterButtonTextActive]}>{t('list.expired')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -504,7 +491,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('expiring_soon')}
               disabled={isLoading || isRefreshing}
             >
-              <FontAwesome name="clock-o" size={16} color={filterStatus === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500'} />
+              <Text style={{ fontSize: 16, color: filterStatus === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500' }}>⏰</Text>
               <Text style={[styles.filterButtonText, filterStatus === 'expiring_soon' && styles.filterButtonTextActive]}>{t('list.expiring')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -512,7 +499,7 @@ export default function ListScreen() {
               onPress={() => setFilterStatus('fresh')}
               disabled={isLoading || isRefreshing}
             >
-              <FontAwesome name="check" size={16} color={filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759'} />
+              <Text style={{ fontSize: 16, color: filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759' }}>✅</Text>
               <Text style={[styles.filterButtonText, filterStatus === 'fresh' && styles.filterButtonTextActive]}>{t('list.fresh')}</Text>
             </TouchableOpacity>
           </View>

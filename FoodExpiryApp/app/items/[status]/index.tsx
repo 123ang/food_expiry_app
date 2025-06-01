@@ -14,23 +14,25 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
 import { FoodItemWithDetails } from '../../../database/models';
+import CategoryIcon from '../../../components/CategoryIcon';
+import LocationIcon from '../../../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
 const statusInfo = {
   fresh: {
     name: 'Fresh Items',
-    icon: 'check-circle' as IconName,
+    icon: '✅',
     color: '#4CAF50',
   },
   expiring: {
     name: 'Expiring',
-    icon: 'clock-o' as IconName,
+    icon: '⏰',
     color: '#FF9800',
   },
   expired: {
     name: 'Expired',
-    icon: 'warning' as IconName,
+    icon: '⚠️',
     color: '#F44336',
   },
 };
@@ -47,11 +49,11 @@ const FoodItemCard: React.FC<{
   // Determine status icon and color based on days until expiry
   const getStatusInfo = () => {
     if (item.days_until_expiry <= 0) {
-      return { icon: 'warning', color: '#F44336', text: 'Expired' };
+      return { icon: '⚠️', color: '#F44336', text: 'Expired' };
     } else if (item.days_until_expiry <= 5) {
-      return { icon: 'clock-o', color: '#FF9800', text: 'Expiring' };
+      return { icon: '⏰', color: '#FF9800', text: 'Expiring' };
     } else {
-      return { icon: 'check-circle', color: '#4CAF50', text: 'Fresh' };
+      return { icon: '✅', color: '#4CAF50', text: 'Fresh' };
     }
   };
 
@@ -67,44 +69,28 @@ const FoodItemCard: React.FC<{
         />
       ) : (
         <View style={styles.placeholderImage}>
-          <FontAwesome 
-            name={(item.category_icon as IconName) || 'cutlery'} 
-            size={32} 
-            color={theme.primaryColor} 
-          />
+          <CategoryIcon iconName={item.category_icon} size={32} />
         </View>
       )}
       <View style={styles.foodInfo}>
         <View style={styles.foodNameRow}>
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.statusContainer}>
-            <FontAwesome 
-              name={statusInfo.icon as IconName} 
-              size={16} 
-              color={statusInfo.color} 
-            />
-            <Text style={styles.quantity}>x{item.quantity}</Text>
+            <Text style={{ fontSize: 16, color: statusInfo.color }}>{statusInfo.icon}</Text>
+            <Text style={[styles.quantity, { color: statusInfo.color }]}>x{item.quantity}</Text>
           </View>
         </View>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
-            <FontAwesome 
-              name={(item.category_icon as IconName) || 'folder'} 
-              size={16} 
-              color={theme.textSecondary} 
-            />
+            <CategoryIcon iconName={item.category_icon} size={16} />
             <Text style={styles.metaText}>{item.category_name || 'No category'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome 
-              name={(item.location_icon as IconName) || 'map-marker'} 
-              size={16} 
-              color={theme.textSecondary} 
-            />
+            <LocationIcon iconName={item.location_icon} size={16} />
             <Text style={styles.metaText}>{item.location_name || 'No location'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
+            <Text style={{ fontSize: 16, color: theme.textSecondary }}>📅</Text>
             <Text style={[styles.metaText, { color: statusInfo.color }]}>
               {item.days_until_expiry > 0
                 ? `${item.days_until_expiry} days left`
@@ -330,10 +316,10 @@ export default function ItemStatusScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
+          <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <FontAwesome name={statusData.icon} size={24} color={statusData.color} />
+          <Text style={[styles.title, { color: statusData.color }]}>{statusData.icon}</Text>
           <Text style={styles.title}>{statusData.name}</Text>
         </View>
       </View>
@@ -341,7 +327,7 @@ export default function ItemStatusScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
           <View style={[styles.statsIcon, dynamicStyles.statsIconBackground]}>
-            <FontAwesome name={statusData?.icon || 'check-circle'} size={24} color={statusData?.color || '#4CAF50'} />
+            <Text style={{ fontSize: 24, color: statusData.color }}>{statusData.icon}</Text>
           </View>
           <Text style={styles.statsTitle}>Items</Text>
           <Text style={styles.statsCount}>{currentItems.length}</Text>
@@ -349,7 +335,7 @@ export default function ItemStatusScreen() {
         
         {error ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <FontAwesome name="exclamation-triangle" size={48} color={theme.dangerColor || '#FF3B30'} />
+            <Text style={{ fontSize: 48, color: theme.dangerColor || '#FF3B30' }}>⚠️</Text>
             <Text style={{ color: theme.textColor, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
               {error}
             </Text>
@@ -394,7 +380,7 @@ export default function ItemStatusScreen() {
           <ActivityIndicator size="large" color={theme.primaryColor} />
         ) : currentItems.length === 0 ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <FontAwesome name="inbox" size={48} color={theme.textSecondary} />
+            <Text style={{ fontSize: 48, color: theme.textSecondary }}>📦</Text>
             <Text style={{ color: theme.textSecondary, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
               No {statusData?.name?.toLowerCase() || 'items'} found
             </Text>

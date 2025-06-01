@@ -15,6 +15,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
 import { useDatabase } from '../../../context/DatabaseContext';
 import { FoodItemWithDetails } from '../../../database/models';
+import CategoryIcon from '../../../components/CategoryIcon';
+import LocationIcon from '../../../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -30,11 +32,11 @@ const FoodItemCard: React.FC<{
   // Determine status icon and color based on days until expiry
   const getStatusInfo = () => {
     if (item.days_until_expiry <= 0) {
-      return { icon: 'warning', color: '#F44336', text: 'Expired' };
+      return { icon: '⚠️', color: '#F44336', text: 'Expired' };
     } else if (item.days_until_expiry <= 5) {
-      return { icon: 'clock-o', color: '#FF9800', text: 'Expiring' };
+      return { icon: '⏰', color: '#FF9800', text: 'Expiring' };
     } else {
-      return { icon: 'check-circle', color: '#4CAF50', text: 'Fresh' };
+      return { icon: '✅', color: '#4CAF50', text: 'Fresh' };
     }
   };
 
@@ -50,36 +52,24 @@ const FoodItemCard: React.FC<{
         />
       ) : (
         <View style={styles.placeholderImage}>
-          <FontAwesome 
-            name={(item.category_icon as IconName) || 'cutlery'} 
-            size={32} 
-            color={theme.primaryColor} 
-          />
+          <CategoryIcon iconName={item.category_icon} size={32} />
         </View>
       )}
       <View style={styles.foodInfo}>
         <View style={styles.foodNameRow}>
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.statusContainer}>
-            <FontAwesome 
-              name={statusInfo.icon as IconName} 
-              size={16} 
-              color={statusInfo.color} 
-            />
+            <Text style={{ fontSize: 16 }}>{statusInfo.icon}</Text>
             <Text style={styles.quantity}>x{item.quantity}</Text>
           </View>
         </View>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
-            <FontAwesome 
-              name={(item.location_icon as IconName) || 'map-marker'} 
-              size={16} 
-              color={theme.textSecondary} 
-            />
+            <LocationIcon iconName={item.location_icon} size={16} />
             <Text style={styles.metaText}>{item.location_name || 'No location'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
+            <Text style={{ fontSize: 16 }}>📅</Text>
             <Text style={[styles.metaText, { color: statusInfo.color }]}>
               {item.days_until_expiry > 0
                 ? `${item.days_until_expiry} days left`
@@ -306,7 +296,7 @@ export default function CategoryDetailScreen() {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <View style={styles.titleContainer}>
-          <FontAwesome name={(category?.icon || 'question-circle') as IconName} size={24} color={category?.color || theme.primaryColor} />
+          <CategoryIcon iconName={category?.icon} size={24} />
           <Text style={styles.title}>{category?.name || 'Unknown Category'}</Text>
         </View>
       </View>
@@ -314,11 +304,7 @@ export default function CategoryDetailScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
           <View style={[styles.statsIcon, { backgroundColor: `${category?.color || theme.primaryColor}20` }]}>
-            <FontAwesome
-              name={(category?.icon || 'question-circle') as IconName}
-              size={24}
-              color={category?.color || theme.primaryColor}
-            />
+            <CategoryIcon iconName={category?.icon} size={24} />
           </View>
           <Text style={styles.statsTitle}>Items in {category?.name || 'Category'}</Text>
           <Text style={styles.statsCount}>{categoryItems.length}</Text>
@@ -336,11 +322,7 @@ export default function CategoryDetailScreen() {
           ))
         ) : (
           <View style={styles.emptyState}>
-            <FontAwesome
-              name="inbox"
-              size={48}
-              color={theme.textSecondary}
-            />
+            <Text style={{ fontSize: 48 }}>📦</Text>
             <Text style={styles.emptyStateText}>
               No items in this category yet
             </Text>

@@ -655,26 +655,25 @@ export default function DashboardScreen() {
 
   const renderFoodItem = (item: any) => (
     <View key={item.id} style={styles.foodItem}>
-      <Image source={{ uri: item.image }} style={styles.foodImage} />
       <View style={styles.foodInfo}>
         <Text style={styles.foodName}>{item.name}</Text>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
-            <FontAwesome name={'clock-o' as IconName} size={14} color={theme.textSecondary} />
+            <Text style={{ fontSize: 14 }}>⏰</Text>
             <Text style={styles.metaText}>{item.daysLeft} days left</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name={getSafeIconName(item.locationIcon, 'home')} size={14} color={theme.textSecondary} />
+            <LocationIcon iconName={item.locationIcon} size={14} />
             <Text style={styles.metaText}>{item.location}</Text>
           </View>
         </View>
       </View>
       <View style={styles.foodActions}>
         <TouchableOpacity style={styles.actionButton}>
-          <FontAwesome name={'pencil' as IconName} size={14} color={theme.primaryColor} />
+          <Text style={{ fontSize: 14, color: theme.primaryColor }}>✏️</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
-          <FontAwesome name={'trash' as IconName} size={14} color={theme.dangerColor} />
+          <Text style={{ fontSize: 14, color: theme.dangerColor }}>🗑️</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -718,12 +717,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
               onPress={() => router.push('/items/fresh')}
             >
-              <FontAwesome
-                name={'check-circle' as IconName}
-                size={24}
-                color={'#4CAF50'}
-                style={styles.statIcon}
-              />
+              <Text style={{ fontSize: 24, color: '#4CAF50', marginBottom: 8 }}>✅</Text>
               <Text style={styles.statLabel}>{t('home.fresh')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
             </TouchableOpacity>
@@ -731,12 +725,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
               onPress={() => router.push('/items/expiring')}
             >
-              <FontAwesome
-                name={'clock-o' as IconName}
-                size={24}
-                color={'#FF9800'}
-                style={styles.statIcon}
-              />
+              <Text style={{ fontSize: 24, color: '#FF9800', marginBottom: 8 }}>⏰</Text>
               <Text style={styles.statLabel}>{t('list.expiring')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.expiring_soon}</Text>
             </TouchableOpacity>
@@ -744,12 +733,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
               onPress={() => router.push('/items/expired')}
             >
-              <FontAwesome
-                name={'warning' as IconName}
-                size={24}
-                color={'#F44336'}
-                style={styles.statIcon}
-              />
+              <Text style={{ fontSize: 24, color: '#F44336', marginBottom: 8 }}>⚠️</Text>
               <Text style={styles.statLabel}>{t('home.expired')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.expired}</Text>
             </TouchableOpacity>

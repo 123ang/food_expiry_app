@@ -17,6 +17,8 @@ import { useDatabase } from '../../context/DatabaseContext';
 import { DatePicker } from '../../components/DatePicker';
 import { getCurrentDate } from '../../database/database';
 import { BottomNav } from '../../components/BottomNav';
+import CategoryIcon from '../../components/CategoryIcon';
+import LocationIcon from '../../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -97,6 +99,11 @@ export default function EditScreen() {
         image_uri: null,
         created_at: getCurrentDate(),
       });
+      
+      // Force refresh all data
+      await refreshAll();
+      
+      console.log('Edit: Item updated successfully, data refreshed');
       
       // Navigate back - the list will refresh automatically via useFocusEffect
       router.back();
@@ -243,7 +250,7 @@ export default function EditScreen() {
             onPress={() => router.back()}
             disabled={isSaving}
           >
-            <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
+            <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Edit Food Item</Text>
           <TouchableOpacity 
@@ -284,7 +291,7 @@ export default function EditScreen() {
                   onPress={() => setSelectedCategory(category.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={category.icon as IconName} size={20} color={theme.primaryColor} />
+                    <CategoryIcon iconName={category.icon} size={20} />
                   </View>
                   <Text style={styles.optionName}>{category.name}</Text>
                 </TouchableOpacity>
@@ -305,7 +312,7 @@ export default function EditScreen() {
                   onPress={() => setSelectedLocation(location.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />
+                    <LocationIcon iconName={location.icon} size={20} />
                   </View>
                   <Text style={styles.optionName}>{location.name}</Text>
                 </TouchableOpacity>

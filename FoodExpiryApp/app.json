@@ -40,10 +40,6 @@
         "READ_EXTERNAL_STORAGE"
       ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true

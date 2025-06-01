@@ -17,6 +17,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { FoodItemWithDetails } from '../../database/models';
 import { BottomNav } from '../../components/BottomNav';
+import CategoryIcon from '../../components/CategoryIcon';
+import LocationIcon from '../../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -294,7 +296,7 @@ export default function ItemDetailsScreen() {
           }} 
         />
         <View style={styles.loadingContainer}>
-          <FontAwesome name="exclamation-triangle" size={48} color={theme?.textSecondary || '#666666'} />
+          <Text style={{ fontSize: 48, color: theme?.textSecondary || '#666666' }}>⚠️</Text>
           <Text style={{ color: theme?.textColor || '#000000', marginTop: 16 }}>Item not found</Text>
         </View>
       </View>
@@ -316,16 +318,16 @@ export default function ItemDetailsScreen() {
         <View style={styles.imageSection}>
           {/* Back Button */}
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <FontAwesome name="arrow-left" size={20} color={theme?.textColor || '#000000'} />
+            <Text style={{ fontSize: 20, color: theme?.textColor || '#000000' }}>◀</Text>
           </TouchableOpacity>
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-              <FontAwesome name="pencil" size={16} color={theme?.primaryColor || '#000000'} />
+              <Text style={{ fontSize: 16, color: theme?.primaryColor || '#000000' }}>✏️</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={handleDelete}>
-              <FontAwesome name="trash" size={16} color={theme?.dangerColor || '#000000'} />
+              <Text style={{ fontSize: 16, color: theme?.dangerColor || '#000000' }}>🗑️</Text>
             </TouchableOpacity>
           </View>
 
@@ -342,16 +344,15 @@ export default function ItemDetailsScreen() {
             />
           ) : (
             <View style={styles.placeholderImage}>
-              <FontAwesome
-                name={(item.category_icon as IconName) || 'question-circle'}
-                size={40}
-                color={theme?.primaryColor || '#000000'}
-              />
+              <CategoryIcon iconName={item.category_icon} size={40} />
             </View>
           )}
           <Text style={styles.itemName}>{item.name}</Text>
           <View style={styles.statusContainer}>
-            <FontAwesome name={statusInfo.icon} size={16} color={statusInfo.color} />
+            <Text style={{ fontSize: 16, color: statusInfo.color }}>
+              {statusInfo.icon === 'warning' ? '⚠️' :
+               statusInfo.icon === 'clock-o' ? '⏰' : '✅'}
+            </Text>
             <Text style={[styles.statusText, { color: statusInfo.color }]}>
               {statusInfo.text}
             </Text>
@@ -363,7 +364,7 @@ export default function ItemDetailsScreen() {
           <View style={styles.detailCard}>
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <FontAwesome name="calendar" size={16} color={theme?.primaryColor || '#000000'} />
+                <Text style={{ fontSize: 16, color: theme?.primaryColor || '#000000' }}>📅</Text>
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.expiryDate')}</Text>
@@ -373,7 +374,7 @@ export default function ItemDetailsScreen() {
 
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <FontAwesome name="cubes" size={16} color={theme?.primaryColor || '#000000'} />
+                <Text style={{ fontSize: 16, color: theme?.primaryColor || '#000000' }}>📦</Text>
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.quantity')}</Text>
@@ -383,7 +384,7 @@ export default function ItemDetailsScreen() {
 
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <FontAwesome name={(item.category_icon as IconName) || 'folder'} size={16} color={theme?.primaryColor || '#000000'} />
+                <CategoryIcon iconName={item.category_icon} size={16} />
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.category')}</Text>
@@ -393,7 +394,7 @@ export default function ItemDetailsScreen() {
 
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <FontAwesome name={(item.location_icon as IconName) || 'map-marker'} size={16} color={theme?.primaryColor || '#000000'} />
+                <LocationIcon iconName={item.location_icon} size={16} />
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.location')}</Text>
@@ -403,7 +404,7 @@ export default function ItemDetailsScreen() {
 
             <View style={[styles.detailRow, { marginBottom: 0 }]}>
               <View style={styles.detailIcon}>
-                <FontAwesome name="bell" size={16} color={theme?.primaryColor || '#000000'} />
+                <Text style={{ fontSize: 16, color: theme?.primaryColor || '#000000' }}>🔔</Text>
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.reminderDays')}</Text>

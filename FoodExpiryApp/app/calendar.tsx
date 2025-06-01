@@ -13,10 +13,12 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
-import { FontAwesome } from '@expo/vector-icons';
-import { BottomNav } from '../components/BottomNav';
-import { FoodItemWithDetails } from '../database/models';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import { FoodItemWithDetails } from '../database/models';
+import { BottomNav } from '../components/BottomNav';
+import CategoryIcon from '../components/CategoryIcon';
+import LocationIcon from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -45,8 +47,12 @@ export default function CalendarScreen() {
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
+      console.log('Calendar screen focused, refreshing data...');
       refreshAll();
-    }, [])
+      // Force update filtered items
+      const items = getItemsForDate(selectedDate);
+      setFilteredItems(items);
+    }, [selectedDate, refreshAll])
   );
 
   // Update filtered items when selected date or food items change
@@ -283,10 +289,14 @@ export default function CalendarScreen() {
       textAlign: 'center',
     },
     addButton: {
-      padding: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
       borderRadius: 16,
       backgroundColor: theme.primaryColor,
       marginLeft: 8,
+      minWidth: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
   });
 
@@ -375,15 +385,21 @@ export default function CalendarScreen() {
       style={styles.foodItem}
       onPress={() => router.push(`/item/${item.id}`)}
     >
-      <Image 
-        source={{ uri: item.image_uri || 'https://via.placeholder.com/50' }} 
-        style={styles.foodImage} 
-      />
+      {item.image_uri ? (
+        <Image 
+          source={{ uri: item.image_uri }} 
+          style={styles.foodImage} 
+        />
+      ) : (
+        <View style={[styles.foodImage, { backgroundColor: `${theme.primaryColor}20`, justifyContent: 'center', alignItems: 'center' }]}>
+          <CategoryIcon iconName={item.category_icon} size={24} />
+        </View>
+      )}
       <View style={styles.foodInfo}>
         <Text style={styles.foodName}>{item.name}</Text>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
-            <FontAwesome name={'clock-o' as IconName} size={14} color={theme.textSecondary} />
+            <Text style={{ fontSize: 14 }}>⏰</Text>
             <Text style={[
               styles.metaText,
               item.days_until_expiry < 0 && { color: theme.dangerColor },
@@ -394,28 +410,25 @@ export default function CalendarScreen() {
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name={item.location_icon as IconName} size={14} color={theme.textSecondary} />
+            <LocationIcon iconName={item.location_icon} size={14} />
             <Text style={styles.metaText}>{item.location_name}</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name={item.category_icon as IconName} size={14} color={theme.textSecondary} />
+            <CategoryIcon iconName={item.category_icon} size={14} />
             <Text style={styles.metaText}>{item.category_name}</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name="cubes" size={14} color={theme.textSecondary} />
+            <Text style={{ fontSize: 14 }}>📦</Text>
             <Text style={styles.metaText}>{item.quantity}</Text>
-            <FontAwesome 
-              name={
-                item.status === 'expired' ? 'warning' :
-                item.status === 'expiring_soon' ? 'clock-o' : 'check-circle'
-              } 
-              size={14} 
-              color={
-                item.status === 'expired' ? '#F44336' :
-                item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
-              }
-              style={{ marginLeft: 8 }}
-            />
+            <Text style={{ 
+              fontSize: 14, 
+              marginLeft: 8,
+              color: item.status === 'expired' ? '#F44336' :
+                     item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
+            }}>
+              {item.status === 'expired' ? '⚠️' :
+               item.status === 'expiring_soon' ? '⏰' : '✅'}
+            </Text>
           </View>
         </View>
       </View>
@@ -440,7 +453,7 @@ export default function CalendarScreen() {
                   setCurrentMonth(newDate);
                 }}
               >
-                <FontAwesome name="chevron-left" size={20} color={theme.textColor} />
+                <Text style={{ fontSize: 20, color: theme.textColor }}>◀</Text>
               </TouchableOpacity>
               <Text style={styles.monthText}>
                 {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
@@ -452,7 +465,7 @@ export default function CalendarScreen() {
                   setCurrentMonth(newDate);
                 }}
               >
-                <FontAwesome name="chevron-right" size={20} color={theme.textColor} />
+                <Text style={{ fontSize: 20, color: theme.textColor }}>▶</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.weekDaysRow}>
@@ -492,7 +505,7 @@ export default function CalendarScreen() {
               }
             })}
           >
-            <FontAwesome name="plus" size={16} color="#FFFFFF" />
+            <Text style={{ fontSize: 20, color: "#FFFFFF", fontWeight: 'bold' }}>+</Text>
           </TouchableOpacity>
         </View>
         <ScrollView 
@@ -504,7 +517,7 @@ export default function CalendarScreen() {
         >
           {filteredItems.length === 0 ? (
             <View>
-              <FontAwesome name="calendar-o" size={48} color={theme.textSecondary} />
+              <Text style={{ fontSize: 48, color: theme.textSecondary }}>📅</Text>
               <Text style={styles.emptyListText}>
                 {t('calendar.noItems')}
               </Text>

@@ -13,6 +13,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
 import { FoodItemWithDetails } from '../../../database/models';
+import LocationIcon from '../../../components/LocationIcon';
+import CategoryIcon from '../../../components/CategoryIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -35,11 +37,11 @@ const FoodItemCard: React.FC<{
   // Determine status icon and color based on days until expiry
   const getStatusInfo = () => {
     if (item.days_until_expiry <= 0) {
-      return { icon: 'warning', color: '#F44336', text: 'Expired' };
+      return { icon: '⚠️', color: '#F44336', text: 'Expired' };
     } else if (item.days_until_expiry <= 5) {
-      return { icon: 'clock-o', color: '#FF9800', text: 'Expiring' };
+      return { icon: '⏰', color: '#FF9800', text: 'Expiring' };
     } else {
-      return { icon: 'check-circle', color: '#4CAF50', text: 'Fresh' };
+      return { icon: '✅', color: '#4CAF50', text: 'Fresh' };
     }
   };
 
@@ -55,36 +57,24 @@ const FoodItemCard: React.FC<{
         />
       ) : (
         <View style={styles.placeholderImage}>
-          <FontAwesome 
-            name={(item.category_icon as IconName) || 'cutlery'} 
-            size={32} 
-            color={theme.primaryColor} 
-          />
+          <CategoryIcon iconName={item.category_icon} size={32} />
         </View>
       )}
       <View style={styles.foodInfo}>
         <View style={styles.foodNameRow}>
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.statusContainer}>
-            <FontAwesome 
-              name={statusInfo.icon as IconName} 
-              size={16} 
-              color={statusInfo.color} 
-            />
+            <Text style={{ fontSize: 16 }}>{statusInfo.icon}</Text>
             <Text style={styles.quantity}>x{item.quantity}</Text>
           </View>
         </View>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
-            <FontAwesome 
-              name={(item.category_icon as IconName) || 'folder'} 
-              size={16} 
-              color={theme.textSecondary} 
-            />
+            <CategoryIcon iconName={item.category_icon} size={16} />
             <Text style={styles.metaText}>{item.category_name || 'No category'}</Text>
           </View>
           <View style={styles.metaItem}>
-            <FontAwesome name="calendar" size={16} color={theme.textSecondary} />
+            <Text style={{ fontSize: 16 }}>📅</Text>
             <Text style={[styles.metaText, { color: statusInfo.color }]}>
               {item.days_until_expiry > 0
                 ? `${item.days_until_expiry} days left`
@@ -276,7 +266,7 @@ export default function LocationDetailScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <FontAwesome name={location.icon as IconName} size={24} color={locationColor} />
+          <LocationIcon iconName={location.icon} size={24} />
           <Text style={styles.title}>{location.name}</Text>
         </View>
       </View>
@@ -284,7 +274,7 @@ export default function LocationDetailScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.statsCard}>
           <View style={[styles.statsIcon, { backgroundColor: `${locationColor}20` }]}>
-            <FontAwesome name={location.icon as IconName} size={24} color={locationColor} />
+            <LocationIcon iconName={location.icon} size={24} />
           </View>
           <Text style={styles.statsTitle}>Items in {location.name}</Text>
           <Text style={styles.statsCount}>{locationItems.length}</Text>
@@ -292,7 +282,7 @@ export default function LocationDetailScreen() {
 
         {locationItems.length === 0 ? (
           <View style={styles.emptyState}>
-            <FontAwesome name="inbox" size={48} color={theme.textSecondary} />
+            <Text style={{ fontSize: 48 }}>📦</Text>
             <Text style={styles.emptyStateText}>
               No items in {location.name} yet.{'\n'}
               Add some items to see them here!
