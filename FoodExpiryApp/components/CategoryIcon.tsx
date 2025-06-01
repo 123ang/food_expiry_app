@@ -1,46 +1,78 @@
 import React from 'react';
-import { Image, StyleSheet, View, ViewStyle, ImageStyle } from 'react-native';
-import { getCategoryIcon } from '../utils/iconRegistry';
+import { Text, StyleSheet } from 'react-native';
 
 interface CategoryIconProps {
-  iconName: string | null | undefined;
+  iconName?: string;
   size?: number;
-  style?: ViewStyle;
-  imageStyle?: ImageStyle;
-  backgroundColor?: string;
-  borderRadius?: number;
 }
 
-export function CategoryIcon({
-  iconName,
-  size = 24,
-  style,
-  imageStyle,
-  backgroundColor,
-  borderRadius,
-}: CategoryIconProps) {
-  const iconSource = getCategoryIcon(iconName);
+// Category emoji mapping with more variety
+const CATEGORY_EMOJIS: { [key: string]: string } = {
+  apple: '🍎',
+  dairy: '🥛', 
+  fruits: '🍇',
+  vegetables: '🥕',
+  meat: '🥩',
+  bread: '🍞',
+  beverages: '🥤',
+  snacks: '🍿',
+  frozen: '🧊',
+  canned: '🥫',
+  // Alternative mappings
+  fruit: '🍊',
+  vegetable: '🥬',
+  grains: '🌾',
+  seafood: '🐟',
+  spices: '🌶️',
+  dessert: '🍰',
+  default: '🍎',
+};
 
-  const containerStyle: ViewStyle = {
-    width: size,
-    height: size,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: backgroundColor || 'transparent',
-    borderRadius: borderRadius || 0,
-    ...style,
-  };
-
-  const imgStyle: ImageStyle = {
-    width: size * 0.8, // Slightly smaller than container for padding
-    height: size * 0.8,
-    resizeMode: 'contain',
-    ...imageStyle,
-  };
-
+const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
+  // First try exact match, then lowercase match, then default
+  let emoji = CATEGORY_EMOJIS.default;
+  
+  if (iconName) {
+    // Try exact match first
+    if (CATEGORY_EMOJIS[iconName]) {
+      emoji = CATEGORY_EMOJIS[iconName];
+    } 
+    // Try lowercase match
+    else if (CATEGORY_EMOJIS[iconName.toLowerCase()]) {
+      emoji = CATEGORY_EMOJIS[iconName.toLowerCase()];
+    }
+    // Try partial matches for common patterns
+    else if (iconName.toLowerCase().includes('fruit')) {
+      emoji = '🍊';
+    }
+    else if (iconName.toLowerCase().includes('vegetable')) {
+      emoji = '🥬';
+    }
+    else if (iconName.toLowerCase().includes('dairy')) {
+      emoji = '🥛';
+    }
+    else if (iconName.toLowerCase().includes('meat')) {
+      emoji = '🥩';
+    }
+    else if (iconName.toLowerCase().includes('bread') || iconName.toLowerCase().includes('grain')) {
+      emoji = '🍞';
+    }
+    else if (iconName.toLowerCase().includes('drink') || iconName.toLowerCase().includes('beverage')) {
+      emoji = '🥤';
+    }
+  }
+  
   return (
-    <View style={containerStyle}>
-      <Image source={iconSource} style={imgStyle} />
-    </View>
+    <Text style={[styles.emoji, { fontSize: size }]}>
+      {emoji}
+    </Text>
   );
-} 
+};
+
+const styles = StyleSheet.create({
+  emoji: {
+    textAlign: 'center',
+  },
+});
+
+export default CategoryIcon; 

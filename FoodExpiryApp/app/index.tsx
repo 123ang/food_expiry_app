@@ -22,8 +22,8 @@ import { FoodItem } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
 import { getSafeIconName } from '../utils/iconUtils';
-import { CategoryIcon } from '../components/CategoryIcon';
-import { LocationIcon } from '../components/LocationIcon';
+import CategoryIcon from '../components/CategoryIcon';
+import LocationIcon from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -602,6 +602,15 @@ export default function DashboardScreen() {
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
     },
+    headerContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerLogo: {
+      width: 40,
+      height: 40,
+      marginRight: 16,
+    },
     headerTitle: {
       color: theme.textColor,
       fontSize: 20,
@@ -641,7 +650,14 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       {/* Custom Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Fresh Food</Text>
+        <View style={styles.headerContent}>
+          <Image 
+            source={require('../assets/food_expiry_logo.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Expiry Alert</Text>
+        </View>
       </View>
       
       {isLoading ? (
@@ -714,7 +730,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push(`/locations/${location.id}`)}
               >
                 <View style={styles.locationIcon}>
-                  <LocationIcon iconName={location.icon} size={40} backgroundColor="rgba(76, 175, 80, 0.1)" borderRadius={20} />
+                  <LocationIcon iconName={location.icon} size={40} />
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
@@ -736,7 +752,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push(`/categories/${category.id}`)}
                 >
                   <View style={styles.categoryIcon}>
-                    <CategoryIcon iconName={category.icon} size={40} backgroundColor="rgba(76, 175, 80, 0.1)" borderRadius={20} />
+                    <CategoryIcon iconName={category.icon} size={40} />
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
-import { initDatabase, getDatabase } from '../database/database';
+import { initDatabase, getDatabase, resetDatabase, getCurrentDate } from '../database/database';
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
 
@@ -71,6 +71,7 @@ interface DatabaseContextType {
   refreshFoodItems: () => Promise<void>;
   refreshDashboardCounts: () => Promise<void>;
   refreshAll: () => Promise<void>;
+  resetDatabase: () => Promise<void>;
 
   // Cache management
   clearCache: () => void;
@@ -193,8 +194,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const loadData = async () => {
-    const db = getDatabase();
-
     // Load categories with caching
     const loadCategories = async (): Promise<Category[]> => {
       const cached = getCacheEntry(categoriesCache);
@@ -203,24 +202,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return cached;
       }
 
-      return new Promise<Category[]>((resolve, reject) => {
-        db.transaction(tx => {
-          tx.executeSql(
-            'SELECT * FROM categories ORDER BY name',
-            [],
-            (_, { rows: { _array } }) => {
-              setCacheEntry(categoriesCache, _array);
-              console.log('Categories loaded from database and cached');
-              resolve(_array);
-            },
-            (_, error) => {
-              console.error('Error loading categories:', error);
-              reject(error);
-              return false;
-            }
-          );
-        });
-      });
+      try {
+        const data = await CategoryRepository.getAll();
+        setCacheEntry(categoriesCache, data);
+        console.log('Categories loaded from database and cached');
+        return data;
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        throw error;
+      }
     };
 
     // Load locations with caching
@@ -231,24 +221,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return cached;
       }
 
-      return new Promise<Location[]>((resolve, reject) => {
-        db.transaction(tx => {
-          tx.executeSql(
-            'SELECT * FROM locations ORDER BY name',
-            [],
-            (_, { rows: { _array } }) => {
-              setCacheEntry(locationsCache, _array);
-              console.log('Locations loaded from database and cached');
-              resolve(_array);
-            },
-            (_, error) => {
-              console.error('Error loading locations:', error);
-              reject(error);
-              return false;
-            }
-          );
-        });
-      });
+      try {
+        const data = await LocationRepository.getAll();
+        setCacheEntry(locationsCache, data);
+        console.log('Locations loaded from database and cached');
+        return data;
+      } catch (error) {
+        console.error('Error loading locations:', error);
+        throw error;
+      }
     };
 
     // Load food items with caching
@@ -259,37 +240,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return cached;
       }
 
-      return new Promise<FoodItemWithDetails[]>((resolve, reject) => {
-        db.transaction(tx => {
-          tx.executeSql(
-            `SELECT 
-              f.*,
-              c.name as category_name,
-              c.icon as category_icon,
-              l.name as location_name,
-              l.icon as location_icon
-            FROM food_items f
-            LEFT JOIN categories c ON f.category_id = c.id
-            LEFT JOIN locations l ON f.location_id = l.id
-            ORDER BY f.expiry_date`,
-            [],
-            (_, { rows: { _array } }) => {
-              const itemsWithDetails = _array.map(item => ({
-                ...item,
-                days_until_expiry: calculateDaysUntilExpiry(item.expiry_date),
-              }));
-              setCacheEntry(foodItemsCache, itemsWithDetails);
-              console.log('Food items loaded from database and cached');
-              resolve(itemsWithDetails);
-            },
-            (_, error) => {
-              console.error('Error loading food items:', error);
-              reject(error);
-              return false;
-            }
-          );
-        });
-      });
+      try {
+        const data = await FoodItemRepository.getAllWithDetails();
+        setCacheEntry(foodItemsCache, data);
+        console.log('Food items loaded from database and cached');
+        return data;
+      } catch (error) {
+        console.error('Error loading food items:', error);
+        throw error;
+      }
     };
 
     try {
@@ -378,7 +337,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Invalidate cache first
       invalidateCache([CACHE_KEYS.FOOD_ITEMS]);
       
-      const data = await FoodItemRepository.getAll();
+      const data = await FoodItemRepository.getAllWithDetails();
       setFoodItems(data);
       
       // Update cache with fresh data
@@ -401,7 +360,17 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
       
-      const counts = await FoodItemRepository.getCounts();
+      // Calculate counts from food items
+      const items = await FoodItemRepository.getAllWithDetails();
+      const today = getCurrentDate();
+      
+      const counts = {
+        total: items.length,
+        expired: items.filter(item => item.days_until_expiry < 0).length,
+        expiring_soon: items.filter(item => item.days_until_expiry >= 0 && item.days_until_expiry <= 5).length,
+        fresh: items.filter(item => item.days_until_expiry > 5).length
+      };
+      
       setDashboardCounts(counts);
       
       // Update cache with fresh data
@@ -506,8 +475,22 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // Food item operations with cache management
-  const getFoodItem = async (id: number) => {
-    return FoodItemRepository.getById(id);
+  const getFoodItem = async (id: number): Promise<FoodItemWithDetails | null> => {
+    try {
+      // Try to find in cached data first
+      const cached = getCacheEntry(foodItemsCache);
+      if (cached) {
+        const found = cached.find(item => item.id === id);
+        if (found) return found;
+      }
+      
+      // If not in cache, fetch all items with details and find the one we need
+      const items = await FoodItemRepository.getAllWithDetails();
+      return items.find(item => item.id === id) || null;
+    } catch (error) {
+      console.error('Error getting food item:', error);
+      throw error;
+    }
   };
 
   const createFoodItem = async (item: FoodItem) => {
@@ -569,12 +552,34 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return filtered;
       }
       
-      // If no cache, fetch from database
-      const data = await FoodItemRepository.getByStatus(status);
-      return data;
+      // If no cache, get all items and filter
+      const items = await FoodItemRepository.getAllWithDetails();
+      const filtered = items.filter(item => {
+        if (status === 'expired') return item.days_until_expiry < 0;
+        if (status === 'expiring_soon') return item.days_until_expiry >= 0 && item.days_until_expiry <= 5;
+        if (status === 'fresh') return item.days_until_expiry > 5;
+        return false;
+      });
+      return filtered;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch items by status'));
       return [];
+    }
+  };
+
+  const resetDatabaseHandler = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Starting database reset...');
+      await resetDatabase();
+      clearCache();
+      await loadData();
+      console.log('Database reset and data refreshed');
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Failed to reset database:', err);
+      setError(err instanceof Error ? err : new Error('Failed to reset database'));
+      setIsLoading(false);
     }
   };
 
@@ -603,6 +608,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshFoodItems,
     refreshDashboardCounts,
     refreshAll,
+    resetDatabase: resetDatabaseHandler,
     clearCache,
     invalidateCache,
     getCacheStatus: () => ({

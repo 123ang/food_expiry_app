@@ -1,127 +1,113 @@
 import * as SQLite from 'expo-sqlite';
 
-let db: SQLite.WebSQLDatabase;
+let db: SQLite.SQLiteDatabase;
 
 // Database name
 const DATABASE_NAME = 'foodexpiry.db';
 
 // Open or create the database
-export const getDatabase = () => {
+export const getDatabase = async () => {
   if (!db) {
-    db = SQLite.openDatabase(DATABASE_NAME);
+    db = await SQLite.openDatabaseAsync(DATABASE_NAME);
   }
   return db;
 };
 
 // Initialize the database with tables
-export const initDatabase = () => {
-  const db = getDatabase();
+export const initDatabase = async () => {
+  const database = await getDatabase();
   
-  return new Promise<void>((resolve, reject) => {
-    db.transaction(
-      (tx) => {
-        // Create categories table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            icon TEXT NOT NULL
-          );`,
-          [],
-          () => {},
-          (_, error): boolean => {
-            console.error('Error creating categories table:', error);
-            reject(error);
-            return false;
-          }
-        );
+  try {
+    // Create categories table
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL
+      );
+    `);
 
-        // Create storage locations table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS locations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            icon TEXT NOT NULL
-          );`,
-          [],
-          () => {},
-          (_, error): boolean => {
-            console.error('Error creating locations table:', error);
-            reject(error);
-            return false;
-          }
-        );
+    // Create storage locations table
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS locations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL
+      );
+    `);
 
-        // Create food items table
-        tx.executeSql(
-          `CREATE TABLE IF NOT EXISTS food_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            quantity INTEGER DEFAULT 1,
-            category_id INTEGER,
-            location_id INTEGER,
-            expiry_date TEXT NOT NULL,
-            reminder_days INTEGER DEFAULT 0,
-            notes TEXT,
-            image_uri TEXT,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
-            FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
-          );`,
-          [],
-          () => {},
-          (_, error): boolean => {
-            console.error('Error creating food_items table:', error);
-            reject(error);
-            return false;
-          }
-        );
+    // Create food items table
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS food_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        quantity INTEGER DEFAULT 1,
+        category_id INTEGER,
+        location_id INTEGER,
+        expiry_date TEXT NOT NULL,
+        reminder_days INTEGER DEFAULT 0,
+        notes TEXT,
+        image_uri TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
+        FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
+      );
+    `);
 
-        // Insert default categories if they don't exist
-        tx.executeSql(
-          `INSERT OR IGNORE INTO categories (id, name, icon) VALUES 
-          (1, 'Vegetables', 'leaf'),
-          (2, 'Fruits', 'apple'),
-          (3, 'Dairy', 'glass'),
-          (4, 'Meat', 'cutlery'),
-          (5, 'Snacks', 'coffee'),
-          (6, 'Desserts', 'birthday-cake'),
-          (7, 'Seafood', 'anchor'),
-          (8, 'Bread', 'shopping-basket');`,
-          [],
-          () => {},
-          (_, error): boolean => {
-            console.error('Error inserting default categories:', error);
-            reject(error);
-            return false;
-          }
-        );
+    // Insert default categories if they don't exist
+    await database.execAsync(`
+      DELETE FROM categories WHERE id IN (1,2,3,4,5,6,7,8);
+      INSERT INTO categories (id, name, icon) VALUES 
+      (1, 'Vegetables', 'vegetables'),
+      (2, 'Fruits', 'apple'),
+      (3, 'Dairy', 'dairy'),
+      (4, 'Meat', 'meat'),
+      (5, 'Snacks', 'snacks'),
+      (6, 'Desserts', 'dessert'),
+      (7, 'Seafood', 'seafood'),
+      (8, 'Bread', 'bread');
+    `);
 
-        // Insert default locations if they don't exist
-        tx.executeSql(
-          `INSERT OR IGNORE INTO locations (id, name, icon) VALUES 
-          (1, 'Fridge', 'building'),
-          (2, 'Freezer', 'snowflake-o'),
-          (3, 'Pantry', 'archive'),
-          (4, 'Cabinet', 'inbox');`,
-          [],
-          () => {},
-          (_, error): boolean => {
-            console.error('Error inserting default locations:', error);
-            reject(error);
-            return false;
-          }
-        );
-      },
-      (error) => {
-        console.error('Transaction error:', error);
-        reject(error);
-      },
-      () => {
-        resolve();
-      }
-    );
-  });
+    // Insert default locations if they don't exist
+    await database.execAsync(`
+      DELETE FROM locations WHERE id IN (1,2,3,4,5);
+      INSERT INTO locations (id, name, icon) VALUES 
+      (1, 'Fridge', 'fridge'),
+      (2, 'Freezer', 'freezer'),
+      (3, 'Pantry', 'pantry'),
+      (4, 'Counter', 'counter'),
+      (5, 'Cabinet', 'cabinet');
+    `);
+
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
+};
+
+// Reset database - drops all tables and recreates them
+export const resetDatabase = async () => {
+  const database = await getDatabase();
+  
+  try {
+    console.log('Resetting database...');
+    
+    // Drop all tables
+    await database.execAsync('DROP TABLE IF EXISTS food_items');
+    await database.execAsync('DROP TABLE IF EXISTS categories');
+    await database.execAsync('DROP TABLE IF EXISTS locations');
+    
+    console.log('Tables dropped, reinitializing...');
+    
+    // Reinitialize with fresh data
+    await initDatabase();
+    
+    console.log('Database reset completed successfully');
+  } catch (error) {
+    console.error('Error resetting database:', error);
+    throw error;
+  }
 };
 
 // Helper function to format date as YYYY-MM-DD

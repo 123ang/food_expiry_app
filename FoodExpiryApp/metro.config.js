@@ -2,12 +2,6 @@
 const { getDefaultConfig } = require('expo/metro-config');
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname, {
-  // [Web-only]: Enables CSS support in Metro.
-  isCSSEnabled: true,
-});
-
-// Add this to make expo-router work properly
-config.resolver.sourceExts.push('mjs');
+const config = getDefaultConfig(__dirname);
 
 module.exports = config; 

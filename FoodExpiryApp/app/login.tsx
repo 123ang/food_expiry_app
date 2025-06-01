@@ -51,6 +51,10 @@ export default function LoginScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    logoImage: {
+      width: '100%',
+      height: '100%',
+    },
     title: {
       fontSize: 28,
       fontWeight: 'bold',
@@ -100,9 +104,13 @@ export default function LoginScreen() {
     >
       <View style={styles.content}>
         <View style={styles.logo}>
-          <FontAwesome name="cutlery" size={60} color={theme.primaryColor} />
+          <Image 
+            source={require('../assets/food_expiry_logo.png')} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
-        <Text style={styles.title}>Fresh Food Reminder</Text>
+        <Text style={styles.title}>Expiry Alert</Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
