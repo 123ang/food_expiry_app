@@ -107,6 +107,7 @@ const calculateDaysUntilExpiry = (expiryDate: string) => {
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [foodItems, setFoodItems] = useState<FoodItemWithDetails[]>([]);
@@ -291,10 +292,12 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.log(`Database setup completed in ${totalTime}ms`);
         
         setIsLoading(false);
+        setIsDatabaseReady(true);
       } catch (error) {
         console.error('Error setting up database:', error);
         setError(error instanceof Error ? error : new Error('Failed to setup database'));
         setIsLoading(false);
+        setIsDatabaseReady(false);
       }
     };
 
@@ -494,14 +497,23 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createFoodItem = async (item: FoodItem) => {
-    const id = await FoodItemRepository.create(item);
-    
-    // Invalidate related caches
-    invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
-    
-    // Refresh data
-    await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
-    return id;
+    try {
+      await ensureDatabaseReady();
+      console.log('Creating food item with database ready...');
+      const id = await FoodItemRepository.create(item);
+      console.log('Food item created successfully with ID:', id);
+      
+      // Invalidate related caches
+      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
+      
+      // Refresh data
+      await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
+      return id;
+    } catch (err) {
+      console.error('Error in createFoodItem:', err);
+      setError(err instanceof Error ? err : new Error('Failed to create food item'));
+      throw err;
+    }
   };
 
   const updateFoodItem = async (item: FoodItem) => {
@@ -580,6 +592,22 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       console.error('Failed to reset database:', err);
       setError(err instanceof Error ? err : new Error('Failed to reset database'));
       setIsLoading(false);
+    }
+  };
+
+  // Ensure database is ready before operations
+  const ensureDatabaseReady = async (): Promise<void> => {
+    if (!isDatabaseReady) {
+      console.log('Database not ready, waiting...');
+      // Wait up to 5 seconds for database to be ready
+      for (let i = 0; i < 50; i++) {
+        if (isDatabaseReady) {
+          console.log('Database is now ready');
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      throw new Error('Database initialization timeout - database not ready after 5 seconds');
     }
   };
 

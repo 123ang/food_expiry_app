@@ -16,6 +16,8 @@ import { useDatabase } from '../context/DatabaseContext';
 import { DatePicker } from '../components/DatePicker';
 import { getCurrentDate } from '../database/database';
 import { BottomNav } from '../components/BottomNav';
+import CategoryIcon from '../components/CategoryIcon';
+import LocationIcon from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -42,6 +44,12 @@ export default function AddScreen() {
   }, [prefilledDate]);
 
   const handleSave = async () => {
+    console.log('=== ADD SCREEN handleSave started ===');
+    console.log('Item name:', itemName);
+    console.log('Quantity:', quantity);
+    console.log('Category ID:', selectedCategory);
+    console.log('Location ID:', selectedLocation);
+    
     if (!itemName.trim()) {
       Alert.alert('Error', 'Please enter an item name');
       return;
@@ -53,6 +61,7 @@ export default function AddScreen() {
     }
 
     try {
+      console.log('Creating food item...');
       const id = await createFoodItem({
         name: itemName.trim(),
         quantity: parseInt(quantity) || 1,
@@ -65,13 +74,19 @@ export default function AddScreen() {
         image_uri: null,
       });
       
+      console.log('Food item created with ID:', id);
+      
       // Refresh all data to ensure consistency across the app
       await refreshAll();
+      console.log('Data refreshed, navigating back');
       
       router.back();
     } catch (error) {
+      console.error('=== ADD SCREEN ERROR ===');
       console.error('Error creating food item:', error);
-      Alert.alert('Error', 'Failed to create item');
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      Alert.alert('Error', `Failed to create item\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -113,15 +128,10 @@ export default function AddScreen() {
     input: {
       backgroundColor: theme.cardBackground,
       padding: 12,
-      borderRadius: theme.borderRadius,
+      borderRadius: 8,
       color: theme.textColor,
       borderWidth: 1,
       borderColor: theme.borderColor,
-      shadowColor: theme.shadowColor,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
     },
     optionsGrid: {
       flexDirection: 'row',
@@ -132,16 +142,11 @@ export default function AddScreen() {
     optionCard: {
       width: '48%',
       backgroundColor: theme.cardBackground,
-      borderRadius: theme.borderRadius,
+      borderRadius: 8,
       padding: 16,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
-      shadowColor: theme.shadowColor,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
     },
     optionCardSelected: {
       borderColor: theme.primaryColor,
@@ -163,16 +168,11 @@ export default function AddScreen() {
     },
     datePickerContainer: {
       backgroundColor: theme.cardBackground,
-      borderRadius: theme.borderRadius,
+      borderRadius: 8,
       padding: 16,
       borderWidth: 1,
       borderColor: theme.borderColor,
       marginBottom: 24,
-      shadowColor: theme.shadowColor,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
     },
     notesInput: {
       height: 100,
@@ -182,13 +182,8 @@ export default function AddScreen() {
       backgroundColor: theme.primaryColor,
       paddingVertical: 8,
       paddingHorizontal: 16,
-      borderRadius: theme.borderRadius / 2,
+      borderRadius: 4,
       alignItems: 'center',
-      shadowColor: theme.shadowColor,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
     },
     saveButtonText: {
       color: '#FFFFFF',
@@ -197,31 +192,6 @@ export default function AddScreen() {
     },
     backButton: {
       padding: 8,
-    },
-    photoUpload: {
-      width: '100%',
-      height: 200,
-      backgroundColor: theme.cardBackground,
-      borderRadius: theme.borderRadius,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 24,
-      borderWidth: 1,
-      borderColor: theme.borderColor,
-      borderStyle: 'dashed',
-    },
-    photoUploadIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: `${theme.primaryColor}20`,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    photoUploadText: {
-      color: theme.textSecondary,
-      fontSize: 14,
     },
   });
 
@@ -276,7 +246,7 @@ export default function AddScreen() {
                   onPress={() => setSelectedCategory(category.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={category.icon as IconName} size={20} color={theme.primaryColor} />
+                    <CategoryIcon iconName={category.icon} size={20} />
                   </View>
                   <Text style={styles.optionName}>{category.name}</Text>
                 </TouchableOpacity>
@@ -297,7 +267,7 @@ export default function AddScreen() {
                   onPress={() => setSelectedLocation(location.id!)}
                 >
                   <View style={styles.optionIcon}>
-                    <FontAwesome name={location.icon as IconName} size={20} color={theme.primaryColor} />
+                    <LocationIcon iconName={location.icon} size={20} />
                   </View>
                   <Text style={styles.optionName}>{location.name}</Text>
                 </TouchableOpacity>

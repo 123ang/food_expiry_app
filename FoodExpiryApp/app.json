@@ -23,16 +23,21 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/food_expiry_logo.png",
-        "backgroundColor": "#228B22"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4CAF50",
+        "monochromeImage": "./assets/adaptive-icon.png"
       },
+      "icon": "./assets/icon.png",
+      "roundIconImage": "./assets/adaptive-icon.png",
       "package": "com.expiryalert.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
       ]
     },
     "web": {

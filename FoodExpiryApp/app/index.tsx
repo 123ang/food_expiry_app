@@ -101,17 +101,27 @@ export default function DashboardScreen() {
   };
 
   const handleSave = async () => {
+    console.log('=== handleSave started ===');
+    console.log('Item name:', itemName);
+    console.log('Quantity:', quantity);
+    console.log('Category ID:', categoryId);
+    console.log('Location ID:', locationId);
+    console.log('Expiry date:', expiryDate);
+    
     if (!itemName.trim()) {
+      console.log('Error: Item name is empty');
       Alert.alert(t('alert.error'), t('alert.nameRequired'));
       return;
     }
 
     if (!quantity || parseInt(quantity) < 1) {
+      console.log('Error: Invalid quantity');
       Alert.alert(t('alert.error'), t('alert.quantityRequired'));
       return;
     }
 
     try {
+      console.log('Creating food item object...');
       const item: FoodItem = {
         name: itemName,
         quantity: parseInt(quantity),
@@ -123,17 +133,36 @@ export default function DashboardScreen() {
         created_at: new Date().toISOString().split('T')[0],
         image_uri: null,
       };
+      
+      console.log('Food item object created:', item);
 
       if (editingItem) {
+        console.log('Updating existing item with ID:', editingItem.id);
         await updateFoodItem({ ...item, id: editingItem.id });
+        console.log('Item updated successfully');
       } else {
-        await createFoodItem(item);
+        console.log('Creating new food item...');
+        const newId = await createFoodItem(item);
+        console.log('Food item created successfully with ID:', newId);
       }
+      
+      console.log('Closing modal...');
       handleCloseModal();
-      // Refresh data after saving
+      
+      console.log('Refreshing data...');
       await refreshAll();
+      console.log('Data refreshed successfully');
+      console.log('=== handleSave completed successfully ===');
     } catch (error) {
-      Alert.alert(t('alert.error'), t('alert.saveFailed'));
+      console.error('=== handleSave ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      Alert.alert(
+        t('alert.error'), 
+        `${t('alert.saveFailed')}\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   };
 
@@ -420,6 +449,11 @@ export default function DashboardScreen() {
     },
     pickerOptionTextSelected: {
       color: '#FFFFFF',
+    },
+    pickerOptionContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
     },
     buttonContainer: {
       flexDirection: 'row',
@@ -811,14 +845,17 @@ export default function DashboardScreen() {
                       ]}
                       onPress={() => setCategoryId(category.id!)}
                     >
-                      <Text
-                        style={[
-                          styles.pickerOptionText,
-                          categoryId === category.id && styles.pickerOptionTextSelected,
-                        ]}
-                      >
-                        {category.name}
-                      </Text>
+                      <View style={styles.pickerOptionContent}>
+                        <CategoryIcon iconName={category.icon} size={16} />
+                        <Text
+                          style={[
+                            styles.pickerOptionText,
+                            categoryId === category.id && styles.pickerOptionTextSelected,
+                          ]}
+                        >
+                          {category.name}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -836,14 +873,17 @@ export default function DashboardScreen() {
                       ]}
                       onPress={() => setLocationId(location.id!)}
                     >
-                      <Text
-                        style={[
-                          styles.pickerOptionText,
-                          locationId === location.id && styles.pickerOptionTextSelected,
-                        ]}
-                      >
-                        {location.name}
-                      </Text>
+                      <View style={styles.pickerOptionContent}>
+                        <LocationIcon iconName={location.icon} size={16} />
+                        <Text
+                          style={[
+                            styles.pickerOptionText,
+                            locationId === location.id && styles.pickerOptionTextSelected,
+                          ]}
+                        >
+                          {location.name}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   ))}
                 </View>

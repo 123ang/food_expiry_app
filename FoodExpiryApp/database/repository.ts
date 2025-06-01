@@ -1,12 +1,59 @@
-import { getDatabase, getCurrentDate, daysDifference } from './database';
+import { getDatabase, getCurrentDate, daysDifference, isUsingFallbackStorage, getFallbackStorage } from './database';
 import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './models';
+
+// Database connection helper with retry logic and fallback support
+const getDatabaseSafely = async (retries = 3): Promise<any> => {
+  // Check if we're using fallback storage
+  if (isUsingFallbackStorage()) {
+    console.log('Using fallback storage instead of SQLite');
+    return getFallbackStorage();
+  }
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      const db = await getDatabase();
+      if (db) {
+        // Test the connection with a simple query
+        await db.getFirstAsync('SELECT 1');
+        return db;
+      }
+    } catch (error) {
+      console.warn(`Database connection attempt ${i + 1}/${retries} failed:`, error);
+      
+      // Check if this was a fallback storage error
+      if (error instanceof Error && error.message.includes('fallback storage')) {
+        console.log('SQLite failed, using fallback storage');
+        return getFallbackStorage();
+      }
+      
+      if (i === retries - 1) {
+        console.error(`All database connection attempts failed, switching to fallback storage`);
+        return getFallbackStorage();
+      }
+      // Wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
+    }
+  }
+  
+  // Final fallback
+  console.log('Using fallback storage as last resort');
+  return getFallbackStorage();
+};
 
 // Category Repository
 export const CategoryRepository = {
   // Get all categories
   getAll: async (): Promise<Category[]> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
+      
+      // Check if we're using fallback storage
+      if (isUsingFallbackStorage() || typeof db.getAllCategories === 'function') {
+        console.log('Using fallback storage for categories');
+        return await db.getAllCategories();
+      }
+      
+      // Regular SQLite operation
       const result = await db.getAllAsync('SELECT * FROM categories ORDER BY name') as any[];
       return result.map(row => ({
         id: row.id as number,
@@ -22,7 +69,7 @@ export const CategoryRepository = {
   // Get category by ID
   getById: async (id: number): Promise<Category | null> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const result = await db.getFirstAsync('SELECT * FROM categories WHERE id = ?', [id]) as any;
       
       if (result) {
@@ -42,7 +89,7 @@ export const CategoryRepository = {
   // Create a new category
   create: async (category: Omit<Category, 'id'>): Promise<number> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const result = await db.runAsync(
         'INSERT INTO categories (name, icon) VALUES (?, ?)',
         [category.name, category.icon]
@@ -61,7 +108,7 @@ export const CategoryRepository = {
     }
 
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       await db.runAsync(
         'UPDATE categories SET name = ?, icon = ? WHERE id = ?',
         [category.name, category.icon, category.id]
@@ -79,7 +126,7 @@ export const CategoryRepository = {
     }
 
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       await db.runAsync('DELETE FROM categories WHERE id = ?', [id]);
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -93,7 +140,15 @@ export const LocationRepository = {
   // Get all locations
   getAll: async (): Promise<Location[]> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
+      
+      // Check if we're using fallback storage
+      if (isUsingFallbackStorage() || typeof db.getAllLocations === 'function') {
+        console.log('Using fallback storage for locations');
+        return await db.getAllLocations();
+      }
+      
+      // Regular SQLite operation
       const result = await db.getAllAsync('SELECT * FROM locations ORDER BY name') as any[];
       return result.map(row => ({
         id: row.id as number,
@@ -109,7 +164,7 @@ export const LocationRepository = {
   // Get location by ID
   getById: async (id: number): Promise<Location | null> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const result = await db.getFirstAsync('SELECT * FROM locations WHERE id = ?', [id]) as any;
       
       if (result) {
@@ -129,7 +184,7 @@ export const LocationRepository = {
   // Create a new location
   create: async (location: Omit<Location, 'id'>): Promise<number> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const result = await db.runAsync(
         'INSERT INTO locations (name, icon) VALUES (?, ?)',
         [location.name, location.icon]
@@ -148,7 +203,7 @@ export const LocationRepository = {
     }
 
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       await db.runAsync(
         'UPDATE locations SET name = ?, icon = ? WHERE id = ?',
         [location.name, location.icon, location.id]
@@ -166,7 +221,7 @@ export const LocationRepository = {
     }
 
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       await db.runAsync('DELETE FROM locations WHERE id = ?', [id]);
     } catch (error) {
       console.error('Error deleting location:', error);
@@ -180,7 +235,41 @@ export const FoodItemRepository = {
   // Get all food items with details
   getAllWithDetails: async (): Promise<FoodItemWithDetails[]> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
+      
+      // Check if we're using fallback storage
+      if (isUsingFallbackStorage() || typeof db.getAllFoodItems === 'function') {
+        console.log('Using fallback storage for getAllWithDetails');
+        const items = await db.getAllFoodItems();
+        const categories = await db.getAllCategories();
+        const locations = await db.getAllLocations();
+        
+        // Transform fallback data to match expected format
+        return items.map((item: any) => {
+          const category = categories.find((c: any) => c.id === item.category_id);
+          const location = locations.find((l: any) => l.id === item.location_id);
+          
+          return {
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            category_id: item.category_id,
+            location_id: item.location_id,
+            expiry_date: item.expiry_date,
+            reminder_days: item.reminder_days,
+            notes: item.notes,
+            image_uri: item.image_uri,
+            created_at: item.created_at,
+            category_name: category?.name || 'Unknown',
+            category_icon: category?.icon || 'unknown',
+            location_name: location?.name || 'Unknown',
+            location_icon: location?.icon || 'unknown',
+            days_until_expiry: daysDifference(getCurrentDate(), item.expiry_date)
+          };
+        });
+      }
+      
+      // Regular SQLite operation
       const result = await db.getAllAsync(`
         SELECT 
           fi.*,
@@ -220,7 +309,7 @@ export const FoodItemRepository = {
   // Get food item by ID
   getById: async (id: number): Promise<FoodItem | null> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const result = await db.getFirstAsync('SELECT * FROM food_items WHERE id = ?', [id]) as any;
       
       if (result) {
@@ -247,7 +336,15 @@ export const FoodItemRepository = {
   // Create a new food item
   create: async (item: Omit<FoodItem, 'id'>): Promise<number> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
+      
+      // Check if we're using fallback storage
+      if (isUsingFallbackStorage() || typeof db.addFoodItem === 'function') {
+        console.log('Using fallback storage for creating food item');
+        return await db.addFoodItem(item);
+      }
+      
+      // Regular SQLite operation
       const result = await db.runAsync(
         `INSERT INTO food_items 
          (name, quantity, category_id, location_id, expiry_date, reminder_days, notes, image_uri, created_at) 
@@ -278,7 +375,7 @@ export const FoodItemRepository = {
     }
 
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       await db.runAsync(
         `UPDATE food_items SET 
          name = ?, quantity = ?, category_id = ?, location_id = ?, 
@@ -309,7 +406,7 @@ export const FoodItemRepository = {
     }
 
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       await db.runAsync('DELETE FROM food_items WHERE id = ?', [id]);
     } catch (error) {
       console.error('Error deleting food item:', error);
@@ -320,7 +417,7 @@ export const FoodItemRepository = {
   // Get expired items
   getExpiredItems: async (): Promise<FoodItemWithDetails[]> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const today = getCurrentDate();
       const result = await db.getAllAsync(`
         SELECT 
@@ -362,7 +459,7 @@ export const FoodItemRepository = {
   // Get items expiring soon
   getExpiringItems: async (days: number = 7): Promise<FoodItemWithDetails[]> => {
     try {
-      const db = await getDatabase();
+      const db = await getDatabaseSafely();
       const today = getCurrentDate();
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + days);
