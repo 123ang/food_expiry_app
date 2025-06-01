@@ -15,6 +15,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../../components/BottomNav';
 import IconSelector, { CATEGORY_ICONS } from '../../components/IconSelector';
+import CategoryIcon from '../../components/CategoryIcon';
 import { Category } from '../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
@@ -252,7 +253,7 @@ export default function CategoriesScreen() {
             onPress={() => setShowIconSelector(true)}
           >
             <View style={styles.iconPreview}>
-              <FontAwesome name={selectedIcon} size={20} color={theme.primaryColor} />
+              <CategoryIcon iconName={selectedIcon} size={20} />
             </View>
             <Text style={styles.iconText}>Select Icon</Text>
           </TouchableOpacity>
@@ -276,11 +277,7 @@ export default function CategoriesScreen() {
           {categories.map((category) => (
             <View key={category.id} style={styles.categoryItem}>
               <View style={styles.categoryIcon}>
-                <FontAwesome
-                  name={category.icon as IconName}
-                  size={20}
-                  color={theme.primaryColor}
-                />
+                <CategoryIcon iconName={category.icon} size={20} />
               </View>
               <Text style={styles.categoryName}>{category.name}</Text>
               <TouchableOpacity

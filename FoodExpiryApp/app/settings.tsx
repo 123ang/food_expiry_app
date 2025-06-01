@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -20,6 +21,7 @@ import { BottomNav } from '../components/BottomNav';
 import { Category, Location } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import IconSelector, { CATEGORY_ICONS, LOCATION_ICONS } from '../components/IconSelector';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -28,11 +30,10 @@ type SettingItem = {
   icon: IconName;
   title: string;
   description: string;
-  type: 'switch' | 'language' | 'navigation' | 'expandable';
+  type: 'switch' | 'language' | 'navigation';
   value?: boolean;
   onValueChange?: (value: boolean) => void;
   onPress?: () => void;
-  expandedContent?: React.ReactNode;
 };
 
 type EditModalProps = {
@@ -42,6 +43,7 @@ type EditModalProps = {
   title: string;
   initialName?: string;
   initialIcon?: string;
+  isCategory?: boolean;
 };
 
 const createStyles = (theme: any) => StyleSheet.create({
@@ -290,6 +292,112 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.textColor,
     textAlign: 'center',
   },
+  // About modal styles
+  aboutModal: {
+    backgroundColor: theme.cardBackground,
+    borderRadius: 16,
+    padding: 24,
+    width: '85%',
+    maxWidth: 400,
+    maxHeight: '80%',
+  },
+  aboutHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  appIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: theme.primaryColor,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: theme.textColor,
+    marginBottom: 8,
+  },
+  appVersion: {
+    fontSize: 16,
+    color: theme.textSecondary,
+    marginBottom: 4,
+  },
+  appTagline: {
+    fontSize: 14,
+    color: theme.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  aboutContent: {
+    flex: 1,
+  },
+  aboutSection: {
+    marginBottom: 16,
+  },
+  aboutSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.textColor,
+    marginBottom: 8,
+  },
+  aboutSectionText: {
+    fontSize: 14,
+    color: theme.textSecondary,
+    lineHeight: 20,
+  },
+  aboutFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  aboutFeatureText: {
+    fontSize: 14,
+    color: theme.textSecondary,
+    marginLeft: 8,
+  },
+  aboutFooter: {
+    borderTopWidth: 1,
+    borderTopColor: theme.borderColor,
+    paddingTop: 16,
+    alignItems: 'center',
+  },
+  aboutFooterText: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  closeAboutButton: {
+    backgroundColor: theme.primaryColor,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  closeAboutButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  iconSelector: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconPreview: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  iconText: {
+    fontSize: 16,
+  },
 });
 
 const EditModal: React.FC<EditModalProps> = ({
@@ -299,10 +407,12 @@ const EditModal: React.FC<EditModalProps> = ({
   title,
   initialName = '',
   initialIcon = '',
+  isCategory = true,
 }) => {
   const { theme } = useTheme();
   const [name, setName] = useState(initialName);
-  const [icon, setIcon] = useState(initialIcon);
+  const [icon, setIcon] = useState<IconName>((initialIcon as IconName) || 'circle');
+  const [showIconSelector, setShowIconSelector] = useState(false);
   const styles = createStyles(theme);
 
   const handleSave = () => {
@@ -310,64 +420,86 @@ const EditModal: React.FC<EditModalProps> = ({
       Alert.alert('Error', 'Name is required');
       return;
     }
-    onSave(name.trim(), icon.trim() || 'circle');
+    onSave(name.trim(), icon);
     setName('');
-    setIcon('');
+    setIcon('circle');
     onClose();
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-        <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-          <Text style={[styles.modalTitle, { color: theme.textColor }]}>{title}</Text>
-          
-          <TextInput
-            style={[styles.input, { 
-              color: theme.textColor,
-              borderColor: theme.borderColor,
-              backgroundColor: theme.backgroundColor
-            }]}
-            placeholder="Name"
-            placeholderTextColor={theme.textSecondary}
-            value={name}
-            onChangeText={setName}
-          />
-          
-          <TextInput
-            style={[styles.input, { 
-              color: theme.textColor,
-              borderColor: theme.borderColor,
-              backgroundColor: theme.backgroundColor
-            }]}
-            placeholder="Icon (FontAwesome name)"
-            placeholderTextColor={theme.textSecondary}
-            value={icon}
-            onChangeText={setIcon}
-          />
+    <>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}>{title}</Text>
+            
+            <TextInput
+              style={[styles.input, { 
+                color: theme.textColor,
+                borderColor: theme.borderColor,
+                backgroundColor: theme.backgroundColor
+              }]}
+              placeholder="Name"
+              placeholderTextColor={theme.textSecondary}
+              value={name}
+              onChangeText={setName}
+            />
+            
+            <TouchableOpacity
+              style={[styles.iconSelector, { 
+                borderColor: theme.borderColor,
+                backgroundColor: theme.backgroundColor
+              }]}
+              onPress={() => setShowIconSelector(true)}
+            >
+              <View style={styles.iconPreview}>
+                {isCategory ? (
+                  <CategoryIcon iconName={icon} size={20} />
+                ) : (
+                  <LocationIcon iconName={icon} size={20} />
+                )}
+              </View>
+              <Text style={[styles.iconText, { color: theme.textColor }]}>
+                Select Icon ({icon})
+              </Text>
+              <FontAwesome name="chevron-right" size={16} color={theme.textSecondary} />
+            </TouchableOpacity>
 
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: theme.dangerColor }]}
-              onPress={onClose}
-            >
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: theme.primaryColor }]}
-              onPress={handleSave}
-            >
-              <Text style={styles.modalButtonText}>Save</Text>
-            </TouchableOpacity>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.dangerColor }]}
+                onPress={onClose}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.primaryColor }]}
+                onPress={handleSave}
+              >
+                <Text style={styles.modalButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <IconSelector
+        visible={showIconSelector}
+        onClose={() => setShowIconSelector(false)}
+        onSelect={(selectedIcon) => {
+          setIcon(selectedIcon);
+          setShowIconSelector(false);
+        }}
+        icons={isCategory ? CATEGORY_ICONS : LOCATION_ICONS}
+        title={`Select ${isCategory ? 'Category' : 'Location'} Icon`}
+        selectedIcon={icon}
+      />
+    </>
   );
 };
 
@@ -381,6 +513,7 @@ export default function SettingsScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [editItem, setEditItem] = useState<Category | Location | null>(null);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const settings: SettingItem[] = [
     {
@@ -438,7 +571,7 @@ export default function SettingsScreen() {
       title: t('settings.about'),
       description: t('settings.aboutDescription'),
       type: 'navigation',
-      onPress: () => router.push('/about'),
+      onPress: () => setShowAboutModal(true),
     },
   ];
 
@@ -596,6 +729,106 @@ export default function SettingsScreen() {
     </Modal>
   );
 
+  const renderAboutModal = () => (
+    <Modal
+      visible={showAboutModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowAboutModal(false)}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowAboutModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.aboutModal}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          {/* App Header */}
+          <View style={styles.aboutHeader}>
+            <View style={styles.appIcon}>
+              <Image 
+                source={require('../assets/food_expiry_logo.png')} 
+                style={{ width: 64, height: 64, borderRadius: 16 }}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.appName}>FoodExpiry Tracker</Text>
+            <Text style={styles.appVersion}>Version 1.0.0</Text>
+            <Text style={styles.appTagline}>"Never let food go to waste again"</Text>
+          </View>
+
+          {/* App Content */}
+          <ScrollView 
+            style={styles.aboutContent}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={{ paddingBottom: 16 }}
+          >
+            <View style={styles.aboutSection}>
+              <Text style={styles.aboutSectionTitle}>About</Text>
+              <Text style={styles.aboutSectionText}>
+                FoodExpiry Tracker is your personal food management assistant. Keep track of expiration dates, 
+                organize your pantry, and reduce food waste with our intuitive and feature-rich app.
+              </Text>
+            </View>
+
+            <View style={styles.aboutSection}>
+              <Text style={styles.aboutSectionTitle}>Key Features</Text>
+              <View style={styles.aboutFeature}>
+                <Text style={{ color: theme.primaryColor }}>📅</Text>
+                <Text style={styles.aboutFeatureText}>Smart expiry date tracking with visual calendar</Text>
+              </View>
+              <View style={styles.aboutFeature}>
+                <Text style={{ color: theme.primaryColor }}>🏷️</Text>
+                <Text style={styles.aboutFeatureText}>Customizable categories and storage locations</Text>
+              </View>
+              <View style={styles.aboutFeature}>
+                <Text style={{ color: theme.primaryColor }}>📊</Text>
+                <Text style={styles.aboutFeatureText}>Dashboard overview with status indicators</Text>
+              </View>
+              <View style={styles.aboutFeature}>
+                <Text style={{ color: theme.primaryColor }}>🔍</Text>
+                <Text style={styles.aboutFeatureText}>Advanced search and filtering options</Text>
+              </View>
+              <View style={styles.aboutFeature}>
+                <Text style={{ color: theme.primaryColor }}>🌙</Text>
+                <Text style={styles.aboutFeatureText}>Dark mode and multiple language support</Text>
+              </View>
+              <View style={styles.aboutFeature}>
+                <Text style={{ color: theme.primaryColor }}>📱</Text>
+                <Text style={styles.aboutFeatureText}>Cross-platform compatibility (iOS, Android, Web)</Text>
+              </View>
+            </View>
+
+            <View style={styles.aboutSection}>
+              <Text style={styles.aboutSectionTitle}>Technology</Text>
+              <Text style={styles.aboutSectionText}>
+                Built with React Native and Expo for optimal performance across all platforms. 
+                Uses SQLite for reliable local data storage and React Navigation for smooth user experience.
+              </Text>
+            </View>
+          </ScrollView>
+
+          {/* Footer */}
+          <View style={styles.aboutFooter}>
+            <Text style={styles.aboutFooterText}>
+              Made with ❤️ for reducing food waste{'\n'}
+              © 2024 FoodExpiry Tracker. All rights reserved.
+            </Text>
+            <TouchableOpacity 
+              style={styles.closeAboutButton}
+              onPress={() => setShowAboutModal(false)}
+            >
+              <Text style={styles.closeAboutButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   return (
     <>
       <View style={styles.container}>
@@ -626,6 +859,7 @@ export default function SettingsScreen() {
           title={editItem ? t('editCategory') : t('addCategory')}
           initialName={editItem?.name}
           initialIcon={editItem?.icon}
+          isCategory={true}
         />
 
         <EditModal
@@ -644,9 +878,11 @@ export default function SettingsScreen() {
           title={editItem ? t('editLocation') : t('addLocation')}
           initialName={editItem?.name}
           initialIcon={editItem?.icon}
+          isCategory={false}
         />
 
         {renderLanguageModal()}
+        {renderAboutModal()}
         <BottomNav />
       </View>
     </>

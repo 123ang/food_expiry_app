@@ -14,6 +14,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../../components/BottomNav';
 import IconSelector, { LOCATION_ICONS } from '../../components/IconSelector';
+import LocationIcon from '../../components/LocationIcon';
 import { Location } from '../../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
@@ -238,7 +239,7 @@ export default function LocationsScreen() {
             onPress={() => setShowIconSelector(true)}
           >
             <View style={styles.iconPreview}>
-              <FontAwesome name={selectedIcon} size={20} color={theme.primaryColor} />
+              <LocationIcon iconName={selectedIcon} size={20} />
             </View>
             <Text style={styles.iconText}>Select Icon</Text>
           </TouchableOpacity>
@@ -254,11 +255,7 @@ export default function LocationsScreen() {
           {locations.map((location) => (
             <View key={location.id} style={styles.locationItem}>
               <View style={styles.locationIcon}>
-                <FontAwesome
-                  name={location.icon as IconName}
-                  size={20}
-                  color={theme.primaryColor}
-                />
+                <LocationIcon iconName={location.icon} size={20} />
               </View>
               <Text style={styles.locationName}>{location.name}</Text>
               <TouchableOpacity
