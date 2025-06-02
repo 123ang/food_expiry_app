@@ -306,7 +306,7 @@ export default function CategoryDetailScreen() {
           <View style={[styles.statsIcon, { backgroundColor: `${category?.color || theme.primaryColor}20` }]}>
             <CategoryIcon iconName={category?.icon} size={24} />
           </View>
-          <Text style={styles.statsTitle}>Items in {category?.name || 'Category'}</Text>
+          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {category?.name || 'Category'}</Text>
           <Text style={styles.statsCount}>{categoryItems.length}</Text>
         </View>
 
@@ -324,7 +324,7 @@ export default function CategoryDetailScreen() {
           <View style={styles.emptyState}>
             <Text style={{ fontSize: 48 }}>📦</Text>
             <Text style={styles.emptyStateText}>
-              No items in this category yet
+              {t('detail.noItemsYet')}
             </Text>
           </View>
         )}

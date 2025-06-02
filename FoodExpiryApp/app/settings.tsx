@@ -1001,7 +1001,7 @@ export default function SettingsScreen() {
       <View style={styles.container}>
         {/* Custom Header */}
         <View style={styles.customHeader}>
-          <Text style={styles.headerTitle}>Settings</Text>
+          <Text style={styles.headerTitle}>{t('header.settings')}</Text>
         </View>
         
         <ScrollView style={styles.content}>

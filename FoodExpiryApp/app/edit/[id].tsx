@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { DatePicker } from '../../components/DatePicker';
 import { getCurrentDate } from '../../database/database';
@@ -25,6 +26,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 export default function EditScreen() {
   const { id } = useLocalSearchParams();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { foodItems, updateFoodItem, refreshAll, categories, locations } = useDatabase();
   
@@ -238,7 +240,7 @@ export default function EditScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.primaryColor} />
-        <Text style={styles.loadingText}>Loading item details...</Text>
+        <Text style={styles.loadingText}>{t('addItem.loading')}</Text>
       </View>
     );
   }
@@ -255,7 +257,7 @@ export default function EditScreen() {
           >
             <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Edit Food Item</Text>
+          <Text style={styles.title}>{t('addItem.editTitle')}</Text>
           <TouchableOpacity 
             style={[styles.saveButton, isSaving && { opacity: 0.7 }]} 
             onPress={handleSave}
@@ -264,17 +266,17 @@ export default function EditScreen() {
             {isSaving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.saveButtonText}>Save</Text>
+              <Text style={styles.saveButtonText}>{t('form.save')}</Text>
             )}
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} scrollEnabled={!isSaving}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Item Name</Text>
+            <Text style={styles.label}>{t('addItem.itemName')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter food item name"
+              placeholder={t('addItem.itemNamePlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={itemName}
               onChangeText={setItemName}
@@ -282,7 +284,7 @@ export default function EditScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Category</Text>
+            <Text style={styles.label}>{t('addItem.category')}</Text>
             <View style={styles.optionsGrid}>
               {categories.map((category) => (
                 <TouchableOpacity
@@ -303,7 +305,7 @@ export default function EditScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Storage Location</Text>
+            <Text style={styles.label}>{t('addItem.storageLocation')}</Text>
             <View style={styles.optionsGrid}>
               {locations.map((location) => (
                 <TouchableOpacity
@@ -324,7 +326,7 @@ export default function EditScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Expiry Date</Text>
+            <Text style={styles.label}>{t('addItem.expiryDate')}</Text>
             <View style={styles.datePickerContainer}>
               <DatePicker
                 value={expiryDate}
@@ -336,10 +338,10 @@ export default function EditScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Reminder Days</Text>
+            <Text style={styles.label}>{t('addItem.reminderDays')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Days before expiry to remind"
+              placeholder={t('addItem.reminderDaysPlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={reminderDays}
               onChangeText={setReminderDays}
@@ -348,10 +350,10 @@ export default function EditScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Notes</Text>
+            <Text style={styles.label}>{t('addItem.notes')}</Text>
             <TextInput
               style={[styles.input, styles.notesInput]}
-              placeholder="Add any notes about the item"
+              placeholder={t('addItem.notesPlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={notes}
               onChangeText={setNotes}

@@ -12,6 +12,7 @@ import {
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { DatePicker } from '../components/DatePicker';
 import { getCurrentDate } from '../database/database';
@@ -23,6 +24,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function AddScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { createFoodItem, refreshFoodItems, refreshAll, locations, categories } = useDatabase();
   const { prefilledDate } = useLocalSearchParams();
@@ -51,12 +53,12 @@ export default function AddScreen() {
     console.log('Location ID:', selectedLocation);
     
     if (!itemName.trim()) {
-      Alert.alert('Error', 'Please enter an item name');
+      Alert.alert(t('alert.error'), t('error.enterItemName'));
       return;
     }
 
     if (!selectedLocation) {
-      Alert.alert('Error', 'Please select a storage location');
+      Alert.alert(t('alert.error'), t('error.selectStorageLocation'));
       return;
     }
 
@@ -86,7 +88,7 @@ export default function AddScreen() {
       console.error('Error creating food item:', error);
       console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
       console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      Alert.alert('Error', `Failed to create item\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      Alert.alert(t('alert.error'), `${t('error.failedToCreate')}\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -203,18 +205,18 @@ export default function AddScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
           </TouchableOpacity>
-          <Text style={styles.title}>Add Food Item</Text>
+          <Text style={styles.title}>{t('addItem.title')}</Text>
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
+            <Text style={styles.saveButtonText}>{t('form.save')}</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Item Name</Text>
+            <Text style={styles.label}>{t('addItem.itemName')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter food item name"
+              placeholder={t('addItem.itemNamePlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={itemName}
               onChangeText={setItemName}
@@ -222,10 +224,10 @@ export default function AddScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Quantity</Text>
+            <Text style={styles.label}>{t('addItem.quantity')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter quantity"
+              placeholder={t('addItem.quantityPlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={quantity}
               onChangeText={setQuantity}
@@ -234,7 +236,7 @@ export default function AddScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Category</Text>
+            <Text style={styles.label}>{t('addItem.category')}</Text>
             <View style={styles.optionsGrid}>
               {categories.map((category) => (
                 <TouchableOpacity
@@ -255,7 +257,7 @@ export default function AddScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Storage Location</Text>
+            <Text style={styles.label}>{t('addItem.storageLocation')}</Text>
             <View style={styles.optionsGrid}>
               {locations.map((location) => (
                 <TouchableOpacity
@@ -276,7 +278,7 @@ export default function AddScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Expiry Date</Text>
+            <Text style={styles.label}>{t('addItem.expiryDate')}</Text>
             <View style={styles.datePickerContainer}>
               <DatePicker
                 value={expiryDate}
@@ -288,10 +290,10 @@ export default function AddScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Reminder Days</Text>
+            <Text style={styles.label}>{t('addItem.reminderDays')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Days before expiry to remind"
+              placeholder={t('addItem.reminderDaysPlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={reminderDays}
               onChangeText={setReminderDays}
@@ -300,10 +302,10 @@ export default function AddScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Notes</Text>
+            <Text style={styles.label}>{t('addItem.notes')}</Text>
             <TextInput
               style={[styles.input, styles.notesInput]}
-              placeholder="Add any notes about the item"
+              placeholder={t('addItem.notesPlaceholder')}
               placeholderTextColor={theme.textSecondary}
               value={notes}
               onChangeText={setNotes}

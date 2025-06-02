@@ -18,6 +18,7 @@ import { BottomNav } from '../../components/BottomNav';
 import CategoryIcon from '../../components/CategoryIcon';
 import { Category } from '../../database/models';
 import { useLanguage } from '../../context/LanguageContext';
+import { FontAwesome } from '@expo/vector-icons';
 
 // Category emojis for selection (same as settings)
 const CATEGORY_EMOJIS = [
@@ -177,15 +178,6 @@ export default function CategoriesScreen() {
       fontWeight: 'bold',
       color: theme.textColor,
     },
-    addButton: {
-      backgroundColor: theme.primaryColor,
-      borderRadius: 8,
-      padding: 8,
-      width: 40,
-      height: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
     inputContainer: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
@@ -284,6 +276,15 @@ export default function CategoriesScreen() {
     headerSpacer: {
       width: 40,
     },
+    addButton: {
+      backgroundColor: theme.primaryColor,
+      borderRadius: 8,
+      padding: 8,
+      width: 40,
+      height: 32,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
   });
 
   const handleSave = async () => {
@@ -358,7 +359,12 @@ export default function CategoriesScreen() {
           <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Categories</Text>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity 
+          style={styles.addButton} 
+          onPress={() => setEditingCategory(null)}
+        >
+          <FontAwesome name="plus" size={16} color="#FFFFFF" />
+        </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.content}>

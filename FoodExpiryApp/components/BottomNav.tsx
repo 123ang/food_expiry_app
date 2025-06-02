@@ -107,16 +107,16 @@ export function BottomNav() {
   const navItems = [
     { name: t('nav.home'), icon: 'home', path: '/' },
     { name: t('nav.list'), icon: 'list', path: '/list' },
-    { name: 'Add', icon: 'plus', path: '/add' },
+    { name: t('nav.add'), icon: 'plus', path: '/add' },
     { name: t('nav.calendar'), icon: 'calendar', path: '/calendar' },
-    { name: 'Settings', icon: 'cog', path: '/settings' },
+    { name: t('nav.settings'), icon: 'cog', path: '/settings' },
   ];
 
   return (
     <View style={styles.container}>
       {navItems.map((item) => {
         const isActive = pathname === item.path;
-        const isAdd = item.name === 'Add';
+        const isAdd = item.path === '/add';
 
         if (isAdd) {
           return (

@@ -7,36 +7,38 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { BottomNav } from '../../components/BottomNav';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-const statusCategories = [
-  {
-    id: 'fresh',
-    name: 'Fresh Items',
-    icon: 'check-circle' as IconName,
-    color: '#4CAF50',
-  },
-  {
-    id: 'expiring',
-    name: 'Expiring',
-    icon: 'clock-o' as IconName,
-    color: '#FF9800',
-  },
-  {
-    id: 'expired',
-    name: 'Expired',
-    icon: 'warning' as IconName,
-    color: '#F44336',
-  },
-];
-
 export default function ItemsScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
+
+  const statusCategories = [
+    {
+      id: 'fresh',
+      name: t('status.freshItems'),
+      icon: 'check-circle' as IconName,
+      color: '#4CAF50',
+    },
+    {
+      id: 'expiring',
+      name: t('status.expiring'),
+      icon: 'clock-o' as IconName,
+      color: '#FF9800',
+    },
+    {
+      id: 'expired',
+      name: t('status.expired'),
+      icon: 'warning' as IconName,
+      color: '#F44336',
+    },
+  ];
 
   const styles = StyleSheet.create({
     container: {
@@ -94,7 +96,7 @@ export default function ItemsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Items</Text>
+        <Text style={styles.title}>{t('status.items')}</Text>
       </View>
       
       <ScrollView style={styles.content}>
@@ -109,7 +111,7 @@ export default function ItemsScreen() {
             </View>
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>{category.name}</Text>
-              <Text style={styles.cardSubtitle}>View all items</Text>
+              <Text style={styles.cardSubtitle}>{t('status.viewAll')}</Text>
             </View>
             <FontAwesome name="chevron-right" size={16} color={theme.textSecondary} />
           </TouchableOpacity>

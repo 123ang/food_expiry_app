@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { translations, Language } from '../context/LanguageContext';
 
 let db: SQLite.SQLiteDatabase;
 let useFallbackStorage = false;
@@ -28,25 +29,20 @@ const fallbackStorage = {
       return;
     }
 
-    // Initialize with default data
-    const defaultCategories = [
-      { id: 1, name: 'Vegetables', icon: 'vegetables' },
-      { id: 2, name: 'Fruits', icon: 'apple' },
-      { id: 3, name: 'Dairy', icon: 'dairy' },
-      { id: 4, name: 'Meat', icon: 'meat' },
-      { id: 5, name: 'Snacks', icon: 'snacks' },
-      { id: 6, name: 'Desserts', icon: 'dessert' },
-      { id: 7, name: 'Seafood', icon: 'seafood' },
-      { id: 8, name: 'Bread', icon: 'bread' }
-    ];
+    // Get current language
+    let currentLanguage: Language = 'en';
+    try {
+      const savedLanguage = await AsyncStorage.getItem('app_language');
+      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh' || savedLanguage === 'ja')) {
+        currentLanguage = savedLanguage as Language;
+      }
+    } catch (error) {
+      console.log('Could not load language preference, using English');
+    }
 
-    const defaultLocations = [
-      { id: 1, name: 'Fridge', icon: 'fridge' },
-      { id: 2, name: 'Freezer', icon: 'freezer' },
-      { id: 3, name: 'Pantry', icon: 'pantry' },
-      { id: 4, name: 'Counter', icon: 'counter' },
-      { id: 5, name: 'Cabinet', icon: 'cabinet' }
-    ];
+    // Initialize with translated default data
+    const defaultCategories = getDefaultCategories(currentLanguage);
+    const defaultLocations = getDefaultLocations(currentLanguage);
 
     await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
     await AsyncStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(defaultLocations));
@@ -69,6 +65,14 @@ const fallbackStorage = {
   async getAllFoodItems() {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.FOOD_ITEMS);
     return data ? JSON.parse(data) : [];
+  },
+
+  async saveCategories(categories: any[]) {
+    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+  },
+
+  async saveLocations(locations: any[]) {
+    await AsyncStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locations));
   },
 
   async saveFoodItems(items: any[]) {
@@ -227,32 +231,48 @@ export const initDatabase = async () => {
       );
     `);
 
-    // Insert default categories if they don't exist
+    // Get current language for default data
+    let currentLanguage: Language = 'en';
+    try {
+      const savedLanguage = await AsyncStorage.getItem('app_language');
+      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh' || savedLanguage === 'ja')) {
+        currentLanguage = savedLanguage as Language;
+      }
+    } catch (error) {
+      console.log('Could not load language preference, using English');
+    }
+
+    // Get translated default data
+    const defaultCategories = getDefaultCategories(currentLanguage);
+    const defaultLocations = getDefaultLocations(currentLanguage);
+
+    // Insert default categories with translated names
     await database.execAsync(`
       DELETE FROM categories WHERE id IN (1,2,3,4,5,6,7,8);
-      INSERT INTO categories (id, name, icon) VALUES 
-      (1, 'Vegetables', 'vegetables'),
-      (2, 'Fruits', 'apple'),
-      (3, 'Dairy', 'dairy'),
-      (4, 'Meat', 'meat'),
-      (5, 'Snacks', 'snacks'),
-      (6, 'Desserts', 'dessert'),
-      (7, 'Seafood', 'seafood'),
-      (8, 'Bread', 'bread');
+    `);
+    
+    const categoryInserts = defaultCategories.map(cat => 
+      `(${cat.id}, '${cat.name.replace(/'/g, "''")}', '${cat.icon}')`
+    ).join(',');
+    
+    await database.execAsync(`
+      INSERT OR REPLACE INTO categories (id, name, icon) VALUES ${categoryInserts};
     `);
 
-    // Insert default locations if they don't exist
+    // Insert default locations with translated names
     await database.execAsync(`
       DELETE FROM locations WHERE id IN (1,2,3,4,5);
-      INSERT INTO locations (id, name, icon) VALUES 
-      (1, 'Fridge', 'fridge'),
-      (2, 'Freezer', 'freezer'),
-      (3, 'Pantry', 'pantry'),
-      (4, 'Counter', 'counter'),
-      (5, 'Cabinet', 'cabinet');
+    `);
+    
+    const locationInserts = defaultLocations.map(loc => 
+      `(${loc.id}, '${loc.name.replace(/'/g, "''")}', '${loc.icon}')`
+    ).join(',');
+    
+    await database.execAsync(`
+      INSERT OR REPLACE INTO locations (id, name, icon) VALUES ${locationInserts};
     `);
 
-    console.log('Database initialized successfully');
+    console.log(`Database initialized successfully with ${currentLanguage} translations`);
   } catch (error) {
     console.error('Error initializing database:', error);
     throw error;
@@ -303,4 +323,66 @@ export const daysDifference = (date1: string, date2: string): number => {
   const d2 = new Date(date2);
   const diffTime = d2.getTime() - d1.getTime();
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-}; 
+};
+
+// Helper function to get translated default categories
+const getDefaultCategories = (language: Language = 'en') => {
+  const t = (key: string) => translations[language][key] || translations['en'][key] || key;
+  
+  return [
+    { id: 1, name: t('defaultCategory.vegetables'), icon: 'vegetables' },
+    { id: 2, name: t('defaultCategory.fruits'), icon: 'apple' },
+    { id: 3, name: t('defaultCategory.dairy'), icon: 'dairy' },
+    { id: 4, name: t('defaultCategory.meat'), icon: 'meat' },
+    { id: 5, name: t('defaultCategory.snacks'), icon: 'snacks' },
+    { id: 6, name: t('defaultCategory.desserts'), icon: 'dessert' },
+    { id: 7, name: t('defaultCategory.seafood'), icon: 'seafood' },
+    { id: 8, name: t('defaultCategory.bread'), icon: 'bread' }
+  ];
+};
+
+// Helper function to get translated default locations
+const getDefaultLocations = (language: Language = 'en') => {
+  const t = (key: string) => translations[language][key] || translations['en'][key] || key;
+  
+  return [
+    { id: 1, name: t('defaultLocation.fridge'), icon: 'fridge' },
+    { id: 2, name: t('defaultLocation.freezer'), icon: 'freezer' },
+    { id: 3, name: t('defaultLocation.pantry'), icon: 'pantry' },
+    { id: 4, name: t('defaultLocation.counter'), icon: 'counter' },
+    { id: 5, name: t('defaultLocation.cabinet'), icon: 'cabinet' }
+  ];
+};
+
+// Update default data when language changes
+export const updateDefaultDataForLanguage = async (language: Language) => {
+  try {
+    const database = await getDatabase();
+    
+    // Get translated default data
+    const defaultCategories = getDefaultCategories(language);
+    const defaultLocations = getDefaultLocations(language);
+
+    // Update default categories (only those with IDs 1-8)
+    for (const category of defaultCategories) {
+      await database.execAsync(`
+        UPDATE categories SET name = '${category.name.replace(/'/g, "''")}' WHERE id = ${category.id};
+      `);
+    }
+
+    // Update default locations (only those with IDs 1-5)
+    for (const location of defaultLocations) {
+      await database.execAsync(`
+        UPDATE locations SET name = '${location.name.replace(/'/g, "''")}' WHERE id = ${location.id};
+      `);
+    }
+
+    console.log(`Default data updated for language: ${language}`);
+  } catch (error) {
+    console.error('Error updating default data for language:', error);
+    throw error;
+  }
+};
+
+// Export helper functions for use by other parts of the app
+export { getDefaultCategories, getDefaultLocations }; 

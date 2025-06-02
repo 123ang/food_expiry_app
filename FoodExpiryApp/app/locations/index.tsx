@@ -161,13 +161,26 @@ export default function LocationsScreen() {
       padding: 16,
     },
     header: {
+      backgroundColor: theme.cardBackground,
+      padding: 16,
+      paddingTop: 50,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
+    },
+    headerContent: {
+      flex: 1,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
     },
     title: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: 'bold',
       color: theme.textColor,
     },
@@ -255,29 +268,6 @@ export default function LocationsScreen() {
     actionButton: {
       padding: 8,
     },
-    headerContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      paddingTop: 50,
-      backgroundColor: theme.cardBackground,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.borderColor,
-    },
-    backButton: {
-      padding: 8,
-      marginRight: 8,
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.textColor,
-      textAlign: 'center',
-    },
-    headerSpacer: {
-      width: 40,
-    },
   });
 
   const handleSave = async () => {
@@ -340,12 +330,16 @@ export default function LocationsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
+      <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Storage Locations</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>Storage Locations</Text>
+          <TouchableOpacity style={styles.addButton} onPress={() => setEditingLocation(null)}>
+            <FontAwesome name="plus" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
       
       <ScrollView style={styles.content}>

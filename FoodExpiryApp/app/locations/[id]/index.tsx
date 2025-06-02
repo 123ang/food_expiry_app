@@ -8,6 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { useDatabase } from '../../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -91,6 +92,7 @@ const FoodItemCard: React.FC<{
 
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { locations, foodItems, refreshAll } = useDatabase();
@@ -259,7 +261,7 @@ export default function LocationDetailScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>Location not found</Text>
+            <Text style={styles.title}>{t('detail.locationNotFound')}</Text>
           </View>
         </View>
       </View>
@@ -282,7 +284,7 @@ export default function LocationDetailScreen() {
           <View style={[styles.statsIcon, { backgroundColor: `${locationColor}20` }]}>
             <LocationIcon iconName={location.icon} size={24} />
           </View>
-          <Text style={styles.statsTitle}>Items in {location.name}</Text>
+          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {location.name}</Text>
           <Text style={styles.statsCount}>{locationItems.length}</Text>
         </View>
 
@@ -290,8 +292,7 @@ export default function LocationDetailScreen() {
           <View style={styles.emptyState}>
             <Text style={{ fontSize: 48 }}>📦</Text>
             <Text style={styles.emptyStateText}>
-              No items in {location.name} yet.{'\n'}
-              Add some items to see them here!
+              {t('detail.noItemsInLocation').replace('{location}', location.name)}
             </Text>
           </View>
         ) : (

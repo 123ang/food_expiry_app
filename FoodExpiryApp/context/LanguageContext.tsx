@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateDefaultDataForLanguage } from '../database/database';
 
 export type Language = 'en' | 'zh' | 'ja';
 
@@ -20,6 +21,8 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.calendar': 'Calendar',
     'nav.locations': 'Locations',
     'nav.categories': 'Categories',
+    'nav.settings': 'Settings',
+    'nav.add': 'Add',
     
     // Home Screen
     'home.welcome': 'Welcome Back!',
@@ -48,10 +51,19 @@ const translations: Record<Language, Record<string, string>> = {
     'calendar.items': 'items',
     
     // Status Screens
+    'status.items': 'Items',
     'status.fresh': 'Fresh Items',
-    'status.expiring': 'Expiring Items',
-    'status.expired': 'Expired Items',
+    'status.freshItems': 'Fresh Items',
+    'status.expiring': 'Expiring',
+    'status.expired': 'Expired',
+    'status.expiringSoon': 'Expiring Soon',
+    'status.expiredItems': 'Expired Items',
     'status.viewAll': 'View all items',
+    'status.noItems': 'No {status} items found',
+    'status.refresh': 'Refresh',
+    'status.retry': 'Retry',
+    'status.loading': 'Loading...',
+    'status.error': 'Error loading data',
     
     // Food Item Details
     'item.details': 'Item Details',
@@ -159,6 +171,7 @@ const translations: Record<Language, Record<string, string>> = {
     'about.sectionTechnology': 'Technology',
     'about.technologyDescription': 'Built with React Native and Expo for optimal performance across all platforms.',
     'about.footerText': 'Made with ❤️ for reducing food waste worldwide',
+    'about.close': 'Close',
 
     // Notification Messages
     'notification.testTitle': 'Food Expiry Alert',
@@ -183,11 +196,11 @@ const translations: Record<Language, Record<string, string>> = {
     'notification.enableNotifications': 'Enable Notifications',
     'notification.enableNotificationsDesc': 'Receive alerts about expiring food',
     'notification.expiringSoonAlerts': 'Expiring Soon Alerts',
-    'notification.expiringSoonAlertsDesc': 'Alert when items are about to expire',
+    'notification.expiringSoonAlertsDesc': 'Alert when food items are about to expire',
     'notification.expiringTodayAlerts': 'Expiring Today Alerts',
-    'notification.expiringTodayAlertsDesc': 'Alert when items expire today',
+    'notification.expiringTodayAlertsDesc': 'Alert when food items expire today',
     'notification.expiredAlerts': 'Expired Alerts',
-    'notification.expiredAlertsDesc': 'Alert when items have expired',
+    'notification.expiredAlertsDesc': 'Alert when food items have expired',
     'notification.reminderTiming': 'Reminder Timing',
     'notification.alertMeBefore': 'Alert me before expiry',
     'notification.alertMeBeforeDesc': 'How many days before expiry to alert',
@@ -201,6 +214,85 @@ const translations: Record<Language, Record<string, string>> = {
     'notification.enabledSuccessDesc': 'You will now receive alerts when your food items are about to expire!',
     'notification.disabledError': 'Notifications Disabled',
     'notification.disabledErrorDesc': 'Please enable notifications in your device settings to receive expiry alerts.',
+
+    // Additional Settings Translations
+    'deleteCategory': 'Delete Category',
+    'deleteCategoryConfirm': 'Are you sure you want to delete this category?',
+    'deleteLocation': 'Delete Location',
+    'deleteLocationConfirm': 'Are you sure you want to delete this location?',
+    'cancel': 'Cancel',
+    'delete': 'Delete',
+    'close': 'Close',
+    'save': 'Save',
+    'edit': 'Edit',
+    'add': 'Add',
+    'settings.title': 'Settings',
+
+    // Edit Modal Translations
+    'editCategory': 'Edit Category',
+    'addCategory': 'Add Category',
+    'editLocation': 'Edit Location',
+    'addLocation': 'Add Location',
+    'categoryName': 'Category Name',
+    'locationName': 'Location Name',
+    'selectIcon': 'Select Icon',
+
+    // Default Categories
+    'defaultCategory.vegetables': 'Vegetables',
+    'defaultCategory.fruits': 'Fruits', 
+    'defaultCategory.dairy': 'Dairy',
+    'defaultCategory.meat': 'Meat',
+    'defaultCategory.snacks': 'Snacks',
+    'defaultCategory.desserts': 'Desserts',
+    'defaultCategory.seafood': 'Seafood',
+    'defaultCategory.bread': 'Bread',
+
+    // Default Locations
+    'defaultLocation.fridge': 'Fridge',
+    'defaultLocation.freezer': 'Freezer',
+    'defaultLocation.pantry': 'Pantry',
+    'defaultLocation.counter': 'Counter',
+    'defaultLocation.cabinet': 'Cabinet',
+
+    // Add/Edit Food Item Page
+    'addItem.title': '食品アイテムを追加',
+    'addItem.editTitle': '食品アイテムを編集',
+    'addItem.itemName': 'アイテム名',
+    'addItem.itemNamePlaceholder': '食品アイテム名を入力',
+    'addItem.quantity': '数量',
+    'addItem.quantityPlaceholder': '数量を入力',
+    'addItem.category': 'カテゴリ',
+    'addItem.storageLocation': '保存場所',
+    'addItem.expiryDate': '賞味期限',
+    'addItem.reminderDays': 'リマインダー日数',
+    'addItem.reminderDaysPlaceholder': '期限前のリマインダー日数',
+    'addItem.notes': 'メモ',
+    'addItem.notesPlaceholder': 'アイテムについてのメモを追加',
+    'addItem.loading': 'アイテムの詳細を読み込み中...',
+    
+    // Detail Pages
+    'detail.itemsIn': 'アイテム数：',
+    'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
+    'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加してここで確認してください！',
+    'detail.locationNotFound': '場所が見つかりません',
+
+    // Error Messages  
+    'error.enterItemName': 'アイテム名を入力してください',
+    'error.selectStorageLocation': '保存場所を選択してください',
+    'error.failedToCreate': 'アイテムの作成に失敗しました',
+    'error.failedToUpdate': 'アイテムの更新に失敗しました',
+    'error.failedToLoadData': 'データの読み込みに失敗しました',
+    'error.tryAgain': 'もう一度お試しください',
+
+    // Food Item Status
+    'foodStatus.fresh': 'Fresh',
+    'foodStatus.expiring': 'Expiring',
+    'foodStatus.expired': 'Expired',
+    'foodStatus.expirestoday': 'Expires today',
+    'foodStatus.daysLeft': 'days left',
+    'foodStatus.expiredDays': 'days ago',
+    'foodStatus.noCategory': 'No category',
+    'foodStatus.noLocation': 'No location',
   },
   zh: {
     // Navigation
@@ -209,12 +301,14 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.calendar': '日历',
     'nav.locations': '储存位置',
     'nav.categories': '分类',
+    'nav.settings': '设置',
+    'nav.add': '添加',
     
     // Home Screen
     'home.welcome': '欢迎回来！',
     'home.expiring': '即将过期',
     'home.item': '项',
-    'home.items': '项',
+    'home.items': '食品',
     'home.fresh': '新鲜',
     'home.expired': '已过期',
     'home.storageLocations': '储存位置',
@@ -222,28 +316,37 @@ const translations: Record<Language, Record<string, string>> = {
     'home.loading': '正在加载仪表板...',
     
     // List Screen
-    'list.search': '搜索项目...',
+    'list.search': '搜索食品...',
     'list.all': '全部',
     'list.fresh': '新鲜',
     'list.expiring': '即将过期',
     'list.expired': '已过期',
-    'list.loading': '正在加载项目...',
-    'list.noItems': '未找到项目。开始添加一些项目吧！',
-    'list.noSearch': '没有项目匹配您的搜索',
-    'list.noCategory': '此分类中未找到项目。',
+    'list.loading': '正在加载食品...',
+    'list.noItems': '未找到食品。开始添加一些食品吧！',
+    'list.noSearch': '没有食品匹配您的搜索',
+    'list.noCategory': '此分类中未找到食品。',
     
     // Calendar Screen
-    'calendar.noItems': '此日期没有过期的项目',
-    'calendar.items': '项',
+    'calendar.noItems': '此日期没有过期的食品',
+    'calendar.items': '食品',
     
     // Status Screens
-    'status.fresh': '新鲜项目',
-    'status.expiring': '即将过期项目',
-    'status.expired': '已过期项目',
-    'status.viewAll': '查看所有项目',
+    'status.items': '食品',
+    'status.fresh': '新鲜食品',
+    'status.freshItems': '新鲜食品',
+    'status.expiring': '即将过期',
+    'status.expired': '已过期',
+    'status.expiringSoon': '即将过期食品',
+    'status.expiredItems': '已过期食品',
+    'status.viewAll': '查看所有食品',
+    'status.noItems': '未找到{status}食品',
+    'status.refresh': '刷新',
+    'status.retry': '重试',
+    'status.loading': '正在加载...',
+    'status.error': '加载数据错误',
     
     // Food Item Details
-    'item.details': '项目详情',
+    'item.details': '食品详情',
     'item.daysLeft': '天剩余',
     'item.expirestoday': '今天过期',
     'item.expiredDays': '天前过期',
@@ -255,7 +358,7 @@ const translations: Record<Language, Record<string, string>> = {
     'item.expiryDate': '过期日期',
     
     // Forms
-    'form.itemName': '项目名称',
+    'form.itemName': '食品名称',
     'form.quantity': '数量',
     'form.category': '分类',
     'form.location': '储存位置',
@@ -264,8 +367,8 @@ const translations: Record<Language, Record<string, string>> = {
     'form.notes': '备注',
     'form.save': '保存',
     'form.cancel': '取消',
-    'form.edit': '编辑食品项目',
-    'form.new': '新食品项目',
+    'form.edit': '编辑食品物品',
+    'form.new': '新食品物品',
     
     // Actions
     'action.edit': '编辑',
@@ -275,12 +378,12 @@ const translations: Record<Language, Record<string, string>> = {
     // Alerts
     'alert.error': '错误',
     'alert.success': '成功',
-    'alert.deleteTitle': '删除项目',
+    'alert.deleteTitle': '删除食品',
     'alert.deleteMessage': '您确定要删除吗',
-    'alert.nameRequired': '请输入项目名称',
+    'alert.nameRequired': '请输入食品名称',
     'alert.quantityRequired': '请输入有效数量（最少1个）',
-    'alert.saveFailed': '保存食品项目失败',
-    'alert.deleteFailed': '删除项目失败',
+    'alert.saveFailed': '保存食品物品失败',
+    'alert.deleteFailed': '删除食品失败',
     'alert.loadFailed': '加载数据失败',
     
     // Months
@@ -373,11 +476,11 @@ const translations: Record<Language, Record<string, string>> = {
     'notification.enableNotifications': '启用通知',
     'notification.enableNotificationsDesc': '接收即将过期食品的提醒',
     'notification.expiringSoonAlerts': '即将过期提醒',
-    'notification.expiringSoonAlertsDesc': '当物品即将过期时提醒',
+    'notification.expiringSoonAlertsDesc': '当食品即将过期时提醒',
     'notification.expiringTodayAlerts': '今天过期提醒',
-    'notification.expiringTodayAlertsDesc': '当物品今天过期时提醒',
+    'notification.expiringTodayAlertsDesc': '当食品今天过期时提醒',
     'notification.expiredAlerts': '已过期提醒',
-    'notification.expiredAlertsDesc': '当物品已过期时提醒',
+    'notification.expiredAlertsDesc': '当食品已过期时提醒',
     'notification.reminderTiming': '提醒时间',
     'notification.alertMeBefore': '在过期前提醒我',
     'notification.alertMeBeforeDesc': '在过期前多少天提醒',
@@ -391,6 +494,85 @@ const translations: Record<Language, Record<string, string>> = {
     'notification.enabledSuccessDesc': '您现在将收到即将过期食品的提醒！',
     'notification.disabledError': '通知已禁用',
     'notification.disabledErrorDesc': '请在设备设置中启用通知以接收过期提醒。',
+
+    // Additional Settings Translations
+    'deleteCategory': '删除分类',
+    'deleteCategoryConfirm': '您确定要删除这个分类吗？',
+    'deleteLocation': '删除位置',
+    'deleteLocationConfirm': '您确定要删除这个位置吗？',
+    'cancel': '取消',
+    'delete': '删除',
+    'close': '关闭',
+    'save': '保存',
+    'edit': '编辑',
+    'add': '添加',
+    'settings.title': '设置',
+
+    // Edit Modal Translations
+    'editCategory': '编辑分类',
+    'addCategory': '添加分类',
+    'editLocation': '编辑位置',
+    'addLocation': '添加位置',
+    'categoryName': '分类名称',
+    'locationName': '位置名称',
+    'selectIcon': '选择图标',
+
+    // Default Categories
+    'defaultCategory.vegetables': '蔬菜',
+    'defaultCategory.fruits': '水果', 
+    'defaultCategory.dairy': '乳制品',
+    'defaultCategory.meat': '肉类',
+    'defaultCategory.snacks': '零食',
+    'defaultCategory.desserts': '甜点',
+    'defaultCategory.seafood': '海鲜',
+    'defaultCategory.bread': '面包',
+
+    // Default Locations
+    'defaultLocation.fridge': '冰箱',
+    'defaultLocation.freezer': '冷冻室',
+    'defaultLocation.pantry': '储藏室',
+    'defaultLocation.counter': '台面',
+    'defaultLocation.cabinet': '橱柜',
+
+    // Add/Edit Food Item Page
+    'addItem.title': '添加食品',
+    'addItem.editTitle': '编辑食品',
+    'addItem.itemName': '食品名称',
+    'addItem.itemNamePlaceholder': '输入食品名称',
+    'addItem.quantity': '数量',
+    'addItem.quantityPlaceholder': '输入数量',
+    'addItem.category': '分类',
+    'addItem.storageLocation': '储存位置',
+    'addItem.expiryDate': '过期日期',
+    'addItem.reminderDays': '提醒天数',
+    'addItem.reminderDaysPlaceholder': '过期前提醒天数',
+    'addItem.notes': '备注',
+    'addItem.notesPlaceholder': '添加关于此食品的备注',
+    'addItem.loading': '正在加载食品详情...',
+    
+    // Detail Pages
+    'detail.itemsIn': '食品在',
+    'detail.noItemsYet': '此分类中还没有食品',
+    'detail.noItemsInLocation': '{location}中还没有食品。\n添加一些食品以在此处查看！',
+    'detail.locationNotFound': '未找到位置',
+
+    // Error Messages  
+    'error.enterItemName': '请输入食品名称',
+    'error.selectStorageLocation': '请选择储存位置',
+    'error.failedToCreate': '创建食品失败',
+    'error.failedToUpdate': '更新食品失败',
+    'error.failedToLoadData': '加载数据失败',
+    'error.tryAgain': '请重试',
+
+    // Food Item Status
+    'foodStatus.fresh': '新鲜',
+    'foodStatus.expiring': '即将过期',
+    'foodStatus.expired': '已过期',
+    'foodStatus.expirestoday': '今天过期',
+    'foodStatus.daysLeft': '天剩余',
+    'foodStatus.expiredDays': '天前',
+    'foodStatus.noCategory': '无分类',
+    'foodStatus.noLocation': '无位置',
   },
   ja: {
     // Navigation
@@ -399,6 +581,8 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.calendar': 'カレンダー',
     'nav.locations': '保存場所',
     'nav.categories': 'カテゴリ',
+    'nav.settings': '設定',
+    'nav.add': '追加',
     
     // Home Screen
     'home.welcome': 'おかえりなさい！',
@@ -427,10 +611,19 @@ const translations: Record<Language, Record<string, string>> = {
     'calendar.items': '項目',
     
     // Status Screens
+    'status.items': 'アイテム',
     'status.fresh': '新鮮なアイテム',
-    'status.expiring': '期限切れ間近のアイテム',
-    'status.expired': '期限切れのアイテム',
+    'status.freshItems': '新鮮なアイテム',
+    'status.expiring': '期限切れ間近',
+    'status.expired': '期限切れ',
+    'status.expiringSoon': '期限切れ間近のアイテム',
+    'status.expiredItems': '期限切れのアイテム',
     'status.viewAll': 'すべてのアイテムを表示',
+    'status.noItems': '{status}アイテムが見つかりません',
+    'status.refresh': '更新',
+    'status.retry': '再試行',
+    'status.loading': '読み込み中...',
+    'status.error': 'データ読み込みエラー',
     
     // Food Item Details
     'item.details': 'アイテムの詳細',
@@ -554,33 +747,112 @@ const translations: Record<Language, Record<string, string>> = {
     'notification.day': '日',
 
     // Notification Settings Screen
-    'notification.enabledTitle': '通知已启用',
-    'notification.enableTitle': '启用通知',
-    'notification.enabledDesc': '当您的食品即将过期时，您将收到提醒。',
-    'notification.disabledDesc': '允许通知以获取即将过期食品的提醒。',
-    'notification.enableButton': '启用通知',
-    'notification.alertSettings': '通知设置',
-    'notification.enableNotifications': '启用通知',
-    'notification.enableNotificationsDesc': '接收即将过期食品的提醒',
-    'notification.expiringSoonAlerts': '即将过期提醒',
-    'notification.expiringSoonAlertsDesc': '当物品即将过期时提醒',
-    'notification.expiringTodayAlerts': '今天过期提醒',
-    'notification.expiringTodayAlertsDesc': '当物品今天过期时提醒',
-    'notification.expiredAlerts': '已过期提醒',
-    'notification.expiredAlertsDesc': '当物品已过期时提醒',
-    'notification.reminderTiming': '提醒时间',
-    'notification.alertMeBefore': '在过期前提醒我',
-    'notification.alertMeBeforeDesc': '在过期前多少天提醒',
-    'notification.testNotification': '测试通知',
-    'notification.testNotificationDesc': '发送测试通知',
-    'notification.testButton': '测试',
-    'notification.testSent': '测试已发送',
-    'notification.testSentDesc': '检查您的通知！',
-    'notification.notEnabledError': '通知未启用',
-    'notification.enabledSuccess': '通知已启用',
-    'notification.enabledSuccessDesc': '您现在将收到即将过期食品的提醒！',
-    'notification.disabledError': '通知已禁用',
-    'notification.disabledErrorDesc': '请在设备设置中启用通知以接收过期提醒。',
+    'notification.enabledTitle': '通知が有効になりました',
+    'notification.enableTitle': '通知を有効にする',
+    'notification.enabledDesc': '食品の期限が近づくとお知らせが届きます。',
+    'notification.disabledDesc': '期限切れ間近の食品についてのお知らせを受け取るために通知を許可してください。',
+    'notification.enableButton': '通知を有効にする',
+    'notification.alertSettings': '通知設定',
+    'notification.enableNotifications': '通知を有効にする',
+    'notification.enableNotificationsDesc': '期限切れ間近の食品のお知らせを受け取る',
+    'notification.expiringSoonAlerts': '期限切れ間近のお知らせ',
+    'notification.expiringSoonAlertsDesc': '食品が期限切れ間近になったときのお知らせ',
+    'notification.expiringTodayAlerts': '今日期限切れのお知らせ',
+    'notification.expiringTodayAlertsDesc': '食品が今日期限切れになるときのお知らせ',
+    'notification.expiredAlerts': '期限切れのお知らせ',
+    'notification.expiredAlertsDesc': '食品が期限切れになったときのお知らせ',
+    'notification.reminderTiming': 'リマインダーのタイミング',
+    'notification.alertMeBefore': '期限切れ前にお知らせ',
+    'notification.alertMeBeforeDesc': '期限切れ何日前にお知らせするか',
+    'notification.testNotification': 'テスト通知',
+    'notification.testNotificationDesc': 'テスト通知を送信',
+    'notification.testButton': 'テスト',
+    'notification.testSent': 'テスト送信完了',
+    'notification.testSentDesc': '通知をご確認ください！',
+    'notification.notEnabledError': '通知が有効になっていません',
+    'notification.enabledSuccess': '通知が有効になりました',
+    'notification.enabledSuccessDesc': '食品の期限切れが近づくとお知らせが届くようになりました！',
+    'notification.disabledError': '通知が無効になっています',
+    'notification.disabledErrorDesc': '期限切れのお知らせを受け取るには、デバイス設定で通知を有効にしてください。',
+
+    // Additional Settings Translations
+    'deleteCategory': 'カテゴリを削除',
+    'deleteCategoryConfirm': 'このカテゴリを削除してもよろしいですか？',
+    'deleteLocation': '場所を削除',
+    'deleteLocationConfirm': 'この場所を削除してもよろしいですか？',
+    'cancel': 'キャンセル',
+    'delete': '削除',
+    'close': '閉じる',
+    'save': '保存',
+    'edit': '編集',
+    'add': '追加',
+    'settings.title': '設定',
+
+    // Edit Modal Translations
+    'editCategory': 'カテゴリを編集',
+    'addCategory': 'カテゴリを追加',
+    'editLocation': '場所を編集',
+    'addLocation': '場所を追加',
+    'categoryName': 'カテゴリ名',
+    'locationName': '場所名',
+    'selectIcon': 'アイコンを選択',
+
+    // Default Categories
+    'defaultCategory.vegetables': '野菜',
+    'defaultCategory.fruits': '果物', 
+    'defaultCategory.dairy': '乳製品',
+    'defaultCategory.meat': '肉',
+    'defaultCategory.snacks': 'スナック',
+    'defaultCategory.desserts': 'デザート',
+    'defaultCategory.seafood': '海鮮',
+    'defaultCategory.bread': 'パン',
+
+    // Default Locations
+    'defaultLocation.fridge': '冷蔵庫',
+    'defaultLocation.freezer': '冷凍庫',
+    'defaultLocation.pantry': 'パントリー',
+    'defaultLocation.counter': '台面',
+    'defaultLocation.cabinet': 'キャビネット',
+
+    // Add/Edit Food Item Page
+    'addItem.title': '食品アイテムを追加',
+    'addItem.editTitle': '食品アイテムを編集',
+    'addItem.itemName': 'アイテム名',
+    'addItem.itemNamePlaceholder': '食品アイテム名を入力',
+    'addItem.quantity': '数量',
+    'addItem.quantityPlaceholder': '数量を入力',
+    'addItem.category': 'カテゴリ',
+    'addItem.storageLocation': '保存場所',
+    'addItem.expiryDate': '賞味期限',
+    'addItem.reminderDays': 'リマインダー日数',
+    'addItem.reminderDaysPlaceholder': '期限前のリマインダー日数',
+    'addItem.notes': 'メモ',
+    'addItem.notesPlaceholder': 'アイテムについてのメモを追加',
+    'addItem.loading': 'アイテムの詳細を読み込み中...',
+    
+    // Detail Pages
+    'detail.itemsIn': 'アイテム数：',
+    'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
+    'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加してここで確認してください！',
+    'detail.locationNotFound': '場所が見つかりません',
+
+    // Error Messages  
+    'error.enterItemName': 'アイテム名を入力してください',
+    'error.selectStorageLocation': '保存場所を選択してください',
+    'error.failedToCreate': 'アイテムの作成に失敗しました',
+    'error.failedToUpdate': 'アイテムの更新に失敗しました',
+    'error.failedToLoadData': 'データの読み込みに失敗しました',
+    'error.tryAgain': 'もう一度お試しください',
+
+    // Food Item Status
+    'foodStatus.fresh': '新鮮',
+    'foodStatus.expiring': '期限切れ間近',
+    'foodStatus.expired': '期限切れ',
+    'foodStatus.expirestoday': '今日期限',
+    'foodStatus.daysLeft': '日残り',
+    'foodStatus.expiredDays': '日前',
+    'foodStatus.noCategory': 'カテゴリなし',
+    'foodStatus.noLocation': '場所なし',
   }
 };
 
@@ -609,6 +881,15 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       await AsyncStorage.setItem('app_language', lang);
       setLanguageState(lang);
+      
+      // Update default categories and locations with new language
+      try {
+        await updateDefaultDataForLanguage(lang);
+        console.log('Default data updated for new language');
+      } catch (error) {
+        console.error('Error updating default data for language:', error);
+        // Continue even if this fails - the main language change should work
+      }
     } catch (error) {
       console.error('Error saving language:', error);
     }

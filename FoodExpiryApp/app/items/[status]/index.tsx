@@ -44,17 +44,18 @@ const FoodItemCard: React.FC<{
   onPress: () => void; 
   theme: any;
   styles: any;
-}> = ({ item, onPress, theme, styles }) => {
+  t: (key: string) => string;
+}> = ({ item, onPress, theme, styles, t }) => {
   const [imageError, setImageError] = useState(false);
 
   // Determine status icon and color based on days until expiry
   const getStatusInfo = () => {
     if (item.days_until_expiry <= 0) {
-      return { icon: '⚠️', color: '#F44336', text: 'Expired' };
+      return { icon: '⚠️', color: '#F44336', text: t('foodStatus.expired') };
     } else if (item.days_until_expiry <= 5) {
-      return { icon: '⏰', color: '#FF9800', text: 'Expiring' };
+      return { icon: '⏰', color: '#FF9800', text: t('foodStatus.expiring') };
     } else {
-      return { icon: '✅', color: '#4CAF50', text: 'Fresh' };
+      return { icon: '✅', color: '#4CAF50', text: t('foodStatus.fresh') };
     }
   };
 
@@ -84,20 +85,20 @@ const FoodItemCard: React.FC<{
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <CategoryIcon iconName={item.category_icon} size={16} />
-            <Text style={styles.metaText}>{item.category_name || 'No category'}</Text>
+            <Text style={styles.metaText}>{item.category_name || t('foodStatus.noCategory')}</Text>
           </View>
           <View style={styles.metaItem}>
             <LocationIcon iconName={item.location_icon} size={16} />
-            <Text style={styles.metaText}>{item.location_name || 'No location'}</Text>
+            <Text style={styles.metaText}>{item.location_name || t('foodStatus.noLocation')}</Text>
           </View>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 16, color: theme.textSecondary }}>📅</Text>
             <Text style={[styles.metaText, { color: statusInfo.color }]}>
               {item.days_until_expiry > 0
-                ? `${item.days_until_expiry} days left`
+                ? `${item.days_until_expiry} ${t('foodStatus.daysLeft')}`
                 : item.days_until_expiry === 0
-                ? 'Expires today'
-                : `Expired ${Math.abs(item.days_until_expiry)} days ago`}
+                ? t('foodStatus.expirestoday')
+                : `${t('foodStatus.expired')} ${Math.abs(item.days_until_expiry)} ${t('foodStatus.expiredDays')}`}
             </Text>
           </View>
         </View>
@@ -122,9 +123,9 @@ export default function ItemStatusScreen() {
   
   // Map status to display information
   const statusConfig = {
-    fresh: { title: 'Fresh Items', color: '#4CAF50', icon: '✅' },
-    expiring: { title: 'Expiring Soon', color: '#FF9800', icon: '⏰' },
-    expired: { title: 'Expired Items', color: '#F44336', icon: '⚠️' }
+    fresh: { title: t('status.freshItems'), color: '#4CAF50', icon: '✅' },
+    expiring: { title: t('status.expiringSoon'), color: '#FF9800', icon: '⏰' },
+    expired: { title: t('status.expiredItems'), color: '#F44336', icon: '⚠️' }
   };
   
   const statusData = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.fresh;
@@ -136,7 +137,7 @@ export default function ItemStatusScreen() {
   if (!theme) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <Text>Loading...</Text>
+        <Text>{t('status.loading')}</Text>
       </View>
     );
   }
@@ -327,6 +328,7 @@ export default function ItemStatusScreen() {
         onPress={() => router.push(`/item/${item.id}`)}
         theme={theme}
         styles={styles}
+        t={t}
       />
     );
   };
@@ -348,7 +350,7 @@ export default function ItemStatusScreen() {
           <View style={[styles.statsIcon, dynamicStyles.statsIconBackground]}>
             <Text style={{ fontSize: 24, color: statusData.color }}>{statusData.icon}</Text>
           </View>
-          <Text style={styles.statsTitle}>Items</Text>
+          <Text style={styles.statsTitle}>{t('status.items')}</Text>
           <Text style={styles.statsCount}>{currentItems.length}</Text>
         </View>
         
@@ -384,7 +386,7 @@ export default function ItemStatusScreen() {
                     const items = await getByStatus(dbStatus);
                     setCurrentItems(items || []);
                   } catch (error) {
-                    setError(error instanceof Error ? error.message : 'Failed to load items');
+                    setError(error instanceof Error ? error.message : t('error.failedToLoadData'));
                   } finally {
                     setIsLoading(false);
                   }
@@ -392,16 +394,21 @@ export default function ItemStatusScreen() {
                 loadItems();
               }}
             >
-              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Retry</Text>
+              <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>{t('status.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : isLoading ? (
-          <ActivityIndicator size="large" color={theme.primaryColor} />
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 }}>
+            <ActivityIndicator size="large" color={theme.primaryColor} />
+            <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 16 }}>
+              {t('status.loading')}
+            </Text>
+          </View>
         ) : currentItems.length === 0 ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ fontSize: 48, color: theme.textSecondary }}>📦</Text>
             <Text style={{ color: theme.textSecondary, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
-              No {statusData?.title?.toLowerCase() || 'items'} found
+              {t('status.noItems').replace('{status}', statusData?.title?.toLowerCase() || 'items')}
             </Text>
           </View>
         ) : (
