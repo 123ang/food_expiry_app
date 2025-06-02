@@ -8,6 +8,8 @@
     "userInterfaceStyle": "automatic",
     "scheme": "expiryalert",
     "sdkVersion": "53.0.0",
+    "description": "Never let food go to waste again! Track expiration dates, organize your pantry, and reduce food waste with our intuitive food management app.",
+    "privacy": "public",
     "splash": {
       "image": "./assets/food_expiry_logo_adaptive.png",
       "resizeMode": "contain",
@@ -19,7 +21,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.expiryalert.app",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to scan barcodes for adding food items quickly.",
+        "NSPhotoLibraryUsageDescription": "This app accesses photo library to save food item images for better organization.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,14 +36,15 @@
       "icon": "./assets/food_expiry_logo.png",
       "roundIconImage": "./assets/food_expiry_logo.png",
       "package": "com.expiryalert.app",
-      "versionCode": 9,
+      "versionCode": 1,
       "permissions": [
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
         "WAKE_LOCK",
         "WRITE_EXTERNAL_STORAGE",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "POST_NOTIFICATIONS"
       ]
     },
     "experiments": {
