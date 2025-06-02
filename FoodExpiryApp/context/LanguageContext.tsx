@@ -138,6 +138,23 @@ const translations: Record<Language, Record<string, string>> = {
     'language.chinese': 'Chinese',
     'language.japanese': 'Japanese',
     'language.close': 'Close',
+    
+    // About Section
+    'about.appName': 'FoodExpiry Tracker',
+    'about.appTagline': 'Never let food go to waste again',
+    'about.sectionAbout': 'About',
+    'about.description': 'FoodExpiry Tracker is your personal food management assistant. Keep track of expiration dates, organize your pantry, and reduce food waste with our intuitive and feature-rich app.',
+    'about.sectionFeatures': 'Key Features',
+    'about.featureCalendar': 'Smart expiry date tracking with visual calendar',
+    'about.featureCategories': 'Customizable categories and storage locations',
+    'about.featureDashboard': 'Dashboard overview with status indicators',
+    'about.featureSearch': 'Advanced search and filtering options',
+    'about.featureDarkMode': 'Dark mode and multiple language support',
+    'about.featureCrossPlatform': 'Cross-platform compatibility (iOS, Android, Web)',
+    'about.sectionTechnology': 'Technology',
+    'about.technologyDescription': 'Built with React Native and Expo for optimal performance across all platforms. Uses SQLite for reliable local data storage and React Navigation for smooth user experience.',
+    'about.footerText': 'Made with ❤️ for reducing food waste\n© 2024 FoodExpiry Tracker. All rights reserved.',
+    'about.close': 'Close',
   },
   zh: {
     // Navigation
@@ -264,6 +281,23 @@ const translations: Record<Language, Record<string, string>> = {
     'language.chinese': '中文',
     'language.japanese': '日语',
     'language.close': '关闭',
+    
+    // About Section
+    'about.appName': '食品过期跟踪器',
+    'about.appTagline': '再也不让食物浪费',
+    'about.sectionAbout': '关于',
+    'about.description': '食品过期跟踪器是您的个人食品管理助手。跟踪过期日期，整理您的食品储藏室，并通过我们直观且功能丰富的应用程序减少食物浪费。',
+    'about.sectionFeatures': '主要功能',
+    'about.featureCalendar': '智能过期日期跟踪与视觉日历',
+    'about.featureCategories': '可自定义的分类和储存位置',
+    'about.featureDashboard': '带状态指示器的仪表板概览',
+    'about.featureSearch': '高级搜索和过滤选项',
+    'about.featureDarkMode': '暗模式和多语言支持',
+    'about.featureCrossPlatform': '跨平台兼容性（iOS、Android、Web）',
+    'about.sectionTechnology': '技术',
+    'about.technologyDescription': '使用React Native和Expo构建，在所有平台上实现最佳性能。使用SQLite进行可靠的本地数据存储，使用React Navigation提供流畅的用户体验。',
+    'about.footerText': '为减少食物浪费而用❤️制作\n© 2024 食品过期跟踪器。保留所有权利。',
+    'about.close': '关闭',
   },
   ja: {
     // Navigation
@@ -390,6 +424,23 @@ const translations: Record<Language, Record<string, string>> = {
     'language.chinese': '中国語',
     'language.japanese': '日本語',
     'language.close': '閉じる',
+    
+    // About Section
+    'about.appName': '食品期限追跡アプリ',
+    'about.appTagline': '二度と食べ物を無駄にしません',
+    'about.sectionAbout': 'について',
+    'about.description': '食品期限追跡アプリは、あなたの個人的な食品管理アシスタントです。賞味期限を追跡し、パントリーを整理し、直感的で機能豊富なアプリで食品廃棄を削減します。',
+    'about.sectionFeatures': '主な機能',
+    'about.featureCalendar': 'ビジュアルカレンダーによるスマートな期限追跡',
+    'about.featureCategories': 'カスタマイズ可能なカテゴリと保存場所',
+    'about.featureDashboard': 'ステータスインジケーター付きダッシュボード概要',
+    'about.featureSearch': '高度な検索とフィルタリングオプション',
+    'about.featureDarkMode': 'ダークモードと多言語サポート',
+    'about.featureCrossPlatform': 'クロスプラットフォーム対応（iOS、Android、Web）',
+    'about.sectionTechnology': '技術',
+    'about.technologyDescription': 'すべてのプラットフォームで最適なパフォーマンスを実現するため、React NativeとExpoで構築されています。信頼性の高いローカルデータストレージにはSQLite、スムーズなユーザーエクスペリエンスにはReact Navigationを使用しています。',
+    'about.footerText': '食品廃棄削減のために❤️で作成\n© 2024 食品期限追跡アプリ。全著作権所有。',
+    'about.close': '閉じる',
   }
 };
 

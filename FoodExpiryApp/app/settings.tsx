@@ -727,14 +727,14 @@ export default function SettingsScreen() {
       type: 'navigation',
       onPress: () => router.push('/notifications'),
     },
-    {
-      id: 'backup',
-      icon: 'cloud',
-      title: t('settings.backupSync'),
-      description: t('settings.backupSyncDescription'),
-      type: 'navigation',
-      onPress: () => router.push('/backup'),
-    },
+    // {
+    //   id: 'backup',
+    //   icon: 'cloud',
+    //   title: t('settings.backupSync'),
+    //   description: t('settings.backupSyncDescription'),
+    //   type: 'navigation',
+    //   onPress: () => router.push('/backup'),
+    // },
     {
       id: 'about',
       icon: 'info-circle',
@@ -925,9 +925,9 @@ export default function SettingsScreen() {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.appName}>FoodExpiry Tracker</Text>
+            <Text style={styles.appName}>{t('about.appName')}</Text>
             <Text style={styles.appVersion}>Version 1.0.0</Text>
-            <Text style={styles.appTagline}>"Never let food go to waste again"</Text>
+            <Text style={styles.appTagline}>"{t('about.appTagline')}"</Text>
           </View>
 
           {/* App Content */}
@@ -937,46 +937,44 @@ export default function SettingsScreen() {
             contentContainerStyle={{ paddingBottom: 16 }}
           >
             <View style={styles.aboutSection}>
-              <Text style={styles.aboutSectionTitle}>About</Text>
+              <Text style={styles.aboutSectionTitle}>{t('about.sectionAbout')}</Text>
               <Text style={styles.aboutSectionText}>
-                FoodExpiry Tracker is your personal food management assistant. Keep track of expiration dates, 
-                organize your pantry, and reduce food waste with our intuitive and feature-rich app.
+                {t('about.description')}
               </Text>
             </View>
 
             <View style={styles.aboutSection}>
-              <Text style={styles.aboutSectionTitle}>Key Features</Text>
+              <Text style={styles.aboutSectionTitle}>{t('about.sectionFeatures')}</Text>
               <View style={styles.aboutFeature}>
                 <Text style={{ color: theme.primaryColor }}>📅</Text>
-                <Text style={styles.aboutFeatureText}>Smart expiry date tracking with visual calendar</Text>
+                <Text style={styles.aboutFeatureText}>{t('about.featureCalendar')}</Text>
               </View>
               <View style={styles.aboutFeature}>
                 <Text style={{ color: theme.primaryColor }}>🏷️</Text>
-                <Text style={styles.aboutFeatureText}>Customizable categories and storage locations</Text>
+                <Text style={styles.aboutFeatureText}>{t('about.featureCategories')}</Text>
               </View>
               <View style={styles.aboutFeature}>
                 <Text style={{ color: theme.primaryColor }}>📊</Text>
-                <Text style={styles.aboutFeatureText}>Dashboard overview with status indicators</Text>
+                <Text style={styles.aboutFeatureText}>{t('about.featureDashboard')}</Text>
               </View>
               <View style={styles.aboutFeature}>
                 <Text style={{ color: theme.primaryColor }}>🔍</Text>
-                <Text style={styles.aboutFeatureText}>Advanced search and filtering options</Text>
+                <Text style={styles.aboutFeatureText}>{t('about.featureSearch')}</Text>
               </View>
               <View style={styles.aboutFeature}>
                 <Text style={{ color: theme.primaryColor }}>🌙</Text>
-                <Text style={styles.aboutFeatureText}>Dark mode and multiple language support</Text>
+                <Text style={styles.aboutFeatureText}>{t('about.featureDarkMode')}</Text>
               </View>
               <View style={styles.aboutFeature}>
                 <Text style={{ color: theme.primaryColor }}>📱</Text>
-                <Text style={styles.aboutFeatureText}>Cross-platform compatibility (iOS, Android, Web)</Text>
+                <Text style={styles.aboutFeatureText}>{t('about.featureCrossPlatform')}</Text>
               </View>
             </View>
 
             <View style={styles.aboutSection}>
-              <Text style={styles.aboutSectionTitle}>Technology</Text>
+              <Text style={styles.aboutSectionTitle}>{t('about.sectionTechnology')}</Text>
               <Text style={styles.aboutSectionText}>
-                Built with React Native and Expo for optimal performance across all platforms. 
-                Uses SQLite for reliable local data storage and React Navigation for smooth user experience.
+                {t('about.technologyDescription')}
               </Text>
             </View>
           </ScrollView>
@@ -984,14 +982,13 @@ export default function SettingsScreen() {
           {/* Footer */}
           <View style={styles.aboutFooter}>
             <Text style={styles.aboutFooterText}>
-              Made with ❤️ for reducing food waste{'\n'}
-              © 2024 FoodExpiry Tracker. All rights reserved.
+              {t('about.footerText')}
             </Text>
             <TouchableOpacity 
               style={styles.closeAboutButton}
               onPress={() => setShowAboutModal(false)}
             >
-              <Text style={styles.closeAboutButtonText}>Close</Text>
+              <Text style={styles.closeAboutButtonText}>{t('about.close')}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
