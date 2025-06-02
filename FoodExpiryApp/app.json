@@ -4,7 +4,7 @@
     "slug": "expiry-alert-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/food_expiry_logo.png",
+    "icon": "./assets/food_expiry_logo_adaptive.png",
     "userInterfaceStyle": "automatic",
     "scheme": "expiryalert",
     "sdkVersion": "53.0.0",
@@ -31,10 +31,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/food_expiry_logo_adaptive.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#F0F8FF"
       },
-      "icon": "./assets/food_expiry_logo.png",
-      "roundIconImage": "./assets/food_expiry_logo.png",
       "package": "com.expiryalert.app",
       "versionCode": 1,
       "permissions": [
