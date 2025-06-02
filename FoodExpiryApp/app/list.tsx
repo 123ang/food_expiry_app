@@ -26,7 +26,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function ListScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable, dataVersion } = useDatabase();
   const router = useRouter();
   
@@ -212,7 +212,7 @@ export default function ListScreen() {
           setLastDataVersion(dataVersion);
         }
       }
-    }, [dataVersion, isLoading, foodItems?.length]) // Depend on dataVersion to detect changes
+    }, [dataVersion, isLoading, foodItems?.length, language]) // Add language to dependencies
   );
 
   const styles = StyleSheet.create({

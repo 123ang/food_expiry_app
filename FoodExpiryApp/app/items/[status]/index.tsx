@@ -109,7 +109,7 @@ const FoodItemCard: React.FC<{
 
 export default function ItemStatusScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const { status } = useLocalSearchParams();
   const { getByStatus, refreshAll, foodItems } = useDatabase();
@@ -142,7 +142,7 @@ export default function ItemStatusScreen() {
     );
   }
 
-  // Load items when screen comes into focus
+  // Load items when screen comes into focus or language changes
   useFocusEffect(
     React.useCallback(() => {
       const loadItems = async () => {
@@ -181,7 +181,7 @@ export default function ItemStatusScreen() {
         }
       };
       loadItems();
-    }, [currentStatus, foodItems?.length]) // Only refresh when status changes or no cached data
+    }, [currentStatus, foodItems?.length, language]) // Add language to dependencies
   );
 
   const styles = StyleSheet.create({

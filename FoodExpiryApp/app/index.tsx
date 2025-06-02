@@ -29,7 +29,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const {
     foodItems,
@@ -54,7 +54,7 @@ export default function DashboardScreen() {
   const [quantity, setQuantity] = useState('1');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data when screen comes into focus
+  // Load data when screen comes into focus or language changes
   useFocusEffect(
     React.useCallback(() => {
       const loadData = async () => {
@@ -76,8 +76,25 @@ export default function DashboardScreen() {
         }
       };
       loadData();
-    }, [isDataAvailable]) // Only depend on data availability function
+    }, [isDataAvailable, language]) // Add language to dependencies
   );
+
+  // Force refresh when language changes (for proper translation updates)
+  useEffect(() => {
+    const forceRefreshOnLanguageChange = async () => {
+      console.log('Language changed, forcing data refresh for translations...');
+      try {
+        await refreshAll();
+      } catch (error) {
+        console.error('Error refreshing data after language change:', error);
+      }
+    };
+    
+    // Skip the initial render to avoid double loading
+    if (language !== 'en' || categories.length > 0) {
+      forceRefreshOnLanguageChange();
+    }
+  }, [language]);
 
   // Calculate location item counts
   const getLocationItemCounts = () => {

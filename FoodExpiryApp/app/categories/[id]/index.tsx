@@ -86,7 +86,7 @@ const FoodItemCard: React.FC<{
 
 export default function CategoryDetailScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { foodItems, categories, getCategory } = useDatabase();
@@ -134,7 +134,7 @@ export default function CategoryDetailScreen() {
     };
 
     loadCategoryData();
-  }, [id, foodItems]);
+  }, [id, foodItems, language]);
 
   const styles = StyleSheet.create({
     container: {
@@ -295,6 +295,9 @@ export default function CategoryDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
+        </TouchableOpacity>
         <View style={styles.titleContainer}>
           <CategoryIcon iconName={category?.icon} size={24} />
           <Text style={styles.title}>{category?.name || 'Unknown Category'}</Text>

@@ -92,7 +92,7 @@ const FoodItemCard: React.FC<{
 
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { locations, foodItems, refreshAll } = useDatabase();
@@ -101,7 +101,7 @@ export default function LocationDetailScreen() {
   const location = locations.find(loc => loc.id === locationId);
   const locationItems = foodItems.filter(item => item.location_id === locationId);
 
-  // Refresh data when screen comes into focus
+  // Refresh data when screen comes into focus or language changes
   useFocusEffect(
     React.useCallback(() => {
       // Only refresh if we don't have data available
@@ -111,7 +111,7 @@ export default function LocationDetailScreen() {
       } else {
         console.log('Location detail: Using cached data');
       }
-    }, [locations?.length, foodItems?.length])
+    }, [locations?.length, foodItems?.length, language])
   );
 
   const styles = StyleSheet.create({
@@ -273,6 +273,9 @@ export default function LocationDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
+        </TouchableOpacity>
         <View style={styles.titleContainer}>
           <LocationIcon iconName={location.icon} size={24} />
           <Text style={styles.title}>{location.name}</Text>

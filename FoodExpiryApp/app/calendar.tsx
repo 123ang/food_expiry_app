@@ -24,7 +24,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function CalendarScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { foodItems, refreshAll, dataVersion } = useDatabase();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -76,7 +76,7 @@ export default function CalendarScreen() {
           setLastDataVersion(dataVersion);
         }
       }
-    }, [dataVersion, foodItems?.length]) // Depend on dataVersion to detect changes
+    }, [dataVersion, foodItems?.length, language]) // Add language to dependencies
   );
 
   // Update filtered items when selected date or food items change
