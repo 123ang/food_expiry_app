@@ -3,14 +3,33 @@ import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { useNotificationChecker } from '../hooks/useNotificationChecker';
+import { useFonts } from 'expo-font';
+import { FONTS_TO_LOAD, typography } from '../styles/typography';
 
 function RootLayoutContent() {
   const { theme } = useTheme();
   
+  // Load fonts
+  const [fontsLoaded] = useFonts(FONTS_TO_LOAD);
+  
   // Initialize notification checker for automatic expiry notifications
   useNotificationChecker();
+
+  // Show loading spinner while fonts are loading
+  if (!fontsLoaded) {
+    return (
+      <View style={{ 
+        flex: 1, 
+        backgroundColor: theme.backgroundColor, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+      }}>
+        <ActivityIndicator size="large" color={theme.primaryColor} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
@@ -23,7 +42,8 @@ function RootLayoutContent() {
           headerTintColor: theme.textColor,
           headerShadowVisible: false,
           headerTitleStyle: {
-            fontWeight: '600',
+            ...typography.h4,
+            color: theme.textColor,
           },
           contentStyle: {
             backgroundColor: theme.backgroundColor,

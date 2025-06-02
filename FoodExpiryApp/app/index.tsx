@@ -24,6 +24,7 @@ import { BottomNav } from '../components/BottomNav';
 import { getSafeIconName } from '../utils/iconUtils';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import { useTypography } from '../hooks/useTypography';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -42,6 +43,7 @@ export default function DashboardScreen() {
     refreshAll,
     isDataAvailable,
   } = useDatabase();
+  const typography = useTypography();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -251,15 +253,14 @@ export default function DashboardScreen() {
       flex: 1,
     },
     welcomeTitle: {
+      ...typography.h3,
       color: '#FFFFFF',
-      fontSize: 24,
-      fontWeight: 'bold',
       marginBottom: 4,
     },
     welcomeSubtitle: {
+      ...typography.body1,
       color: '#FFFFFF',
       opacity: 0.9,
-      fontSize: 16,
     },
     bannerIcon: {
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -296,18 +297,16 @@ export default function DashboardScreen() {
       marginBottom: 8,
     },
     statLabel: {
+      ...typography.body3,
       color: theme.textSecondary,
-      fontSize: 14,
       marginBottom: 4,
     },
     statValue: {
+      ...typography.h2,
       color: theme.textColor,
-      fontSize: 24,
-      fontWeight: 'bold',
     },
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
+      ...typography.h4,
       color: theme.textColor,
       marginBottom: 12,
     },
@@ -659,6 +658,7 @@ export default function DashboardScreen() {
     headerContent: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
     },
     headerLogo: {
       width: 40,
@@ -666,10 +666,13 @@ export default function DashboardScreen() {
       marginRight: 16,
     },
     headerTitle: {
+      ...typography.h2,
       color: theme.textColor,
-      fontSize: 20,
-      fontWeight: 'bold',
-      textAlign: 'center',
+    },
+    headerText: {
+      ...typography.h2,
+      color: theme.textColor,
+      textAlign: 'center' as const,
     },
   });
 
