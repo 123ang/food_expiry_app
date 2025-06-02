@@ -283,7 +283,7 @@ const translations: Record<Language, Record<string, string>> = {
     'language.close': '关闭',
     
     // About Section
-    'about.appName': '食品过期跟踪器',
+    'about.appName': '过期警报',
     'about.appTagline': '再也不让食物浪费',
     'about.sectionAbout': '关于',
     'about.description': '食品过期跟踪器是您的个人食品管理助手。跟踪过期日期，整理您的食品储藏室，并通过我们直观且功能丰富的应用程序减少食物浪费。',
