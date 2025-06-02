@@ -4,9 +4,13 @@ import { DatabaseProvider } from '../context/DatabaseContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
+import { useNotificationChecker } from '../hooks/useNotificationChecker';
 
 function RootLayoutContent() {
   const { theme } = useTheme();
+  
+  // Initialize notification checker for automatic expiry notifications
+  useNotificationChecker();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
@@ -76,6 +80,12 @@ function RootLayoutContent() {
         />
         <Stack.Screen
           name="item"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="notifications"
           options={{
             headerShown: false,
           }}

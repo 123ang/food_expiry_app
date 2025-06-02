@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { initDatabase, getDatabase, resetDatabase, getCurrentDate } from '../database/database';
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
+import { simpleNotificationService } from '../services/SimpleNotificationService';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -522,6 +523,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Increment data version to notify screens of changes
       incrementDataVersion();
       
+      // Trigger notification
+      await simpleNotificationService.notifyExpiry(item);
+      
       return id;
     } catch (err) {
       console.error('Error in createFoodItem:', err);
@@ -546,6 +550,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Increment data version to notify screens of changes
       incrementDataVersion();
+      
+      // Trigger notification
+      await simpleNotificationService.notifyExpiry(item);
       
       console.log('Food item updated and data refreshed');
     } catch (error) {

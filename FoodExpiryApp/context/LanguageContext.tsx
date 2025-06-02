@@ -139,6 +139,11 @@ const translations: Record<Language, Record<string, string>> = {
     'language.japanese': 'Japanese',
     'language.close': 'Close',
     
+    // Screen Headers
+    'header.notifications': 'Notifications',
+    'header.settings': 'Settings',
+    'header.about': 'About',
+    
     // About Section
     'about.appName': 'FoodExpiry Tracker',
     'about.appTagline': 'Never let food go to waste again',
@@ -149,12 +154,53 @@ const translations: Record<Language, Record<string, string>> = {
     'about.featureCategories': 'Customizable categories and storage locations',
     'about.featureDashboard': 'Dashboard overview with status indicators',
     'about.featureSearch': 'Advanced search and filtering options',
-    'about.featureDarkMode': 'Dark mode and multiple language support',
+    'about.featureDarkMode': 'Dark mode and multi-language support',
     'about.featureCrossPlatform': 'Cross-platform compatibility (iOS, Android, Web)',
     'about.sectionTechnology': 'Technology',
-    'about.technologyDescription': 'Built with React Native and Expo for optimal performance across all platforms. Uses SQLite for reliable local data storage and React Navigation for smooth user experience.',
-    'about.footerText': 'Made with ❤️ for reducing food waste\n© 2024 FoodExpiry Tracker. All rights reserved.',
-    'about.close': 'Close',
+    'about.technologyDescription': 'Built with React Native and Expo for optimal performance across all platforms.',
+    'about.footerText': 'Made with ❤️ for reducing food waste worldwide',
+
+    // Notification Messages
+    'notification.testTitle': 'Food Expiry Alert',
+    'notification.testBody': 'This is a test notification from Expiry Alert!',
+    'notification.expiringTodayTitle': 'Food Expiring Today!',
+    'notification.expiringSoonTitle': 'Food Expiring Soon',
+    'notification.expiredTitle': 'Food Has Expired',
+    'notification.expiringTodayBody': '{quantity}{name}{category} expires today{location}. Use it now!',
+    'notification.expiringSoonBody': '{quantity}{name}{category} will expire in {days} day{plural}{location}',
+    'notification.expiredBody': '{quantity}{name}{category} expired {days} day{plural} ago{location}',
+    'notification.in': 'in',
+    'notification.days': 'days',
+    'notification.day': 'day',
+
+    // Notification Settings Screen
+    'notification.enabledTitle': 'Notifications Enabled',
+    'notification.enableTitle': 'Enable Notifications',
+    'notification.enabledDesc': 'You will receive alerts when your food items are about to expire.',
+    'notification.disabledDesc': 'Allow notifications to get alerts about expiring food items.',
+    'notification.enableButton': 'Enable Notifications',
+    'notification.alertSettings': 'Alert Settings',
+    'notification.enableNotifications': 'Enable Notifications',
+    'notification.enableNotificationsDesc': 'Receive alerts about expiring food',
+    'notification.expiringSoonAlerts': 'Expiring Soon Alerts',
+    'notification.expiringSoonAlertsDesc': 'Alert when items are about to expire',
+    'notification.expiringTodayAlerts': 'Expiring Today Alerts',
+    'notification.expiringTodayAlertsDesc': 'Alert when items expire today',
+    'notification.expiredAlerts': 'Expired Alerts',
+    'notification.expiredAlertsDesc': 'Alert when items have expired',
+    'notification.reminderTiming': 'Reminder Timing',
+    'notification.alertMeBefore': 'Alert me before expiry',
+    'notification.alertMeBeforeDesc': 'How many days before expiry to alert',
+    'notification.testNotification': 'Test Notification',
+    'notification.testNotificationDesc': 'Send a test notification',
+    'notification.testButton': 'Test',
+    'notification.testSent': 'Test Sent',
+    'notification.testSentDesc': 'Check your notifications!',
+    'notification.notEnabledError': 'Notifications not enabled',
+    'notification.enabledSuccess': 'Notifications Enabled',
+    'notification.enabledSuccessDesc': 'You will now receive alerts when your food items are about to expire!',
+    'notification.disabledError': 'Notifications Disabled',
+    'notification.disabledErrorDesc': 'Please enable notifications in your device settings to receive expiry alerts.',
   },
   zh: {
     // Navigation
@@ -282,6 +328,11 @@ const translations: Record<Language, Record<string, string>> = {
     'language.japanese': '日语',
     'language.close': '关闭',
     
+    // Screen Headers
+    'header.notifications': '通知',
+    'header.settings': '设置',
+    'header.about': '关于',
+    
     // About Section
     'about.appName': '过期警报',
     'about.appTagline': '再也不让食物浪费',
@@ -298,6 +349,48 @@ const translations: Record<Language, Record<string, string>> = {
     'about.technologyDescription': '使用React Native和Expo构建，在所有平台上实现最佳性能。使用SQLite进行可靠的本地数据存储，使用React Navigation提供流畅的用户体验。',
     'about.footerText': '为减少食物浪费而用❤️制作\n© 2024 食品过期跟踪器。保留所有权利。',
     'about.close': '关闭',
+
+    // Notification Messages
+    'notification.testTitle': '食品过期警报',
+    'notification.testBody': '这是一个测试通知，来自过期警报！',
+    'notification.expiringTodayTitle': '今天过期的食品！',
+    'notification.expiringSoonTitle': '即将过期的食品',
+    'notification.expiredTitle': '食品已过期',
+    'notification.expiringTodayBody': '{quantity}{name}{category} 今天过期{location}。现在使用它！',
+    'notification.expiringSoonBody': '{quantity}{name}{category} 将在 {days} 天{plural}{location} 后过期',
+    'notification.expiredBody': '{quantity}{name}{category} 已过期 {days} 天{plural} 前{location}',
+    'notification.in': '在',
+    'notification.days': '天',
+    'notification.day': '天',
+
+    // Notification Settings Screen
+    'notification.enabledTitle': '通知已启用',
+    'notification.enableTitle': '启用通知',
+    'notification.enabledDesc': '当您的食品即将过期时，您将收到提醒。',
+    'notification.disabledDesc': '允许通知以获取即将过期食品的提醒。',
+    'notification.enableButton': '启用通知',
+    'notification.alertSettings': '通知设置',
+    'notification.enableNotifications': '启用通知',
+    'notification.enableNotificationsDesc': '接收即将过期食品的提醒',
+    'notification.expiringSoonAlerts': '即将过期提醒',
+    'notification.expiringSoonAlertsDesc': '当物品即将过期时提醒',
+    'notification.expiringTodayAlerts': '今天过期提醒',
+    'notification.expiringTodayAlertsDesc': '当物品今天过期时提醒',
+    'notification.expiredAlerts': '已过期提醒',
+    'notification.expiredAlertsDesc': '当物品已过期时提醒',
+    'notification.reminderTiming': '提醒时间',
+    'notification.alertMeBefore': '在过期前提醒我',
+    'notification.alertMeBeforeDesc': '在过期前多少天提醒',
+    'notification.testNotification': '测试通知',
+    'notification.testNotificationDesc': '发送测试通知',
+    'notification.testButton': '测试',
+    'notification.testSent': '测试已发送',
+    'notification.testSentDesc': '检查您的通知！',
+    'notification.notEnabledError': '通知未启用',
+    'notification.enabledSuccess': '通知已启用',
+    'notification.enabledSuccessDesc': '您现在将收到即将过期食品的提醒！',
+    'notification.disabledError': '通知已禁用',
+    'notification.disabledErrorDesc': '请在设备设置中启用通知以接收过期提醒。',
   },
   ja: {
     // Navigation
@@ -425,6 +518,11 @@ const translations: Record<Language, Record<string, string>> = {
     'language.japanese': '日本語',
     'language.close': '閉じる',
     
+    // Screen Headers
+    'header.notifications': '通知',
+    'header.settings': '設定',
+    'header.about': 'について',
+    
     // About Section
     'about.appName': '食品期限追跡アプリ',
     'about.appTagline': '二度と食べ物を無駄にしません',
@@ -441,8 +539,53 @@ const translations: Record<Language, Record<string, string>> = {
     'about.technologyDescription': 'すべてのプラットフォームで最適なパフォーマンスを実現するため、React NativeとExpoで構築されています。信頼性の高いローカルデータストレージにはSQLite、スムーズなユーザーエクスペリエンスにはReact Navigationを使用しています。',
     'about.footerText': '食品廃棄削減のために❤️で作成\n© 2024 食品期限追跡アプリ。全著作権所有。',
     'about.close': '閉じる',
+
+    // Notification Messages
+    'notification.testTitle': '食品期限警報',
+    'notification.testBody': 'これは過期警報からのテスト通知です！',
+    'notification.expiringTodayTitle': '今日期限切れの食品！',
+    'notification.expiringSoonTitle': '期限切れ間近の食品',
+    'notification.expiredTitle': '食品が期限切れ',
+    'notification.expiringTodayBody': '{quantity}{name}{category} 今日期限切れ{location}。今すぐ使用してください！',
+    'notification.expiringSoonBody': '{quantity}{name}{category} は {days} 日{plural}{location} 後に期限切れになります',
+    'notification.expiredBody': '{quantity}{name}{category} は {days} 日{plural} 前に期限切れになりました{location}',
+    'notification.in': 'に',
+    'notification.days': '日',
+    'notification.day': '日',
+
+    // Notification Settings Screen
+    'notification.enabledTitle': '通知已启用',
+    'notification.enableTitle': '启用通知',
+    'notification.enabledDesc': '当您的食品即将过期时，您将收到提醒。',
+    'notification.disabledDesc': '允许通知以获取即将过期食品的提醒。',
+    'notification.enableButton': '启用通知',
+    'notification.alertSettings': '通知设置',
+    'notification.enableNotifications': '启用通知',
+    'notification.enableNotificationsDesc': '接收即将过期食品的提醒',
+    'notification.expiringSoonAlerts': '即将过期提醒',
+    'notification.expiringSoonAlertsDesc': '当物品即将过期时提醒',
+    'notification.expiringTodayAlerts': '今天过期提醒',
+    'notification.expiringTodayAlertsDesc': '当物品今天过期时提醒',
+    'notification.expiredAlerts': '已过期提醒',
+    'notification.expiredAlertsDesc': '当物品已过期时提醒',
+    'notification.reminderTiming': '提醒时间',
+    'notification.alertMeBefore': '在过期前提醒我',
+    'notification.alertMeBeforeDesc': '在过期前多少天提醒',
+    'notification.testNotification': '测试通知',
+    'notification.testNotificationDesc': '发送测试通知',
+    'notification.testButton': '测试',
+    'notification.testSent': '测试已发送',
+    'notification.testSentDesc': '检查您的通知！',
+    'notification.notEnabledError': '通知未启用',
+    'notification.enabledSuccess': '通知已启用',
+    'notification.enabledSuccessDesc': '您现在将收到即将过期食品的提醒！',
+    'notification.disabledError': '通知已禁用',
+    'notification.disabledErrorDesc': '请在设备设置中启用通知以接收过期提醒。',
   }
 };
+
+// Export translations for use in other services
+export { translations };
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('en');
