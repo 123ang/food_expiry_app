@@ -34,9 +34,6 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
   let emoji = CATEGORY_EMOJIS.default;
   
   if (iconName) {
-    // Debug logging
-    console.log('CategoryIcon received iconName:', iconName);
-    
     // Try exact match first
     if (CATEGORY_EMOJIS[iconName]) {
       emoji = CATEGORY_EMOJIS[iconName];
@@ -64,8 +61,6 @@ const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
     else if (iconName.toLowerCase().includes('drink') || iconName.toLowerCase().includes('beverage')) {
       emoji = '🥤';
     }
-    
-    console.log('CategoryIcon final emoji:', emoji, 'for iconName:', iconName);
   }
   
   return (

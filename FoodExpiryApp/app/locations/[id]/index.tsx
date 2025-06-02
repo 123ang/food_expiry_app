@@ -273,7 +273,7 @@ export default function LocationDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/')}>
           <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>

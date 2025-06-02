@@ -287,17 +287,33 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         
         await initDatabase();
         
-        // Load data with performance monitoring
+        // Load data with performance monitoring - load categories and locations in parallel
         const loadStartTime = Date.now();
-        await loadData();
-        const loadEndTime = Date.now();
         
+        // Load essential data first (categories and locations) in parallel
+        const [categoriesData, locationsData] = await Promise.all([
+          CategoryRepository.getAll(),
+          LocationRepository.getAll()
+        ]);
+        
+        // Set categories and locations immediately for faster UI rendering
+        setCategories(categoriesData);
+        setLocations(locationsData);
+        setCacheEntry(categoriesCache, categoriesData);
+        setCacheEntry(locationsCache, locationsData);
+        
+        // Load food items separately (less critical for initial UI)
+        const foodItemsData = await FoodItemRepository.getAllWithDetails();
+        setFoodItems(foodItemsData);
+        setCacheEntry(foodItemsCache, foodItemsData);
+        
+        const loadEndTime = Date.now();
         console.log(`Data loaded in ${loadEndTime - loadStartTime}ms`);
         
-        // Load dashboard counts separately to avoid blocking main data
+        // Load dashboard counts with minimal delay to avoid blocking UI
         setTimeout(async () => {
           await refreshDashboardCounts();
-        }, 100);
+        }, 50);
         
         const totalTime = Date.now() - startTime;
         console.log(`Database setup completed in ${totalTime}ms`);

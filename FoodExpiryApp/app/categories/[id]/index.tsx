@@ -295,7 +295,7 @@ export default function CategoryDetailScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/')}>
           <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
