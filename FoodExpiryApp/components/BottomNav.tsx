@@ -14,48 +14,32 @@ export function BottomNav() {
   const { t } = useLanguage();
 
   const handleNavigation = (path: string) => {
-    console.log('BottomNav - Current pathname:', pathname);
-    console.log('BottomNav - Navigating to:', path);
-    
     if (path === '/') {
-      // If we're already on the home screen, exit the app
+      // Special handling for home navigation
       if (pathname === '/') {
-        console.log('BottomNav - Already on home, exiting app');
-        BackHandler.exitApp();
+        // Already on home, don't navigate
         return;
       }
-      
-      // Special handling for location detail screens
-      if (pathname.startsWith('/locations/')) {
-        console.log('BottomNav - Navigating from location detail to home');
-        // First go back to clear the location detail, then navigate to home
-        router.back();
-        setTimeout(() => {
-          router.replace('/');
-        }, 200);
-        return;
-      }
-      
-      // Special handling for category detail screens
-      if (pathname.startsWith('/categories/')) {
-        console.log('BottomNav - Navigating from category detail to home');
-        // First go back to clear the category detail, then navigate to home
-        router.back();
-        setTimeout(() => {
-          router.replace('/');
-        }, 200);
-        return;
-      }
-      
-      // For other screens, direct navigation to home
-      console.log('BottomNav - Direct navigation to home from:', pathname);
-      router.replace('/');
-      return;
-    }
 
-    // For other screens, just push to the navigation stack
-    console.log('BottomNav - Pushing to:', path);
-    router.push(path);
+      // Check if coming from location detail
+      if (pathname.startsWith('/locations/') && pathname !== '/locations') {
+        // Navigate back to home from location detail
+        router.push('/');
+        return;
+      }
+
+      // Check if coming from category detail  
+      if (pathname.startsWith('/categories/') && pathname !== '/categories') {
+        // Navigate back to home from category detail
+        router.push('/');
+        return;
+      }
+
+      // Direct navigation to home from other screens
+      router.push('/');
+    } else {
+      router.push(path as any);
+    }
   };
 
   const styles = StyleSheet.create({

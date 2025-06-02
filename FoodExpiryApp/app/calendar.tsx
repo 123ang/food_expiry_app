@@ -48,35 +48,24 @@ export default function CalendarScreen() {
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('Calendar screen focused, checking if refresh needed...');
-      console.log('Calendar dataVersion:', dataVersion, 'lastDataVersion:', lastDataVersion);
-      
-      // Check if data version has changed or if we have no data
+      // Check if data has changed or no data available
       const dataHasChanged = dataVersion !== lastDataVersion;
       const hasNoData = !foodItems || foodItems.length === 0;
       
       if (dataHasChanged || hasNoData) {
-        console.log('Calendar: Data has changed or no data available, refreshing...');
         setLastDataVersion(dataVersion);
         
         const refreshData = async () => {
           try {
             await refreshAll();
-            console.log('Calendar: Database refreshed successfully');
           } catch (error) {
             console.error('Calendar: Error refreshing data:', error);
           }
         };
         
         refreshData();
-      } else {
-        console.log('Calendar: No changes detected, using existing data');
-        // Update lastDataVersion to avoid false positives
-        if (dataVersion !== lastDataVersion) {
-          setLastDataVersion(dataVersion);
-        }
       }
-    }, [dataVersion, foodItems?.length, language]) // Add language to dependencies
+    }, [dataVersion, foodItems?.length, language])
   );
 
   // Update filtered items when selected date or food items change

@@ -130,9 +130,6 @@ export default function ItemStatusScreen() {
   
   const statusData = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.fresh;
 
-  console.log('ItemStatusScreen - currentStatus:', currentStatus);
-  console.log('ItemStatusScreen - statusData:', statusData);
-
   // Safety check for theme
   if (!theme) {
     return (
@@ -152,25 +149,20 @@ export default function ItemStatusScreen() {
           // Try to use cached data first if available
           const hasData = foodItems && foodItems.length > 0;
           if (!hasData) {
-            console.log('Items status: No cached data, refreshing...');
             await refreshAll();
-          } else {
-            console.log('Items status: Using cached data');
           }
           
           // Map the status parameter to the database enum
-          let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
+          let dbStatus: 'expired' | 'expiring' | 'fresh' = 'fresh';
           if (currentStatus === 'expired') {
             dbStatus = 'expired';
           } else if (currentStatus === 'expiring') {
-            dbStatus = 'expiring_soon';
+            dbStatus = 'expiring';
           } else {
             dbStatus = 'fresh';
           }
           
-          console.log('Loading items with dbStatus:', dbStatus);
           const items = await getByStatus(dbStatus);
-          console.log('Loaded items count:', items.length);
           setCurrentItems(items || []);
         } catch (error) {
           console.error('Error loading items:', error);
@@ -375,11 +367,11 @@ export default function ItemStatusScreen() {
                   setIsLoading(true);
                   try {
                     await refreshAll();
-                    let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
+                    let dbStatus: 'expired' | 'expiring' | 'fresh' = 'fresh';
                     if (currentStatus === 'expired') {
                       dbStatus = 'expired';
                     } else if (currentStatus === 'expiring') {
-                      dbStatus = 'expiring_soon';
+                      dbStatus = 'expiring';
                     } else {
                       dbStatus = 'fresh';
                     }

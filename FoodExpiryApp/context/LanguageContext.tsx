@@ -885,7 +885,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Update default categories and locations with new language
       try {
         await updateDefaultDataForLanguage(lang);
-        console.log('Default data updated for new language');
       } catch (error) {
         console.error('Error updating default data for language:', error);
         // Continue even if this fails - the main language change should work

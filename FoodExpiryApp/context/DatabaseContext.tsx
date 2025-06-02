@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { initDatabase, getDatabase, resetDatabase, getCurrentDate } from '../database/database';
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
@@ -56,7 +56,7 @@ interface DatabaseContextType {
   createFoodItem: (item: FoodItem) => Promise<number>;
   updateFoodItem: (item: FoodItem) => Promise<void>;
   deleteFoodItem: (id: number) => Promise<void>;
-  getByStatus: (status: 'expired' | 'expiring_soon' | 'fresh') => Promise<FoodItemWithDetails[]>;
+  getByStatus: (status: 'fresh' | 'expiring' | 'expired') => Promise<FoodItemWithDetails[]>;
 
   // Dashboard Data
   dashboardCounts: {
@@ -120,7 +120,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isDatabaseReady, setIsDatabaseReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [dataVersion, setDataVersion] = useState(1);
 
   // Cache refs with proper typing
@@ -137,7 +137,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Function to increment data version when data changes
   const incrementDataVersion = () => {
     setDataVersion(prev => prev + 1);
-    console.log('Data version incremented to:', dataVersion + 1);
   };
 
   // Cache utility functions
@@ -174,7 +173,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     locationsCache.current = null;
     foodItemsCache.current = null;
     dashboardCountsCache.current = null;
-    console.log('Cache cleared');
   };
 
   const invalidateCache = (keys?: string[]): void => {
@@ -195,74 +193,48 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             break;
         }
       });
-      console.log('Cache invalidated for keys:', keys);
     } else {
       if (categoriesCache.current) categoriesCache.current.isValid = false;
       if (locationsCache.current) locationsCache.current.isValid = false;
       if (foodItemsCache.current) foodItemsCache.current.isValid = false;
       if (dashboardCountsCache.current) dashboardCountsCache.current.isValid = false;
-      console.log('All cache invalidated');
     }
   };
 
+  const loadCategories = async (): Promise<Category[]> => {
+    const cached = getCacheEntry(categoriesCache);
+    if (cached) {
+      return cached;
+    }
+
+    const data = await CategoryRepository.getAll();
+    setCacheEntry(categoriesCache, data);
+    return data;
+  };
+
+  const loadLocations = async (): Promise<Location[]> => {
+    const cached = getCacheEntry(locationsCache);
+    if (cached) {
+      return cached;
+    }
+
+    const data = await LocationRepository.getAll();
+    setCacheEntry(locationsCache, data);
+    return data;
+  };
+
+  const loadFoodItems = async (): Promise<FoodItemWithDetails[]> => {
+    const cached = getCacheEntry(foodItemsCache);
+    if (cached) {
+      return cached;
+    }
+
+    const data = await FoodItemRepository.getAllWithDetails();
+    setCacheEntry(foodItemsCache, data);
+    return data;
+  };
+
   const loadData = async () => {
-    // Load categories with caching
-    const loadCategories = async (): Promise<Category[]> => {
-      const cached = getCacheEntry(categoriesCache);
-      if (cached) {
-        console.log('Using cached categories');
-        return cached;
-      }
-
-      try {
-        const data = await CategoryRepository.getAll();
-        setCacheEntry(categoriesCache, data);
-        console.log('Categories loaded from database and cached');
-        return data;
-      } catch (error) {
-        console.error('Error loading categories:', error);
-        throw error;
-      }
-    };
-
-    // Load locations with caching
-    const loadLocations = async (): Promise<Location[]> => {
-      const cached = getCacheEntry(locationsCache);
-      if (cached) {
-        console.log('Using cached locations');
-        return cached;
-      }
-
-      try {
-        const data = await LocationRepository.getAll();
-        setCacheEntry(locationsCache, data);
-        console.log('Locations loaded from database and cached');
-        return data;
-      } catch (error) {
-        console.error('Error loading locations:', error);
-        throw error;
-      }
-    };
-
-    // Load food items with caching
-    const loadFoodItems = async (): Promise<FoodItemWithDetails[]> => {
-      const cached = getCacheEntry(foodItemsCache);
-      if (cached) {
-        console.log('Using cached food items');
-        return cached;
-      }
-
-      try {
-        const data = await FoodItemRepository.getAllWithDetails();
-        setCacheEntry(foodItemsCache, data);
-        console.log('Food items loaded from database and cached');
-        return data;
-      } catch (error) {
-        console.error('Error loading food items:', error);
-        throw error;
-      }
-    };
-
     try {
       const [categoriesData, locationsData, foodItemsData] = await Promise.all([
         loadCategories(),
@@ -283,7 +255,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const setupDatabase = async () => {
       try {
         const startTime = Date.now();
-        console.log('Starting database setup...');
         
         await initDatabase();
         
@@ -299,16 +270,17 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Set categories and locations immediately for faster UI rendering
         setCategories(categoriesData);
         setLocations(locationsData);
+        
+        // Cache the data immediately
         setCacheEntry(categoriesCache, categoriesData);
         setCacheEntry(locationsCache, locationsData);
         
-        // Load food items separately (less critical for initial UI)
+        // Then load food items
         const foodItemsData = await FoodItemRepository.getAllWithDetails();
         setFoodItems(foodItemsData);
         setCacheEntry(foodItemsCache, foodItemsData);
         
         const loadEndTime = Date.now();
-        console.log(`Data loaded in ${loadEndTime - loadStartTime}ms`);
         
         // Load dashboard counts with minimal delay to avoid blocking UI
         setTimeout(async () => {
@@ -316,15 +288,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }, 50);
         
         const totalTime = Date.now() - startTime;
-        console.log(`Database setup completed in ${totalTime}ms`);
         
         setIsLoading(false);
-        setIsDatabaseReady(true);
+        setIsReady(true);
       } catch (error) {
-        console.error('Error setting up database:', error);
+        console.error('Database setup error:', error);
         setError(error instanceof Error ? error : new Error('Failed to setup database'));
         setIsLoading(false);
-        setIsDatabaseReady(false);
+        setIsReady(false);
       }
     };
 
@@ -380,55 +351,65 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const refreshDashboardCounts = async () => {
+  const refreshDashboardCounts = async (): Promise<void> => {
+    const cached = getCacheEntry(dashboardCountsCache);
+    if (cached) {
+      return;
+    }
+
     try {
-      // Check cache first
-      const cached = getCacheEntry(dashboardCountsCache);
-      if (cached) {
-        console.log('Using cached dashboard counts');
-        setDashboardCounts(cached);
-        return;
-      }
+      const currentDate = getCurrentDate();
+      const db = await getDatabase();
       
-      // Calculate counts from food items
-      const items = await FoodItemRepository.getAllWithDetails();
-      const today = getCurrentDate();
+      const countsResult = await db.getAllAsync(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(CASE WHEN date(expiry_date) <= date(?) THEN 1 END) as expired,
+          COUNT(CASE WHEN date(expiry_date) BETWEEN date(?, '+1 day') AND date(?, '+3 days') THEN 1 END) as expiring_soon,
+          COUNT(CASE WHEN date(expiry_date) > date(?, '+3 days') THEN 1 END) as fresh
+        FROM food_items
+      `, [currentDate, currentDate, currentDate, currentDate]);
       
-      const counts = {
-        total: items.length,
-        expired: items.filter(item => item.days_until_expiry < 0).length,
-        expiring_soon: items.filter(item => item.days_until_expiry >= 0 && item.days_until_expiry <= 5).length,
-        fresh: items.filter(item => item.days_until_expiry > 5).length
+      const counts = countsResult[0] as any;
+      const dashboardData = {
+        total: counts.total || 0,
+        expired: counts.expired || 0,
+        expiring_soon: counts.expiring_soon || 0,
+        fresh: counts.fresh || 0
       };
       
-      setDashboardCounts(counts);
-      
-      // Update cache with fresh data
-      setCacheEntry(dashboardCountsCache, counts);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch dashboard counts'));
+      setDashboardCounts(dashboardData);
+      setCacheEntry(dashboardCountsCache, dashboardData);
+    } catch (error) {
+      console.error('Error refreshing dashboard counts:', error);
     }
   };
 
-  const refreshAll = async () => {
+  const refreshAll = async (): Promise<void> => {
     try {
-      setIsLoading(true);
-      
-      // Clear all cache to force fresh data
+      // First clear cache to force fresh data
       clearCache();
       
       // Load fresh data
-      await loadData();
+      const [categoriesData, locationsData, foodItemsData] = await Promise.all([
+        loadCategories(),
+        loadLocations(),
+        loadFoodItems()
+      ]);
       
-      // Refresh dashboard counts
+      // Update state
+      setCategories(categoriesData);
+      setLocations(locationsData);
+      setFoodItems(foodItemsData);
+      
+      // Refresh dashboard counts last
       await refreshDashboardCounts();
       
-      console.log('All data refreshed successfully');
-    } catch (err) {
-      console.error('Failed to refresh all data:', err);
-      setError(err instanceof Error ? err : new Error('Failed to refresh all data'));
-    } finally {
-      setIsLoading(false);
+      // Increment data version to notify components
+      incrementDataVersion();
+    } catch (error) {
+      console.error('Error refreshing all data:', error);
+      throw error;
     }
   };
 
@@ -523,54 +504,28 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const createFoodItem = async (item: FoodItem) => {
+  const createFoodItem = async (item: FoodItem): Promise<number> => {
+    await ensureDatabaseReady();
+    
     try {
-      await ensureDatabaseReady();
-      console.log('Creating food item with database ready...');
       const id = await FoodItemRepository.create(item);
-      console.log('Food item created successfully with ID:', id);
       
-      // Invalidate related caches
-      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
-      
-      // Refresh data
-      await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
-      
-      // Increment data version to notify screens of changes
-      incrementDataVersion();
-      
-      // Trigger notification
-      await simpleNotificationService.notifyExpiry(item);
+      // Refresh data to show the new item
+      await refreshAll();
       
       return id;
-    } catch (err) {
-      console.error('Error in createFoodItem:', err);
-      setError(err instanceof Error ? err : new Error('Failed to create food item'));
-      throw err;
+    } catch (error) {
+      console.error('Error creating food item:', error);
+      throw error;
     }
   };
 
-  const updateFoodItem = async (item: FoodItem) => {
+  const updateFoodItem = async (item: FoodItem): Promise<void> => {
     try {
-      console.log('Updating food item:', item.id);
       await FoodItemRepository.update(item);
       
-      // Invalidate related caches
-      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
-      
-      // Force refresh of all related data
-      await Promise.all([
-        refreshFoodItems(), 
-        refreshDashboardCounts()
-      ]);
-      
-      // Increment data version to notify screens of changes
-      incrementDataVersion();
-      
-      // Trigger notification
-      await simpleNotificationService.notifyExpiry(item);
-      
-      console.log('Food item updated and data refreshed');
+      // Refresh data to show updated item
+      await refreshAll();
     } catch (error) {
       console.error('Error updating food item:', error);
       throw error;
@@ -591,66 +546,47 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // Add getByStatus function with caching
-  const getByStatus = async (status: 'expired' | 'expiring_soon' | 'fresh') => {
+  const getByStatus = async (status: 'fresh' | 'expiring' | 'expired'): Promise<FoodItemWithDetails[]> => {
     try {
-      // For status queries, we can use cached food items if available
+      // Try cache first
       const cached = getCacheEntry(foodItemsCache);
       if (cached) {
-        console.log('Using cached food items for status filter');
-        // Filter cached data by status
-        const filtered = cached.filter(item => {
-          if (status === 'expired') return item.days_until_expiry < 0;
-          if (status === 'expiring_soon') return item.days_until_expiry >= 0 && item.days_until_expiry <= 5;
-          if (status === 'fresh') return item.days_until_expiry > 5;
-          return false;
-        });
-        return filtered;
+        return cached.filter(item => item.status === status);
       }
       
-      // If no cache, get all items and filter
+      // If no cache, load fresh data
       const items = await FoodItemRepository.getAllWithDetails();
-      const filtered = items.filter(item => {
-        if (status === 'expired') return item.days_until_expiry < 0;
-        if (status === 'expiring_soon') return item.days_until_expiry >= 0 && item.days_until_expiry <= 5;
-        if (status === 'fresh') return item.days_until_expiry > 5;
-        return false;
-      });
-      return filtered;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch items by status'));
-      return [];
+      setCacheEntry(foodItemsCache, items);
+      setFoodItems(items);
+      
+      return items.filter(item => item.status === status);
+    } catch (error) {
+      console.error('Error filtering items by status:', error);
+      throw error;
     }
   };
 
-  const resetDatabaseHandler = async () => {
+  const resetDatabaseData = async (): Promise<void> => {
     try {
-      setIsLoading(true);
-      console.log('Starting database reset...');
       await resetDatabase();
-      clearCache();
-      await loadData();
-      console.log('Database reset and data refreshed');
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Failed to reset database:', err);
-      setError(err instanceof Error ? err : new Error('Failed to reset database'));
-      setIsLoading(false);
+      await refreshAll();
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      throw error;
     }
   };
 
   // Ensure database is ready before operations
   const ensureDatabaseReady = async (): Promise<void> => {
-    if (!isDatabaseReady) {
-      console.log('Database not ready, waiting...');
+    if (!isReady) {
       // Wait up to 5 seconds for database to be ready
       for (let i = 0; i < 50; i++) {
-        if (isDatabaseReady) {
-          console.log('Database is now ready');
+        if (isReady) {
           return;
         }
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      throw new Error('Database initialization timeout - database not ready after 5 seconds');
+      throw new Error('Database not ready after timeout');
     }
   };
 
@@ -679,7 +615,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshFoodItems,
     refreshDashboardCounts,
     refreshAll,
-    resetDatabase: resetDatabaseHandler,
+    resetDatabase: resetDatabaseData,
     clearCache,
     invalidateCache,
     getCacheStatus: () => ({

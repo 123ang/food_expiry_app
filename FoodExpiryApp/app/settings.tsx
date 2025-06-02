@@ -96,9 +96,6 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   const { theme } = useTheme();
   const emojis = isCategory ? CATEGORY_EMOJIS : LOCATION_EMOJIS;
   
-  console.log('EmojiSelector - isCategory:', isCategory, 'emojis count:', emojis.length);
-  console.log('Available emojis:', emojis.map(e => `${e.key}:${e.emoji}`).join(', '));
-
   const styles = StyleSheet.create({
     modalOverlay: {
       flex: 1,
@@ -129,7 +126,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
       justifyContent: 'space-between',
       paddingVertical: 8,
     },
-    emojiButton: {
+    emojiItem: {
       width: '22%',
       aspectRatio: 1,
       justifyContent: 'center',
@@ -140,16 +137,16 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
       borderWidth: 2,
       borderColor: 'transparent',
     },
-    selectedEmoji: {
+    emojiItemSelected: {
       borderColor: theme.primaryColor,
       backgroundColor: `${theme.primaryColor}20`,
     },
-    emojiText: {
+    emojiIcon: {
       fontSize: 28,
       marginBottom: 4,
       textAlign: 'center',
     },
-    emojiLabel: {
+    emojiName: {
       fontSize: 10,
       color: theme.textSecondary,
       textAlign: 'center',
@@ -181,16 +178,15 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
                 <TouchableOpacity
                   key={item.key}
                   style={[
-                    styles.emojiButton,
-                    selectedEmoji === item.key && styles.selectedEmoji,
+                    styles.emojiItem,
+                    selectedEmoji === item.key && styles.emojiItemSelected
                   ]}
                   onPress={() => {
-                    console.log('Emoji selected:', item.key, item.emoji);
                     onSelect(item.key);
                   }}
                 >
-                  <Text style={styles.emojiText}>{item.emoji}</Text>
-                  <Text style={styles.emojiLabel}>{item.label}</Text>
+                  <Text style={styles.emojiIcon}>{item.emoji}</Text>
+                  <Text style={styles.emojiName}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -582,12 +578,10 @@ const EditModal: React.FC<EditModalProps> = ({
   }, [visible, initialName, initialIcon, isCategory]);
 
   const handleSave = () => {
-    if (!name.trim()) {
-      Alert.alert('Error', 'Name is required');
-      return;
+    if (name.trim()) {
+      onSave(name.trim(), icon);
+      handleClose();
     }
-    onSave(name.trim(), icon);
-    onClose();
   };
 
   const handleClose = () => {
@@ -662,7 +656,6 @@ const EditModal: React.FC<EditModalProps> = ({
         visible={showEmojiSelector}
         onClose={() => setShowEmojiSelector(false)}
         onSelect={(selectedIcon) => {
-          console.log('Selected icon:', selectedIcon, 'for', isCategory ? 'category' : 'location');
           setIcon(selectedIcon);
           setShowEmojiSelector(false);
         }}

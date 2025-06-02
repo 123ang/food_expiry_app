@@ -46,6 +46,7 @@ export default function ListScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastDataVersion, setLastDataVersion] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   // Default colors for fallback
   const defaultColors = {
@@ -82,7 +83,6 @@ export default function ListScreen() {
   const loadInitialData = async () => {
     // Check if data is already available from cache
     if (isDataAvailable()) {
-      console.log('Data available from cache, loading items directly');
       setIsLoading(false);
       await loadItems();
       return;
@@ -100,105 +100,59 @@ export default function ListScreen() {
     }
   };
 
-  // Manual refresh function for pull-to-refresh
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
+  const loadItems = async () => {
     try {
-      console.log('Manual refresh triggered');
+      await refreshFoodItems();
+      // foodItems will be updated by refreshFoodItems, so we use it from context
+      setFilteredItems(foodItems);
+      setSearchQuery('');
+      setFilterStatus('all');
+    } catch (error) {
+      console.error('Error loading items:', error);
+      // Handle error appropriately
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    try {
+      setIsRefreshing(true);
       await refreshAll();
       await loadItems();
     } catch (error) {
-      console.error('Error refreshing data:', error);
-      Alert.alert(t('alert.error'), t('alert.loadFailed'));
+      console.error('Error during manual refresh:', error);
     } finally {
       setIsRefreshing(false);
     }
   };
-
-  const loadItems = async () => {
-    try {
-      let items: FoodItemWithDetails[] = [];
-      
-      // Get items based on filter status
-      if (filterStatus === 'all') {
-        items = [...foodItems]; // Create a copy to avoid reference issues
-      } else {
-        items = await getByStatus(filterStatus);
-      }
-
-      if (!items || items.length === 0) {
-        setFilteredItems([]);
-        return;
-      }
-
-      // Apply search and sort in a single pass
-      const searchLower = searchQuery.toLowerCase();
-      items = items
-        .filter(item => {
-          return !searchQuery || 
-            item.name.toLowerCase().includes(searchLower) ||
-            (item.category_name && item.category_name.toLowerCase().includes(searchLower)) ||
-            (item.location_name && item.location_name.toLowerCase().includes(searchLower));
-        })
-        .sort((a, b) => sortBy === 'name' ? 
-          a.name.localeCompare(b.name) : 
-          a.days_until_expiry - b.days_until_expiry
-        );
-
-      setFilteredItems(items);
-      console.log('Items loaded:', items.length);
-    } catch (error) {
-      console.error('Error loading items:', error);
-      Alert.alert(t('alert.error'), t('alert.loadFailed'));
-      setFilteredItems([]);
-    }
-  };
-
-  // Update filtered items when search query or sort changes
-  useEffect(() => {
-    if (!isLoading && !isRefreshing) {
-      loadItems();
-    }
-  }, [searchQuery, sortBy]);
 
   const handleDelete = async (item: FoodItemWithDetails) => {
     try {
-      setIsRefreshing(true);
-      await deleteFoodItem(item.id!);
-      // Refresh data after delete
-      await refreshAll();
+      await deleteFoodItem(item.id);
+      // Refresh the list after deletion
       await loadItems();
-      console.log('Item deleted and list refreshed');
     } catch (error) {
       console.error('Error deleting item:', error);
-      Alert.alert(t('alert.error'), t('alert.deleteFailed'));
-    } finally {
-      setIsRefreshing(false);
+      Alert.alert('Error', 'Failed to delete item');
     }
   };
 
   // Listen for navigation events to refresh after edit
   useFocusEffect(
     React.useCallback(() => {
-      console.log('List screen focused, dataVersion:', dataVersion, 'lastDataVersion:', lastDataVersion);
-      
       // Check if data version has changed (indicating edits/deletes) or if we have no data
       const dataHasChanged = dataVersion !== lastDataVersion;
       const hasNoData = !foodItems || foodItems.length === 0;
       
       if (!isLoading && (dataHasChanged || hasNoData)) {
-        console.log('List: Data has changed or no data available, refreshing...');
         setLastDataVersion(dataVersion);
         
         const refreshAfterChange = async () => {
           try {
             // Force refresh all data from database
             await refreshAll();
-            console.log('List: Database refreshed successfully');
             
             // Reload items with fresh data
             await loadItems();
-            console.log('List: Items reloaded successfully');
           } catch (error) {
             console.error('List: Error refreshing after change:', error);
           }
@@ -206,13 +160,12 @@ export default function ListScreen() {
         
         refreshAfterChange();
       } else {
-        console.log('List: No changes detected, skipping refresh');
         // Update lastDataVersion even if we don't refresh to avoid false positives
         if (dataVersion !== lastDataVersion) {
           setLastDataVersion(dataVersion);
         }
       }
-    }, [dataVersion, isLoading, foodItems?.length, language]) // Add language to dependencies
+    }, [dataVersion, isLoading, foodItems?.length, language])
   );
 
   const styles = StyleSheet.create({
@@ -527,7 +480,7 @@ export default function ListScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={handleRefresh}
+            onRefresh={handleManualRefresh}
             colors={[colors.primaryColor]}
             tintColor={colors.primaryColor}
           />

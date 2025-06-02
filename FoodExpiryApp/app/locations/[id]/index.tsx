@@ -95,23 +95,37 @@ export default function LocationDetailScreen() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { locations, foodItems, refreshAll } = useDatabase();
+  const { locations, foodItems, refreshAll, dataVersion } = useDatabase();
+  const [lastDataVersion, setLastDataVersion] = useState(0);
   
   const locationId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
   const location = locations.find(loc => loc.id === locationId);
   const locationItems = foodItems.filter(item => item.location_id === locationId);
 
-  // Refresh data when screen comes into focus or language changes
+  // Load data when screen comes into focus or language changes
   useFocusEffect(
     React.useCallback(() => {
-      // Only refresh if we don't have data available
-      if (!locations || locations.length === 0 || !foodItems || foodItems.length === 0) {
-        console.log('Location detail: No cached data, refreshing...');
-        refreshAll();
-      } else {
-        console.log('Location detail: Using cached data');
-      }
-    }, [locations?.length, foodItems?.length, language])
+      const loadData = async () => {
+        // Check if data has changed or no data available
+        const dataHasChanged = dataVersion !== lastDataVersion;
+        const hasNoData = !foodItems || foodItems.length === 0;
+        
+        if (dataHasChanged || hasNoData) {
+          setLastDataVersion(dataVersion);
+          
+          const refreshData = async () => {
+            try {
+              await refreshAll();
+            } catch (error) {
+              console.error('Location detail: Error refreshing data:', error);
+            }
+          };
+          
+          refreshData();
+        }
+      };
+      loadData();
+    }, [dataVersion, foodItems?.length, language])
   );
 
   const styles = StyleSheet.create({

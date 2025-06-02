@@ -62,12 +62,10 @@ export default function DashboardScreen() {
       const loadData = async () => {
         // Check if data is already available from cache
         if (isDataAvailable()) {
-          console.log('Dashboard: Data available from cache, skipping loading state');
           setIsLoading(false);
           return;
         }
         
-        console.log('Dashboard: No cached data available, refreshing...');
         setIsLoading(true);
         try {
           await refreshAll();
@@ -78,13 +76,12 @@ export default function DashboardScreen() {
         }
       };
       loadData();
-    }, [isDataAvailable, language]) // Add language to dependencies
+    }, [isDataAvailable, refreshAll, language])
   );
 
-  // Force refresh when language changes (for proper translation updates)
+  // Force refresh when language changes
   useEffect(() => {
-    const forceRefreshOnLanguageChange = async () => {
-      console.log('Language changed, forcing data refresh for translations...');
+    const forceRefresh = async () => {
       try {
         await refreshAll();
       } catch (error) {
@@ -92,11 +89,10 @@ export default function DashboardScreen() {
       }
     };
     
-    // Skip the initial render to avoid double loading
-    if (language !== 'en' || categories.length > 0) {
-      forceRefreshOnLanguageChange();
+    if (language) {
+      forceRefresh();
     }
-  }, [language]);
+  }, [language, refreshAll]);
 
   // Calculate location item counts
   const getLocationItemCounts = () => {
@@ -121,68 +117,41 @@ export default function DashboardScreen() {
   };
 
   const handleSave = async () => {
-    console.log('=== handleSave started ===');
-    console.log('Item name:', itemName);
-    console.log('Quantity:', quantity);
-    console.log('Category ID:', categoryId);
-    console.log('Location ID:', locationId);
-    console.log('Expiry date:', expiryDate);
-    
     if (!itemName.trim()) {
-      console.log('Error: Item name is empty');
       Alert.alert(t('alert.error'), t('alert.nameRequired'));
       return;
     }
 
     if (!quantity || parseInt(quantity) < 1) {
-      console.log('Error: Invalid quantity');
       Alert.alert(t('alert.error'), t('alert.quantityRequired'));
       return;
     }
 
     try {
-      console.log('Creating food item object...');
-      const item: FoodItem = {
-        name: itemName,
+      const item: Omit<FoodItem, 'id'> = {
+        name: itemName.trim(),
         quantity: parseInt(quantity),
         category_id: categoryId,
         location_id: locationId,
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 0,
-        notes: notes.trim() || null,
-        created_at: new Date().toISOString().split('T')[0],
+        notes: notes?.trim() || null,
         image_uri: null,
+        created_at: new Date().toISOString().split('T')[0]
       };
-      
-      console.log('Food item object created:', item);
 
       if (editingItem) {
-        console.log('Updating existing item with ID:', editingItem.id);
         await updateFoodItem({ ...item, id: editingItem.id });
-        console.log('Item updated successfully');
       } else {
-        console.log('Creating new food item...');
         const newId = await createFoodItem(item);
-        console.log('Food item created successfully with ID:', newId);
       }
-      
-      console.log('Closing modal...');
+
+      setModalVisible(false);
       handleCloseModal();
-      
-      console.log('Refreshing data...');
       await refreshAll();
-      console.log('Data refreshed successfully');
-      console.log('=== handleSave completed successfully ===');
     } catch (error) {
-      console.error('=== handleSave ERROR ===');
-      console.error('Error details:', error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      
-      Alert.alert(
-        t('alert.error'), 
-        `${t('alert.saveFailed')}\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      console.error('Error saving food item:', error);
+      Alert.alert(t('alert.error'), t('alert.saveFailed'));
     }
   };
 

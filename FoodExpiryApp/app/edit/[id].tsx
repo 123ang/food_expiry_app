@@ -108,8 +108,6 @@ export default function EditScreen() {
       // Small delay to ensure database changes are propagated
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      console.log('Edit: Item updated successfully, data refreshed');
-      
       // Navigate back - the list will refresh automatically via useFocusEffect
       router.back();
     } catch (error) {

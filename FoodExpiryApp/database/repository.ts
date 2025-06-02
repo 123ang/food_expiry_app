@@ -3,42 +3,13 @@ import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './mode
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Database connection helper with retry logic and fallback support
-const getDatabaseSafely = async (retries = 3): Promise<any> => {
-  // Check if we're using fallback storage
-  if (isUsingFallbackStorage()) {
-    console.log('Using fallback storage instead of SQLite');
-    return getFallbackStorage();
+const getDatabaseSafely = (): any => {
+  try {
+    return getDatabase();
+  } catch (error) {
+    console.error('Failed to get database, falling back to storage:', error);
+    return null;
   }
-
-  for (let i = 0; i < retries; i++) {
-    try {
-      const db = await getDatabase();
-      if (db) {
-        // Test the connection with a simple query
-        await db.getFirstAsync('SELECT 1');
-        return db;
-      }
-    } catch (error) {
-      console.warn(`Database connection attempt ${i + 1}/${retries} failed:`, error);
-      
-      // Check if this was a fallback storage error
-      if (error instanceof Error && error.message.includes('fallback storage')) {
-        console.log('SQLite failed, using fallback storage');
-        return getFallbackStorage();
-      }
-      
-      if (i === retries - 1) {
-        console.error(`All database connection attempts failed, switching to fallback storage`);
-        return getFallbackStorage();
-      }
-      // Wait a bit before retrying
-      await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
-    }
-  }
-  
-  // Final fallback
-  console.log('Using fallback storage as last resort');
-  return getFallbackStorage();
 };
 
 // Category Repository
@@ -48,17 +19,15 @@ export const CategoryRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for categories');
         const fallbackDb = getFallbackStorage();
         return await fallbackDb.getAllCategories();
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has getAllCategories method)
       if (typeof db.getAllCategories === 'function') {
-        console.log('Using fallback storage for categories (from getDatabaseSafely)');
         return await db.getAllCategories();
       }
       
@@ -80,18 +49,16 @@ export const CategoryRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for category by ID');
         const fallbackDb = getFallbackStorage();
         const categories = await fallbackDb.getAllCategories();
         return categories.find((cat: any) => cat.id === id) || null;
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has getAllCategories method)
       if (typeof db.getAllCategories === 'function') {
-        console.log('Using fallback storage for category by ID (from getDatabaseSafely)');
         const categories = await db.getAllCategories();
         return categories.find((cat: any) => cat.id === id) || null;
       }
@@ -118,7 +85,6 @@ export const CategoryRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for creating category');
         const fallbackDb = getFallbackStorage();
         const categories = await fallbackDb.getAllCategories();
         const newId = Math.max(0, ...categories.map((c: any) => c.id || 0)) + 1;
@@ -129,11 +95,10 @@ export const CategoryRepository = {
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage
       if (typeof db.getAllCategories === 'function') {
-        console.log('Using fallback storage for creating category (from getDatabaseSafely)');
         const categories = await db.getAllCategories();
         const newId = Math.max(0, ...categories.map((c: any) => c.id || 0)) + 1;
         const newCategory = { ...category, id: newId };
@@ -161,7 +126,7 @@ export const CategoryRepository = {
     }
 
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       await db.runAsync(
         'UPDATE categories SET name = ?, icon = ? WHERE id = ?',
         [category.name, category.icon, category.id]
@@ -179,7 +144,7 @@ export const CategoryRepository = {
     }
 
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       await db.runAsync('DELETE FROM categories WHERE id = ?', [id]);
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -195,17 +160,15 @@ export const LocationRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for locations');
         const fallbackDb = getFallbackStorage();
         return await fallbackDb.getAllLocations();
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has getAllLocations method)
       if (typeof db.getAllLocations === 'function') {
-        console.log('Using fallback storage for locations (from getDatabaseSafely)');
         return await db.getAllLocations();
       }
       
@@ -227,18 +190,16 @@ export const LocationRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for location by ID');
         const fallbackDb = getFallbackStorage();
         const locations = await fallbackDb.getAllLocations();
         return locations.find((loc: any) => loc.id === id) || null;
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has getAllLocations method)
       if (typeof db.getAllLocations === 'function') {
-        console.log('Using fallback storage for location by ID (from getDatabaseSafely)');
         const locations = await db.getAllLocations();
         return locations.find((loc: any) => loc.id === id) || null;
       }
@@ -263,7 +224,7 @@ export const LocationRepository = {
   // Create a new location
   create: async (location: Omit<Location, 'id'>): Promise<number> => {
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       const result = await db.runAsync(
         'INSERT INTO locations (name, icon) VALUES (?, ?)',
         [location.name, location.icon]
@@ -282,7 +243,7 @@ export const LocationRepository = {
     }
 
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       await db.runAsync(
         'UPDATE locations SET name = ?, icon = ? WHERE id = ?',
         [location.name, location.icon, location.id]
@@ -300,7 +261,7 @@ export const LocationRepository = {
     }
 
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       await db.runAsync('DELETE FROM locations WHERE id = ?', [id]);
     } catch (error) {
       console.error('Error deleting location:', error);
@@ -316,7 +277,6 @@ export const FoodItemRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for getAllWithDetails');
         const fallbackDb = getFallbackStorage();
         const items = await fallbackDb.getAllFoodItems();
         const categories = await fallbackDb.getAllCategories();
@@ -348,11 +308,10 @@ export const FoodItemRepository = {
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has getAllFoodItems method)
       if (typeof db.getAllFoodItems === 'function') {
-        console.log('Using fallback storage for getAllWithDetails (from getDatabaseSafely)');
         const items = await db.getAllFoodItems();
         const categories = await db.getAllCategories();
         const locations = await db.getAllLocations();
@@ -424,18 +383,16 @@ export const FoodItemRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for food item by ID');
         const fallbackDb = getFallbackStorage();
         const items = await fallbackDb.getAllFoodItems();
         return items.find((item: any) => item.id === id) || null;
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has getAllFoodItems method)
       if (typeof db.getAllFoodItems === 'function') {
-        console.log('Using fallback storage for food item by ID (from getDatabaseSafely)');
         const items = await db.getAllFoodItems();
         return items.find((item: any) => item.id === id) || null;
       }
@@ -469,17 +426,15 @@ export const FoodItemRepository = {
     try {
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('Using fallback storage for creating food item');
         const fallbackDb = getFallbackStorage();
         return await fallbackDb.addFoodItem(item);
       }
 
       // Try to get the SQLite database
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       
       // If getDatabaseSafely returned fallback storage (has addFoodItem method)
       if (typeof db.addFoodItem === 'function') {
-        console.log('Using fallback storage for creating food item (from getDatabaseSafely)');
         return await db.addFoodItem(item);
       }
       
@@ -514,7 +469,7 @@ export const FoodItemRepository = {
     }
 
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       await db.runAsync(
         `UPDATE food_items SET 
          name = ?, quantity = ?, category_id = ?, location_id = ?, 
@@ -545,7 +500,7 @@ export const FoodItemRepository = {
     }
 
     try {
-      const db = await getDatabaseSafely();
+      const db = getDatabaseSafely();
       await db.runAsync('DELETE FROM food_items WHERE id = ?', [id]);
     } catch (error) {
       console.error('Error deleting food item:', error);

@@ -19,6 +19,7 @@ import { getCurrentDate } from '../database/database';
 import { BottomNav } from '../components/BottomNav';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import { FoodItem } from '../database/models';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -46,12 +47,6 @@ export default function AddScreen() {
   }, [prefilledDate]);
 
   const handleSave = async () => {
-    console.log('=== ADD SCREEN handleSave started ===');
-    console.log('Item name:', itemName);
-    console.log('Quantity:', quantity);
-    console.log('Category ID:', selectedCategory);
-    console.log('Location ID:', selectedLocation);
-    
     if (!itemName.trim()) {
       Alert.alert(t('alert.error'), t('error.enterItemName'));
       return;
@@ -63,32 +58,28 @@ export default function AddScreen() {
     }
 
     try {
-      console.log('Creating food item...');
-      const id = await createFoodItem({
+      const item: Omit<FoodItem, 'id'> = {
         name: itemName.trim(),
         quantity: parseInt(quantity) || 1,
         category_id: selectedCategory,
         location_id: selectedLocation,
         expiry_date: expiryDate.toISOString().split('T')[0],
-        reminder_days: parseInt(reminderDays) || 0,
-        notes: notes.trim(),
-        created_at: getCurrentDate(),
+        reminder_days: parseInt(reminderDays) || 3,
+        notes: notes.trim() || null,
         image_uri: null,
-      });
-      
-      console.log('Food item created with ID:', id);
-      
-      // Refresh all data to ensure consistency across the app
-      await refreshAll();
-      console.log('Data refreshed, navigating back');
-      
-      router.back();
+        created_at: new Date().toISOString().split('T')[0]
+      };
+
+      const id = await createFoodItem(item);
+
+      // Navigate back to home
+      router.push('/');
     } catch (error) {
-      console.error('=== ADD SCREEN ERROR ===');
       console.error('Error creating food item:', error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      Alert.alert(t('alert.error'), `${t('error.failedToCreate')}\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      Alert.alert(
+        t('alert.error'), 
+        error instanceof Error ? error.message : t('error.failedToCreate')
+      );
     }
   };
 

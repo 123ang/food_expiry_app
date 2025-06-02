@@ -385,4 +385,46 @@ export const updateDefaultDataForLanguage = async (language: Language) => {
 };
 
 // Export helper functions for use by other parts of the app
-export { getDefaultCategories, getDefaultLocations }; 
+export { getDefaultCategories, getDefaultLocations };
+
+const initializeFallbackStorage = async () => {
+  if (fallbackStorage) {
+    return;
+  }
+
+  try {
+    // Load existing data or initialize empty
+    const language = await AsyncStorage.getItem('language');
+    if (!language) {
+      console.error('Could not load language preference, using English');
+    }
+    
+    const currentLanguage = language || 'en';
+    
+    const existingCategories = await AsyncStorage.getItem('categories');
+    const existingLocations = await AsyncStorage.getItem('locations');
+    const existingFoodItems = await AsyncStorage.getItem('foodItems');
+
+    const categories = existingCategories ? JSON.parse(existingCategories) : getDefaultCategoriesData(currentLanguage);
+    const locations = existingLocations ? JSON.parse(existingLocations) : getDefaultLocationsData(currentLanguage);
+    const foodItems = existingFoodItems ? JSON.parse(existingFoodItems) : [];
+
+    // Save default data if it doesn't exist
+    if (!existingCategories) {
+      await AsyncStorage.setItem('categories', JSON.stringify(categories));
+    }
+    if (!existingLocations) {
+      await AsyncStorage.setItem('locations', JSON.stringify(locations));
+    }
+    if (!existingFoodItems) {
+      await AsyncStorage.setItem('foodItems', JSON.stringify(foodItems));
+    }
+
+    // Create fallback storage object
+    fallbackStorage = createFallbackStorage();
+    isUsingFallback = true;
+  } catch (error) {
+    console.error('Failed to initialize fallback storage:', error);
+    throw error;
+  }
+}; 
