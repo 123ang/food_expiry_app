@@ -12,6 +12,14 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production-apk": {
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
