@@ -98,7 +98,11 @@ const AddCategory: React.FC = () => {
         await CategoriesService.updateCategory(id, formData);
         alert(`${t('alert.success')}: ${t('categories.edit')}`);
       } else {
-        await CategoriesService.addCategory(formData, user.uid);
+        const categoryData = {
+          ...formData,
+          userId: user.uid
+        };
+        await CategoriesService.addCategory(categoryData, user.uid);
         alert(`${t('alert.success')}: ${t('categories.save')}`);
       }
       navigate('/categories');

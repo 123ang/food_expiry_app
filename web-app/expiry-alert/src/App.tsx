@@ -21,7 +21,7 @@ const AppContent: React.FC = () => {
 
   // Initialize user data when user first signs in
   useEffect(() => {
-    if (user && !user.isDemo) {
+    if (user) {
       initializeUserData(user.uid).catch(error => {
         console.error('Failed to initialize user data:', error);
       });

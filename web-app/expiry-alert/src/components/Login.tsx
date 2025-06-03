@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,40 +28,26 @@ const Login: React.FC = () => {
       }
       navigate('/dashboard');
     } catch (err: any) {
-      // Check if it's a Firebase configuration error
-      if (err.message.includes('api-key-not-valid') || err.message.includes('Firebase')) {
-        setError('Demo Mode: Firebase not configured. Click "Demo Login" below to continue.');
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
       console.error('Error:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDemoLogin = () => {
-    console.log('Demo login - bypassing Firebase auth');
-    // Create a mock user session
-    localStorage.setItem('demoUser', JSON.stringify({
-      uid: 'demo-user',
-      email: 'demo@expiryalert.com',
-      displayName: 'Demo User'
-    }));
-    navigate('/dashboard');
-    // Refresh the page to trigger auth state update
-    window.location.reload();
-  };
-
   return (
     <div className="login-container">
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <img src="/food_expiry_logo.png" alt="Expiry Alert" style={{ width: '80px', height: '80px', borderRadius: '16px' }} />
+        <h1 style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>Expiry Alert</h1>
+        <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+          {isSignUp ? t('auth.createAccount') : t('auth.signIn')}
+        </p>
       </div>
-      <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
+      <h2>{isSignUp ? t('auth.signUp') : t('auth.login')}</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="email">Email:</label>
+          <label htmlFor="email">{t('auth.email')}:</label>
           <input
             type="email"
             id="email"
@@ -67,11 +55,11 @@ const Login: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="Enter your email"
+            placeholder={t('auth.email')}
           />
         </div>
         <div className="form-group">
-          <label htmlFor="password">Password:</label>
+          <label htmlFor="password">{t('auth.password')}:</label>
           <input
             type="password"
             id="password"
@@ -79,7 +67,7 @@ const Login: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            placeholder="Enter your password"
+            placeholder={t('auth.password')}
           />
         </div>
         {error && <div className="error-message">{error}</div>}
@@ -89,7 +77,7 @@ const Login: React.FC = () => {
           style={{ width: '100%', marginBottom: '1rem' }}
           disabled={isLoading}
         >
-          {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Login')}
+          {isLoading ? t('status.loading') : (isSignUp ? t('auth.signUp') : t('auth.login'))}
         </button>
       </form>
       
@@ -98,27 +86,10 @@ const Login: React.FC = () => {
           type="button" 
           className="btn btn-secondary"
           onClick={() => setIsSignUp(!isSignUp)}
-          style={{ background: 'transparent', color: '#22c55e', marginBottom: '1rem' }}
+          style={{ background: 'transparent', color: '#22c55e', border: 'none' }}
         >
-          {isSignUp ? 'Already have an account? Login' : 'Need an account? Sign Up'}
+          {isSignUp ? t('auth.alreadyHaveAccount') + ' ' + t('auth.login') : t('auth.dontHaveAccount') + ' ' + t('auth.signUp')}
         </button>
-      </div>
-
-      <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-        <button 
-          onClick={handleDemoLogin}
-          className="btn btn-primary"
-          style={{ width: '100%', background: '#16a34a', marginBottom: '1rem' }}
-        >
-          🚀 Demo Login (Try Without Firebase)
-        </button>
-      </div>
-
-      <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-        <small style={{ color: '#6b7280' }}>
-          <strong>Demo Mode:</strong> Experience the app without setting up Firebase.<br/>
-          Your data won't be saved in demo mode.
-        </small>
       </div>
     </div>
   );

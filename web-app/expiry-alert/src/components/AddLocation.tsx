@@ -1,112 +1,179 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { LocationsService, Location } from '../services/firestoreService';
 
 const AddLocation: React.FC = () => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [temperature, setTemperature] = useState<'room' | 'refrigerated' | 'frozen'>('room');
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    temperature: 'room' as 'room' | 'refrigerated' | 'frozen'
+  });
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { t } = useLanguage();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (id) {
+      setIsEditing(true);
+      loadLocation();
+    }
+  }, [id]);
+
+  const loadLocation = async () => {
+    if (!id || !user) return;
+    
+    setIsLoading(true);
+    try {
+      const location = await LocationsService.getLocation(id);
+      if (location) {
+        setFormData({
+          name: location.name,
+          description: location.description,
+          temperature: location.temperature
+        });
+      } else {
+        setError('Location not found');
+      }
+    } catch (error) {
+      console.error('Error loading location:', error);
+      setError('Failed to load location');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      setError(t('validation.nameRequired'));
+      return false;
+    }
+    if (!formData.description.trim()) {
+      setError(t('validation.required'));
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !validateForm()) return;
+    
+    setIsLoading(true);
     setError(null);
-    setSuccess(null);
-
-    if (!name || !description) {
-      setError('Please fill in all required fields.');
-      return;
-    }
-
+    
     try {
-      // Demo mode - just show success message
-      console.log('Adding location:', {
-        name,
-        description,
-        temperature,
-        addedAt: new Date(),
-      });
-      
-      setSuccess('Location added successfully! (Demo mode)');
-      
-      // Reset form
-      setName('');
-      setDescription('');
-      setTemperature('room');
-      
-      // Navigate back after a short delay
-      setTimeout(() => {
-        navigate('/locations');
-      }, 1500);
-      
-    } catch (err: any) {
-      setError('Failed to add location. Please try again.');
-      console.error('Error adding location:', err);
+      if (isEditing && id) {
+        await LocationsService.updateLocation(id, formData);
+        alert(`${t('alert.success')}: ${t('locations.edit')}`);
+      } else {
+        const locationData = {
+          ...formData,
+          userId: user.uid
+        };
+        await LocationsService.addLocation(locationData, user.uid);
+        alert(`${t('alert.success')}: ${t('locations.save')}`);
+      }
+      navigate('/locations');
+    } catch (error) {
+      console.error('Error saving location:', error);
+      setError(isEditing ? 'Failed to update location' : 'Failed to create location');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const handleCancel = () => {
+    navigate('/locations');
+  };
+
+  if (isEditing && isLoading) {
+    return (
+      <div className="loading">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>{t('status.loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container">
       <div className="dashboard-header">
-        <h2>Add Storage Location</h2>
-        <Link to="/locations" className="btn btn-secondary">← Back to Locations</Link>
+        <h2>{isEditing ? t('locations.edit') : t('locations.addNew')}</h2>
+        <Link to="/locations" className="btn btn-secondary">← {t('common.cancel')}</Link>
       </div>
 
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Location Name *</label>
+            <label htmlFor="name">{t('locations.name')} *</label>
             <input
               type="text"
               id="name"
+              name="name"
               className="form-control"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={handleInputChange}
               required
-              placeholder="e.g., Main Refrigerator, Pantry, Freezer"
+              placeholder={t('locations.name')}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description *</label>
+            <label htmlFor="description">{t('locations.description')} *</label>
             <textarea
               id="description"
+              name="description"
               className="form-control"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={formData.description}
+              onChange={handleInputChange}
               required
-              placeholder="Describe this storage location..."
+              placeholder={t('locations.description')}
               rows={3}
               style={{ resize: 'vertical', minHeight: '80px' }}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="temperature">Temperature Type *</label>
+            <label htmlFor="temperature">{t('locations.temperature')} *</label>
             <select
               id="temperature"
+              name="temperature"
               className="form-control"
-              value={temperature}
-              onChange={(e) => setTemperature(e.target.value as 'room' | 'refrigerated' | 'frozen')}
+              value={formData.temperature}
+              onChange={handleInputChange}
               required
             >
-              <option value="room">🌡️ Room Temperature</option>
-              <option value="refrigerated">🧊 Refrigerated</option>
-              <option value="frozen">❄️ Frozen</option>
+              <option value="room">🌡️ {t('locations.room')}</option>
+              <option value="refrigerated">🧊 {t('locations.refrigerated')}</option>
+              <option value="frozen">❄️ {t('locations.frozen')}</option>
             </select>
           </div>
 
           {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-              Add Location
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isLoading}>
+              {isLoading ? t('status.loading') : (isEditing ? t('locations.save') : t('locations.save'))}
             </button>
-            <Link to="/locations" className="btn btn-secondary" style={{ flex: 1, textAlign: 'center' }}>
-              Cancel
-            </Link>
+            <button type="button" onClick={handleCancel} className="btn btn-secondary" style={{ flex: 1 }}>
+              {t('locations.cancel')}
+            </button>
           </div>
         </form>
 

@@ -20,6 +20,34 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.categories': 'Categories',
     'nav.logout': 'Logout',
     
+    // Landing Page
+    'landing.title': 'Never Let Food Go to Waste Again',
+    'landing.subtitle': 'Smart expiry tracking for your kitchen. Get notified before items expire and reduce food waste while saving money.',
+    'landing.getStarted': 'Get Started',
+    'landing.learnMore': 'Learn More',
+    'landing.smartAlerts': 'Smart Alerts',
+    'landing.whyChoose': 'Why Choose Expiry Alert?',
+    'landing.smartTracking': 'Smart Tracking',
+    'landing.smartTrackingDesc': 'Easily track expiry dates for all your food items with our intuitive interface.',
+    'landing.timelyAlerts': 'Timely Alerts',
+    'landing.timelyAlertsDesc': 'Get notified before items expire so you can use them in time.',
+    'landing.visualDashboard': 'Visual Dashboard',
+    'landing.visualDashboardDesc': 'See your inventory at a glance with color-coded status indicators.',
+    'landing.reduceWaste': 'Reduce Waste',
+    'landing.reduceWasteDesc': 'Help the environment by reducing food waste and saving money.',
+    'landing.crossPlatform': 'Cross-Platform',
+    'landing.crossPlatformDesc': 'Available on web, iOS, and Android for seamless synchronization.',
+    'landing.securePrivate': 'Secure & Private',
+    'landing.securePrivateDesc': 'Your data is securely stored and synchronized across all devices.',
+    'landing.downloadTitle': 'Download Expiry Alert',
+    'landing.downloadDesc': 'Get the mobile app for the best experience with notifications and offline access.',
+    'landing.preferBrowser': 'Prefer to use it in your browser?',
+    'landing.launchWebApp': 'Launch Web App',
+    'landing.activeUsers': 'Active Users',
+    'landing.itemsTracked': 'Items Tracked',
+    'landing.wasteReduced': 'Food Waste Reduced',
+    'landing.appStoreRating': 'App Store Rating',
+    
     // Dashboard
     'dashboard.recentItems': 'Recent Items',
     'dashboard.getStarted': 'Add your first food item to get started with tracking expiry dates!',
@@ -85,6 +113,7 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.save': 'Save Category',
     'categories.cancel': 'Cancel',
     'categories.noCategories': 'No categories found. Add your first category to get started!',
+    'categories.preview': 'Preview',
     
     // Locations
     'locations.title': 'Storage Locations',
@@ -163,6 +192,34 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.categories': '分类',
     'nav.logout': '登出',
     
+    // Landing Page
+    'landing.title': '再也不让食物浪费',
+    'landing.subtitle': '智能厨房保质期跟踪。在食品过期前获得通知，减少食物浪费并节省金钱。',
+    'landing.getStarted': '开始使用',
+    'landing.learnMore': '了解更多',
+    'landing.smartAlerts': '智能提醒',
+    'landing.whyChoose': '为什么选择过期提醒？',
+    'landing.smartTracking': '智能跟踪',
+    'landing.smartTrackingDesc': '通过我们直观的界面轻松跟踪所有食品的保质期。',
+    'landing.timelyAlerts': '及时提醒',
+    'landing.timelyAlertsDesc': '在食品过期前获得通知，以便及时使用。',
+    'landing.visualDashboard': '可视化仪表板',
+    'landing.visualDashboardDesc': '通过彩色状态指示器一目了然地查看您的库存。',
+    'landing.reduceWaste': '减少浪费',
+    'landing.reduceWasteDesc': '通过减少食物浪费来帮助环境并节省金钱。',
+    'landing.crossPlatform': '跨平台',
+    'landing.crossPlatformDesc': '在网页、iOS和Android上可用，实现无缝同步。',
+    'landing.securePrivate': '安全私密',
+    'landing.securePrivateDesc': '您的数据安全存储并在所有设备间同步。',
+    'landing.downloadTitle': '下载过期提醒',
+    'landing.downloadDesc': '获取移动应用程序以获得最佳的通知和离线访问体验。',
+    'landing.preferBrowser': '更喜欢在浏览器中使用？',
+    'landing.launchWebApp': '启动网页应用',
+    'landing.activeUsers': '活跃用户',
+    'landing.itemsTracked': '跟踪项目',
+    'landing.wasteReduced': '减少食物浪费',
+    'landing.appStoreRating': '应用商店评分',
+    
     // Dashboard
     'dashboard.recentItems': '最近项目',
     'dashboard.getStarted': '添加您的第一个食品项目以开始跟踪过期日期！',
@@ -205,13 +262,13 @@ const translations: Record<Language, Record<string, string>> = {
     'form.itemName': '项目',
     
     // Lists
-    'list.noItems': '未找到项目。开始添加一些项目！',
+    'list.noItems': '未找到项目。添加一些项目以开始！',
     
     // Cleanup
     'cleanup.confirmMessage': '您确定要清理过期项目吗？',
     'cleanup.success': '清理成功完成',
     'cleanup.failed': '清理过期项目失败',
-    'cleanup.itemsDeleted': '个项目已删除',
+    'cleanup.itemsDeleted': '项目已删除',
     'cleanup.cleanupExpired': '清理过期',
     'cleanup.inProgress': '清理中...',
     
@@ -227,10 +284,11 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.edit': '编辑分类',
     'categories.save': '保存分类',
     'categories.cancel': '取消',
-    'categories.noCategories': '未找到分类。添加您的第一个分类开始！',
+    'categories.noCategories': '未找到分类。添加您的第一个分类以开始！',
+    'categories.preview': '预览',
     
     // Locations
-    'locations.title': '储存位置',
+    'locations.title': '存储位置',
     'locations.addNew': '添加新位置',
     'locations.name': '位置名称',
     'locations.description': '描述',
@@ -243,14 +301,14 @@ const translations: Record<Language, Record<string, string>> = {
     'locations.edit': '编辑位置',
     'locations.save': '保存位置',
     'locations.cancel': '取消',
-    'locations.noLocations': '未找到位置。添加您的第一个储存位置开始！',
+    'locations.noLocations': '未找到位置。添加您的第一个存储位置以开始！',
     
     // Food Items
     'foodItems.title': '食品项目',
     'foodItems.addNew': '添加新项目',
     'foodItems.name': '项目名称',
     'foodItems.category': '分类',
-    'foodItems.location': '储存位置',
+    'foodItems.location': '存储位置',
     'foodItems.expiryDate': '过期日期',
     'foodItems.quantity': '数量',
     'foodItems.notes': '备注',
@@ -260,7 +318,7 @@ const translations: Record<Language, Record<string, string>> = {
     'foodItems.edit': '编辑项目',
     'foodItems.delete': '删除项目',
     'foodItems.deleteConfirm': '您确定要删除此项目吗？',
-    'foodItems.noItems': '未找到食品项目。添加您的第一个项目开始跟踪！',
+    'foodItems.noItems': '未找到食品项目。添加您的第一个项目以开始跟踪！',
     
     // Common
     'common.save': '保存',
@@ -306,9 +364,37 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.categories': 'カテゴリ',
     'nav.logout': 'ログアウト',
     
+    // Landing Page
+    'landing.title': '食品を無駄にしないスマートアプリ',
+    'landing.subtitle': 'キッチンのためのスマート賞味期限追跡。食品が期限切れになる前に通知を受け取り、食品廃棄を減らしてお金を節約しましょう。',
+    'landing.getStarted': '始める',
+    'landing.learnMore': '詳細を見る',
+    'landing.smartAlerts': 'スマートアラート',
+    'landing.whyChoose': 'なぜExpiry Alertを選ぶのか？',
+    'landing.smartTracking': 'スマート追跡',
+    'landing.smartTrackingDesc': '直感的なインターフェースですべての食品の賞味期限を簡単に追跡できます。',
+    'landing.timelyAlerts': 'タイムリーアラート',
+    'landing.timelyAlertsDesc': '食品が期限切れになる前に通知を受け取り、時間内に使用できます。',
+    'landing.visualDashboard': 'ビジュアルダッシュボード',
+    'landing.visualDashboardDesc': 'カラーコード化されたステータスインジケーターで在庫を一目で確認できます。',
+    'landing.reduceWaste': '廃棄削減',
+    'landing.reduceWasteDesc': '食品廃棄を減らして環境を守り、お金を節約しましょう。',
+    'landing.crossPlatform': 'クロスプラットフォーム',
+    'landing.crossPlatformDesc': 'ウェブ、iOS、Androidで利用可能でシームレスな同期を実現。',
+    'landing.securePrivate': 'セキュアでプライベート',
+    'landing.securePrivateDesc': 'あなたのデータは安全に保存され、すべてのデバイス間で同期されます。',
+    'landing.downloadTitle': 'Expiry Alertをダウンロード',
+    'landing.downloadDesc': '通知とオフラインアクセスの最高の体験のためにモバイルアプリを入手してください。',
+    'landing.preferBrowser': 'ブラウザでの使用を希望しますか？',
+    'landing.launchWebApp': 'ウェブアプリを起動',
+    'landing.activeUsers': 'アクティブユーザー',
+    'landing.itemsTracked': '追跡アイテム',
+    'landing.wasteReduced': '食品廃棄削減',
+    'landing.appStoreRating': 'App Store評価',
+    
     // Dashboard
     'dashboard.recentItems': '最近のアイテム',
-    'dashboard.getStarted': '最初の食品アイテムを追加して期限追跡を開始しましょう！',
+    'dashboard.getStarted': '最初の食品アイテムを追加して賞味期限の追跡を始めましょう！',
     
     // Home/Welcome
     'home.welcome': 'おかえりなさい！',
@@ -316,7 +402,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Status
     'status.fresh': '新鮮',
-    'status.expiring': '期限切れ間近',
+    'status.expiring': '期限間近',
     'status.expired': '期限切れ',
     'status.items': 'アイテム',
     'status.loading': '読み込み中...',
@@ -348,14 +434,14 @@ const translations: Record<Language, Record<string, string>> = {
     'form.itemName': 'アイテム',
     
     // Lists
-    'list.noItems': 'アイテムが見つかりません。アイテムを追加してください！',
+    'list.noItems': 'アイテムが見つかりません。始めるためにアイテムを追加してください！',
     
     // Cleanup
     'cleanup.confirmMessage': '期限切れアイテムをクリーンアップしてもよろしいですか？',
     'cleanup.success': 'クリーンアップが正常に完了しました',
     'cleanup.failed': '期限切れアイテムのクリーンアップに失敗しました',
     'cleanup.itemsDeleted': 'アイテムが削除されました',
-    'cleanup.cleanupExpired': '期限切れクリーンアップ',
+    'cleanup.cleanupExpired': '期限切れをクリーンアップ',
     'cleanup.inProgress': 'クリーンアップ中...',
     
     // Categories
@@ -370,7 +456,8 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.edit': 'カテゴリを編集',
     'categories.save': 'カテゴリを保存',
     'categories.cancel': 'キャンセル',
-    'categories.noCategories': 'カテゴリが見つかりません。最初のカテゴリを追加してください！',
+    'categories.noCategories': 'カテゴリが見つかりません。最初のカテゴリを追加して始めましょう！',
+    'categories.preview': 'プレビュー',
     
     // Locations
     'locations.title': '保存場所',
@@ -386,7 +473,7 @@ const translations: Record<Language, Record<string, string>> = {
     'locations.edit': '場所を編集',
     'locations.save': '場所を保存',
     'locations.cancel': 'キャンセル',
-    'locations.noLocations': '場所が見つかりません。最初の保存場所を追加してください！',
+    'locations.noLocations': '場所が見つかりません。最初の保存場所を追加して始めましょう！',
     
     // Food Items
     'foodItems.title': '食品アイテム',
@@ -403,7 +490,7 @@ const translations: Record<Language, Record<string, string>> = {
     'foodItems.edit': 'アイテムを編集',
     'foodItems.delete': 'アイテムを削除',
     'foodItems.deleteConfirm': 'このアイテムを削除してもよろしいですか？',
-    'foodItems.noItems': '食品アイテムが見つかりません。最初のアイテムを追加して追跡を開始してください！',
+    'foodItems.noItems': '食品アイテムが見つかりません。最初のアイテムを追加して追跡を始めましょう！',
     
     // Common
     'common.save': '保存',
@@ -419,7 +506,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.created': '作成済み',
     
     // Validation
-    'validation.required': 'この項目は必須です',
+    'validation.required': 'このフィールドは必須です',
     'validation.nameRequired': '名前は必須です',
     'validation.categoryRequired': 'カテゴリは必須です',
     'validation.locationRequired': '場所は必須です',
@@ -437,7 +524,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.confirmPassword': 'パスワード確認',
     'auth.displayName': '表示名',
     'auth.forgotPassword': 'パスワードを忘れましたか？',
-    'auth.createAccount': 'アカウント作成',
+    'auth.createAccount': 'アカウントを作成',
     'auth.alreadyHaveAccount': 'すでにアカウントをお持ちですか？',
     'auth.dontHaveAccount': 'アカウントをお持ちでないですか？',
   }

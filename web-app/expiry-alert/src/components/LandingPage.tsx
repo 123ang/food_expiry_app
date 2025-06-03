@@ -11,13 +11,13 @@ const LandingPage: React.FC = () => {
       {/* Header */}
       <header className="App-header">
         <div className="container">
-          <div className="logo-container">
+          <Link to="/" className="logo-container" style={{ textDecoration: 'none' }}>
             <img src="/food_expiry_logo.png" alt="Expiry Alert" className="logo" />
             <h1>Expiry Alert</h1>
-          </div>
+          </Link>
           <nav>
             <LanguageSwitcher />
-            <Link to="/login" className="btn btn-primary">Get Started</Link>
+            <Link to="/login" className="btn btn-primary">{t('landing.getStarted')}</Link>
           </nav>
         </div>
       </header>
@@ -49,11 +49,11 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div className="feature-card card-2">
                   <span className="emoji">⚠️</span>
-                  <span>{t('status.expiringSoon')}</span>
+                  <span>{t('status.expiring')}</span>
                 </div>
                 <div className="feature-card card-3">
                   <span className="emoji">📱</span>
-                  <span>Smart Alerts</span>
+                  <span>{t('landing.smartAlerts')}</span>
                 </div>
               </div>
             </div>
@@ -64,37 +64,37 @@ const LandingPage: React.FC = () => {
       {/* Features Section */}
       <section className="features-section">
         <div className="container">
-          <h2 className="section-title">Why Choose Expiry Alert?</h2>
+          <h2 className="section-title">{t('landing.whyChoose')}</h2>
           <div className="features-grid">
             <div className="feature-item">
               <div className="feature-icon">📅</div>
-              <h3>Smart Tracking</h3>
-              <p>Easily track expiry dates for all your food items with our intuitive interface.</p>
+              <h3>{t('landing.smartTracking')}</h3>
+              <p>{t('landing.smartTrackingDesc')}</p>
             </div>
             <div className="feature-item">
               <div className="feature-icon">🔔</div>
-              <h3>Timely Alerts</h3>
-              <p>Get notified before items expire so you can use them in time.</p>
+              <h3>{t('landing.timelyAlerts')}</h3>
+              <p>{t('landing.timelyAlertsDesc')}</p>
             </div>
             <div className="feature-item">
               <div className="feature-icon">📊</div>
-              <h3>Visual Dashboard</h3>
-              <p>See your inventory at a glance with color-coded status indicators.</p>
+              <h3>{t('landing.visualDashboard')}</h3>
+              <p>{t('landing.visualDashboardDesc')}</p>
             </div>
             <div className="feature-item">
               <div className="feature-icon">🌱</div>
-              <h3>Reduce Waste</h3>
-              <p>Help the environment by reducing food waste and saving money.</p>
+              <h3>{t('landing.reduceWaste')}</h3>
+              <p>{t('landing.reduceWasteDesc')}</p>
             </div>
             <div className="feature-item">
               <div className="feature-icon">📱</div>
-              <h3>Cross-Platform</h3>
-              <p>Available on web, iOS, and Android for seamless synchronization.</p>
+              <h3>{t('landing.crossPlatform')}</h3>
+              <p>{t('landing.crossPlatformDesc')}</p>
             </div>
             <div className="feature-item">
               <div className="feature-icon">🔐</div>
-              <h3>Secure & Private</h3>
-              <p>Your data is securely stored and synchronized across all devices.</p>
+              <h3>{t('landing.securePrivate')}</h3>
+              <p>{t('landing.securePrivateDesc')}</p>
             </div>
           </div>
         </div>
@@ -103,24 +103,26 @@ const LandingPage: React.FC = () => {
       {/* Download Section */}
       <section id="download" className="download-section">
         <div className="container">
-          <h2 className="section-title">Download Expiry Alert</h2>
+          <h2 className="section-title">{t('landing.downloadTitle')}</h2>
           <p className="section-subtitle">
-            Get the mobile app for the best experience with notifications and offline access.
+            {t('landing.downloadDesc')}
           </p>
           <div className="download-buttons">
             <a href="#" className="download-btn app-store">
               <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" 
-                   alt="Download on App Store" />
+                   alt="Download on App Store" 
+                   style={{ height: '60px' }} />
             </a>
             <a href="#" className="download-btn play-store">
               <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" 
-                   alt="Get it on Google Play" />
+                   alt="Get it on Google Play" 
+                   style={{ height: '60px' }} />
             </a>
           </div>
           <div className="web-app-link">
-            <p>Prefer to use it in your browser?</p>
+            <p>{t('landing.preferBrowser')}</p>
             <Link to="/login" className="btn btn-primary">
-              Launch Web App
+              {t('landing.launchWebApp')}
             </Link>
           </div>
         </div>
@@ -132,19 +134,19 @@ const LandingPage: React.FC = () => {
           <div className="stats-grid">
             <div className="stat-item">
               <h3>10,000+</h3>
-              <p>Active Users</p>
+              <p>{t('landing.activeUsers')}</p>
             </div>
             <div className="stat-item">
               <h3>50,000+</h3>
-              <p>Items Tracked</p>
+              <p>{t('landing.itemsTracked')}</p>
             </div>
             <div className="stat-item">
               <h3>30%</h3>
-              <p>Food Waste Reduced</p>
+              <p>{t('landing.wasteReduced')}</p>
             </div>
             <div className="stat-item">
               <h3>4.8★</h3>
-              <p>App Store Rating</p>
+              <p>{t('landing.appStoreRating')}</p>
             </div>
           </div>
         </div>

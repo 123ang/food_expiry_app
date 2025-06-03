@@ -16,7 +16,6 @@ interface User {
   displayName: string | null;
   photoURL: string | null;
   isAnonymous: boolean;
-  isDemo?: boolean;
 }
 
 interface AuthContextType {
@@ -26,7 +25,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  signInDemo: () => void;
   signInAsGuest: () => Promise<void>;
   clearError: () => void;
 }
@@ -51,20 +49,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for demo user in localStorage first
-    const demoUserData = localStorage.getItem('demoUser');
-    if (demoUserData) {
-      try {
-        const demoUser = JSON.parse(demoUserData);
-        setUser({ ...demoUser, isDemo: true });
-        setLoading(false);
-        return;
-      } catch (err) {
-        console.error('Error parsing demo user data:', err);
-        localStorage.removeItem('demoUser');
-      }
-    }
-
     // Listen to Firebase auth state changes
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
@@ -73,15 +57,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
-          isAnonymous: firebaseUser.isAnonymous,
-          isDemo: false
+          isAnonymous: firebaseUser.isAnonymous
         });
       } else {
-        // Only set user to null if no demo user exists
-        const demoUserData = localStorage.getItem('demoUser');
-        if (!demoUserData) {
-          setUser(null);
-        }
+        setUser(null);
       }
       setLoading(false);
     });
@@ -94,8 +73,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password);
-      // Clear any demo user data
-      localStorage.removeItem('demoUser');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
       throw err;
@@ -113,9 +90,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (displayName && userCredential.user) {
         await updateProfile(userCredential.user, { displayName });
       }
-      
-      // Clear any demo user data
-      localStorage.removeItem('demoUser');
     } catch (err: any) {
       setError(err.message || 'Failed to create account');
       throw err;
@@ -128,7 +102,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setError(null);
       await firebaseSignOut(auth);
-      localStorage.removeItem('demoUser');
       setUser(null);
     } catch (err: any) {
       setError(err.message || 'Failed to sign out');
@@ -136,27 +109,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signInDemo = (): void => {
-    const demoUser: User = {
-      uid: 'demo-user-123',
-      email: 'demo@example.com',
-      displayName: 'Demo User',
-      photoURL: null,
-      isAnonymous: false,
-      isDemo: true
-    };
-    
-    localStorage.setItem('demoUser', JSON.stringify(demoUser));
-    setUser(demoUser);
-  };
-
   const signInAsGuest = async (): Promise<void> => {
     try {
       setError(null);
       setLoading(true);
       await signInAnonymously(auth);
-      // Clear any demo user data since we're using real anonymous auth
-      localStorage.removeItem('demoUser');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in as guest');
       throw err;
@@ -176,7 +133,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
-    signInDemo,
     signInAsGuest,
     clearError
   };
