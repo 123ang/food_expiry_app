@@ -9,7 +9,8 @@ import {
   DashboardStats,
   FoodItem,
   Category,
-  Location
+  Location,
+  cleanupUserData
 } from '../services/firestoreService';
 
 interface DashboardProps {
@@ -45,20 +46,50 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     setError(null);
     
     try {
-      const [itemsData, categoriesData, locationsData, statsData] = await Promise.all([
-        filter ? FoodItemsService.getItemsByStatus(user.uid, filter) : FoodItemsService.getUserItems(user.uid),
-        CategoriesService.getUserCategories(user.uid),
-        LocationsService.getUserLocations(user.uid),
-        FoodItemsService.getDashboardStats(user.uid)
-      ]);
+      // Load data with individual error handling
+      let itemsData: FoodItem[] = [];
+      let categoriesData: Category[] = [];
+      let locationsData: Location[] = [];
+      let statsData: DashboardStats = { total: 0, fresh: 0, expiringSoon: 0, expired: 0 };
+
+      try {
+        itemsData = filter ? 
+          await FoodItemsService.getItemsByStatus(user.uid, filter) : 
+          await FoodItemsService.getUserItems(user.uid);
+      } catch (err) {
+        console.error('Error loading food items:', err);
+        // Continue with empty array
+      }
+
+      try {
+        categoriesData = await CategoriesService.getUserCategories(user.uid);
+      } catch (err) {
+        console.error('Error loading categories:', err);
+        // Continue with empty array
+      }
+
+      try {
+        locationsData = await LocationsService.getUserLocations(user.uid);
+      } catch (err) {
+        console.error('Error loading locations:', err);
+        // Continue with empty array
+      }
+
+      try {
+        statsData = await FoodItemsService.getDashboardStats(user.uid);
+      } catch (err) {
+        console.error('Error loading stats:', err);
+        // Continue with default stats
+      }
 
       setFoodItems(itemsData);
       setCategories(categoriesData);
       setLocations(locationsData);
       setStats(statsData);
+
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      setError('Failed to load data. Please try again.');
+      setError(`Failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your internet connection and try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -87,84 +118,104 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const handleCleanupExpired = async () => {
     if (!user) return;
     
-    const confirmCleanup = window.confirm(
-      `${t('cleanup.confirmMessage')} This will permanently delete expired items that are older than 30 days.`
-    );
-    
-    if (!confirmCleanup) return;
+    const confirmed = window.confirm(t('cleanup.confirmMessage'));
+    if (!confirmed) return;
     
     setIsCleaningUp(true);
     try {
-      const deletedCount = await FoodItemsService.cleanupExpiredItems(user.uid, 30);
-      await loadData(); // Refresh data
+      const deletedCount = await FoodItemsService.cleanupExpiredItems(user.uid);
       alert(`${t('cleanup.success')}: ${deletedCount} ${t('cleanup.itemsDeleted')}`);
+      await loadData(); // Refresh the data
     } catch (error) {
       console.error('Error cleaning up expired items:', error);
-      alert(`${t('cleanup.failed')}`);
+      alert(t('cleanup.failed'));
     } finally {
       setIsCleaningUp(false);
     }
   };
 
-  const getCategoryIcon = (categoryName: string) => {
-    const category = categories.find(cat => cat.name === categoryName);
-    if (category?.icon) return category.icon;
+  const handleDataCleanup = async () => {
+    if (!user) return;
     
-    // Fallback icons
-    const icons: { [key: string]: string } = {
-      'Fruits': '🍇',
-      'Vegetables': '🥕',
-      'Dairy': '🥛',
-      'Meat': '🥩',
-      'Bread': '🍞',
-      'Beverages': '🥤',
-      'Snacks': '🍿',
-      'Frozen': '🧊',
-      'Seafood': '🐟',
-      'Spices': '🌶️',
-      'Dessert': '🍰',
-      'Grains': '🌾'
-    };
-    return icons[categoryName] || icons[categoryName.toLowerCase()] || '🍎';
+    const confirmed = window.confirm('Clean up duplicate items and fix data inconsistencies? This will also migrate any legacy data to the new ID-based system. This cannot be undone.');
+    if (!confirmed) return;
+    
+    setIsCleaningUp(true);
+    try {
+      const result = await cleanupUserData(user.uid);
+      alert(`Data cleanup completed! Duplicates removed: ${result.duplicatesRemoved}, Orphaned references fixed: ${result.orphansFixed}, Locations migrated: ${result.locationsMigrated}, Categories migrated: ${result.categoriesMigrated}`);
+      await loadData(); // Refresh the data
+    } catch (error) {
+      console.error('Error cleaning up data:', error);
+      alert('Failed to clean up data');
+    } finally {
+      setIsCleaningUp(false);
+    }
   };
 
-  const getLocationIcon = (locationName: string) => {
-    const location = locations.find(loc => loc.name === locationName);
+  const getCategoryIcon = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (category?.icon) return category.icon;
+    
+    // Fallback icons for unknown categories
+    return '🍎';
+  };
+
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.name || 'Unknown Category';
+  };
+
+  const getLocationIcon = (locationId: string) => {
+    const location = locations.find(loc => loc.id === locationId);
     if (location) {
-      // Return icon based on temperature or use fallback
-      const tempIcons = {
-        'refrigerated': '❄️',
-        'frozen': '🧊',
-        'room': '🏠'
+      // Simple icon mapping based on location name
+      const icons: { [key: string]: string } = {
+        'Fridge': '❄️',
+        'Freezer': '🧊',
+        'Pantry': '🏠',
+        'Cabinet': '🗄️',
+        'Counter': '🍽️',
+        'Kitchen': '🍳',
+        'Storage': '📦',
+        // Multilingual support
+        '冰箱': '❄️',
+        '冷冻室': '🧊',
+        '食品储藏室': '🏠',
+        '台面': '🍽️',
+        '橱柜': '🗄️',
+        '冷蔵庫': '❄️',
+        '冷凍庫': '🧊',
+        'パントリー': '🏠',
+        'カウンター': '🍽️',
+        'キャビネット': '🗄️'
       };
-      return tempIcons[location.temperature] || '📦';
+      
+      const lowerName = location.name.toLowerCase();
+      
+      // Direct match
+      if (icons[location.name]) return icons[location.name];
+      
+      // Partial matches
+      if (lowerName.includes('fridge') || lowerName.includes('refrigerat')) {
+        return '❄️';
+      } else if (lowerName.includes('freezer') || lowerName.includes('冷冻') || lowerName.includes('冷凍')) {
+        return '🧊';
+      } else if (lowerName.includes('pantry') || lowerName.includes('储藏') || lowerName.includes('パントリー')) {
+        return '🏠';
+      } else if (lowerName.includes('cabinet') || lowerName.includes('橱柜') || lowerName.includes('キャビネット')) {
+        return '🗄️';
+      } else if (lowerName.includes('counter') || lowerName.includes('台面') || lowerName.includes('カウンター')) {
+        return '🍽️';
+      }
     }
     
-    // Fallback icons
-    const icons: { [key: string]: string } = {
-      'Fridge': '❄️',
-      'Freezer': '🧊',
-      'Pantry': '🏠',
-      'Cabinet': '🗄️',
-      'Counter': '🍽️',
-      'Kitchen': '🍳',
-      'Storage': '📦'
-    };
-    
-    const lowerLocation = locationName.toLowerCase();
-    if (icons[locationName]) return icons[locationName];
-    if (icons[lowerLocation]) return icons[lowerLocation];
-    
-    // Partial matches
-    if (lowerLocation.includes('fridge') || lowerLocation.includes('refrigerator')) {
-      return '❄️';
-    } else if (lowerLocation.includes('freezer')) {
-      return '🧊';
-    } else if (lowerLocation.includes('pantry')) {
-      return '🏠';
-    }
-    
-    return '📦';
+    return '📍'; // Default location icon
+  };
+
+  const getLocationName = (locationId: string) => {
+    const location = locations.find(loc => loc.id === locationId);
+    return location?.name || 'Unknown Location';
   };
 
   const getDaysText = (days: number) => {
@@ -257,16 +308,32 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
               >
                 <div className="item-header">
                   <div className="item-title">
-                    <span className="category-icon">{getCategoryIcon(item.category)}</span>
+                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
                     <h3>{item.name}</h3>
                   </div>
-                  <button 
-                    className="delete-btn"
-                    onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
-                    title={t('action.delete')}
-                  >
-                    🗑️
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <Link 
+                      to={`/edit-item/${item.id}`}
+                      className="btn btn-small btn-secondary"
+                      onClick={(e) => e.stopPropagation()}
+                      title={t('action.edit')}
+                      style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        fontSize: '0.75rem',
+                        minWidth: 'auto',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      ✏️
+                    </Link>
+                    <button 
+                      className="delete-btn"
+                      onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
+                      title={t('action.delete')}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="item-details">
@@ -274,8 +341,12 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
                     <span>{t('item.quantity')}: {item.quantity}</span>
                   </div>
                   <div className="detail-row">
-                    <span className="location-icon">{getLocationIcon(item.location)}</span>
-                    <span>{item.location}</span>
+                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
+                    <span>{getCategoryName(item.categoryId)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="location-icon">{getLocationIcon(item.locationId)}</span>
+                    <span>{getLocationName(item.locationId)}</span>
                   </div>
                 </div>
                 
@@ -395,16 +466,32 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
               >
                 <div className="item-header">
                   <div className="item-title">
-                    <span className="category-icon">{getCategoryIcon(item.category)}</span>
+                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
                     <h3>{item.name}</h3>
                   </div>
-                  <button 
-                    className="delete-btn"
-                    onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
-                    title={t('action.delete')}
-                  >
-                    🗑️
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <Link 
+                      to={`/edit-item/${item.id}`}
+                      className="btn btn-small btn-secondary"
+                      onClick={(e) => e.stopPropagation()}
+                      title={t('action.edit')}
+                      style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        fontSize: '0.75rem',
+                        minWidth: 'auto',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      ✏️
+                    </Link>
+                    <button 
+                      className="delete-btn"
+                      onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
+                      title={t('action.delete')}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="item-details">
@@ -412,8 +499,12 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
                     <span>{t('item.quantity')}: {item.quantity}</span>
                   </div>
                   <div className="detail-row">
-                    <span className="location-icon">{getLocationIcon(item.location)}</span>
-                    <span>{item.location}</span>
+                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
+                    <span>{getCategoryName(item.categoryId)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="location-icon">{getLocationIcon(item.locationId)}</span>
+                    <span>{getLocationName(item.locationId)}</span>
                   </div>
                 </div>
                 

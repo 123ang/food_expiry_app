@@ -7,8 +7,7 @@ import { LocationsService, Location } from '../services/firestoreService';
 const AddLocation: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    temperature: 'room' as 'room' | 'refrigerated' | 'frozen'
+    description: ''
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +34,7 @@ const AddLocation: React.FC = () => {
       if (location) {
         setFormData({
           name: location.name,
-          description: location.description,
-          temperature: location.temperature
+          description: location.description
         });
       } else {
         setError('Location not found');
@@ -49,7 +47,7 @@ const AddLocation: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError(null);
@@ -149,22 +147,6 @@ const AddLocation: React.FC = () => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="temperature">{t('locations.temperature')} *</label>
-            <select
-              id="temperature"
-              name="temperature"
-              className="form-control"
-              value={formData.temperature}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="room">🌡️ {t('locations.room')}</option>
-              <option value="refrigerated">🧊 {t('locations.refrigerated')}</option>
-              <option value="frozen">❄️ {t('locations.frozen')}</option>
-            </select>
-          </div>
-
           {error && <div className="error-message">{error}</div>}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
@@ -180,10 +162,11 @@ const AddLocation: React.FC = () => {
         <div style={{ marginTop: '2rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px' }}>
           <h4 style={{ marginBottom: '0.5rem', color: '#374151' }}>Tips for Storage Locations:</h4>
           <ul style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0, paddingLeft: '1rem' }}>
-            <li><strong>Room Temperature:</strong> Pantry, counter, cupboards</li>
-            <li><strong>Refrigerated:</strong> Main fridge, mini fridge, cold storage</li>
+            <li><strong>Refrigerated:</strong> Fridge, refrigerator, cold storage</li>
             <li><strong>Frozen:</strong> Freezer, deep freeze, ice chest</li>
+            <li><strong>Room Temperature:</strong> Pantry, counter, cupboards, cabinet</li>
             <li>Be specific with names to easily identify locations</li>
+            <li>Use descriptive names like "Kitchen Pantry" or "Main Fridge"</li>
           </ul>
         </div>
       </div>

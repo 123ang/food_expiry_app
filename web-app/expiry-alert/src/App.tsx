@@ -17,16 +17,16 @@ import './App.css';
 
 const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Initialize user data when user first signs in
   useEffect(() => {
     if (user) {
-      initializeUserData(user.uid).catch(error => {
+      initializeUserData(user.uid, language).catch(error => {
         console.error('Failed to initialize user data:', error);
       });
     }
-  }, [user]);
+  }, [user, language]);
 
   if (loading) {
     return (
@@ -42,7 +42,7 @@ const AppContent: React.FC = () => {
   const renderAppHeader = (showNav: boolean = true) => (
     <header className="App-header">
       <div className="container">
-        <Link to={user ? "/dashboard" : "/"} className="logo-container" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="logo-container" style={{ textDecoration: 'none' }}>
           <img src="/food_expiry_logo.png" alt="Expiry Alert" className="logo" />
           <h1>Expiry Alert</h1>
         </Link>

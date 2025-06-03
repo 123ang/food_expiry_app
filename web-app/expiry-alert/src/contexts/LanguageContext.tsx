@@ -67,6 +67,8 @@ const translations: Record<Language, Record<string, string>> = {
     'status.refresh': 'Refresh',
     'status.viewAll': 'View All',
     'status.noItems': 'No {status} items found',
+    'status.itemsStored': 'Items Stored',
+    'status.total': 'Total',
     
     // Items
     'item.quantity': 'Quantity',
@@ -239,6 +241,8 @@ const translations: Record<Language, Record<string, string>> = {
     'status.refresh': '刷新',
     'status.viewAll': '查看全部',
     'status.noItems': '未找到{status}项目',
+    'status.itemsStored': '项目已存储',
+    'status.total': '总计',
     
     // Items
     'item.quantity': '数量',
@@ -411,6 +415,8 @@ const translations: Record<Language, Record<string, string>> = {
     'status.refresh': '更新',
     'status.viewAll': 'すべて表示',
     'status.noItems': '{status}アイテムが見つかりません',
+    'status.itemsStored': 'アイテムが保存されました',
+    'status.total': '合計',
     
     // Items
     'item.quantity': '数量',

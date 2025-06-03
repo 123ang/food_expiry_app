@@ -20,12 +20,12 @@ const AddItem: React.FC = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    categoryId: '',
+    locationId: '',
     expiryDate: '',
-    category: '',
-    location: '',
     quantity: '',
     notes: '',
-    reminderDays: 3
+    reminderDays: '3'
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -41,7 +41,7 @@ const AddItem: React.FC = () => {
 
   useEffect(() => {
     if (isEditing && id && user) {
-      loadExistingItem();
+      loadItem();
     }
   }, [isEditing, id, user]);
 
@@ -65,7 +65,7 @@ const AddItem: React.FC = () => {
     }
   };
 
-  const loadExistingItem = async () => {
+  const loadItem = async () => {
     if (!id || !user) return;
     
     setIsLoading(true);
@@ -74,15 +74,15 @@ const AddItem: React.FC = () => {
       if (item) {
         setFormData({
           name: item.name,
+          categoryId: item.categoryId,
+          locationId: item.locationId,
           expiryDate: item.expiryDate,
-          category: item.category,
-          location: item.location,
           quantity: item.quantity,
           notes: item.notes,
-          reminderDays: item.reminderDays || 3
+          reminderDays: item.reminderDays?.toString() || '3'
         });
       } else {
-        setError(t('foodItems.notFound') || 'Item not found');
+        setError('Item not found');
       }
     } catch (error) {
       console.error('Error loading item:', error);
@@ -103,16 +103,20 @@ const AddItem: React.FC = () => {
       setError(t('validation.nameRequired'));
       return false;
     }
+    if (!formData.categoryId) {
+      setError(t('validation.categoryRequired'));
+      return false;
+    }
+    if (!formData.locationId) {
+      setError(t('validation.locationRequired'));
+      return false;
+    }
     if (!formData.expiryDate) {
       setError(t('validation.dateRequired'));
       return false;
     }
-    if (!formData.category) {
-      setError(t('validation.categoryRequired'));
-      return false;
-    }
-    if (!formData.location) {
-      setError(t('validation.locationRequired'));
+    if (!formData.quantity.trim()) {
+      setError(t('validation.quantityRequired'));
       return false;
     }
     return true;
@@ -125,29 +129,18 @@ const AddItem: React.FC = () => {
     
     setIsLoading(true);
     setError(null);
-
-    const today = new Date();
-    const expiry = new Date(formData.expiryDate);
     
-    if (expiry < today) {
-      const confirmAdd = window.confirm(
-        'The expiry date is in the past. This item appears to be expired. Do you still want to add it?'
-      );
-      if (!confirmAdd) {
-        setIsLoading(false);
-        return;
-      }
-    }
-
     try {
+      const itemData = {
+        ...formData,
+        reminderDays: parseInt(formData.reminderDays) || 3,
+        userId: user.uid
+      };
+      
       if (isEditing && id) {
-        await FoodItemsService.updateItem(id, formData);
+        await FoodItemsService.updateItem(id, itemData);
         alert(`${t('alert.success')}: ${t('foodItems.edit')}`);
       } else {
-        const itemData = {
-          ...formData,
-          userId: user.uid
-        };
         await FoodItemsService.addItem(itemData, user.uid);
         alert(`${t('alert.success')}: ${t('foodItems.save')}`);
       }
@@ -215,15 +208,15 @@ const AddItem: React.FC = () => {
             <label htmlFor="category">{t('foodItems.category')} *</label>
             <select
               id="category"
-              name="category"
+              name="categoryId"
               className="form-control"
-              value={formData.category}
+              value={formData.categoryId}
               onChange={handleInputChange}
               required
             >
               <option value="">{t('foodItems.category')}</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
+                <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
                 </option>
               ))}
@@ -237,16 +230,16 @@ const AddItem: React.FC = () => {
             <label htmlFor="location">{t('foodItems.location')} *</label>
             <select
               id="location"
-              name="location"
+              name="locationId"
               className="form-control"
-              value={formData.location}
+              value={formData.locationId}
               onChange={handleInputChange}
               required
             >
               <option value="">{t('foodItems.location')}</option>
               {locations.map((loc) => (
-                <option key={loc.id} value={loc.name}>
-                  {loc.temperature === 'frozen' ? '❄️' : loc.temperature === 'refrigerated' ? '🧊' : '🏠'} {loc.name}
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
                 </option>
               ))}
             </select>
@@ -256,7 +249,7 @@ const AddItem: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="quantity">{t('foodItems.quantity')}</label>
+            <label htmlFor="quantity">{t('foodItems.quantity')} *</label>
             <input
               type="text"
               id="quantity"
@@ -264,6 +257,7 @@ const AddItem: React.FC = () => {
               className="form-control"
               value={formData.quantity}
               onChange={handleInputChange}
+              required
               placeholder={t('foodItems.quantity')}
             />
           </div>
