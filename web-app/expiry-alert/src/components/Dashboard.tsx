@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface FoodItem {
   id: string;
@@ -84,166 +85,357 @@ const Dashboard: React.FC = () => {
     }
   ]);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const freshItems = foodItems.filter(item => item.status === 'fresh');
   const expiringSoonItems = foodItems.filter(item => item.status === 'expiring-soon');
   const expiredItems = foodItems.filter(item => item.status === 'expired');
 
+  const handleCardClick = (itemId: string) => {
+    navigate(`/item/${itemId}`);
+  };
+
+  const handleDeleteItem = (e: React.MouseEvent, itemId: string, itemName: string) => {
+    e.stopPropagation(); // Prevent card click when delete button is clicked
+    if (window.confirm(`${t('confirm.delete')} "${itemName}"?`)) {
+      alert(`${t('confirm.deleted')} "${itemName}" ${t('confirm.demoMode')}`);
+    }
+  };
+
   const getCategoryIcon = (category: string) => {
     const icons: { [key: string]: string } = {
-      'Dairy': '🥛',
-      'Bakery': '🍞',
-      'Fruits': '🍎',
-      'Meat': '🥩',
-      'Frozen': '🧊',
+      // Match mobile app exactly from CategoryIcon.tsx
+      'Apple': '🍎',
+      'Dairy': '🥛', 
+      'Fruits': '🍇',
       'Vegetables': '🥕',
+      'Meat': '🥩',
+      'Bread': '🍞',
+      'Beverages': '🥤',
+      'Snacks': '🍿',
+      'Frozen': '🧊',
+      'Canned': '🥫',
       'Seafood': '🐟',
-      'Pantry': '🥫'
+      'Spices': '🌶️',
+      'Dessert': '🍰',
+      'Grains': '🌾',
+      'Bakery': '🍞', // Map Bakery to Bread
+      'Pantry': '🥫', // Map Pantry items to Canned
+      // Lowercase mappings for flexibility
+      'apple': '🍎',
+      'dairy': '🥛',
+      'fruits': '🍇',
+      'vegetables': '🥕',
+      'meat': '🥩',
+      'bread': '🍞',
+      'beverages': '🥤',
+      'snacks': '🍿',
+      'frozen': '🧊',
+      'canned': '🥫',
+      'seafood': '🐟',
+      'spices': '🌶️',
+      'dessert': '🍰',
+      'grains': '🌾',
+      'bakery': '🍞',
+      'pantry': '🥫'
     };
-    return icons[category] || '🍽️';
+    return icons[category] || icons[category.toLowerCase()] || '🍎';
   };
 
   const getLocationIcon = (location: string) => {
-    if (location.toLowerCase().includes('fridge') || location.toLowerCase().includes('refrigerator')) {
-      return '🧊';
-    } else if (location.toLowerCase().includes('freezer')) {
-      return '❄️';
-    } else if (location.toLowerCase().includes('pantry')) {
-      return '🏠';
-    } else if (location.toLowerCase().includes('counter')) {
-      return '🌡️';
+    const icons: { [key: string]: string } = {
+      // Match mobile app exactly from LocationIcon.tsx
+      'Fridge': '❄️',
+      'Freezer': '🧊',
+      'Pantry': '🏠',
+      'Cabinet': '🗄️',
+      'Counter': '🍽️',
+      'Basement': '⬇️',
+      'Garage': '🏢',
+      'Kitchen': '🍳',
+      'Cupboard': '🗃️',
+      'Shelf': '📚',
+      'Storage': '📦',
+      'Refrigerator': '❄️',
+      'Main Refrigerator': '❄️',
+      // Lowercase mappings for flexibility
+      'fridge': '❄️',
+      'freezer': '🧊',
+      'pantry': '🏠',
+      'cabinet': '🗄️',
+      'counter': '🍽️',
+      'basement': '⬇️',
+      'garage': '🏢',
+      'kitchen': '🍳',
+      'cupboard': '🗃️',
+      'shelf': '📚',
+      'storage': '📦',
+      'refrigerator': '❄️'
+    };
+    
+    // Try exact match first, then check for partial matches
+    if (icons[location]) {
+      return icons[location];
     }
-    return '📍';
+    
+    const lowerLocation = location.toLowerCase();
+    if (icons[lowerLocation]) {
+      return icons[lowerLocation];
+    }
+    
+    // Partial match patterns (same as mobile app logic)
+    if (lowerLocation.includes('fridge') || lowerLocation.includes('refrigerator')) {
+      return '❄️';
+    } else if (lowerLocation.includes('freezer')) {
+      return '🧊';
+    } else if (lowerLocation.includes('pantry') || lowerLocation.includes('kitchen')) {
+      return '🍳';
+    } else if (lowerLocation.includes('cabinet') || lowerLocation.includes('cupboard')) {
+      return '🗄️';
+    } else if (lowerLocation.includes('counter')) {
+      return '🍽️';
+    } else if (lowerLocation.includes('storage') || lowerLocation.includes('room')) {
+      return '📦';
+    }
+    
+    return '📍'; // Default from mobile app
   };
 
+  const getDaysText = (days: number) => {
+    if (days < 0) return `${Math.abs(days)} ${t('time.overdue')}`;
+    if (days === 0) return t('time.expirestoday');
+    if (days === 1) return t('time.expirestomorrow');
+    return `${days} ${t('time.expiresIn')}`;
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'fresh': return t('status.fresh');
+      case 'expiring-soon': return t('status.expiringSoon');
+      case 'expired': return t('status.expired');
+      default: return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'fresh': return 'var(--success-color)';
+      case 'expiring-soon': return 'var(--warning-color)';
+      case 'expired': return 'var(--danger-color)';
+      default: return 'var(--text-secondary)';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="loading">
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔄</div>
+          <div>{t('loading.inventory')}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container">
+    <div className="fade-in">
+      {/* Dashboard Header */}
       <div className="dashboard-header">
-        <h2>Dashboard</h2>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link to="/add-item" className="btn btn-primary">+ Add Item</Link>
-          <Link to="/locations" className="btn btn-secondary">📍 Locations</Link>
-          <Link to="/categories" className="btn btn-secondary">🏷️ Categories</Link>
+        <div>
+          <h2>{t('dashboard.title')}</h2>
+          <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
+            {t('dashboard.subtitle')}
+          </p>
+        </div>
+        <div className="d-flex gap-2" style={{ flexWrap: 'wrap' }}>
+          <Link to="/add-item" className="btn btn-primary">
+            ➕ {t('nav.addItem')}
+          </Link>
+          <Link to="/locations" className="btn btn-secondary">
+            📍 {t('nav.locations')}
+          </Link>
+          <Link to="/categories" className="btn btn-secondary">
+            🏷️ {t('nav.categories')}
+          </Link>
         </div>
       </div>
 
+      {/* Quick Stats */}
       <div className="dashboard-stats">
         <div className="stat-card">
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
           <h3>{foodItems.length}</h3>
-          <p>Total Items</p>
+          <p>{t('dashboard.totalItems')}</p>
         </div>
         <div className="stat-card">
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
           <h3>{freshItems.length}</h3>
-          <p>Fresh Items</p>
+          <p>{t('dashboard.freshItems')}</p>
         </div>
         <div className="stat-card warning">
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏰</div>
           <h3>{expiringSoonItems.length}</h3>
-          <p>Expiring Soon</p>
+          <p>{t('dashboard.expiringSoon')}</p>
         </div>
         <div className="stat-card danger">
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
           <h3>{expiredItems.length}</h3>
-          <p>Expired Items</p>
+          <p>{t('dashboard.expiredItems')}</p>
         </div>
       </div>
 
-      {/* Quick Actions Section */}
-      <div style={{ 
-        background: '#f9fafb', 
-        borderRadius: '12px', 
-        padding: '1.5rem', 
-        marginBottom: '2rem',
-        border: '1px solid #e5e7eb'
-      }}>
-        <h3 style={{ marginBottom: '1rem', color: '#374151' }}>Quick Actions</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <Link to="/add-item" className="btn btn-primary" style={{ textAlign: 'center' }}>
-            🍽️ Add Food Item
-          </Link>
-          <Link to="/add-location" className="btn btn-secondary" style={{ textAlign: 'center' }}>
-            📍 Add Location
-          </Link>
-          <Link to="/add-category" className="btn btn-secondary" style={{ textAlign: 'center' }}>
-            🏷️ Add Category
-          </Link>
-          <button 
-            onClick={() => alert('Cleanup expired items! (Demo mode)')}
-            className="btn btn-danger" 
-            style={{ textAlign: 'center' }}
-          >
-            🗑️ Cleanup Expired
-          </button>
-        </div>
-      </div>
-
-      <div className="food-items-grid">
-        {foodItems.map((item) => (
-          <div key={item.id} className={`food-item-card ${item.status}`}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <h4>{item.name}</h4>
-              <span className={`status ${item.status}`}>
-                {item.status === 'expiring-soon' ? 'Expiring Soon' : item.status}
-              </span>
-            </div>
-            
-            <div className="expiry-date">
-              <strong>Expires:</strong> {new Date(item.expiryDate).toLocaleDateString()}
-            </div>
-            
-            <div style={{ marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span>{getCategoryIcon(item.category)}</span>
-                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>{item.category}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <span>{getLocationIcon(item.location)}</span>
-                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>{item.location}</span>
-              </div>
-              {item.quantity && (
-                <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                  <strong>Qty:</strong> {item.quantity}
-                </div>
-              )}
-            </div>
-
-            <div style={{ 
-              color: item.status === 'expired' ? '#dc2626' : item.status === 'expiring-soon' ? '#d97706' : '#22c55e',
-              fontWeight: '600',
-              fontSize: '0.875rem',
-              marginBottom: '1rem'
-            }}>
-              {item.status === 'expired' 
-                ? `Expired ${Math.abs(item.daysUntilExpiry)} days ago`
-                : item.status === 'expiring-soon'
-                ? `${item.daysUntilExpiry} day${item.daysUntilExpiry !== 1 ? 's' : ''} left`
-                : `${item.daysUntilExpiry} days remaining`
-              }
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <Link 
-                to={`/item/${item.id}`}
-                className="btn btn-secondary" 
-                style={{ fontSize: '0.75rem', padding: '0.5rem', flex: 1, textAlign: 'center' }}
-              >
-                View Details
-              </Link>
-              <Link 
-                to={`/edit-item/${item.id}`}
-                className="btn btn-primary" 
-                style={{ fontSize: '0.75rem', padding: '0.5rem', flex: 1, textAlign: 'center' }}
-              >
-                Edit
-              </Link>
-            </div>
+      {/* Quick Actions */}
+      <div className="card" style={{ marginBottom: '2rem' }}>
+        <div className="card-body">
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>{t('quickActions.title')}</h3>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+            gap: '1rem' 
+          }}>
+            <Link to="/add-item" className="btn btn-primary" style={{ textAlign: 'center' }}>
+              ➕ {t('action.addFood')}
+            </Link>
+            <Link to="/add-location" className="btn btn-secondary" style={{ textAlign: 'center' }}>
+              📍 {t('action.addLocation')}
+            </Link>
+            <Link to="/add-category" className="btn btn-secondary" style={{ textAlign: 'center' }}>
+              🏷️ {t('action.addCategory')}
+            </Link>
+            <button 
+              onClick={() => alert(`${t('action.cleanup')}! ${t('confirm.demoMode')}`)}
+              className="btn btn-danger" 
+              style={{ textAlign: 'center' }}
+            >
+              🗑️ {t('action.cleanup')}
+            </button>
           </div>
-        ))}
+        </div>
       </div>
 
-      {foodItems.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
-          <p style={{ color: '#6b7280', fontSize: '1.125rem' }}>No food items tracked yet.</p>
-          <Link to="/add-item" className="btn btn-primary" style={{ marginTop: '1rem' }}>
-            Add Your First Item
-          </Link>
+      {/* Recent Items */}
+      <div style={{ marginBottom: '2rem' }}>
+        <div className="d-flex align-center" style={{ justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>{t('recent.title')}</h3>
+          <Link to="/items" className="btn btn-secondary btn-small">{t('recent.viewAll')}</Link>
+        </div>
+
+        <div className="food-items-grid">
+          {foodItems.slice(0, 6).map((item) => (
+            <div 
+              key={item.id} 
+              className={`food-item-card ${item.status}`}
+              onClick={() => handleCardClick(item.id)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="d-flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <h4 style={{ margin: 0, flex: 1 }}>{item.name}</h4>
+                <div className="d-flex align-center gap-2">
+                  <span className={`status ${item.status}`}>
+                    {getStatusText(item.status)}
+                  </span>
+                  <button
+                    onClick={(e) => handleDeleteItem(e, item.id, item.name)}
+                    className="btn btn-danger btn-small"
+                    style={{ 
+                      padding: '0.25rem 0.5rem',
+                      fontSize: '0.75rem',
+                      minWidth: 'auto'
+                    }}
+                    title={t('action.delete')}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+              
+              <div className="expiry-date" style={{ 
+                fontWeight: 600,
+                color: getStatusColor(item.status),
+                marginBottom: '1rem' 
+              }}>
+                {getDaysText(item.daysUntilExpiry)} • {t('time.expiresAt')}: {new Date(item.expiryDate).toLocaleDateString()}
+              </div>
+              
+              <div style={{ marginBottom: '1rem' }}>
+                <div className="d-flex align-center gap-2" style={{ marginBottom: '0.5rem' }}>
+                  <span>{getCategoryIcon(item.category)}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{item.category}</span>
+                </div>
+                <div className="d-flex align-center gap-2" style={{ marginBottom: '0.5rem' }}>
+                  <span>{getLocationIcon(item.location)}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{item.location}</span>
+                </div>
+                <div className="d-flex align-center gap-2">
+                  <span>📦</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{item.quantity}</span>
+                </div>
+              </div>
+
+              <div className="d-flex gap-2" style={{ marginTop: 'auto' }}>
+                <Link 
+                  to={`/edit-item/${item.id}`} 
+                  className="btn btn-primary btn-small" 
+                  style={{ flex: 1 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  ✏️ {t('action.edit')}
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Priority Alerts */}
+      {(expiredItems.length > 0 || expiringSoonItems.length > 0) && (
+        <div className="card" style={{ 
+          borderLeft: `4px solid ${expiredItems.length > 0 ? 'var(--danger-color)' : 'var(--warning-color)'}`,
+          marginBottom: '2rem' 
+        }}>
+          <div className="card-body">
+            <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
+              🚨 {t('alerts.title')}
+            </h3>
+            
+            {expiredItems.length > 0 && (
+              <div style={{ marginBottom: '1rem' }}>
+                <p style={{ color: 'var(--danger-color)', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  ⚠️ {expiredItems.length} {t('alerts.itemsExpired')}
+                </p>
+                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                  {expiredItems.slice(0, 3).map(item => (
+                    <li key={item.id} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      {item.name} - {Math.abs(item.daysUntilExpiry)} {t('time.overdue')}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            {expiringSoonItems.length > 0 && (
+              <div>
+                <p style={{ color: 'var(--warning-color)', fontWeight: 600, marginBottom: '0.5rem' }}>
+                  ⏰ {expiringSoonItems.length} {t('alerts.itemsExpiring')}
+                </p>
+                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+                  {expiringSoonItems.slice(0, 3).map(item => (
+                    <li key={item.id} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                      {item.name} - {item.daysUntilExpiry} {t('time.expiresIn')}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

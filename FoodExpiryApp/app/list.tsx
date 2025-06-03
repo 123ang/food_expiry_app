@@ -93,7 +93,7 @@ export default function ListScreen() {
       await refreshAll();
       await loadItems();
     } catch (error) {
-      console.error('Error loading initial data:', error);
+      // Silent error handling for production
       Alert.alert(t('alert.error'), t('alert.loadFailed'));
     } finally {
       setIsLoading(false);
@@ -108,8 +108,7 @@ export default function ListScreen() {
       setSearchQuery('');
       setFilterStatus('all');
     } catch (error) {
-      console.error('Error loading items:', error);
-      // Handle error appropriately
+      // Silent error handling - error already handled by database layer
     }
   };
 
@@ -119,7 +118,7 @@ export default function ListScreen() {
       await refreshAll();
       await loadItems();
     } catch (error) {
-      console.error('Error during manual refresh:', error);
+      // Silent error handling for production
     } finally {
       setIsRefreshing(false);
     }
@@ -131,7 +130,6 @@ export default function ListScreen() {
       // Refresh the list after deletion
       await loadItems();
     } catch (error) {
-      console.error('Error deleting item:', error);
       Alert.alert('Error', 'Failed to delete item');
     }
   };
@@ -154,7 +152,7 @@ export default function ListScreen() {
             // Reload items with fresh data
             await loadItems();
           } catch (error) {
-            console.error('List: Error refreshing after change:', error);
+            // Silent error handling for production
           }
         };
         

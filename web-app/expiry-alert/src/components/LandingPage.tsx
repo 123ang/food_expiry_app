@@ -1,24 +1,41 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const LandingPage: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="landing-page">
+      {/* Header */}
+      <header className="App-header">
+        <div className="container">
+          <div className="logo-container">
+            <img src="/food_expiry_logo.png" alt="Expiry Alert" className="logo" />
+            <h1>Expiry Alert</h1>
+          </div>
+          <nav>
+            <LanguageSwitcher />
+            <Link to="/login" className="btn btn-primary">Get Started</Link>
+          </nav>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-content">
           <div className="hero-text">
-            <h1 className="hero-title">Never Let Food Go to Waste Again</h1>
+            <h1 className="hero-title">{t('landing.title')}</h1>
             <p className="hero-subtitle">
-              Track expiry dates, get smart alerts, and reduce food waste with Expiry Alert - 
-              your personal food inventory manager.
+              {t('landing.subtitle')}
             </p>
             <div className="hero-buttons">
               <Link to="/login" className="btn btn-primary btn-large">
-                Try Web App
+                {t('landing.getStarted')}
               </Link>
               <Link to="#download" className="btn btn-secondary btn-large">
-                Download Mobile App
+                {t('landing.learnMore')}
               </Link>
             </div>
           </div>
@@ -28,11 +45,11 @@ const LandingPage: React.FC = () => {
               <div className="floating-cards">
                 <div className="feature-card card-1">
                   <span className="emoji">🍎</span>
-                  <span>Fresh</span>
+                  <span>{t('status.fresh')}</span>
                 </div>
                 <div className="feature-card card-2">
                   <span className="emoji">⚠️</span>
-                  <span>Expiring Soon</span>
+                  <span>{t('status.expiringSoon')}</span>
                 </div>
                 <div className="feature-card card-3">
                   <span className="emoji">📱</span>

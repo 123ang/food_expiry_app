@@ -35,8 +35,7 @@ export function validateIconName(iconName: string | undefined | null, fallback: 
     return iconName as IconName;
   }
 
-  // If not valid, return fallback
-  console.warn(`Icon "${iconName}" is not valid, using fallback "${fallback}"`);
+  // If not valid, return fallback silently
   return fallback;
 }
 
@@ -45,4 +44,13 @@ export function validateIconName(iconName: string | undefined | null, fallback: 
  */
 export function getSafeIconName(iconName: string | undefined | null, fallback: IconName = 'circle'): IconName {
   return validateIconName(iconName, fallback);
-} 
+}
+
+export const getValidIconName = (iconName: string, fallback: keyof typeof FontAwesome.glyphMap = 'question-circle'): keyof typeof FontAwesome.glyphMap => {
+  if (typeof iconName === 'string' && iconName in FontAwesome.glyphMap) {
+    return iconName as keyof typeof FontAwesome.glyphMap;
+  }
+  
+  // Silent fallback for production
+  return fallback;
+}; 

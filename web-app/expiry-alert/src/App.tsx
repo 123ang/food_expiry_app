@@ -9,36 +9,47 @@ import AddLocation from './components/AddLocation';
 import CategoryList from './components/CategoryList';
 import AddCategory from './components/AddCategory';
 import ItemDetails from './components/ItemDetails';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import { useAuth } from './hooks/useAuth';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import './App.css';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
+  const { t } = useLanguage();
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="loading">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   const renderAppHeader = (showNav: boolean = true) => (
     <header className="App-header">
-      <div className="logo-container">
-        <img src="/food_expiry_logo.png" alt="Expiry Alert" className="logo" />
-        <h1>Expiry Alert</h1>
+      <div className="container">
+        <Link to={user ? "/dashboard" : "/"} className="logo-container" style={{ textDecoration: 'none' }}>
+          <img src="/food_expiry_logo.png" alt="Expiry Alert" className="logo" />
+          <h1>Expiry Alert</h1>
+        </Link>
+        {showNav && user && (
+          <nav>
+            <Link to="/dashboard" className="btn btn-secondary">🏠 {t('nav.dashboard')}</Link>
+            <Link to="/add-item" className="btn btn-secondary">➕ {t('nav.addItem')}</Link>
+            <Link to="/locations" className="btn btn-secondary">📍 {t('nav.locations')}</Link>
+            <Link to="/categories" className="btn btn-secondary">🏷️ {t('nav.categories')}</Link>
+            <LanguageSwitcher />
+            <button onClick={signOut} className="btn btn-danger">🚪 {t('nav.logout')}</button>
+          </nav>
+        )}
+        {showNav && !user && (
+          <nav>
+            <LanguageSwitcher />
+            <Link to="/" className="btn btn-secondary">← Back to Home</Link>
+          </nav>
+        )}
       </div>
-      {showNav && user && (
-        <nav>
-          <Link to="/dashboard" className="btn btn-secondary">Dashboard</Link>
-          <Link to="/add-item" className="btn btn-secondary">Add Item</Link>
-          <Link to="/locations" className="btn btn-secondary">Locations</Link>
-          <Link to="/categories" className="btn btn-secondary">Categories</Link>
-          <button onClick={signOut} className="btn btn-danger">Logout</button>
-        </nav>
-      )}
-      {showNav && !user && (
-        <nav>
-          <Link to="/" className="btn btn-secondary">← Back to Home</Link>
-        </nav>
-      )}
     </header>
   );
 
@@ -52,7 +63,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader(false)}
               <main>
-                {!user ? <Login /> : <Navigate to="/dashboard" />}
+                <div className="container">
+                  {!user ? <Login /> : <Navigate to="/dashboard" />}
+                </div>
               </main>
             </div>
           } />
@@ -61,7 +74,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <Dashboard /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <Dashboard /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -70,7 +85,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <AddItem /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <AddItem /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -79,7 +96,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <ItemDetails /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <ItemDetails /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -88,7 +107,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <AddItem /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <AddItem /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -97,7 +118,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <LocationList /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <LocationList /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -106,7 +129,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <AddLocation /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <AddLocation /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -115,7 +140,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <AddLocation /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <AddLocation /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -124,7 +151,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <CategoryList /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <CategoryList /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -133,7 +162,9 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <AddCategory /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <AddCategory /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
@@ -142,13 +173,23 @@ const App: React.FC = () => {
             <div>
               {renderAppHeader()}
               <main>
-                {user ? <AddCategory /> : <Navigate to="/login" />}
+                <div className="container">
+                  {user ? <AddCategory /> : <Navigate to="/login" />}
+                </div>
               </main>
             </div>
           } />
         </Routes>
       </div>
     </Router>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 };
 

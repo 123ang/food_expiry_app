@@ -55,6 +55,8 @@ export default function DashboardScreen() {
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const lastLanguage = React.useRef(language);
 
   // Load data when screen comes into focus or language changes
   useFocusEffect(
@@ -70,7 +72,7 @@ export default function DashboardScreen() {
         try {
           await refreshAll();
         } catch (error) {
-          console.error('Error refreshing dashboard data:', error);
+          // Silent error handling for production
         } finally {
           setIsLoading(false);
         }
@@ -79,20 +81,24 @@ export default function DashboardScreen() {
     }, [isDataAvailable, refreshAll, language])
   );
 
-  // Force refresh when language changes
-  useEffect(() => {
-    const forceRefresh = async () => {
-      try {
-        await refreshAll();
-      } catch (error) {
-        console.error('Error refreshing data after language change:', error);
+  // Handle language changes
+  useFocusEffect(
+    React.useCallback(() => {
+      if (language !== lastLanguage.current) {
+        lastLanguage.current = language;
+        
+        const refreshData = async () => {
+          try {
+            await refreshAll();
+          } catch (error) {
+            // Silent error handling for production
+          }
+        };
+        
+        refreshData();
       }
-    };
-    
-    if (language) {
-      forceRefresh();
-    }
-  }, [language, refreshAll]);
+    }, [language])
+  );
 
   // Calculate location item counts
   const getLocationItemCounts = () => {
@@ -118,29 +124,34 @@ export default function DashboardScreen() {
 
   const handleSave = async () => {
     if (!itemName.trim()) {
-      Alert.alert(t('alert.error'), t('alert.nameRequired'));
+      Alert.alert(t('alert.error'), t('form.nameRequired'));
       return;
     }
 
-    if (!quantity || parseInt(quantity) < 1) {
-      Alert.alert(t('alert.error'), t('alert.quantityRequired'));
+    if (!categoryId) {
+      Alert.alert(t('alert.error'), t('form.categoryRequired'));
+      return;
+    }
+
+    if (!locationId) {
+      Alert.alert(t('alert.error'), t('form.locationRequired'));
       return;
     }
 
     try {
-      const item: Omit<FoodItem, 'id'> = {
+      const item: FoodItem = {
         name: itemName.trim(),
-        quantity: parseInt(quantity),
         category_id: categoryId,
         location_id: locationId,
         expiry_date: expiryDate.toISOString().split('T')[0],
-        reminder_days: parseInt(reminderDays) || 0,
-        notes: notes?.trim() || null,
+        reminder_days: parseInt(reminderDays, 10),
+        notes: notes.trim(),
+        quantity: parseInt(quantity) || 1,
         image_uri: null,
         created_at: new Date().toISOString().split('T')[0]
       };
 
-      if (editingItem) {
+      if (editingItem && editingItem.id) {
         await updateFoodItem({ ...item, id: editingItem.id });
       } else {
         const newId = await createFoodItem(item);
@@ -150,7 +161,6 @@ export default function DashboardScreen() {
       handleCloseModal();
       await refreshAll();
     } catch (error) {
-      console.error('Error saving food item:', error);
       Alert.alert(t('alert.error'), t('alert.saveFailed'));
     }
   };
@@ -198,6 +208,17 @@ export default function DashboardScreen() {
     setReminderDays('3');
     setNotes('');
     setQuantity('1');
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await refreshAll();
+    } catch (error) {
+      // Silent error handling for production
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const styles = StyleSheet.create({
