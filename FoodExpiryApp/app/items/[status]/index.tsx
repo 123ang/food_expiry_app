@@ -153,11 +153,11 @@ export default function ItemStatusScreen() {
           }
           
           // Map the status parameter to the database enum
-          let dbStatus: 'expired' | 'expiring' | 'fresh' = 'fresh';
+          let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
           if (currentStatus === 'expired') {
             dbStatus = 'expired';
           } else if (currentStatus === 'expiring') {
-            dbStatus = 'expiring';
+            dbStatus = 'expiring_soon';
           } else {
             dbStatus = 'fresh';
           }
@@ -303,6 +303,14 @@ export default function ItemStatusScreen() {
       alignItems: 'center',
       gap: 8,
     },
+    listButton: {
+      padding: 8,
+      marginLeft: 8,
+    },
+    listButtonText: {
+      fontSize: 24,
+      color: theme.textColor,
+    },
   });
 
   // Dynamic styles
@@ -335,6 +343,15 @@ export default function ItemStatusScreen() {
           <Text style={[styles.title, { color: statusData.color }]}>{statusData.icon}</Text>
           <Text style={styles.title}>{statusData.title}</Text>
         </View>
+        <TouchableOpacity 
+          style={styles.listButton}
+          onPress={() => router.push({
+            pathname: '/list',
+            params: { filterStatus: currentStatus === 'expiring' ? 'expiring_soon' : currentStatus }
+          })}
+        >
+          <Text style={styles.listButtonText}>📋</Text>
+        </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.content}>
@@ -367,11 +384,11 @@ export default function ItemStatusScreen() {
                   setIsLoading(true);
                   try {
                     await refreshAll();
-                    let dbStatus: 'expired' | 'expiring' | 'fresh' = 'fresh';
+                    let dbStatus: 'expired' | 'expiring_soon' | 'fresh' = 'fresh';
                     if (currentStatus === 'expired') {
                       dbStatus = 'expired';
                     } else if (currentStatus === 'expiring') {
-                      dbStatus = 'expiring';
+                      dbStatus = 'expiring_soon';
                     } else {
                       dbStatus = 'fresh';
                     }

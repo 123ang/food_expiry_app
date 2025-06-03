@@ -1,4 +1,4 @@
-import { getDatabase, getCurrentDate, daysDifference, isUsingFallbackStorage, getFallbackStorage } from './database';
+import { getDatabase, getCurrentDate, calculateDaysUntilExpiry, isUsingFallbackStorage, getFallbackStorage } from './database';
 import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -297,6 +297,17 @@ export const FoodItemRepository = {
         return items.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
           const location = locations.find((l: any) => l.id === item.location_id);
+          const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
+          
+          // Calculate status based on days until expiry
+          let status: 'fresh' | 'expiring_soon' | 'expired';
+          if (daysUntilExpiry < 0) {
+            status = 'expired';
+          } else if (daysUntilExpiry <= 3) {
+            status = 'expiring_soon';
+          } else {
+            status = 'fresh';
+          }
           
           return {
             id: item.id,
@@ -313,7 +324,8 @@ export const FoodItemRepository = {
             category_icon: category?.icon || 'unknown',
             location_name: location?.name || 'Unknown',
             location_icon: location?.icon || 'unknown',
-            days_until_expiry: daysDifference(getCurrentDate(), item.expiry_date)
+            days_until_expiry: daysUntilExpiry,
+            status: status
           };
         });
       }
@@ -332,6 +344,17 @@ export const FoodItemRepository = {
         return items.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
           const location = locations.find((l: any) => l.id === item.location_id);
+          const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
+          
+          // Calculate status based on days until expiry
+          let status: 'fresh' | 'expiring_soon' | 'expired';
+          if (daysUntilExpiry < 0) {
+            status = 'expired';
+          } else if (daysUntilExpiry <= 3) {
+            status = 'expiring_soon';
+          } else {
+            status = 'fresh';
+          }
           
           return {
             id: item.id,
@@ -348,7 +371,8 @@ export const FoodItemRepository = {
             category_icon: category?.icon || 'unknown',
             location_name: location?.name || 'Unknown',
             location_icon: location?.icon || 'unknown',
-            days_until_expiry: daysDifference(getCurrentDate(), item.expiry_date)
+            days_until_expiry: daysUntilExpiry,
+            status: status
           };
         });
       }
@@ -367,23 +391,38 @@ export const FoodItemRepository = {
         ORDER BY fi.expiry_date ASC
       `) as any[];
 
-      return result.map(row => ({
-        id: row.id as number,
-        name: row.name as string,
-        quantity: row.quantity as number,
-        category_id: row.category_id as number | null,
-        location_id: row.location_id as number | null,
-        expiry_date: row.expiry_date as string,
-        reminder_days: row.reminder_days as number,
-        notes: row.notes as string | null,
-        image_uri: row.image_uri as string | null,
-        created_at: row.created_at as string,
-        category_name: row.category_name as string,
-        category_icon: row.category_icon as string,
-        location_name: row.location_name as string,
-        location_icon: row.location_icon as string,
-        days_until_expiry: daysDifference(getCurrentDate(), row.expiry_date as string)
-      }));
+      return result.map(row => {
+        const daysUntilExpiry = calculateDaysUntilExpiry(row.expiry_date);
+        
+        // Calculate status based on days until expiry
+        let status: 'fresh' | 'expiring_soon' | 'expired';
+        if (daysUntilExpiry < 0) {
+          status = 'expired';
+        } else if (daysUntilExpiry <= 3) {
+          status = 'expiring_soon';
+        } else {
+          status = 'fresh';
+        }
+        
+        return {
+          id: row.id as number,
+          name: row.name as string,
+          quantity: row.quantity as number,
+          category_id: row.category_id as number | null,
+          location_id: row.location_id as number | null,
+          expiry_date: row.expiry_date as string,
+          reminder_days: row.reminder_days as number,
+          notes: row.notes as string | null,
+          image_uri: row.image_uri as string | null,
+          created_at: row.created_at as string,
+          category_name: row.category_name as string,
+          category_icon: row.category_icon as string,
+          location_name: row.location_name as string,
+          location_icon: row.location_icon as string,
+          days_until_expiry: daysUntilExpiry,
+          status: status
+        };
+      });
     } catch (error) {
       console.error('Error getting food items with details:', error);
       throw error;
@@ -589,7 +628,7 @@ export const FoodItemRepository = {
         category_icon: row.category_icon as string,
         location_name: row.location_name as string,
         location_icon: row.location_icon as string,
-        days_until_expiry: daysDifference(getCurrentDate(), row.expiry_date as string)
+        days_until_expiry: calculateDaysUntilExpiry(row.expiry_date)
       }));
     } catch (error) {
       console.error('Error getting expired items:', error);
@@ -640,7 +679,7 @@ export const FoodItemRepository = {
         category_icon: row.category_icon as string,
         location_name: row.location_name as string,
         location_icon: row.location_icon as string,
-        days_until_expiry: daysDifference(getCurrentDate(), row.expiry_date as string)
+        days_until_expiry: calculateDaysUntilExpiry(row.expiry_date)
       }));
     } catch (error) {
       console.error('Error getting expiring items:', error);

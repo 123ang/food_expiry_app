@@ -17,7 +17,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { FoodItemWithDetails } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
@@ -29,6 +29,7 @@ export default function ListScreen() {
   const { t, language } = useLanguage();
   const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable, dataVersion } = useDatabase();
   const router = useRouter();
+  const { filterStatus } = useLocalSearchParams();
   
   // Ensure we have a theme before rendering
   if (!theme) {
@@ -41,12 +42,15 @@ export default function ListScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'expiry'>('expiry');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'expired' | 'expiring_soon' | 'fresh'>('all');
+  const [currentFilterStatus, setCurrentFilterStatus] = useState<'all' | 'expired' | 'expiring_soon' | 'fresh'>('all');
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastDataVersion, setLastDataVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Get filter from URL params or use current state
+  const activeFilter = (Array.isArray(filterStatus) ? filterStatus[0] : filterStatus) || currentFilterStatus;
 
   // Default colors for fallback
   const defaultColors = {
@@ -78,7 +82,7 @@ export default function ListScreen() {
     if (!isLoading) {
       loadItems();
     }
-  }, [filterStatus]);
+  }, [activeFilter]);
 
   const loadInitialData = async () => {
     // Check if data is already available from cache
@@ -102,11 +106,19 @@ export default function ListScreen() {
 
   const loadItems = async () => {
     try {
-      await refreshFoodItems();
-      // foodItems will be updated by refreshFoodItems, so we use it from context
-      setFilteredItems(foodItems);
+      let items: FoodItemWithDetails[];
+      
+      if (activeFilter === 'all') {
+        await refreshFoodItems();
+        items = foodItems;
+      } else {
+        // Load filtered items based on status
+        items = await getByStatus(activeFilter as 'expired' | 'expiring_soon' | 'fresh');
+      }
+      
+      setFilteredItems(items);
       setSearchQuery('');
-      setFilterStatus('all');
+      setCurrentFilterStatus(activeFilter as 'all' | 'expired' | 'expiring_soon' | 'fresh');
     } catch (error) {
       // Silent error handling - error already handled by database layer
     }
@@ -343,7 +355,7 @@ export default function ListScreen() {
           <Text style={styles.emptyStateText}>
             {searchQuery
               ? t('list.noSearch')
-              : filterStatus === 'all'
+              : activeFilter === 'all'
               ? t('list.noItems')
               : t('list.noCategory')}
           </Text>
@@ -438,36 +450,48 @@ export default function ListScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.filterContainer}>
             <TouchableOpacity
-              style={[styles.filterButton, filterStatus === 'all' && styles.filterButtonActive]}
-              onPress={() => setFilterStatus('all')}
+              style={[styles.filterButton, activeFilter === 'all' && styles.filterButtonActive]}
+              onPress={() => router.push({
+                pathname: '/list',
+                params: { filterStatus: 'all' }
+              })}
               disabled={isLoading || isRefreshing}
             >
-              <Text style={{ fontSize: 16, color: filterStatus === 'all' ? '#FFFFFF' : colors.textColor }}>📝</Text>
-              <Text style={[styles.filterButtonText, filterStatus === 'all' && styles.filterButtonTextActive]}>{t('list.all')}</Text>
+              <Text style={{ fontSize: 16, color: activeFilter === 'all' ? '#FFFFFF' : colors.textColor }}>📝</Text>
+              <Text style={[styles.filterButtonText, activeFilter === 'all' && styles.filterButtonTextActive]}>{t('list.all')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, filterStatus === 'expired' && styles.filterButtonActive]}
-              onPress={() => setFilterStatus('expired')}
+              style={[styles.filterButton, activeFilter === 'expired' && styles.filterButtonActive]}
+              onPress={() => router.push({
+                pathname: '/list',
+                params: { filterStatus: 'expired' }
+              })}
               disabled={isLoading || isRefreshing}
             >
-              <Text style={{ fontSize: 16, color: filterStatus === 'expired' ? '#FFFFFF' : theme.dangerColor || '#FF3B30' }}>⚠️</Text>
-              <Text style={[styles.filterButtonText, filterStatus === 'expired' && styles.filterButtonTextActive]}>{t('list.expired')}</Text>
+              <Text style={{ fontSize: 16, color: activeFilter === 'expired' ? '#FFFFFF' : theme.dangerColor || '#FF3B30' }}>⚠️</Text>
+              <Text style={[styles.filterButtonText, activeFilter === 'expired' && styles.filterButtonTextActive]}>{t('list.expired')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, filterStatus === 'expiring_soon' && styles.filterButtonActive]}
-              onPress={() => setFilterStatus('expiring_soon')}
+              style={[styles.filterButton, activeFilter === 'expiring_soon' && styles.filterButtonActive]}
+              onPress={() => router.push({
+                pathname: '/list',
+                params: { filterStatus: 'expiring_soon' }
+              })}
               disabled={isLoading || isRefreshing}
             >
-              <Text style={{ fontSize: 16, color: filterStatus === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500' }}>⏰</Text>
-              <Text style={[styles.filterButtonText, filterStatus === 'expiring_soon' && styles.filterButtonTextActive]}>{t('list.expiring')}</Text>
+              <Text style={{ fontSize: 16, color: activeFilter === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500' }}>⏰</Text>
+              <Text style={[styles.filterButtonText, activeFilter === 'expiring_soon' && styles.filterButtonTextActive]}>{t('list.expiring')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.filterButton, filterStatus === 'fresh' && styles.filterButtonActive]}
-              onPress={() => setFilterStatus('fresh')}
+              style={[styles.filterButton, activeFilter === 'fresh' && styles.filterButtonActive]}
+              onPress={() => router.push({
+                pathname: '/list',
+                params: { filterStatus: 'fresh' }
+              })}
               disabled={isLoading || isRefreshing}
             >
-              <Text style={{ fontSize: 16, color: filterStatus === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759' }}>✅</Text>
-              <Text style={[styles.filterButtonText, filterStatus === 'fresh' && styles.filterButtonTextActive]}>{t('list.fresh')}</Text>
+              <Text style={{ fontSize: 16, color: activeFilter === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759' }}>✅</Text>
+              <Text style={[styles.filterButtonText, activeFilter === 'fresh' && styles.filterButtonTextActive]}>{t('list.fresh')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

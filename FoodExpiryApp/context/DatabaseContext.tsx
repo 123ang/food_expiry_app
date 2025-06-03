@@ -56,7 +56,7 @@ interface DatabaseContextType {
   createFoodItem: (item: FoodItem) => Promise<number>;
   updateFoodItem: (item: FoodItem) => Promise<void>;
   deleteFoodItem: (id: number) => Promise<void>;
-  getByStatus: (status: 'fresh' | 'expiring' | 'expired') => Promise<FoodItemWithDetails[]>;
+  getByStatus: (status: 'fresh' | 'expiring_soon' | 'expired') => Promise<FoodItemWithDetails[]>;
 
   // Dashboard Data
   dashboardCounts: {
@@ -375,8 +375,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const countsResult = await db.getAllAsync(`
         SELECT 
           COUNT(*) as total,
-          COUNT(CASE WHEN date(expiry_date) <= date(?) THEN 1 END) as expired,
-          COUNT(CASE WHEN date(expiry_date) BETWEEN date(?, '+1 day') AND date(?, '+3 days') THEN 1 END) as expiring_soon,
+          COUNT(CASE WHEN date(expiry_date) < date(?) THEN 1 END) as expired,
+          COUNT(CASE WHEN date(expiry_date) BETWEEN date(?) AND date(?, '+3 days') THEN 1 END) as expiring_soon,
           COUNT(CASE WHEN date(expiry_date) > date(?, '+3 days') THEN 1 END) as fresh
         FROM food_items
       `, [currentDate, currentDate, currentDate, currentDate]);
@@ -560,7 +560,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // Add getByStatus function with caching
-  const getByStatus = async (status: 'fresh' | 'expiring' | 'expired'): Promise<FoodItemWithDetails[]> => {
+  const getByStatus = async (status: 'fresh' | 'expiring_soon' | 'expired'): Promise<FoodItemWithDetails[]> => {
     try {
       // Try cache first
       const cached = getCacheEntry(foodItemsCache);
