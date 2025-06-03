@@ -144,6 +144,9 @@ class SimpleNotificationService {
   }
 
   async scheduleNotificationForItem(item: FoodItemWithDetails): Promise<void> {
+    // Always load latest settings first
+    await this.loadSettings();
+    
     if (!this.settings.enabled) return;
 
     await this.initialize();
@@ -206,6 +209,7 @@ class SimpleNotificationService {
       const title = await this.getTranslatedText(titleKey);
       const body = await this.getTranslatedText(bodyKey, bodyParams);
 
+      // Use immediate notification but rely on throttling to prevent spam
       await Notifications.scheduleNotificationAsync({
         content: {
           title,
@@ -219,7 +223,7 @@ class SimpleNotificationService {
             type: 'expiry_alert'
           },
         },
-        trigger: null, // Show immediately
+        trigger: null,
       });
     } catch (error) {
       // Silent error handling
@@ -227,7 +231,14 @@ class SimpleNotificationService {
   }
 
   async checkAllFoodItemsForExpiry(foodItems: FoodItemWithDetails[]): Promise<void> {
-    if (!this.settings.enabled) return;
+    // Always load latest settings first
+    await this.loadSettings();
+    
+    if (!this.settings.enabled) {
+      // If notifications are disabled, cancel any existing notifications and return
+      await this.cancelAllNotifications();
+      return;
+    }
 
     // Throttle notifications - only check once per minute
     const now = Date.now();
@@ -300,6 +311,27 @@ class SimpleNotificationService {
   async cancelAllNotifications(): Promise<void> {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
+      await Notifications.dismissAllNotificationsAsync();
+      this.notifiedItems.clear();
+      this.lastNotificationCheck = Date.now();
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  async emergencyStopNotifications(): Promise<void> {
+    try {
+      // Disable notifications completely
+      this.settings.enabled = false;
+      await this.saveSettings({ enabled: false });
+      
+      // Cancel all existing notifications
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      await Notifications.dismissAllNotificationsAsync();
+      
+      // Clear tracking
+      this.notifiedItems.clear();
+      this.lastNotificationCheck = Date.now();
     } catch (error) {
       // Silent error handling
     }
@@ -311,6 +343,42 @@ class SimpleNotificationService {
       return status === 'granted';
     } catch (error) {
       return false;
+    }
+  }
+
+  // Add method to return settings with expected property names for the UI
+  async getUISettings(): Promise<any> {
+    await this.loadSettings();
+    return {
+      notificationsEnabled: this.settings.enabled,
+      expiryAlerts: this.settings.expiringSoonAlerts,
+      todayAlerts: this.settings.expiringTodayAlerts,
+      expiredAlerts: this.settings.expiredAlerts,
+      reminderDays: 3, // Default reminder days
+    };
+  }
+
+  // Add method to update individual settings
+  async updateSetting(key: string, value: any): Promise<void> {
+    try {
+      // Map UI property names to service property names
+      const propertyMap: Record<string, string> = {
+        'notificationsEnabled': 'enabled',
+        'expiryAlerts': 'expiringSoonAlerts',
+        'todayAlerts': 'expiringTodayAlerts',
+        'expiredAlerts': 'expiredAlerts',
+      };
+
+      const serviceKey = propertyMap[key] || key;
+      const newSettings = { [serviceKey]: value };
+      await this.saveSettings(newSettings);
+
+      // If notifications are being disabled, cancel all notifications
+      if (key === 'notificationsEnabled' && !value) {
+        await this.emergencyStopNotifications();
+      }
+    } catch (error) {
+      // Silent error handling
     }
   }
 }

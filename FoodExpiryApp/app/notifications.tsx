@@ -45,7 +45,7 @@ export default function NotificationsScreen() {
   // Load notification settings
   const loadNotificationSettings = async () => {
     try {
-      const settings = await simpleNotificationService.loadSettings();
+      const settings = await simpleNotificationService.getUISettings();
       setNotificationsEnabled(settings.notificationsEnabled);
       setExpiryAlerts(settings.expiryAlerts);
       setTodayAlerts(settings.todayAlerts);
@@ -94,9 +94,31 @@ export default function NotificationsScreen() {
     if (!notificationsEnabled && permissionStatus !== 'granted') {
       await requestPermissions();
     } else {
-      setNotificationsEnabled(!notificationsEnabled);
-      await simpleNotificationService.updateSetting('notificationsEnabled', !notificationsEnabled);
+      const newValue = !notificationsEnabled;
+      setNotificationsEnabled(newValue);
+      await simpleNotificationService.updateSetting('notificationsEnabled', newValue);
     }
+  };
+
+  // Toggle expiry alerts
+  const toggleExpiryAlerts = async () => {
+    const newValue = !expiryAlerts;
+    setExpiryAlerts(newValue);
+    await simpleNotificationService.updateSetting('expiryAlerts', newValue);
+  };
+
+  // Toggle today alerts
+  const toggleTodayAlerts = async () => {
+    const newValue = !todayAlerts;
+    setTodayAlerts(newValue);
+    await simpleNotificationService.updateSetting('todayAlerts', newValue);
+  };
+
+  // Toggle expired alerts
+  const toggleExpiredAlerts = async () => {
+    const newValue = !expiredAlerts;
+    setExpiredAlerts(newValue);
+    await simpleNotificationService.updateSetting('expiredAlerts', newValue);
   };
 
   // Update settings
@@ -243,24 +265,7 @@ export default function NotificationsScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Permission Status */}
-        <View style={styles.permissionCard}>
-          <Text style={styles.permissionTitle}>
-            {permissionStatus === 'granted' ? `✅ ${t('notification.enabledTitle')}` : `🔔 ${t('notification.enableTitle')}`}
-          </Text>
-          <Text style={styles.permissionText}>
-            {permissionStatus === 'granted' 
-              ? t('notification.enabledDesc')
-              : t('notification.disabledDesc')
-            }
-          </Text>
-          {permissionStatus !== 'granted' && (
-            <TouchableOpacity style={styles.button} onPress={requestPermissions}>
-              <Text style={styles.buttonText}>{t('notification.enableButton')}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
+     
         {/* Main Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('notification.alertSettings')}</Text>
@@ -291,10 +296,7 @@ export default function NotificationsScreen() {
             </View>
             <Switch
               value={expiryAlerts}
-              onValueChange={(value) => {
-                setExpiryAlerts(value);
-                updateSetting('expiryAlerts', value);
-              }}
+              onValueChange={toggleExpiryAlerts}
               disabled={!notificationsEnabled}
               trackColor={{ false: theme.borderColor, true: theme.warningColor }}
               thumbColor={theme.cardBackground}
@@ -311,10 +313,7 @@ export default function NotificationsScreen() {
             </View>
             <Switch
               value={todayAlerts}
-              onValueChange={(value) => {
-                setTodayAlerts(value);
-                updateSetting('todayAlerts', value);
-              }}
+              onValueChange={toggleTodayAlerts}
               disabled={!notificationsEnabled}
               trackColor={{ false: theme.borderColor, true: theme.dangerColor }}
               thumbColor={theme.cardBackground}
@@ -331,10 +330,7 @@ export default function NotificationsScreen() {
             </View>
             <Switch
               value={expiredAlerts}
-              onValueChange={(value) => {
-                setExpiredAlerts(value);
-                updateSetting('expiredAlerts', value);
-              }}
+              onValueChange={toggleExpiredAlerts}
               disabled={!notificationsEnabled}
               trackColor={{ false: theme.borderColor, true: theme.dangerColor }}
               thumbColor={theme.cardBackground}
