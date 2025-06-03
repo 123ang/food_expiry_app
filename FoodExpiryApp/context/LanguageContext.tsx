@@ -873,7 +873,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setLanguageState(savedLanguage as Language);
       }
     } catch (error) {
-      console.error('Error loading language:', error);
+      // Silent error handling in production
+      setLanguage('en'); // Fallback to English
     }
   };
 
@@ -886,11 +887,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         await updateDefaultDataForLanguage(lang);
       } catch (error) {
-        console.error('Error updating default data for language:', error);
-        // Continue even if this fails - the main language change should work
+        // Silent error handling in production
       }
     } catch (error) {
-      console.error('Error saving language:', error);
+      // Silent error handling in production
     }
   };
 

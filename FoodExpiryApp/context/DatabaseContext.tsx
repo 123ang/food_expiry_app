@@ -246,7 +246,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLocations(locationsData);
       setFoodItems(foodItemsData);
     } catch (error) {
-      console.error('Error loading data:', error);
       setError(error instanceof Error ? error : new Error('Failed to load data'));
     }
   };
@@ -292,7 +291,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setIsLoading(false);
         setIsReady(true);
       } catch (error) {
-        console.error('Database setup error:', error);
         setError(error instanceof Error ? error : new Error('Failed to setup database'));
         setIsLoading(false);
         setIsReady(false);
@@ -381,7 +379,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setDashboardCounts(dashboardData);
       setCacheEntry(dashboardCountsCache, dashboardData);
     } catch (error) {
-      console.error('Error refreshing dashboard counts:', error);
+      // Silent error handling in production
     }
   };
 
@@ -408,7 +406,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Increment data version to notify components
       incrementDataVersion();
     } catch (error) {
-      console.error('Error refreshing all data:', error);
       throw error;
     }
   };
@@ -499,7 +496,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const items = await FoodItemRepository.getAllWithDetails();
       return items.find(item => item.id === id) || null;
     } catch (error) {
-      console.error('Error getting food item:', error);
       throw error;
     }
   };
@@ -515,7 +511,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       return id;
     } catch (error) {
-      console.error('Error creating food item:', error);
       throw error;
     }
   };
@@ -527,7 +522,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Refresh data to show updated item
       await refreshAll();
     } catch (error) {
-      console.error('Error updating food item:', error);
       throw error;
     }
   };
@@ -561,7 +555,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       return items.filter(item => item.status === status);
     } catch (error) {
-      console.error('Error filtering items by status:', error);
       throw error;
     }
   };
@@ -571,7 +564,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       await resetDatabase();
       await refreshAll();
     } catch (error) {
-      console.error('Error resetting database:', error);
       throw error;
     }
   };
