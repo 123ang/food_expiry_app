@@ -359,6 +359,19 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const currentDate = getCurrentDate();
       const db = await getDatabase();
       
+      if (!db) {
+        // If database not available, set default counts
+        const defaultCounts = {
+          total: 0,
+          expired: 0,
+          expiring_soon: 0,
+          fresh: 0
+        };
+        setDashboardCounts(defaultCounts);
+        setCacheEntry(dashboardCountsCache, defaultCounts);
+        return;
+      }
+      
       const countsResult = await db.getAllAsync(`
         SELECT 
           COUNT(*) as total,
@@ -379,7 +392,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setDashboardCounts(dashboardData);
       setCacheEntry(dashboardCountsCache, dashboardData);
     } catch (error) {
-      // Silent error handling in production
+      // Silent error handling in production - set default counts
+      const defaultCounts = {
+        total: 0,
+        expired: 0,
+        expiring_soon: 0,
+        fresh: 0
+      };
+      setDashboardCounts(defaultCounts);
     }
   };
 
@@ -618,11 +638,12 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }),
     isDataAvailable: () => {
       // Check if essential data is available either from cache or current state
+      // For a fresh install, we only need categories and locations to be available
+      // Food items can be empty initially
       const hasCachedCategories = isCacheValid(categoriesCache) || categories.length > 0;
       const hasCachedLocations = isCacheValid(locationsCache) || locations.length > 0;
-      const hasCachedFoodItems = isCacheValid(foodItemsCache) || foodItems.length > 0;
       
-      return hasCachedCategories && hasCachedLocations && hasCachedFoodItems;
+      return hasCachedCategories && hasCachedLocations;
     },
     dataVersion: dataVersion
   };

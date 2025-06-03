@@ -255,34 +255,34 @@ const translations: Record<Language, Record<string, string>> = {
     'defaultLocation.cabinet': 'Cabinet',
 
     // Add/Edit Food Item Page
-    'addItem.title': '食品アイテムを追加',
-    'addItem.editTitle': '食品アイテムを編集',
-    'addItem.itemName': 'アイテム名',
-    'addItem.itemNamePlaceholder': '食品アイテム名を入力',
-    'addItem.quantity': '数量',
-    'addItem.quantityPlaceholder': '数量を入力',
-    'addItem.category': 'カテゴリ',
-    'addItem.storageLocation': '保存場所',
-    'addItem.expiryDate': '賞味期限',
-    'addItem.reminderDays': 'リマインダー日数',
-    'addItem.reminderDaysPlaceholder': '期限前のリマインダー日数',
-    'addItem.notes': 'メモ',
-    'addItem.notesPlaceholder': 'アイテムについてのメモを追加',
-    'addItem.loading': 'アイテムの詳細を読み込み中...',
+    'addItem.title': 'Add Item',
+    'addItem.editTitle': 'Edit Item',
+    'addItem.itemName': 'Item Name',
+    'addItem.itemNamePlaceholder': 'Enter food item name',
+    'addItem.quantity': 'Quantity',
+    'addItem.quantityPlaceholder': 'Enter quantity',
+    'addItem.category': 'Category',
+    'addItem.storageLocation': 'Storage Location',
+    'addItem.expiryDate': 'Expiry Date',
+    'addItem.reminderDays': 'Reminder Days',
+    'addItem.reminderDaysPlaceholder': 'Days before expiry to remind',
+    'addItem.notes': 'Notes',
+    'addItem.notesPlaceholder': 'Add any notes about the item',
+    'addItem.loading': 'Loading...',
+    
+    // Error Messages for Add/Edit
+    'error.enterItemName': 'Please enter an item name',
+    'error.selectStorageLocation': 'Please select a storage location',
+    'error.failedToCreate': 'Failed to create item',
+    'error.itemNotFound': 'Item not found',
+    'error.failedToLoad': 'Failed to load item',
+    'errorSaving': 'Error saving item',
     
     // Detail Pages
-    'detail.itemsIn': 'アイテム数：',
-    'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
-    'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加してここで確認してください！',
-    'detail.locationNotFound': '場所が見つかりません',
-
-    // Error Messages  
-    'error.enterItemName': 'アイテム名を入力してください',
-    'error.selectStorageLocation': '保存場所を選択してください',
-    'error.failedToCreate': 'アイテムの作成に失敗しました',
-    'error.failedToUpdate': 'アイテムの更新に失敗しました',
-    'error.failedToLoadData': 'データの読み込みに失敗しました',
-    'error.tryAgain': 'もう一度お試しください',
+    'detail.itemsIn': 'Item Count:',
+    'detail.noItemsYet': 'No items in this category yet',
+    'detail.noItemsInLocation': 'No items in {location} yet.\nAdd some items here to check!',
+    'detail.locationNotFound': 'Location not found',
 
     // Food Item Status
     'foodStatus.fresh': 'Fresh',
@@ -550,19 +550,22 @@ const translations: Record<Language, Record<string, string>> = {
     'addItem.notesPlaceholder': '添加关于此食品的备注',
     'addItem.loading': '正在加载食品详情...',
     
-    // Detail Pages
-    'detail.itemsIn': '食品在',
-    'detail.noItemsYet': '此分类中还没有食品',
-    'detail.noItemsInLocation': '{location}中还没有食品。\n添加一些食品以在此处查看！',
-    'detail.locationNotFound': '未找到位置',
-
-    // Error Messages  
+    // Error Messages for Add/Edit
     'error.enterItemName': '请输入食品名称',
     'error.selectStorageLocation': '请选择储存位置',
     'error.failedToCreate': '创建食品失败',
     'error.failedToUpdate': '更新食品失败',
     'error.failedToLoadData': '加载数据失败',
     'error.tryAgain': '请重试',
+    'error.itemNotFound': '食品未找到',
+    'error.failedToLoad': '加载食品失败',
+    'errorSaving': '保存食品时出错',
+
+    // Detail Pages
+    'detail.itemsIn': '食品在',
+    'detail.noItemsYet': '此分类中还没有食品',
+    'detail.noItemsInLocation': '{location}中还没有食品。\n添加一些食品以在此处查看！',
+    'detail.locationNotFound': '未找到位置',
 
     // Food Item Status
     'foodStatus.fresh': '新鲜',
@@ -830,19 +833,22 @@ const translations: Record<Language, Record<string, string>> = {
     'addItem.notesPlaceholder': 'アイテムについてのメモを追加',
     'addItem.loading': 'アイテムの詳細を読み込み中...',
     
-    // Detail Pages
-    'detail.itemsIn': 'アイテム数：',
-    'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
-    'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加してここで確認してください！',
-    'detail.locationNotFound': '場所が見つかりません',
-
-    // Error Messages  
+    // Error Messages for Add/Edit
     'error.enterItemName': 'アイテム名を入力してください',
     'error.selectStorageLocation': '保存場所を選択してください',
     'error.failedToCreate': 'アイテムの作成に失敗しました',
     'error.failedToUpdate': 'アイテムの更新に失敗しました',
     'error.failedToLoadData': 'データの読み込みに失敗しました',
     'error.tryAgain': 'もう一度お試しください',
+    'error.itemNotFound': 'アイテムが見つかりません',
+    'error.failedToLoad': 'アイテムの読み込みに失敗しました',
+    'errorSaving': 'アイテムの保存中にエラーが発生しました',
+
+    // Detail Pages
+    'detail.itemsIn': 'アイテム数：',
+    'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
+    'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加してここで確認してください！',
+    'detail.locationNotFound': '場所が見つかりません',
 
     // Food Item Status
     'foodStatus.fresh': '新鮮',
@@ -874,7 +880,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     } catch (error) {
       // Silent error handling in production
-      setLanguage('en'); // Fallback to English
+      setLanguageState('en'); // Fallback to English
     }
   };
 

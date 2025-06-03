@@ -1,323 +1,235 @@
 import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { translations, Language } from '../context/LanguageContext';
+import { Language } from '../context/LanguageContext';
+import { Category, Location } from './models';
 
-let db: SQLite.SQLiteDatabase;
+// Database configuration
+const DATABASE_VERSION = 3;
+const DATABASE_NAME = 'expiry_alert.db';
+
+// Fallback storage for when SQLite is not available
+interface FallbackStorage {
+  categories: Category[];
+  locations: Location[];
+  foodItems: any[];
+}
+
+let db: SQLite.SQLiteDatabase | null = null;
 let useFallbackStorage = false;
 
-// Database name with platform-specific handling
-const DATABASE_NAME = Platform.OS === 'android' ? 'foodexpiry_v3.db' : 'foodexpiry.db';
-
-// AsyncStorage keys for fallback
-const STORAGE_KEYS = {
-  CATEGORIES: 'fallback_categories',
-  LOCATIONS: 'fallback_locations',
-  FOOD_ITEMS: 'fallback_food_items',
-  INITIALIZED: 'fallback_initialized'
-};
-
-// Fallback storage functions
-const fallbackStorage = {
-  async initFallback() {
-    console.log('Initializing fallback AsyncStorage...');
-    
-    // Check if already initialized
-    const initialized = await AsyncStorage.getItem(STORAGE_KEYS.INITIALIZED);
-    if (initialized) {
-      console.log('Fallback storage already initialized');
-      return;
+const initializeFallback = async (): Promise<void> => {
+  if (useFallbackStorage) {
+    return;
+  }
+  
+  try {
+    const existing = await AsyncStorage.getItem('fallback_data');
+    if (!existing) {
+      const fallbackData: FallbackStorage = {
+        categories: [],
+        locations: [],
+        foodItems: []
+      };
+      await AsyncStorage.setItem('fallback_data', JSON.stringify(fallbackData));
     }
-
-    // Get current language
-    let currentLanguage: Language = 'en';
-    try {
-      const savedLanguage = await AsyncStorage.getItem('app_language');
-      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh' || savedLanguage === 'ja')) {
-        currentLanguage = savedLanguage as Language;
-      }
-    } catch (error) {
-      console.log('Could not load language preference, using English');
-    }
-
-    // Initialize with translated default data
-    const defaultCategories = getDefaultCategories(currentLanguage);
-    const defaultLocations = getDefaultLocations(currentLanguage);
-
-    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
-    await AsyncStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(defaultLocations));
-    await AsyncStorage.setItem(STORAGE_KEYS.FOOD_ITEMS, JSON.stringify([]));
-    await AsyncStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
-    
-    console.log('Fallback storage initialized successfully');
-  },
-
-  async getAllCategories() {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    return data ? JSON.parse(data) : [];
-  },
-
-  async getAllLocations() {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.LOCATIONS);
-    return data ? JSON.parse(data) : [];
-  },
-
-  async getAllFoodItems() {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.FOOD_ITEMS);
-    return data ? JSON.parse(data) : [];
-  },
-
-  async saveCategories(categories: any[]) {
-    await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
-  },
-
-  async saveLocations(locations: any[]) {
-    await AsyncStorage.setItem(STORAGE_KEYS.LOCATIONS, JSON.stringify(locations));
-  },
-
-  async saveFoodItems(items: any[]) {
-    await AsyncStorage.setItem(STORAGE_KEYS.FOOD_ITEMS, JSON.stringify(items));
-  },
-
-  async addFoodItem(item: any) {
-    const items = await this.getAllFoodItems();
-    const newId = Math.max(0, ...items.map((i: any) => i.id || 0)) + 1;
-    const newItem = { ...item, id: newId };
-    items.push(newItem);
-    await this.saveFoodItems(items);
-    return newId;
-  },
-
-  async updateFoodItem(updatedItem: any) {
-    const items = await this.getAllFoodItems();
-    const index = items.findIndex((item: any) => item.id === updatedItem.id);
-    if (index !== -1) {
-      items[index] = updatedItem;
-      await this.saveFoodItems(items);
-    }
-  },
-
-  async deleteFoodItem(id: number) {
-    const items = await this.getAllFoodItems();
-    const filtered = items.filter((item: any) => item.id !== id);
-    await this.saveFoodItems(filtered);
+  } catch (error) {
+    // Silent fallback
   }
 };
 
-// Open or create the database with production-specific handling
-export const getDatabase = async () => {
-  // If already using fallback, return a mock object
+const getStoredLanguage = async (): Promise<Language> => {
+  try {
+    const stored = await AsyncStorage.getItem('app_language');
+    return (stored as Language) || 'en';
+  } catch (error) {
+    return 'en';
+  }
+};
+
+const ensureFallbackStorage = async (): Promise<void> => {
+  try {
+    await initializeFallback();
+    useFallbackStorage = true;
+  } catch (error) {
+    throw new Error('Could not initialize fallback storage');
+  }
+};
+
+export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
   if (useFallbackStorage) {
-    console.log('Using fallback storage mode');
-    throw new Error('Using fallback storage - SQLite unavailable');
+    return null;
   }
 
   if (!db) {
-    console.log('Opening database for the first time...');
-    console.log('Platform:', Platform.OS);
-    console.log('Database name:', DATABASE_NAME);
-    
     try {
-      // For production builds, use different approach
-      if (__DEV__) {
-        console.log('Development mode - using standard database opening');
+      // Enhanced database opening strategy
+      const isDevelopment = __DEV__;
+      
+      if (isDevelopment) {
         db = await SQLite.openDatabaseAsync(DATABASE_NAME);
       } else {
-        console.log('Production mode - using fallback database opening');
-        // Try to open with minimal options for production
         db = await SQLite.openDatabaseAsync(DATABASE_NAME);
       }
+
+      // Verify the database connection
+      await db.getAllAsync('SELECT 1');
       
-      console.log('Database opened successfully');
-      
-      // Verify the connection works
-      await db.getFirstAsync('SELECT 1');
-      console.log('Database connection verified');
-      
-    } catch (error) {
-      console.error('Database opening failed:', error);
-      
-      // Fallback: try to delete and recreate database
+    } catch (openError) {
       try {
-        console.log('Attempting database recreation...');
-        const fallbackName = `foodexpiry_fallback_${Date.now()}.db`;
-        db = await SQLite.openDatabaseAsync(fallbackName);
-        console.log('Fallback database created successfully');
-        await db.getFirstAsync('SELECT 1');
-        console.log('Fallback database verified');
-      } catch (fallbackError) {
-        console.error('Fallback database creation also failed:', fallbackError);
-        console.log('Switching to AsyncStorage fallback mode');
-        useFallbackStorage = true;
-        await fallbackStorage.initFallback();
-        throw new Error('SQLite unavailable - using fallback storage');
-      }
-    }
-  }
-  
-  // Always verify the database is still connected
-  if (db) {
-    try {
-      await db.getFirstAsync('SELECT 1');
-    } catch (error) {
-      console.warn('Database connection lost, attempting recovery...', error);
-      
-      try {
-        // Try to reopen the database
-        const recoveryName = `foodexpiry_recovery_${Date.now()}.db`;
-        db = await SQLite.openDatabaseAsync(recoveryName);
-        await db.getFirstAsync('SELECT 1');
-        console.log('Database recovered successfully');
+        // Close any partial connection
+        if (db) {
+          try {
+            await db.closeAsync();
+          } catch (closeError) {
+            // Ignore close errors
+          }
+          db = null;
+        }
         
-        // Force re-initialization after recovery
-        await initDatabase();
-      } catch (recoveryError) {
-        console.error('Database recovery failed:', recoveryError);
-        console.log('Switching to AsyncStorage fallback mode');
-        useFallbackStorage = true;
-        await fallbackStorage.initFallback();
-        throw new Error('Database recovery failed - using fallback storage');
+        // Attempt to recreate the database
+        await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+        db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+        
+      } catch (recreateError) {
+        // If SQLite completely fails, switch to fallback mode
+        await ensureFallbackStorage();
+        return null;
       }
     }
+    
+    // Additional verification
+    try {
+      await db.getAllAsync('SELECT 1');
+    } catch (verifyError) {
+      // Final fallback
+      await ensureFallbackStorage();
+      return null;
+    }
   }
-  
+
   return db;
 };
 
-// Check if we're using fallback storage
-export const isUsingFallbackStorage = () => useFallbackStorage;
-
-// Get fallback storage helper
-export const getFallbackStorage = () => fallbackStorage;
-
-// Initialize the database with tables
-export const initDatabase = async () => {
-  const database = await getDatabase();
-  
-  try {
-    // Create categories table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        icon TEXT NOT NULL
-      );
-    `);
-
-    // Create storage locations table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS locations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        icon TEXT NOT NULL
-      );
-    `);
-
-    // Create food items table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS food_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        quantity INTEGER DEFAULT 1,
-        category_id INTEGER,
-        location_id INTEGER,
-        expiry_date TEXT NOT NULL,
-        reminder_days INTEGER DEFAULT 0,
-        notes TEXT,
-        image_uri TEXT,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
-        FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
-      );
-    `);
-
-    // Get current language for default data
-    let currentLanguage: Language = 'en';
+export const closeDatabase = async (): Promise<void> => {
+  if (db) {
     try {
-      const savedLanguage = await AsyncStorage.getItem('app_language');
-      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh' || savedLanguage === 'ja')) {
-        currentLanguage = savedLanguage as Language;
-      }
+      await db.closeAsync();
     } catch (error) {
-      console.log('Could not load language preference, using English');
+      // Silent error handling
+    } finally {
+      db = null;
     }
-
-    // Get translated default data
-    const defaultCategories = getDefaultCategories(currentLanguage);
-    const defaultLocations = getDefaultLocations(currentLanguage);
-
-    // Insert default categories with translated names
-    await database.execAsync(`
-      DELETE FROM categories WHERE id IN (1,2,3,4,5,6,7,8);
-    `);
-    
-    const categoryInserts = defaultCategories.map(cat => 
-      `(${cat.id}, '${cat.name.replace(/'/g, "''")}', '${cat.icon}')`
-    ).join(',');
-    
-    await database.execAsync(`
-      INSERT OR REPLACE INTO categories (id, name, icon) VALUES ${categoryInserts};
-    `);
-
-    // Insert default locations with translated names
-    await database.execAsync(`
-      DELETE FROM locations WHERE id IN (1,2,3,4,5);
-    `);
-    
-    const locationInserts = defaultLocations.map(loc => 
-      `(${loc.id}, '${loc.name.replace(/'/g, "''")}', '${loc.icon}')`
-    ).join(',');
-    
-    await database.execAsync(`
-      INSERT OR REPLACE INTO locations (id, name, icon) VALUES ${locationInserts};
-    `);
-
-    console.log(`Database initialized successfully with ${currentLanguage} translations`);
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
   }
 };
 
-// Reset database - drops all tables and recreates them
-export const resetDatabase = async () => {
-  const database = await getDatabase();
-  
+// Function to reset database connection completely
+export const resetDatabaseConnection = async (): Promise<void> => {
+  await closeDatabase();
+  useFallbackStorage = false;
+  // Force a fresh connection on next access
+};
+
+// Safe database getter with fallback handling
+export const getDatabaseSafely = async (): Promise<SQLite.SQLiteDatabase | null> => {
   try {
-    console.log('Resetting database...');
-    
-    // Drop all tables
-    await database.execAsync('DROP TABLE IF EXISTS food_items');
-    await database.execAsync('DROP TABLE IF EXISTS categories');
-    await database.execAsync('DROP TABLE IF EXISTS locations');
-    
-    console.log('Tables dropped, reinitializing...');
-    
-    // Reinitialize with fresh data
-    await initDatabase();
-    
-    console.log('Database reset completed successfully');
+    return await getDatabase();
   } catch (error) {
-    console.error('Error resetting database:', error);
-    throw error;
+    // Fallback to AsyncStorage mode
+    await ensureFallbackStorage();
+    return null;
   }
 };
 
-// Helper function to format date as YYYY-MM-DD
-export const formatDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+// Function to check if we're using fallback storage
+export const isUsingFallbackStorage = (): boolean => {
+  return useFallbackStorage;
 };
 
-// Get current date formatted as YYYY-MM-DD
-export const getCurrentDate = () => {
-  const date = new Date();
-  return formatDate(date);
+// Function to get fallback storage interface
+export const getFallbackStorage = () => {
+  return {
+    getAllCategories: async (): Promise<Category[]> => {
+      try {
+        const fallbackData = await AsyncStorage.getItem('fallback_data');
+        if (fallbackData) {
+          const data: FallbackStorage = JSON.parse(fallbackData);
+          return data.categories;
+        }
+        return [];
+      } catch (error) {
+        return [];
+      }
+    },
+    
+    getAllLocations: async (): Promise<Location[]> => {
+      try {
+        const fallbackData = await AsyncStorage.getItem('fallback_data');
+        if (fallbackData) {
+          const data: FallbackStorage = JSON.parse(fallbackData);
+          return data.locations;
+        }
+        return [];
+      } catch (error) {
+        return [];
+      }
+    },
+    
+    getAllFoodItems: async (): Promise<any[]> => {
+      try {
+        const fallbackData = await AsyncStorage.getItem('fallback_data');
+        if (fallbackData) {
+          const data: FallbackStorage = JSON.parse(fallbackData);
+          return data.foodItems;
+        }
+        return [];
+      } catch (error) {
+        return [];
+      }
+    },
+
+    addFoodItem: async (item: any): Promise<number> => {
+      try {
+        const fallbackData = await AsyncStorage.getItem('fallback_data');
+        const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+        const newId = Math.max(0, ...data.foodItems.map((item: any) => item.id || 0)) + 1;
+        const newItem = { ...item, id: newId };
+        data.foodItems.push(newItem);
+        await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+        return newId;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    updateFoodItem: async (item: any): Promise<void> => {
+      try {
+        const fallbackData = await AsyncStorage.getItem('fallback_data');
+        const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+        const index = data.foodItems.findIndex((i: any) => i.id === item.id);
+        if (index !== -1) {
+          data.foodItems[index] = item;
+          await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+        }
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    deleteFoodItem: async (id: number): Promise<void> => {
+      try {
+        const fallbackData = await AsyncStorage.getItem('fallback_data');
+        const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+        data.foodItems = data.foodItems.filter((item: any) => item.id !== id);
+        await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+      } catch (error) {
+        throw error;
+      }
+    }
+  };
 };
 
-// Calculate days difference between two dates
+// Function to calculate days difference between two dates
 export const daysDifference = (date1: string, date2: string): number => {
   const d1 = new Date(date1);
   const d2 = new Date(date2);
@@ -325,106 +237,262 @@ export const daysDifference = (date1: string, date2: string): number => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-// Helper function to get translated default categories
-const getDefaultCategories = (language: Language = 'en') => {
-  const t = (key: string) => translations[language][key] || translations['en'][key] || key;
-  
-  return [
-    { id: 1, name: t('defaultCategory.vegetables'), icon: 'vegetables' },
-    { id: 2, name: t('defaultCategory.fruits'), icon: 'apple' },
-    { id: 3, name: t('defaultCategory.dairy'), icon: 'dairy' },
-    { id: 4, name: t('defaultCategory.meat'), icon: 'meat' },
-    { id: 5, name: t('defaultCategory.snacks'), icon: 'snacks' },
-    { id: 6, name: t('defaultCategory.desserts'), icon: 'dessert' },
-    { id: 7, name: t('defaultCategory.seafood'), icon: 'seafood' },
-    { id: 8, name: t('defaultCategory.bread'), icon: 'bread' }
-  ];
-};
-
-// Helper function to get translated default locations
-const getDefaultLocations = (language: Language = 'en') => {
-  const t = (key: string) => translations[language][key] || translations['en'][key] || key;
-  
-  return [
-    { id: 1, name: t('defaultLocation.fridge'), icon: 'fridge' },
-    { id: 2, name: t('defaultLocation.freezer'), icon: 'freezer' },
-    { id: 3, name: t('defaultLocation.pantry'), icon: 'pantry' },
-    { id: 4, name: t('defaultLocation.counter'), icon: 'counter' },
-    { id: 5, name: t('defaultLocation.cabinet'), icon: 'cabinet' }
-  ];
-};
-
-// Update default data when language changes
-export const updateDefaultDataForLanguage = async (language: Language) => {
-  try {
-    const database = await getDatabase();
+const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  const createTableQueries = [
+    `CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );`,
     
-    // Get translated default data
-    const defaultCategories = getDefaultCategories(language);
-    const defaultLocations = getDefaultLocations(language);
+    `CREATE TABLE IF NOT EXISTS locations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      icon TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );`,
+    
+    `CREATE TABLE IF NOT EXISTS food_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      category_id INTEGER,
+      location_id INTEGER,
+      expiry_date TEXT NOT NULL,
+      reminder_days INTEGER DEFAULT 3,
+      notes TEXT,
+      image_uri TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
+      FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
+    );`,
+    
+    `CREATE INDEX IF NOT EXISTS idx_food_items_expiry ON food_items(expiry_date);`,
+    `CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category_id);`,
+    `CREATE INDEX IF NOT EXISTS idx_food_items_location ON food_items(location_id);`
+  ];
 
-    // Update default categories (only those with IDs 1-8)
-    for (const category of defaultCategories) {
-      await database.execAsync(`
-        UPDATE categories SET name = '${category.name.replace(/'/g, "''")}' WHERE id = ${category.id};
-      `);
-    }
-
-    // Update default locations (only those with IDs 1-5)
-    for (const location of defaultLocations) {
-      await database.execAsync(`
-        UPDATE locations SET name = '${location.name.replace(/'/g, "''")}' WHERE id = ${location.id};
-      `);
-    }
-
-    console.log(`Default data updated for language: ${language}`);
-  } catch (error) {
-    console.error('Error updating default data for language:', error);
-    throw error;
+  for (const query of createTableQueries) {
+    await database.execAsync(query);
   }
 };
 
-// Export helper functions for use by other parts of the app
-export { getDefaultCategories, getDefaultLocations };
+const getDefaultCategories = (language: Language): Category[] => {
+  const categoriesMap: Record<Language, Category[]> = {
+    en: [
+      { name: 'Vegetables', icon: 'leaf' },
+      { name: 'Fruits', icon: 'heart' },
+      { name: 'Dairy', icon: 'tint' },
+      { name: 'Meat', icon: 'cutlery' },
+      { name: 'Snacks', icon: 'star' },
+      { name: 'Desserts', icon: 'birthday-cake' },
+      { name: 'Seafood', icon: 'ship' },
+      { name: 'Bread', icon: 'plus' }
+    ],
+    zh: [
+      { name: '蔬菜', icon: 'leaf' },
+      { name: '水果', icon: 'heart' },
+      { name: '乳制品', icon: 'tint' },
+      { name: '肉类', icon: 'cutlery' },
+      { name: '零食', icon: 'star' },
+      { name: '甜点', icon: 'birthday-cake' },
+      { name: '海鲜', icon: 'ship' },
+      { name: '面包', icon: 'plus' }
+    ],
+    ja: [
+      { name: '野菜', icon: 'leaf' },
+      { name: '果物', icon: 'heart' },
+      { name: '乳製品', icon: 'tint' },
+      { name: '肉', icon: 'cutlery' },
+      { name: 'スナック', icon: 'star' },
+      { name: 'デザート', icon: 'birthday-cake' },
+      { name: '海産物', icon: 'ship' },
+      { name: 'パン', icon: 'plus' }
+    ]
+  };
+  
+  try {
+    return categoriesMap[language] || categoriesMap.en;
+  } catch (error) {
+    return categoriesMap.en;
+  }
+};
 
-const initializeFallbackStorage = async () => {
-  if (fallbackStorage) {
+const getDefaultLocations = (language: Language): Location[] => {
+  const locationsMap: Record<Language, Location[]> = {
+    en: [
+      { name: 'Fridge', icon: 'snowflake-o' },
+      { name: 'Freezer', icon: 'cube' },
+      { name: 'Pantry', icon: 'home' },
+      { name: 'Cabinet', icon: 'archive' }
+    ],
+    zh: [
+      { name: '冰箱', icon: 'snowflake-o' },
+      { name: '冷冻室', icon: 'cube' },
+      { name: '储藏室', icon: 'home' },
+      { name: '橱柜', icon: 'archive' }
+    ],
+    ja: [
+      { name: '冷蔵庫', icon: 'snowflake-o' },
+      { name: '冷凍庫', icon: 'cube' },
+      { name: 'パントリー', icon: 'home' },
+      { name: 'キャビネット', icon: 'archive' }
+    ]
+  };
+  
+  return locationsMap[language] || locationsMap.en;
+};
+
+const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
+  // Check if we already have data
+  const categoryCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM categories');
+  const locationCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM locations');
+  
+  if ((categoryCount as any)?.count > 0 && (locationCount as any)?.count > 0) {
     return;
   }
 
+  const defaultCategories = getDefaultCategories(language);
+  const defaultLocations = getDefaultLocations(language);
+
+  // Insert categories
+  for (const category of defaultCategories) {
+    await database.runAsync(
+      'INSERT OR IGNORE INTO categories (name, icon) VALUES (?, ?)',
+      [category.name, category.icon]
+    );
+  }
+
+  // Insert locations
+  for (const location of defaultLocations) {
+    await database.runAsync(
+      'INSERT OR IGNORE INTO locations (name, icon) VALUES (?, ?)',
+      [location.name, location.icon]
+    );
+  }
+};
+
+export const initDatabase = async (): Promise<void> => {
   try {
-    // Load existing data or initialize empty
-    const language = await AsyncStorage.getItem('language');
-    if (!language) {
-      console.error('Could not load language preference, using English');
-    }
+    const database = await getDatabase();
     
-    const currentLanguage = language || 'en';
+    if (!database) {
+      // Using fallback storage
+      const currentLanguage = await getStoredLanguage();
+      await updateDefaultDataForLanguage(currentLanguage);
+      return;
+    }
+
+    await createTables(database);
     
-    const existingCategories = await AsyncStorage.getItem('categories');
-    const existingLocations = await AsyncStorage.getItem('locations');
-    const existingFoodItems = await AsyncStorage.getItem('foodItems');
-
-    const categories = existingCategories ? JSON.parse(existingCategories) : getDefaultCategoriesData(currentLanguage);
-    const locations = existingLocations ? JSON.parse(existingLocations) : getDefaultLocationsData(currentLanguage);
-    const foodItems = existingFoodItems ? JSON.parse(existingFoodItems) : [];
-
-    // Save default data if it doesn't exist
-    if (!existingCategories) {
-      await AsyncStorage.setItem('categories', JSON.stringify(categories));
-    }
-    if (!existingLocations) {
-      await AsyncStorage.setItem('locations', JSON.stringify(locations));
-    }
-    if (!existingFoodItems) {
-      await AsyncStorage.setItem('foodItems', JSON.stringify(foodItems));
-    }
-
-    // Create fallback storage object
-    fallbackStorage = createFallbackStorage();
-    isUsingFallback = true;
+    const currentLanguage = await getStoredLanguage();
+    await insertDefaultData(database, currentLanguage);
   } catch (error) {
-    console.error('Failed to initialize fallback storage:', error);
     throw error;
+  }
+};
+
+export const resetDatabase = async (): Promise<void> => {
+  try {
+    const database = await getDatabase();
+    
+    if (!database) {
+      // Reset fallback storage
+      const fallbackData: FallbackStorage = {
+        categories: [],
+        locations: [],
+        foodItems: []
+      };
+      await AsyncStorage.setItem('fallback_data', JSON.stringify(fallbackData));
+      await initDatabase();
+      return;
+    }
+
+    // Drop all tables
+    await database.execAsync('DROP TABLE IF EXISTS food_items');
+    await database.execAsync('DROP TABLE IF EXISTS categories');
+    await database.execAsync('DROP TABLE IF EXISTS locations');
+    
+    // Recreate tables and insert default data
+    await initDatabase();
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Utility functions
+export const getCurrentDate = (): string => {
+  return new Date().toISOString().split('T')[0];
+};
+
+export const addDaysToDate = (date: string, days: number): string => {
+  const newDate = new Date(date);
+  newDate.setDate(newDate.getDate() + days);
+  return newDate.toISOString().split('T')[0];
+};
+
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString();
+};
+
+export const calculateDaysUntilExpiry = (expiryDate: string): number => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+// Helper function to update default data when language changes
+export const updateDefaultDataForLanguage = async (language: Language): Promise<void> => {
+  try {
+    const database = await getDatabase();
+    
+    if (!database) {
+      // Handle fallback storage
+      const fallbackData = await AsyncStorage.getItem('fallback_data');
+      const data: FallbackStorage = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+      
+      // Always update default categories and locations with new language
+      data.categories = getDefaultCategories(language).map((cat, index) => ({
+        ...cat,
+        id: index + 1,
+        created_at: getCurrentDate()
+      }));
+      
+      data.locations = getDefaultLocations(language).map((loc, index) => ({
+        ...loc,
+        id: index + 1,
+        created_at: getCurrentDate()
+      }));
+      
+      await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+      return;
+    }
+
+    // Update existing default categories (IDs 1-8) with new language
+    const defaultCategories = getDefaultCategories(language);
+    for (let i = 0; i < defaultCategories.length; i++) {
+      const category = defaultCategories[i];
+      await database.runAsync(
+        'UPDATE categories SET name = ? WHERE id = ?',
+        [category.name, i + 1]
+      );
+    }
+
+    // Update existing default locations (IDs 1-4) with new language  
+    const defaultLocations = getDefaultLocations(language);
+    for (let i = 0; i < defaultLocations.length; i++) {
+      const location = defaultLocations[i];
+      await database.runAsync(
+        'UPDATE locations SET name = ? WHERE id = ?',
+        [location.name, i + 1]
+      );
+    }
+  } catch (error) {
+    // Silent error handling
   }
 }; 

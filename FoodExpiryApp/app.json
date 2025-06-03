@@ -13,7 +13,7 @@
     "splash": {
       "image": "./assets/food_expiry_logo_adaptive.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#0f7714"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -31,7 +31,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/food_expiry_logo_adaptive.png",
-        "backgroundColor": "#F0F8FF"
+        "backgroundColor": "#0f7714"
       },
       "package": "com.expiryalert.app",
       "versionCode": 1,

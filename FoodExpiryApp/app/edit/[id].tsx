@@ -62,12 +62,12 @@ export default function EditScreen() {
           setReminderDays(item.reminder_days.toString());
           setNotes(item.notes || '');
         } else {
-          Alert.alert('Error', 'Item not found');
+          Alert.alert(t('alert.error'), t('error.itemNotFound'));
           router.back();
         }
       } catch (error) {
         console.error('Error loading item:', error);
-        Alert.alert('Error', 'Failed to load item');
+        Alert.alert(t('alert.error'), t('error.failedToLoad'));
       } finally {
         setIsLoading(false);
       }
@@ -77,12 +77,12 @@ export default function EditScreen() {
 
   const handleSave = async () => {
     if (!itemName.trim()) {
-      Alert.alert('Error', 'Please enter an item name');
+      Alert.alert(t('alert.error'), t('error.enterItemName'));
       return;
     }
 
     if (!selectedLocation) {
-      Alert.alert('Error', 'Please select a storage location');
+      Alert.alert(t('alert.error'), t('error.selectStorageLocation'));
       return;
     }
 
@@ -112,7 +112,7 @@ export default function EditScreen() {
       router.back();
     } catch (error) {
       console.error('Error saving item:', error);
-      Alert.alert('Error', 'Failed to update item');
+      Alert.alert(t('alert.error'), t('errorSaving'));
     } finally {
       setIsSaving(false);
     }

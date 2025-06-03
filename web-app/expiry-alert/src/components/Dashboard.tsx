@@ -1,225 +1,184 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  FoodItemsService, 
+  CategoriesService, 
+  LocationsService, 
+  DashboardStats,
+  FoodItem,
+  Category,
+  Location
+} from '../services/firestoreService';
 
-interface FoodItem {
-  id: string;
-  name: string;
-  expiryDate: string;
-  category: string;
-  location: string;
-  quantity: string;
-  notes: string;
-  status: 'fresh' | 'expiring-soon' | 'expired';
-  daysUntilExpiry: number;
+interface DashboardProps {
+  filter?: 'fresh' | 'expiring-soon' | 'expired';
 }
 
-const Dashboard: React.FC = () => {
-  // Demo data with locations
-  const [foodItems] = useState<FoodItem[]>([
-    {
-      id: '1',
-      name: 'Organic Milk',
-      expiryDate: '2024-01-25',
-      category: 'Dairy',
-      location: 'Main Refrigerator',
-      quantity: '1 gallon',
-      notes: 'Opened 3 days ago',
-      status: 'expired',
-      daysUntilExpiry: -2
-    },
-    {
-      id: '2',
-      name: 'Whole Wheat Bread',
-      expiryDate: '2024-01-27',
-      category: 'Bakery',
-      location: 'Pantry',
-      quantity: '1 loaf',
-      notes: 'Store in cool, dry place',
-      status: 'expiring-soon',
-      daysUntilExpiry: 2
-    },
-    {
-      id: '3',
-      name: 'Fresh Bananas',
-      expiryDate: '2024-01-26',
-      category: 'Fruits',
-      location: 'Counter',
-      quantity: '6 pieces',
-      notes: 'Perfect for smoothies',
-      status: 'expiring-soon',
-      daysUntilExpiry: 1
-    },
-    {
-      id: '4',
-      name: 'Greek Yogurt',
-      expiryDate: '2024-02-05',
-      category: 'Dairy',
-      location: 'Main Refrigerator',
-      quantity: '32 oz',
-      notes: 'High protein, low fat',
-      status: 'fresh',
-      daysUntilExpiry: 10
-    },
-    {
-      id: '5',
-      name: 'Chicken Breast',
-      expiryDate: '2024-01-30',
-      category: 'Meat',
-      location: 'Main Refrigerator',
-      quantity: '2 lbs',
-      notes: 'Use for dinner tonight',
-      status: 'fresh',
-      daysUntilExpiry: 5
-    },
-    {
-      id: '6',
-      name: 'Frozen Peas',
-      expiryDate: '2024-06-15',
-      category: 'Frozen',
-      location: 'Freezer',
-      quantity: '1 bag',
-      notes: 'Great for quick sides',
-      status: 'fresh',
-      daysUntilExpiry: 140
-    }
-  ]);
-
+const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
+  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [stats, setStats] = useState<DashboardStats>({
+    total: 0,
+    fresh: 0,
+    expiringSoon: 0,
+    expired: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
+  
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    loadData();
+  }, [user, filter]);
 
-  const freshItems = foodItems.filter(item => item.status === 'fresh');
-  const expiringSoonItems = foodItems.filter(item => item.status === 'expiring-soon');
-  const expiredItems = foodItems.filter(item => item.status === 'expired');
+  const loadData = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const [itemsData, categoriesData, locationsData, statsData] = await Promise.all([
+        filter ? FoodItemsService.getItemsByStatus(user.uid, filter) : FoodItemsService.getUserItems(user.uid),
+        CategoriesService.getUserCategories(user.uid),
+        LocationsService.getUserLocations(user.uid),
+        FoodItemsService.getDashboardStats(user.uid)
+      ]);
+
+      setFoodItems(itemsData);
+      setCategories(categoriesData);
+      setLocations(locationsData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCardClick = (itemId: string) => {
     navigate(`/item/${itemId}`);
   };
 
-  const handleDeleteItem = (e: React.MouseEvent, itemId: string, itemName: string) => {
-    e.stopPropagation(); // Prevent card click when delete button is clicked
-    if (window.confirm(`${t('confirm.delete')} "${itemName}"?`)) {
-      alert(`${t('confirm.deleted')} "${itemName}" ${t('confirm.demoMode')}`);
+  const handleDeleteItem = async (e: React.MouseEvent, itemId: string, itemName: string) => {
+    e.stopPropagation();
+    
+    if (window.confirm(`${t('alert.deleteMessage')} "${itemName}"?`)) {
+      try {
+        await FoodItemsService.deleteItem(itemId);
+        // Reload data to refresh the list
+        await loadData();
+        alert(`${t('alert.success')}: "${itemName}" ${t('action.delete')}`);
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert(`${t('alert.deleteFailed')}: ${itemName}`);
+      }
     }
   };
 
-  const getCategoryIcon = (category: string) => {
+  const handleCleanupExpired = async () => {
+    if (!user) return;
+    
+    const confirmCleanup = window.confirm(
+      `${t('cleanup.confirmMessage')} This will permanently delete expired items that are older than 30 days.`
+    );
+    
+    if (!confirmCleanup) return;
+    
+    setIsCleaningUp(true);
+    try {
+      const deletedCount = await FoodItemsService.cleanupExpiredItems(user.uid, 30);
+      await loadData(); // Refresh data
+      alert(`${t('cleanup.success')}: ${deletedCount} ${t('cleanup.itemsDeleted')}`);
+    } catch (error) {
+      console.error('Error cleaning up expired items:', error);
+      alert(`${t('cleanup.failed')}`);
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
+  const getCategoryIcon = (categoryName: string) => {
+    const category = categories.find(cat => cat.name === categoryName);
+    if (category?.icon) return category.icon;
+    
+    // Fallback icons
     const icons: { [key: string]: string } = {
-      // Match mobile app exactly from CategoryIcon.tsx
-      'Apple': '🍎',
-      'Dairy': '🥛', 
       'Fruits': '🍇',
       'Vegetables': '🥕',
+      'Dairy': '🥛',
       'Meat': '🥩',
       'Bread': '🍞',
       'Beverages': '🥤',
       'Snacks': '🍿',
       'Frozen': '🧊',
-      'Canned': '🥫',
       'Seafood': '🐟',
       'Spices': '🌶️',
       'Dessert': '🍰',
-      'Grains': '🌾',
-      'Bakery': '🍞', // Map Bakery to Bread
-      'Pantry': '🥫', // Map Pantry items to Canned
-      // Lowercase mappings for flexibility
-      'apple': '🍎',
-      'dairy': '🥛',
-      'fruits': '🍇',
-      'vegetables': '🥕',
-      'meat': '🥩',
-      'bread': '🍞',
-      'beverages': '🥤',
-      'snacks': '🍿',
-      'frozen': '🧊',
-      'canned': '🥫',
-      'seafood': '🐟',
-      'spices': '🌶️',
-      'dessert': '🍰',
-      'grains': '🌾',
-      'bakery': '🍞',
-      'pantry': '🥫'
+      'Grains': '🌾'
     };
-    return icons[category] || icons[category.toLowerCase()] || '🍎';
+    return icons[categoryName] || icons[categoryName.toLowerCase()] || '🍎';
   };
 
-  const getLocationIcon = (location: string) => {
+  const getLocationIcon = (locationName: string) => {
+    const location = locations.find(loc => loc.name === locationName);
+    if (location) {
+      // Return icon based on temperature or use fallback
+      const tempIcons = {
+        'refrigerated': '❄️',
+        'frozen': '🧊',
+        'room': '🏠'
+      };
+      return tempIcons[location.temperature] || '📦';
+    }
+    
+    // Fallback icons
     const icons: { [key: string]: string } = {
-      // Match mobile app exactly from LocationIcon.tsx
       'Fridge': '❄️',
       'Freezer': '🧊',
       'Pantry': '🏠',
       'Cabinet': '🗄️',
       'Counter': '🍽️',
-      'Basement': '⬇️',
-      'Garage': '🏢',
       'Kitchen': '🍳',
-      'Cupboard': '🗃️',
-      'Shelf': '📚',
-      'Storage': '📦',
-      'Refrigerator': '❄️',
-      'Main Refrigerator': '❄️',
-      // Lowercase mappings for flexibility
-      'fridge': '❄️',
-      'freezer': '🧊',
-      'pantry': '🏠',
-      'cabinet': '🗄️',
-      'counter': '🍽️',
-      'basement': '⬇️',
-      'garage': '🏢',
-      'kitchen': '🍳',
-      'cupboard': '🗃️',
-      'shelf': '📚',
-      'storage': '📦',
-      'refrigerator': '❄️'
+      'Storage': '📦'
     };
     
-    // Try exact match first, then check for partial matches
-    if (icons[location]) {
-      return icons[location];
-    }
+    const lowerLocation = locationName.toLowerCase();
+    if (icons[locationName]) return icons[locationName];
+    if (icons[lowerLocation]) return icons[lowerLocation];
     
-    const lowerLocation = location.toLowerCase();
-    if (icons[lowerLocation]) {
-      return icons[lowerLocation];
-    }
-    
-    // Partial match patterns (same as mobile app logic)
+    // Partial matches
     if (lowerLocation.includes('fridge') || lowerLocation.includes('refrigerator')) {
       return '❄️';
     } else if (lowerLocation.includes('freezer')) {
       return '🧊';
-    } else if (lowerLocation.includes('pantry') || lowerLocation.includes('kitchen')) {
-      return '🍳';
-    } else if (lowerLocation.includes('cabinet') || lowerLocation.includes('cupboard')) {
-      return '🗄️';
-    } else if (lowerLocation.includes('counter')) {
-      return '🍽️';
-    } else if (lowerLocation.includes('storage') || lowerLocation.includes('room')) {
-      return '📦';
+    } else if (lowerLocation.includes('pantry')) {
+      return '🏠';
     }
     
-    return '📍'; // Default from mobile app
+    return '📦';
   };
 
   const getDaysText = (days: number) => {
-    if (days < 0) return `${Math.abs(days)} ${t('time.overdue')}`;
-    if (days === 0) return t('time.expirestoday');
-    if (days === 1) return t('time.expirestomorrow');
-    return `${days} ${t('time.expiresIn')}`;
+    if (days === 0) return t('item.expirestoday');
+    if (days === 1) return `1 ${t('item.dayLeft')}`;
+    if (days > 0) return `${days} ${t('item.daysLeft')}`;
+    if (days === -1) return `1 ${t('item.dayAgo')}`;
+    return `${Math.abs(days)} ${t('item.daysAgo')}`;
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
       case 'fresh': return t('status.fresh');
-      case 'expiring-soon': return t('status.expiringSoon');
+      case 'expiring-soon': return t('status.expiring');
       case 'expired': return t('status.expired');
       default: return status;
     }
@@ -227,215 +186,270 @@ const Dashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'fresh': return 'var(--success-color)';
-      case 'expiring-soon': return 'var(--warning-color)';
-      case 'expired': return 'var(--danger-color)';
-      default: return 'var(--text-secondary)';
+      case 'fresh': return '#4CAF50';
+      case 'expiring-soon': return '#FF9800';
+      case 'expired': return '#F44336';
+      default: return '#757575';
     }
   };
 
   if (isLoading) {
     return (
       <div className="loading">
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔄</div>
-          <div>{t('loading.inventory')}</div>
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>{t('status.loading')}</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="fade-in">
-      {/* Dashboard Header */}
-      <div className="dashboard-header">
-        <div>
-          <h2>{t('dashboard.title')}</h2>
-          <p style={{ color: 'var(--text-secondary)', margin: '0.5rem 0 0 0' }}>
-            {t('dashboard.subtitle')}
-          </p>
-        </div>
-        <div className="d-flex gap-2" style={{ flexWrap: 'wrap' }}>
-          <Link to="/add-item" className="btn btn-primary">
-            ➕ {t('nav.addItem')}
-          </Link>
-          <Link to="/locations" className="btn btn-secondary">
-            📍 {t('nav.locations')}
-          </Link>
-          <Link to="/categories" className="btn btn-secondary">
-            🏷️ {t('nav.categories')}
-          </Link>
-        </div>
+  if (error) {
+    return (
+      <div className="error-message">
+        <h2>{t('status.error')}</h2>
+        <p>{error}</p>
+        <button onClick={loadData} className="btn btn-primary">
+          {t('status.retry')}
+        </button>
       </div>
+    );
+  }
 
-      {/* Quick Stats */}
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
-          <h3>{foodItems.length}</h3>
-          <p>{t('dashboard.totalItems')}</p>
-        </div>
-        <div className="stat-card">
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
-          <h3>{freshItems.length}</h3>
-          <p>{t('dashboard.freshItems')}</p>
-        </div>
-        <div className="stat-card warning">
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏰</div>
-          <h3>{expiringSoonItems.length}</h3>
-          <p>{t('dashboard.expiringSoon')}</p>
-        </div>
-        <div className="stat-card danger">
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
-          <h3>{expiredItems.length}</h3>
-          <p>{t('dashboard.expiredItems')}</p>
-        </div>
-      </div>
+  // Filter view
+  if (filter) {
+    const filteredItems = foodItems.filter(item => item.status === filter);
+    const pageTitle = filter === 'fresh' ? t('status.fresh') : 
+                     filter === 'expiring-soon' ? t('status.expiring') :
+                     t('status.expired');
 
-      {/* Quick Actions */}
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <div className="card-body">
-          <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>{t('quickActions.title')}</h3>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '1rem' 
-          }}>
-            <Link to="/add-item" className="btn btn-primary" style={{ textAlign: 'center' }}>
-              ➕ {t('action.addFood')}
+    return (
+      <div className="dashboard filtered-view">
+        <div className="dashboard-header">
+          <div className="header-content">
+            <h1>{pageTitle} {t('status.items')}</h1>
+            <p>{filteredItems.length} {t('status.items').toLowerCase()}</p>
+          </div>
+          <div className="header-actions">
+            <Link to="/dashboard" className="btn btn-secondary">
+              ← {t('status.viewAll')}
             </Link>
-            <Link to="/add-location" className="btn btn-secondary" style={{ textAlign: 'center' }}>
-              📍 {t('action.addLocation')}
-            </Link>
-            <Link to="/add-category" className="btn btn-secondary" style={{ textAlign: 'center' }}>
-              🏷️ {t('action.addCategory')}
-            </Link>
-            <button 
-              onClick={() => alert(`${t('action.cleanup')}! ${t('confirm.demoMode')}`)}
-              className="btn btn-danger" 
-              style={{ textAlign: 'center' }}
-            >
-              🗑️ {t('action.cleanup')}
+            <button onClick={loadData} className="btn btn-secondary">
+              🔄 {t('status.refresh')}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Recent Items */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div className="d-flex align-center" style={{ justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-          <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>{t('recent.title')}</h3>
-          <Link to="/items" className="btn btn-secondary btn-small">{t('recent.viewAll')}</Link>
-        </div>
-
-        <div className="food-items-grid">
-          {foodItems.slice(0, 6).map((item) => (
-            <div 
-              key={item.id} 
-              className={`food-item-card ${item.status}`}
-              onClick={() => handleCardClick(item.id)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="d-flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <h4 style={{ margin: 0, flex: 1 }}>{item.name}</h4>
-                <div className="d-flex align-center gap-2">
-                  <span className={`status ${item.status}`}>
-                    {getStatusText(item.status)}
-                  </span>
-                  <button
-                    onClick={(e) => handleDeleteItem(e, item.id, item.name)}
-                    className="btn btn-danger btn-small"
-                    style={{ 
-                      padding: '0.25rem 0.5rem',
-                      fontSize: '0.75rem',
-                      minWidth: 'auto'
-                    }}
+        {filteredItems.length === 0 ? (
+          <div className="empty-state">
+            <h3>{t('status.noItems').replace('{status}', pageTitle.toLowerCase())}</h3>
+            <Link to="/add-item" className="btn btn-primary">
+              ➕ {t('action.add')} {t('form.itemName')}
+            </Link>
+          </div>
+        ) : (
+          <div className="items-grid">
+            {filteredItems.map((item) => (
+              <div 
+                key={item.id} 
+                className={`item-card ${item.status}`}
+                onClick={() => handleCardClick(item.id!)}
+              >
+                <div className="item-header">
+                  <div className="item-title">
+                    <span className="category-icon">{getCategoryIcon(item.category)}</span>
+                    <h3>{item.name}</h3>
+                  </div>
+                  <button 
+                    className="delete-btn"
+                    onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
                     title={t('action.delete')}
                   >
                     🗑️
                   </button>
                 </div>
-              </div>
-              
-              <div className="expiry-date" style={{ 
-                fontWeight: 600,
-                color: getStatusColor(item.status),
-                marginBottom: '1rem' 
-              }}>
-                {getDaysText(item.daysUntilExpiry)} • {t('time.expiresAt')}: {new Date(item.expiryDate).toLocaleDateString()}
-              </div>
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <div className="d-flex align-center gap-2" style={{ marginBottom: '0.5rem' }}>
-                  <span>{getCategoryIcon(item.category)}</span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{item.category}</span>
+                
+                <div className="item-details">
+                  <div className="detail-row">
+                    <span>{t('item.quantity')}: {item.quantity}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="location-icon">{getLocationIcon(item.location)}</span>
+                    <span>{item.location}</span>
+                  </div>
                 </div>
-                <div className="d-flex align-center gap-2" style={{ marginBottom: '0.5rem' }}>
-                  <span>{getLocationIcon(item.location)}</span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{item.location}</span>
-                </div>
-                <div className="d-flex align-center gap-2">
-                  <span>📦</span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{item.quantity}</span>
+                
+                <div className="item-status">
+                  <span 
+                    className="status-badge" 
+                    style={{ backgroundColor: getStatusColor(item.status!) }}
+                  >
+                    {getStatusText(item.status!)}
+                  </span>
+                  <span className="days-text">
+                    {getDaysText(item.daysUntilExpiry!)}
+                  </span>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
-              <div className="d-flex gap-2" style={{ marginTop: 'auto' }}>
-                <Link 
-                  to={`/edit-item/${item.id}`} 
-                  className="btn btn-primary btn-small" 
-                  style={{ flex: 1 }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  ✏️ {t('action.edit')}
-                </Link>
-              </div>
-            </div>
-          ))}
+  // Main dashboard view
+  return (
+    <div className="dashboard">
+      <div className="dashboard-header">
+        <div className="header-content">
+          <h1>{t('home.welcome')}</h1>
+          <p>{t('nav.dashboard')}</p>
+        </div>
+        <div className="header-actions">
+          <Link to="/add-item" className="btn btn-primary">
+            ➕ {t('nav.addItem')}
+          </Link>
+          <button onClick={loadData} className="btn btn-secondary">
+            🔄 {t('status.refresh')}
+          </button>
+          {stats.expired > 0 && (
+            <button 
+              onClick={handleCleanupExpired} 
+              className="btn btn-danger"
+              disabled={isCleaningUp}
+            >
+              🧹 {isCleaningUp ? t('cleanup.inProgress') : t('cleanup.cleanupExpired')}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Priority Alerts */}
-      {(expiredItems.length > 0 || expiringSoonItems.length > 0) && (
-        <div className="card" style={{ 
-          borderLeft: `4px solid ${expiredItems.length > 0 ? 'var(--danger-color)' : 'var(--warning-color)'}`,
-          marginBottom: '2rem' 
-        }}>
-          <div className="card-body">
-            <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
-              🚨 {t('alerts.title')}
-            </h3>
-            
-            {expiredItems.length > 0 && (
-              <div style={{ marginBottom: '1rem' }}>
-                <p style={{ color: 'var(--danger-color)', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  ⚠️ {expiredItems.length} {t('alerts.itemsExpired')}
-                </p>
-                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-                  {expiredItems.slice(0, 3).map(item => (
-                    <li key={item.id} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      {item.name} - {Math.abs(item.daysUntilExpiry)} {t('time.overdue')}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {expiringSoonItems.length > 0 && (
-              <div>
-                <p style={{ color: 'var(--warning-color)', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  ⏰ {expiringSoonItems.length} {t('alerts.itemsExpiring')}
-                </p>
-                <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-                  {expiringSoonItems.slice(0, 3).map(item => (
-                    <li key={item.id} style={{ color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
-                      {item.name} - {item.daysUntilExpiry} {t('time.expiresIn')}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+      {/* Statistics Cards */}
+      <div className="stats-grid">
+        <Link to="/items/fresh" className="stat-card fresh">
+          <div className="stat-header">
+            <h3>{t('status.fresh')}</h3>
+            <span className="stat-icon">✅</span>
           </div>
+          <div className="stat-number">{stats.fresh}</div>
+          <div className="stat-label">{t('status.items')}</div>
+        </Link>
+
+        <Link to="/items/expiring" className="stat-card expiring">
+          <div className="stat-header">
+            <h3>{t('status.expiring')}</h3>
+            <span className="stat-icon">⚠️</span>
+          </div>
+          <div className="stat-number">{stats.expiringSoon}</div>
+          <div className="stat-label">{t('status.items')}</div>
+        </Link>
+
+        <Link to="/items/expired" className="stat-card expired">
+          <div className="stat-header">
+            <h3>{t('status.expired')}</h3>
+            <span className="stat-icon">❌</span>
+          </div>
+          <div className="stat-number">{stats.expired}</div>
+          <div className="stat-label">{t('status.items')}</div>
+        </Link>
+
+        <div className="stat-card total">
+          <div className="stat-header">
+            <h3>{t('nav.dashboard')}</h3>
+            <span className="stat-icon">📊</span>
+          </div>
+          <div className="stat-number">{stats.total}</div>
+          <div className="stat-label">{t('status.items')}</div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        <h2>{t('home.categories')}</h2>
+        <div className="actions-grid">
+          <Link to="/categories" className="action-card">
+            <span className="action-icon">🏷️</span>
+            <h3>{t('nav.categories')}</h3>
+            <p>{categories.length} {t('home.categories').toLowerCase()}</p>
+          </Link>
+          
+          <Link to="/locations" className="action-card">
+            <span className="action-icon">📍</span>
+            <h3>{t('nav.locations')}</h3>
+            <p>{locations.length} {t('nav.locations').toLowerCase()}</p>
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent Items */}
+      {foodItems.length > 0 && (
+        <div className="recent-items">
+          <h2>{t('dashboard.recentItems')}</h2>
+          <div className="items-grid">
+            {foodItems.slice(0, 6).map((item) => (
+              <div 
+                key={item.id} 
+                className={`item-card ${item.status}`}
+                onClick={() => handleCardClick(item.id!)}
+              >
+                <div className="item-header">
+                  <div className="item-title">
+                    <span className="category-icon">{getCategoryIcon(item.category)}</span>
+                    <h3>{item.name}</h3>
+                  </div>
+                  <button 
+                    className="delete-btn"
+                    onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
+                    title={t('action.delete')}
+                  >
+                    🗑️
+                  </button>
+                </div>
+                
+                <div className="item-details">
+                  <div className="detail-row">
+                    <span>{t('item.quantity')}: {item.quantity}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="location-icon">{getLocationIcon(item.location)}</span>
+                    <span>{item.location}</span>
+                  </div>
+                </div>
+                
+                <div className="item-status">
+                  <span 
+                    className="status-badge" 
+                    style={{ backgroundColor: getStatusColor(item.status!) }}
+                  >
+                    {getStatusText(item.status!)}
+                  </span>
+                  <span className="days-text">
+                    {getDaysText(item.daysUntilExpiry!)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {foodItems.length > 6 && (
+            <div className="view-all">
+              <Link to="/items/all" className="btn btn-secondary">
+                {t('status.viewAll')} ({foodItems.length} {t('status.items')})
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {foodItems.length === 0 && (
+        <div className="empty-state">
+          <h3>{t('list.noItems')}</h3>
+          <p>{t('dashboard.getStarted')}</p>
+          <Link to="/add-item" className="btn btn-primary">
+            ➕ {t('nav.addItem')}
+          </Link>
         </div>
       )}
     </div>

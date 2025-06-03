@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, Link } from 'react-router-dom';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
@@ -10,18 +10,31 @@ import CategoryList from './components/CategoryList';
 import AddCategory from './components/AddCategory';
 import ItemDetails from './components/ItemDetails';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import { useAuth } from './hooks/useAuth';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { initializeUserData } from './services/firestoreService';
 import './App.css';
 
 const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
 
+  // Initialize user data when user first signs in
+  useEffect(() => {
+    if (user && !user.isDemo) {
+      initializeUserData(user.uid).catch(error => {
+        console.error('Failed to initialize user data:', error);
+      });
+    }
+  }, [user]);
+
   if (loading) {
     return (
       <div className="loading">
-        <div>Loading...</div>
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
@@ -179,6 +192,43 @@ const AppContent: React.FC = () => {
               </main>
             </div>
           } />
+
+          {/* Status pages for viewing items by status */}
+          <Route path="/items/fresh" element={
+            <div>
+              {renderAppHeader()}
+              <main>
+                <div className="container">
+                  {user ? <Dashboard filter="fresh" /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
+
+          <Route path="/items/expiring" element={
+            <div>
+              {renderAppHeader()}
+              <main>
+                <div className="container">
+                  {user ? <Dashboard filter="expiring-soon" /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
+
+          <Route path="/items/expired" element={
+            <div>
+              {renderAppHeader()}
+              <main>
+                <div className="container">
+                  {user ? <Dashboard filter="expired" /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
+
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
@@ -187,9 +237,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <AuthProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </AuthProvider>
   );
 };
 

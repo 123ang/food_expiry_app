@@ -1,131 +1,195 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { CategoriesService, Category } from '../services/firestoreService';
 
 const AddCategory: React.FC = () => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [icon, setIcon] = useState('🍽️');
-  const [color, setColor] = useState('#22c55e');
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    icon: '🍎',
+    color: '#FF6B6B'
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { t } = useLanguage();
+  const { user } = useAuth();
 
-  const predefinedIcons = [
-    '🍎', '🥕', '🥛', '🥩', '🐟', '🍞', '🥫', '🧊',
-    '🥗', '🍇', '🧄', '🥚', '🍗', '🥦', '🌽', '🍌',
-    '🥔', '🍅', '🥒', '🫐', '🥝', '🍑', '🥬', '🍽️'
+  const commonIcons = [
+    '🍎', '🍇', '🥕', '🥛', '🥩', '🍞', '🥤', '🍿', 
+    '🧊', '🐟', '🌶️', '🍰', '🌾', '🥫', '🍋', '🍌',
+    '🥔', '🧄', '🧅', '🥬', '🍅', '🥒', '🌽', '🥑'
   ];
 
-  const predefinedColors = [
-    '#ef4444', '#22c55e', '#3b82f6', '#dc2626', '#0ea5e9',
-    '#d97706', '#7c3aed', '#06b6d4', '#f59e0b', '#8b5cf6',
-    '#ec4899', '#10b981', '#6366f1', '#84cc16', '#f97316'
+  const commonColors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', 
+    '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
+    '#1DD1A1', '#FD79A8', '#A29BFE', '#6C5CE7', '#E17055'
   ];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    if (!name || !description) {
-      setError('Please fill in all required fields.');
-      return;
+  useEffect(() => {
+    if (id) {
+      setIsEditing(true);
+      loadCategory();
     }
+  }, [id]);
 
+  const loadCategory = async () => {
+    if (!id || !user) return;
+    
+    setIsLoading(true);
     try {
-      // Demo mode - just show success message
-      console.log('Adding category:', {
-        name,
-        description,
-        icon,
-        color,
-        addedAt: new Date(),
-      });
-      
-      setSuccess('Category added successfully! (Demo mode)');
-      
-      // Reset form
-      setName('');
-      setDescription('');
-      setIcon('🍽️');
-      setColor('#22c55e');
-      
-      // Navigate back after a short delay
-      setTimeout(() => {
-        navigate('/categories');
-      }, 1500);
-      
-    } catch (err: any) {
-      setError('Failed to add category. Please try again.');
-      console.error('Error adding category:', err);
+      const category = await CategoriesService.getCategory(id);
+      if (category) {
+        setFormData({
+          name: category.name,
+          description: category.description,
+          icon: category.icon,
+          color: category.color
+        });
+      } else {
+        setError('Category not found');
+      }
+    } catch (error) {
+      console.error('Error loading category:', error);
+      setError('Failed to load category');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null);
+  };
+
+  const handleIconSelect = (icon: string) => {
+    setFormData(prev => ({ ...prev, icon }));
+  };
+
+  const handleColorSelect = (color: string) => {
+    setFormData(prev => ({ ...prev, color }));
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      setError(t('validation.nameRequired'));
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user || !validateForm()) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      if (isEditing && id) {
+        await CategoriesService.updateCategory(id, formData);
+        alert(`${t('alert.success')}: ${t('categories.edit')}`);
+      } else {
+        await CategoriesService.addCategory(formData, user.uid);
+        alert(`${t('alert.success')}: ${t('categories.save')}`);
+      }
+      navigate('/categories');
+    } catch (error) {
+      console.error('Error saving category:', error);
+      setError(isEditing ? 'Failed to update category' : 'Failed to create category');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/categories');
+  };
+
+  if (isEditing && isLoading) {
+    return (
+      <div className="loading">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>{t('status.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container">
-      <div className="dashboard-header">
-        <h2>Add Food Category</h2>
-        <Link to="/categories" className="btn btn-secondary">← Back to Categories</Link>
+    <div className="add-category">
+      <div className="page-header">
+        <div className="header-content">
+          <h1>{isEditing ? t('categories.edit') : t('categories.addNew')}</h1>
+          <p>{isEditing ? t('categories.edit') : t('categories.addNew')}</p>
+        </div>
       </div>
 
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <form onSubmit={handleSubmit}>
+      <div className="form-container">
+        <form onSubmit={handleSubmit} className="category-form">
+          {error && (
+            <div className="error-message">
+              <p>{error}</p>
+            </div>
+          )}
+
           <div className="form-group">
-            <label htmlFor="name">Category Name *</label>
+            <label htmlFor="name" className="form-label">
+              {t('categories.name')} *
+            </label>
             <input
               type="text"
               id="name"
-              className="form-control"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="form-input"
+              placeholder={t('categories.name')}
               required
-              placeholder="e.g., Fruits, Vegetables, Dairy"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description *</label>
+            <label htmlFor="description" className="form-label">
+              {t('categories.description')}
+            </label>
             <textarea
               id="description"
-              className="form-control"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              placeholder="Describe what items belong to this category..."
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              className="form-textarea"
+              placeholder={t('categories.description')}
               rows={3}
-              style={{ resize: 'vertical', minHeight: '80px' }}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="icon">Category Icon</label>
-            <div style={{ marginBottom: '1rem' }}>
-              <input
-                type="text"
-                id="icon"
-                className="form-control"
-                value={icon}
-                onChange={(e) => setIcon(e.target.value)}
-                placeholder="Choose an emoji or enter custom"
-                style={{ marginBottom: '0.5rem' }}
-              />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {predefinedIcons.map((emoji) => (
+            <label className="form-label">
+              {t('categories.icon')}
+            </label>
+            <div className="icon-selector">
+              <div className="selected-icon" style={{ backgroundColor: formData.color }}>
+                {formData.icon}
+              </div>
+              <div className="icon-grid">
+                {commonIcons.map((icon) => (
                   <button
-                    key={emoji}
+                    key={icon}
                     type="button"
-                    onClick={() => setIcon(emoji)}
-                    style={{
-                      background: icon === emoji ? '#22c55e' : '#f3f4f6',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '6px',
-                      padding: '0.5rem',
-                      fontSize: '1.25rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
+                    onClick={() => handleIconSelect(icon)}
+                    className={`icon-option ${formData.icon === icon ? 'active' : ''}`}
                   >
-                    {emoji}
+                    {icon}
                   </button>
                 ))}
               </div>
@@ -133,72 +197,67 @@ const AddCategory: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="color">Category Color</label>
-            <div style={{ marginBottom: '1rem' }}>
-              <input
-                type="color"
-                id="color"
-                className="form-control"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                style={{ height: '50px', marginBottom: '0.5rem' }}
-              />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {predefinedColors.map((colorOption) => (
+            <label className="form-label">
+              {t('categories.color')}
+            </label>
+            <div className="color-selector">
+              <div className="color-preview" style={{ backgroundColor: formData.color }}>
+                <span>{formData.icon}</span>
+              </div>
+              <div className="color-grid">
+                {commonColors.map((color) => (
                   <button
-                    key={colorOption}
+                    key={color}
                     type="button"
-                    onClick={() => setColor(colorOption)}
-                    style={{
-                      background: colorOption,
-                      border: color === colorOption ? '3px solid #000' : '1px solid #e5e7eb',
-                      borderRadius: '50%',
-                      width: '30px',
-                      height: '30px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
+                    onClick={() => handleColorSelect(color)}
+                    className={`color-option ${formData.color === color ? 'active' : ''}`}
+                    style={{ backgroundColor: color }}
+                    title={color}
                   />
                 ))}
               </div>
+              <input
+                type="color"
+                value={formData.color}
+                onChange={(e) => handleColorSelect(e.target.value)}
+                className="color-input"
+              />
             </div>
           </div>
 
-          <div style={{ 
-            padding: '1rem', 
-            background: '#f9fafb', 
-            borderRadius: '8px', 
-            marginBottom: '1rem',
-            border: '1px solid #e5e7eb'
-          }}>
-            <h4 style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>Preview:</h4>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '2rem' }}>{icon}</span>
-              <span style={{ fontWeight: '600', color: color }}>{name || 'Category Name'}</span>
-            </div>
-          </div>
-
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
-
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-              Add Category
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="btn btn-secondary"
+              disabled={isLoading}
+            >
+              {t('categories.cancel')}
             </button>
-            <Link to="/categories" className="btn btn-secondary" style={{ flex: 1, textAlign: 'center' }}>
-              Cancel
-            </Link>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isLoading}
+            >
+              {isLoading ? t('status.loading') : (isEditing ? t('categories.save') : t('categories.save'))}
+            </button>
           </div>
         </form>
 
-        <div style={{ marginTop: '2rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px' }}>
-          <h4 style={{ marginBottom: '0.5rem', color: '#374151' }}>Category Tips:</h4>
-          <ul style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0, paddingLeft: '1rem' }}>
-            <li>Choose descriptive names that clearly identify the food type</li>
-            <li>Pick icons that visually represent the category</li>
-            <li>Use different colors to make categories easily distinguishable</li>
-            <li>Keep descriptions concise but informative</li>
-          </ul>
+        {/* Preview Card */}
+        <div className="category-preview">
+          <h3>{t('categories.preview')}</h3>
+          <div className="category-card preview">
+            <div className="category-header">
+              <div className="category-icon" style={{ backgroundColor: formData.color }}>
+                {formData.icon}
+              </div>
+            </div>
+            <div className="category-content">
+              <h3>{formData.name || t('categories.name')}</h3>
+              <p>{formData.description || t('categories.description')}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

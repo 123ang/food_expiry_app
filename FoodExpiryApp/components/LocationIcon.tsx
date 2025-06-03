@@ -6,8 +6,15 @@ interface LocationIconProps {
   size?: number;
 }
 
-// Location emoji mapping with more variety
+// Location emoji mapping for FontAwesome icon names
 const LOCATION_EMOJIS: { [key: string]: string } = {
+  // FontAwesome icon names from database
+  'snowflake-o': '❄️',    // Fridge
+  cube: '🧊',             // Freezer
+  home: '🏠',             // Pantry
+  archive: '🗄️',         // Cabinet
+  
+  // Additional common location names
   fridge: '❄️',
   freezer: '🧊',
   pantry: '🏠',
@@ -20,7 +27,6 @@ const LOCATION_EMOJIS: { [key: string]: string } = {
   shelf: '📚',
   storage: '📦',
   // Additional mappings to match settings and existing data
-  cube: '📦', // Map cube to storage box emoji
   office: '🏢',
   refrigerator: '❄️',
   room: '🏠',

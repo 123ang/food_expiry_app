@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { FoodItem } from '../database/models';
 
 export interface NotificationSettings {
@@ -11,16 +13,27 @@ export interface NotificationSettings {
   notificationTime: string; // HH:MM format
 }
 
+const DEFAULT_SETTINGS: NotificationSettings = {
+  notificationsEnabled: true,
+  expiryAlerts: true,
+  todayAlerts: true,
+  expiredAlerts: false,
+  reminderDays: 1,
+  notificationTime: '09:00'
+};
+
+// Configure notification behavior
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 export class NotificationService {
   private static instance: NotificationService;
-  private settings: NotificationSettings = {
-    notificationsEnabled: false,
-    expiryAlerts: true,
-    todayAlerts: true,
-    expiredAlerts: true,
-    reminderDays: 1,
-    notificationTime: '09:00'
-  };
+  private settings: NotificationSettings = DEFAULT_SETTINGS;
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -29,37 +42,181 @@ export class NotificationService {
     return NotificationService.instance;
   }
 
-  // Load notification settings from storage
-  async loadSettings(): Promise<NotificationSettings> {
+  async initialize(): Promise<void> {
+    await this.loadSettings();
+    await this.requestPermissions();
+    this.setupNotificationListener();
+  }
+
+  async loadSettings(): Promise<void> {
     try {
-      const settings = await AsyncStorage.getItem('notificationSettings');
-      if (settings) {
-        this.settings = { ...this.settings, ...JSON.parse(settings) };
+      const stored = await AsyncStorage.getItem('notification_settings');
+      if (stored) {
+        this.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
       }
-
-      // Check permission status
-      const { status } = await Notifications.getPermissionsAsync();
-      this.settings.notificationsEnabled = status === 'granted';
-      
     } catch (error) {
-      console.log('Error loading notification settings:', error);
+      // Silent error handling - use defaults
     }
-    return this.settings;
   }
 
-  // Save notification settings
-  async saveSettings(newSettings: Partial<NotificationSettings>): Promise<void> {
-    this.settings = { ...this.settings, ...newSettings };
+  async saveSettings(settings: Partial<NotificationSettings>): Promise<void> {
     try {
-      await AsyncStorage.setItem('notificationSettings', JSON.stringify(this.settings));
+      this.settings = { ...this.settings, ...settings };
+      await AsyncStorage.setItem('notification_settings', JSON.stringify(this.settings));
     } catch (error) {
-      console.log('Error saving notification settings:', error);
+      // Silent error handling
     }
   }
 
-  // Get current settings
   getSettings(): NotificationSettings {
-    return this.settings;
+    return { ...this.settings };
+  }
+
+  async requestPermissions(): Promise<boolean> {
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  }
+
+  async getPermissionStatus(): Promise<boolean> {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  }
+
+  private setupNotificationListener(): void {
+    // Handle notification taps
+    Notifications.addNotificationResponseReceivedListener((response) => {
+      this.handleNotificationTap(response.notification.request.content.data);
+    });
+  }
+
+  async scheduleExpiryNotification(
+    itemId: string,
+    itemName: string,
+    categoryName: string,
+    locationName: string,
+    daysUntilExpiry: number,
+    quantity: number = 1
+  ): Promise<void> {
+    if (!this.settings.notificationsEnabled) return;
+
+    let shouldNotify = false;
+    let title = '';
+    let body = '';
+
+    if (daysUntilExpiry === 0 && this.settings.todayAlerts) {
+      shouldNotify = true;
+      title = '🚨 Food Expiring Today!';
+      const quantityText = quantity > 1 ? `${quantity} ` : '';
+      const locationText = locationName ? ` in ${locationName}` : '';
+      body = `${quantityText}${itemName} (${categoryName}) expires today${locationText}. Use it now!`;
+    } else if (daysUntilExpiry > 0 && daysUntilExpiry <= 3 && this.settings.expiryAlerts) {
+      shouldNotify = true;
+      title = '⚠️ Food Expiring Soon';
+      const quantityText = quantity > 1 ? `${quantity} ` : '';
+      const locationText = locationName ? ` in ${locationName}` : '';
+      const daysText = daysUntilExpiry === 1 ? 'day' : 'days';
+      body = `${quantityText}${itemName} (${categoryName}) will expire in ${daysUntilExpiry} ${daysText}${locationText}`;
+    } else if (daysUntilExpiry < 0 && this.settings.expiredAlerts) {
+      shouldNotify = true;
+      title = '❌ Food Has Expired';
+      const quantityText = quantity > 1 ? `${quantity} ` : '';
+      const locationText = locationName ? ` in ${locationName}` : '';
+      const expiredDays = Math.abs(daysUntilExpiry);
+      const daysText = expiredDays === 1 ? 'day' : 'days';
+      body = `${quantityText}${itemName} (${categoryName}) expired ${expiredDays} ${daysText} ago${locationText}`;
+    }
+
+    if (!shouldNotify) return;
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data: {
+            itemId,
+            itemName,
+            categoryName,
+            locationName,
+            daysUntilExpiry,
+            type: 'expiry_alert'
+          },
+        },
+        trigger: null, // Show immediately
+      });
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  async cancelAllNotifications(): Promise<void> {
+    try {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  async cancelNotificationForItem(itemId: string): Promise<void> {
+    try {
+      const notifications = await Notifications.getAllScheduledNotificationsAsync();
+      const itemNotifications = notifications.filter(
+        notif => notif.content.data?.itemId === itemId
+      );
+      
+      for (const notification of itemNotifications) {
+        await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      }
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  async scheduleTestNotification(): Promise<void> {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🍎 Food Expiry Alert',
+          body: 'This is a test notification from Expiry Alert!',
+          data: { type: 'test' },
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  private handleNotificationTap(data: any): void {
+    if (data?.type === 'expiry_alert' && data?.itemId) {
+      // Navigate to specific item
+      router.push(`/item/${data.itemId}`);
+    } else if (data?.type === 'expiry_alert') {
+      // Navigate to food list
+      router.push('/list');
+    } else if (data?.type === 'test') {
+      // Handle test notification
+    }
+  }
+
+  async getBadgeCount(): Promise<number> {
+    try {
+      return await Notifications.getBadgeCountAsync();
+    } catch (error) {
+      return 0;
+    }
+  }
+
+  async setBadgeCount(count: number): Promise<void> {
+    try {
+      await Notifications.setBadgeCountAsync(count);
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  async clearBadge(): Promise<void> {
+    await this.setBadgeCount(0);
   }
 
   // Schedule notifications for all food items
@@ -69,99 +226,11 @@ export class NotificationService {
     }
 
     // Cancel all existing notifications first
-    await this.cancelAllScheduledNotifications();
+    await this.cancelAllNotifications();
 
     // Schedule new notifications for each food item
     for (const item of foodItems) {
-      await this.scheduleNotificationsForItem(item);
-    }
-  }
-
-  // Schedule notifications for a single food item
-  async scheduleNotificationsForItem(item: FoodItem): Promise<void> {
-    if (!this.settings.notificationsEnabled || !item.expiry_date) {
-      return;
-    }
-
-    const now = new Date();
-    const expiryDate = new Date(item.expiry_date);
-    const timeDiffDays = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
-
-    // Parse notification time
-    const [hours, minutes] = this.settings.notificationTime.split(':').map(Number);
-
-    // Schedule "Expiring Soon" notification
-    if (this.settings.expiryAlerts && timeDiffDays === this.settings.reminderDays && timeDiffDays > 0) {
-      const notificationDate = new Date(expiryDate);
-      notificationDate.setDate(notificationDate.getDate() - this.settings.reminderDays);
-      notificationDate.setHours(hours, minutes, 0, 0);
-
-      if (notificationDate > now) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: '⚠️ Food Expiring Soon',
-            body: `${item.name} will expire in ${this.settings.reminderDays} day${this.settings.reminderDays > 1 ? 's' : ''}`,
-            data: { 
-              type: 'expiring_soon', 
-              itemId: item.id,
-              itemName: item.name,
-              daysLeft: this.settings.reminderDays
-            },
-            sound: true,
-          },
-          trigger: notificationDate,
-          identifier: `expiring_soon_${item.id}`
-        });
-      }
-    }
-
-    // Schedule "Expiring Today" notification
-    if (this.settings.todayAlerts && timeDiffDays === 0) {
-      const todayNotificationDate = new Date(expiryDate);
-      todayNotificationDate.setHours(hours, minutes, 0, 0);
-
-      if (todayNotificationDate > now) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: '🚨 Food Expiring Today!',
-            body: `${item.name} expires today. Use it now!`,
-            data: { 
-              type: 'expiring_today', 
-              itemId: item.id,
-              itemName: item.name,
-              daysLeft: 0
-            },
-            sound: true,
-          },
-          trigger: todayNotificationDate,
-          identifier: `expiring_today_${item.id}`
-        });
-      }
-    }
-
-    // Schedule "Expired" notification
-    if (this.settings.expiredAlerts && timeDiffDays === -1) {
-      const expiredNotificationDate = new Date(expiryDate);
-      expiredNotificationDate.setDate(expiredNotificationDate.getDate() + 1);
-      expiredNotificationDate.setHours(hours, minutes, 0, 0);
-
-      if (expiredNotificationDate > now) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: '❌ Food Has Expired',
-            body: `${item.name} expired yesterday. Check if it's still safe to consume.`,
-            data: { 
-              type: 'expired', 
-              itemId: item.id,
-              itemName: item.name,
-              daysLeft: -1
-            },
-            sound: true,
-          },
-          trigger: expiredNotificationDate,
-          identifier: `expired_${item.id}`
-        });
-      }
+      await this.scheduleExpiryNotification(item.id.toString(), item.name, item.category, item.location, Math.ceil((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)));
     }
   }
 
@@ -205,45 +274,6 @@ export class NotificationService {
       },
       trigger: { seconds: 2 },
     });
-  }
-
-  // Cancel all scheduled notifications
-  async cancelAllScheduledNotifications(): Promise<void> {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-  }
-
-  // Cancel notifications for a specific item
-  async cancelNotificationsForItem(itemId: number): Promise<void> {
-    await Notifications.cancelScheduledNotificationAsync(`expiring_soon_${itemId}`);
-    await Notifications.cancelScheduledNotificationAsync(`expiring_today_${itemId}`);
-    await Notifications.cancelScheduledNotificationAsync(`expired_${itemId}`);
-  }
-
-  // Get scheduled notifications count
-  async getScheduledNotificationsCount(): Promise<number> {
-    const notifications = await Notifications.getAllScheduledNotificationsAsync();
-    return notifications.length;
-  }
-
-  // Handle notification response (when user taps notification)
-  handleNotificationResponse(response: Notifications.NotificationResponse): void {
-    const data = response.notification.request.content.data;
-    
-    switch (data.type) {
-      case 'expiring_soon':
-      case 'expiring_today':
-      case 'expired':
-        // Navigate to food item details or list
-        console.log(`Navigate to item: ${data.itemName} (ID: ${data.itemId})`);
-        break;
-      case 'daily_check':
-        // Navigate to main app or refresh data
-        console.log('Navigate to main food list');
-        break;
-      case 'test':
-        console.log('Test notification received');
-        break;
-    }
   }
 
   // Send immediate notification summary
@@ -297,27 +327,6 @@ export class NotificationService {
       },
       trigger: { seconds: 1 },
     });
-  }
-
-  // Request notification permissions
-  async requestPermissions(): Promise<boolean> {
-    const { status } = await Notifications.requestPermissionsAsync();
-    const granted = status === 'granted';
-    
-    this.settings.notificationsEnabled = granted;
-    await this.saveSettings({ notificationsEnabled: granted });
-    
-    return granted;
-  }
-
-  // Check if notifications are permitted
-  async checkPermissions(): Promise<boolean> {
-    const { status } = await Notifications.getPermissionsAsync();
-    const granted = status === 'granted';
-    
-    this.settings.notificationsEnabled = granted;
-    
-    return granted;
   }
 }
 

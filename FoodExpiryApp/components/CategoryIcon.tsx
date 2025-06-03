@@ -6,9 +6,20 @@ interface CategoryIconProps {
   size?: number;
 }
 
-// Category emoji mapping
+// Category emoji mapping for FontAwesome icon names
 const CATEGORY_EMOJIS: { [key: string]: string } = {
-  apple: '🍎',
+  // FontAwesome icon names from database
+  leaf: '🥬',           // Vegetables
+  heart: '🍇',          // Fruits (changed from 🍎 to 🍇)
+  tint: '🥛',           // Dairy
+  cutlery: '🥩',        // Meat
+  star: '🍿',           // Snacks
+  'birthday-cake': '🍰', // Desserts
+  ship: '🐟',           // Seafood
+  plus: '🍞',           // Bread
+  
+  // Additional common category names
+  apple: '🍎',          // Keep apple as 🍎
   dairy: '🥛',
   fruits: '🍇',
   vegetables: '🥕',
