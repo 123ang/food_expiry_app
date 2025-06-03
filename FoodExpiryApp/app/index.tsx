@@ -631,10 +631,10 @@ export default function DashboardScreen() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: theme.primaryColor,
+      backgroundColor: theme.backgroundColor,
     },
     loadingText: {
-      color: '#FFFFFF',
+      color: theme.textColor,
       fontSize: 16,
       fontWeight: 'bold',
       marginTop: 16,
