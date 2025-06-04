@@ -11,11 +11,12 @@ const CUSTOM_FONTS = {
 };
 
 // For local assets (preferred method), place font files in assets/fonts/ and use:
+// Commented out until font files are actually downloaded and placed in assets/fonts/
 const LOCAL_CUSTOM_FONTS = {
-  'ShipporiMincho-Regular': require('../assets/fonts/ShipporiMincho-Regular.otf'),
-  'ShipporiMincho-Medium': require('../assets/fonts/ShipporiMincho-Medium.otf'),
-  'ShipporiMincho-SemiBold': require('../assets/fonts/ShipporiMincho-SemiBold.otf'),
-  'ShipporiMincho-Bold': require('../assets/fonts/ShipporiMincho-Bold.otf'),
+  // 'ShipporiMincho-Regular': require('../assets/fonts/ShipporiMincho-Regular.otf'),
+  // 'ShipporiMincho-Medium': require('../assets/fonts/ShipporiMincho-Medium.otf'),
+  // 'ShipporiMincho-SemiBold': require('../assets/fonts/ShipporiMincho-SemiBold.otf'),
+  // 'ShipporiMincho-Bold': require('../assets/fonts/ShipporiMincho-Bold.otf'),
 };
 
 export const loadCustomFonts = async () => {

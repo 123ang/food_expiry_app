@@ -303,31 +303,35 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Refresh functions with cache management
   const refreshCategories = async () => {
     try {
-      // Invalidate cache first
+      // Clear cache to force fresh data load
       invalidateCache([CACHE_KEYS.CATEGORIES]);
       
-      const data = await CategoryRepository.getAll();
+      setIsLoading(true);
+      const data = await loadCategories();
       setCategories(data);
-      
-      // Update cache with fresh data
       setCacheEntry(categoriesCache, data);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch categories'));
+      incrementDataVersion();
+    } catch (error) {
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const refreshLocations = async () => {
     try {
-      // Invalidate cache first
+      // Clear cache to force fresh data load
       invalidateCache([CACHE_KEYS.LOCATIONS]);
       
-      const data = await LocationRepository.getAll();
+      setIsLoading(true);
+      const data = await loadLocations();
       setLocations(data);
-      
-      // Update cache with fresh data
       setCacheEntry(locationsCache, data);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch locations'));
+      incrementDataVersion();
+    } catch (error) {
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -405,10 +409,13 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const refreshAll = async (): Promise<void> => {
     try {
-      // First clear cache to force fresh data
+      setIsLoading(true);
+      setError(null);
+      
+      // Clear all cache first to ensure fresh data
       clearCache();
       
-      // Load fresh data
+      // Reload all data in parallel
       const [categoriesData, locationsData, foodItemsData] = await Promise.all([
         loadCategories(),
         loadLocations(),
@@ -420,13 +427,28 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLocations(locationsData);
       setFoodItems(foodItemsData);
       
-      // Refresh dashboard counts last
-      await refreshDashboardCounts();
+      // Update cache
+      setCacheEntry(categoriesCache, categoriesData);
+      setCacheEntry(locationsCache, locationsData);
+      setCacheEntry(foodItemsCache, foodItemsData);
       
-      // Increment data version to notify components
+      // Calculate dashboard counts
+      const total = foodItemsData.length;
+      const expiring_soon = foodItemsData.filter(item => item.status === 'expiring_soon').length;
+      const expired = foodItemsData.filter(item => item.status === 'expired').length;
+      const fresh = foodItemsData.filter(item => item.status === 'fresh').length;
+      
+      const counts = { total, expiring_soon, expired, fresh };
+      setDashboardCounts(counts);
+      setCacheEntry(dashboardCountsCache, counts);
+      
       incrementDataVersion();
-    } catch (error) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to refresh data');
+      setError(error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -43,11 +43,11 @@ export const FONT_FALLBACKS = {
   inter: 'system',
 } as const;
 
-// Language to font mapping
+// Language to font mapping with fallbacks
 export const LANGUAGE_FONTS = {
   en: 'merriweather',
   zh: 'inter', // Chinese uses Inter for now
-  ja: 'shippori',
+  ja: 'inter', // Use Inter as fallback for Japanese until Shippori Mincho is set up
 } as const;
 
 // Font weights mapping

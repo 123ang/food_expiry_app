@@ -92,15 +92,20 @@ export default function DashboardScreen() {
         
         const refreshData = async () => {
           try {
+            // Force clear cache and refresh all data when language changes
+            // This ensures categories and locations are updated with new language
             await refreshAll();
           } catch (error) {
             // Silent error handling for production
           }
         };
         
-        refreshData();
+        // Add a small delay to ensure database update is complete
+        setTimeout(() => {
+          refreshData();
+        }, 200);
       }
-    }, [language])
+    }, [language, refreshAll])
   );
 
   // Calculate location item counts
