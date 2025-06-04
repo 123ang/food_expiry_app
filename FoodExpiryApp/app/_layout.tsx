@@ -1,24 +1,44 @@
 import { Stack } from 'expo-router';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { DatabaseProvider } from '../context/DatabaseContext';
-import { LanguageProvider } from '../context/LanguageContext';
+import { LanguageProvider, useLanguage } from '../context/LanguageContext';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { useNotificationChecker } from '../hooks/useNotificationChecker';
 import { useFonts } from 'expo-font';
-import { FONTS_TO_LOAD, typography } from '../styles/typography';
+import { FONTS_TO_LOAD } from '../styles/typography';
+import { useTypography } from '../hooks/useTypography';
+import { loadCustomFonts } from '../styles/fontLoader';
+import { useEffect, useState } from 'react';
 
 function RootLayoutContent() {
   const { theme } = useTheme();
+  const { language } = useLanguage();
+  const [customFontsLoaded, setCustomFontsLoaded] = useState(false);
   
-  // Load fonts
+  // Get typography based on current language
+  const typography = useTypography(undefined, language);
+  
+  // Load standard fonts
   const [fontsLoaded] = useFonts(FONTS_TO_LOAD);
+  
+  // Load custom fonts (like Shippori Mincho)
+  useEffect(() => {
+    const loadFonts = async () => {
+      const loaded = await loadCustomFonts();
+      setCustomFontsLoaded(true); // Always set to true, as we have fallbacks
+    };
+    
+    if (fontsLoaded) {
+      loadFonts();
+    }
+  }, [fontsLoaded]);
   
   // Initialize notification checker for automatic expiry notifications
   useNotificationChecker();
 
   // Show loading spinner while fonts are loading
-  if (!fontsLoaded) {
+  if (!fontsLoaded || !customFontsLoaded) {
     return (
       <View style={{ 
         flex: 1, 

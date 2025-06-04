@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,12 +12,13 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { FoodItem } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
@@ -43,7 +44,9 @@ export default function DashboardScreen() {
     refreshAll,
     isDataAvailable,
   } = useDatabase();
-  const typography = useTypography();
+  
+  // Use language-aware typography
+  const typography = useTypography(undefined, language);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
