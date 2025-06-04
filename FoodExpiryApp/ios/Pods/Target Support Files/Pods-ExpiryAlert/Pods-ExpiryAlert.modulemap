@@ -1,0 +1,6 @@
+module Pods_ExpiryAlert {
+  umbrella header "Pods-ExpiryAlert-umbrella.h"
+
+  export *
+  module * { export * }
+}
