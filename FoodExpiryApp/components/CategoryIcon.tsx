@@ -6,11 +6,21 @@ interface CategoryIconProps {
   size?: number;
 }
 
-// Category emoji mapping for FontAwesome icon names
+// Category emoji mapping for FontAwesome icon names and direct emojis
 const CATEGORY_EMOJIS: { [key: string]: string } = {
-  // FontAwesome icon names from database
+  // New direct emoji mappings (from database)
+  '🥬': '🥬',           // Vegetables
+  '🍎': '🍎',           // Fruits
+  '🥛': '🥛',           // Dairy
+  '🥩': '🥩',           // Meat
+  '🍿': '🍿',           // Snacks
+  '🍰': '🍰',           // Desserts
+  '🐟': '🐟',           // Seafood
+  '🍞': '🍞',           // Bread
+  
+  // Legacy FontAwesome icon names (for backward compatibility)
   leaf: '🥬',           // Vegetables
-  heart: '🍇',          // Fruits (changed from 🍎 to 🍇)
+  heart: '🍎',          // Fruits
   tint: '🥛',           // Dairy
   cutlery: '🥩',        // Meat
   star: '🍿',           // Snacks
@@ -19,7 +29,7 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   plus: '🍞',           // Bread
   
   // Additional common category names
-  apple: '🍎',          // Keep apple as 🍎
+  apple: '🍎',
   dairy: '🥛',
   fruits: '🍇',
   vegetables: '🥕',
@@ -33,15 +43,23 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   spices: '🌶️',
   dessert: '🍰',
   grains: '🌾',
-  // Additional mappings for existing data
-  vegetable: '🥕', // Map singular form
-  fruit: '🍇',     // Map singular form
-  beverage: '🥤',  // Map singular form
+  vegetable: '🥕',
+  fruit: '🍇',
+  beverage: '🥤',
   default: '🍎',
 };
 
 const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
-  // First try exact match, then lowercase match, then default
+  // First check if it's already an emoji (length 1-4 Unicode characters)
+  if (iconName && /^[\u{1F300}-\u{1F9FF}]$/u.test(iconName)) {
+    return (
+      <Text style={[styles.emoji, { fontSize: size }]}>
+        {iconName}
+      </Text>
+    );
+  }
+  
+  // Otherwise use mapping
   let emoji = CATEGORY_EMOJIS.default;
   
   if (iconName) {

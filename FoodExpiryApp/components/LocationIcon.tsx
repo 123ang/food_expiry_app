@@ -6,19 +6,25 @@ interface LocationIconProps {
   size?: number;
 }
 
-// Location emoji mapping for FontAwesome icon names
+// Location emoji mapping for FontAwesome icon names and direct emojis
 const LOCATION_EMOJIS: { [key: string]: string } = {
-  // FontAwesome icon names from database
+  // New direct emoji mappings (from database)
+  '❄️': '❄️',             // Fridge
+  '🧊': '🧊',             // Freezer
+  '🏠': '🏠',             // Pantry
+  '📦': '📦',             // Cabinet
+  
+  // Legacy FontAwesome icon names (for backward compatibility)
   'snowflake-o': '❄️',    // Fridge
   cube: '🧊',             // Freezer
   home: '🏠',             // Pantry
-  archive: '🗄️',         // Cabinet
+  archive: '📦',          // Cabinet
   
   // Additional common location names
   fridge: '❄️',
   freezer: '🧊',
   pantry: '🏠',
-  cabinet: '🗄️',
+  cabinet: '📦',
   counter: '🍽️',
   basement: '⬇️',
   garage: '🏢',
@@ -26,7 +32,6 @@ const LOCATION_EMOJIS: { [key: string]: string } = {
   cupboard: '🗃️',
   shelf: '📚',
   storage: '📦',
-  // Additional mappings to match settings and existing data
   office: '🏢',
   refrigerator: '❄️',
   room: '🏠',
@@ -34,7 +39,16 @@ const LOCATION_EMOJIS: { [key: string]: string } = {
 };
 
 const LocationIcon: React.FC<LocationIconProps> = ({ iconName, size = 24 }) => {
-  // First try exact match, then lowercase match, then default
+  // First check if it's already an emoji (length 1-4 Unicode characters)
+  if (iconName && /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]$/u.test(iconName)) {
+    return (
+      <Text style={[styles.emoji, { fontSize: size }]}>
+        {iconName}
+      </Text>
+    );
+  }
+  
+  // Otherwise use mapping
   let emoji = LOCATION_EMOJIS.default;
   
   if (iconName) {
@@ -57,7 +71,7 @@ const LocationIcon: React.FC<LocationIconProps> = ({ iconName, size = 24 }) => {
       emoji = '🍳';
     }
     else if (iconName.toLowerCase().includes('cabinet') || iconName.toLowerCase().includes('cupboard')) {
-      emoji = '🗄️';
+      emoji = '📦';
     }
     else if (iconName.toLowerCase().includes('counter')) {
       emoji = '🍽️';

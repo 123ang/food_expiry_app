@@ -281,34 +281,34 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
 const getDefaultCategories = (language: Language): Category[] => {
   const categoriesMap: Record<Language, Category[]> = {
     en: [
-      { name: 'Vegetables', icon: 'leaf' },
-      { name: 'Fruits', icon: 'heart' },
-      { name: 'Dairy', icon: 'tint' },
-      { name: 'Meat', icon: 'cutlery' },
-      { name: 'Snacks', icon: 'star' },
-      { name: 'Desserts', icon: 'birthday-cake' },
-      { name: 'Seafood', icon: 'ship' },
-      { name: 'Bread', icon: 'plus' }
+      { name: 'Vegetables', icon: '🥬' },
+      { name: 'Fruits', icon: '🍎' },
+      { name: 'Dairy', icon: '🥛' },
+      { name: 'Meat', icon: '🥩' },
+      { name: 'Snacks', icon: '🍿' },
+      { name: 'Desserts', icon: '🍰' },
+      { name: 'Seafood', icon: '🐟' },
+      { name: 'Bread', icon: '🍞' }
     ],
     zh: [
-      { name: '蔬菜', icon: 'leaf' },
-      { name: '水果', icon: 'heart' },
-      { name: '乳制品', icon: 'tint' },
-      { name: '肉类', icon: 'cutlery' },
-      { name: '零食', icon: 'star' },
-      { name: '甜点', icon: 'birthday-cake' },
-      { name: '海鲜', icon: 'ship' },
-      { name: '面包', icon: 'plus' }
+      { name: '蔬菜', icon: '🥬' },
+      { name: '水果', icon: '🍎' },
+      { name: '乳制品', icon: '🥛' },
+      { name: '肉类', icon: '🥩' },
+      { name: '零食', icon: '🍿' },
+      { name: '甜点', icon: '🍰' },
+      { name: '海鲜', icon: '🐟' },
+      { name: '面包', icon: '🍞' }
     ],
     ja: [
-      { name: '野菜', icon: 'leaf' },
-      { name: '果物', icon: 'heart' },
-      { name: '乳製品', icon: 'tint' },
-      { name: '肉', icon: 'cutlery' },
-      { name: 'スナック', icon: 'star' },
-      { name: 'デザート', icon: 'birthday-cake' },
-      { name: '海産物', icon: 'ship' },
-      { name: 'パン', icon: 'plus' }
+      { name: '野菜', icon: '🥬' },
+      { name: '果物', icon: '🍎' },
+      { name: '乳製品', icon: '🥛' },
+      { name: '肉', icon: '🥩' },
+      { name: 'スナック', icon: '🍿' },
+      { name: 'デザート', icon: '🍰' },
+      { name: '海産物', icon: '🐟' },
+      { name: 'パン', icon: '🍞' }
     ]
   };
   
@@ -322,22 +322,22 @@ const getDefaultCategories = (language: Language): Category[] => {
 const getDefaultLocations = (language: Language): Location[] => {
   const locationsMap: Record<Language, Location[]> = {
     en: [
-      { name: 'Fridge', icon: 'snowflake-o' },
-      { name: 'Freezer', icon: 'cube' },
-      { name: 'Pantry', icon: 'home' },
-      { name: 'Cabinet', icon: 'archive' }
+      { name: 'Fridge', icon: '❄️' },
+      { name: 'Freezer', icon: '🧊' },
+      { name: 'Pantry', icon: '🏠' },
+      { name: 'Cabinet', icon: '📦' }
     ],
     zh: [
-      { name: '冰箱', icon: 'snowflake-o' },
-      { name: '冷冻室', icon: 'cube' },
-      { name: '储藏室', icon: 'home' },
-      { name: '橱柜', icon: 'archive' }
+      { name: '冰箱', icon: '❄️' },
+      { name: '冷冻室', icon: '🧊' },
+      { name: '储藏室', icon: '🏠' },
+      { name: '橱柜', icon: '📦' }
     ],
     ja: [
-      { name: '冷蔵庫', icon: 'snowflake-o' },
-      { name: '冷凍庫', icon: 'cube' },
-      { name: 'パントリー', icon: 'home' },
-      { name: 'キャビネット', icon: 'archive' }
+      { name: '冷蔵庫', icon: '❄️' },
+      { name: '冷凍庫', icon: '🧊' },
+      { name: 'パントリー', icon: '🏠' },
+      { name: 'キャビネット', icon: '📦' }
     ]
   };
   
