@@ -40,6 +40,31 @@ const FoodItemCard: React.FC<{
     }
   };
 
+  const renderDaysText = () => {
+    if (item.days_until_expiry > 0) {
+      return (
+        <Text style={[styles.metaText, { color: statusInfo.color }]}>
+          <Text style={styles.daysNumber}>{item.days_until_expiry}</Text>
+          <Text style={styles.daysText}> days left</Text>
+        </Text>
+      );
+    } else if (item.days_until_expiry === 0) {
+      return (
+        <Text style={[styles.metaText, { color: statusInfo.color }]}>
+          Expires today
+        </Text>
+      );
+    } else {
+      return (
+        <Text style={[styles.metaText, { color: statusInfo.color }]}>
+          <Text style={styles.daysText}>Expired </Text>
+          <Text style={styles.daysNumber}>{Math.abs(item.days_until_expiry)}</Text>
+          <Text style={styles.daysText}> days ago</Text>
+        </Text>
+      );
+    }
+  };
+
   const statusInfo = getStatusInfo();
 
   return (
@@ -60,7 +85,10 @@ const FoodItemCard: React.FC<{
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.statusContainer}>
             <Text style={{ fontSize: 16 }}>{statusInfo.icon}</Text>
-            <Text style={styles.quantity}>x{item.quantity}</Text>
+            <Text style={styles.quantity}>
+              <Text style={styles.quantityPrefix}>x</Text>
+              <Text style={styles.quantityNumber}>{item.quantity}</Text>
+            </Text>
           </View>
         </View>
         <View style={styles.foodMeta}>
@@ -70,13 +98,7 @@ const FoodItemCard: React.FC<{
           </View>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 16 }}>📅</Text>
-            <Text style={[styles.metaText, { color: statusInfo.color }]}>
-              {item.days_until_expiry > 0
-                ? `${item.days_until_expiry} days left`
-                : item.days_until_expiry === 0
-                ? 'Expires today'
-                : `Expired ${Math.abs(item.days_until_expiry)} days ago`}
-            </Text>
+            {renderDaysText()}
           </View>
         </View>
       </View>
@@ -205,7 +227,7 @@ export default function CategoryDetailScreen() {
     statsCount: {
       fontSize: 28,
       fontWeight: 'bold',
-      color: theme.textColor,
+      color: theme.primaryColor,
       textAlign: 'center',
     },
     foodItem: {
@@ -240,8 +262,13 @@ export default function CategoryDetailScreen() {
     quantity: {
       fontSize: 16,
       fontWeight: '500',
-      color: theme.textSecondary,
       marginLeft: 8,
+    },
+    quantityPrefix: {
+      color: theme.textSecondary,
+    },
+    quantityNumber: {
+      color: theme.primaryColor,
     },
     foodMeta: {
       flexDirection: 'column',
@@ -255,6 +282,13 @@ export default function CategoryDetailScreen() {
       marginLeft: 8,
       color: theme.textSecondary,
       fontSize: 14,
+    },
+    daysNumber: {
+      color: theme.primaryColor,
+      fontWeight: '600',
+    },
+    daysText: {
+      color: theme.textSecondary,
     },
     placeholderImage: {
       width: 80,

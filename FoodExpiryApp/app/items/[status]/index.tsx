@@ -79,7 +79,10 @@ const FoodItemCard: React.FC<{
           <Text style={styles.foodName}>{item.name}</Text>
           <View style={styles.statusContainer}>
             <Text style={{ fontSize: 16, color: statusInfo.color }}>{statusInfo.icon}</Text>
-            <Text style={[styles.quantity, { color: statusInfo.color }]}>x{item.quantity}</Text>
+            <Text style={styles.quantity}>
+              <Text style={styles.quantityPrefix}>x</Text>
+              <Text style={styles.quantityNumber}>{item.quantity}</Text>
+            </Text>
           </View>
         </View>
         <View style={styles.foodMeta}>
@@ -238,7 +241,7 @@ export default function ItemStatusScreen() {
     statsCount: {
       fontSize: 28,
       fontWeight: 'bold',
-      color: theme.textColor,
+      color: theme.primaryColor,
       textAlign: 'center',
     },
     foodItem: {
@@ -273,8 +276,13 @@ export default function ItemStatusScreen() {
     quantity: {
       fontSize: 16,
       fontWeight: '500',
-      color: theme.textSecondary,
       marginLeft: 8,
+    },
+    quantityPrefix: {
+      color: theme.textSecondary,
+    },
+    quantityNumber: {
+      color: theme.primaryColor,
     },
     foodMeta: {
       flexDirection: 'column',

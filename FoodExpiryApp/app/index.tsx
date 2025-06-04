@@ -301,7 +301,7 @@ export default function DashboardScreen() {
     },
     statValue: {
       ...typography.h2,
-      color: theme.textColor,
+      color: theme.primaryColor,
     },
     sectionTitle: {
       ...typography.h4,
@@ -333,14 +333,11 @@ export default function DashboardScreen() {
       }),
     },
     locationIcon: {
-      backgroundColor: 'rgba(76, 175, 80, 0.1)',
       width: 60,
       height: 60,
-      borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
-      overflow: 'hidden',
     },
     locationName: {
       color: theme.textColor,
@@ -539,14 +536,11 @@ export default function DashboardScreen() {
       }),
     },
     categoryIcon: {
-      backgroundColor: 'rgba(76, 175, 80, 0.1)',
       width: 60,
       height: 60,
-      borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 8,
-      overflow: 'hidden',
     },
     categoryName: {
       color: theme.textColor,
@@ -673,6 +667,13 @@ export default function DashboardScreen() {
       color: theme.textColor,
       textAlign: 'center' as const,
     },
+    numberText: {
+      fontWeight: 'bold',
+      color: theme.primaryColor,
+    },
+    greyText: {
+      color: theme.textSecondary,
+    },
   });
 
   const renderFoodItem = (item: any) => (
@@ -726,7 +727,8 @@ export default function DashboardScreen() {
             <View style={styles.welcomeText}>
               <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
               <Text style={styles.welcomeSubtitle}>
-                {dashboardCounts.expiring_soon} {dashboardCounts.expiring_soon === 1 ? t('home.item') : t('home.items')} {t('home.expiring')}
+                <Text style={styles.numberText}>{dashboardCounts.expiring_soon}</Text>
+                <Text style={styles.greyText}> {dashboardCounts.expiring_soon === 1 ? t('home.item') : t('home.items')} {t('home.expiring')}</Text>
               </Text>
             </View>
             <View style={styles.bannerIcon}>
@@ -739,7 +741,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
               onPress={() => router.push('/items/fresh')}
             >
-              <Text style={{ fontSize: 24, color: '#4CAF50', marginBottom: 8 }}>✅</Text>
+              <Text style={{ fontSize: 24, color: theme.successColor, marginBottom: 8 }}>✅</Text>
               <Text style={styles.statLabel}>{t('home.fresh')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
             </TouchableOpacity>
@@ -747,7 +749,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
               onPress={() => router.push('/items/expiring')}
             >
-              <Text style={{ fontSize: 24, color: '#FF9800', marginBottom: 8 }}>⏰</Text>
+              <Text style={{ fontSize: 24, color: theme.warningColor, marginBottom: 8 }}>⏰</Text>
               <Text style={styles.statLabel}>{t('list.expiring')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.expiring_soon}</Text>
             </TouchableOpacity>
@@ -755,7 +757,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
               onPress={() => router.push('/items/expired')}
             >
-              <Text style={{ fontSize: 24, color: '#F44336', marginBottom: 8 }}>⚠️</Text>
+              <Text style={{ fontSize: 24, color: theme.dangerColor, marginBottom: 8 }}>⚠️</Text>
               <Text style={styles.statLabel}>{t('home.expired')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.expired}</Text>
             </TouchableOpacity>
@@ -774,7 +776,8 @@ export default function DashboardScreen() {
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
-                  {location.id ? getLocationItemCounts()[location.id] || 0 : 0} {t('home.items')}
+                  <Text style={styles.numberText}>{location.id ? getLocationItemCounts()[location.id] || 0 : 0}</Text>
+                  <Text style={styles.greyText}> {t('home.items')}</Text>
                 </Text>
               </TouchableOpacity>
             ))}
@@ -796,7 +799,8 @@ export default function DashboardScreen() {
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>
-                    {category.id ? getCategoryItemCounts()[category.id] || 0 : 0} {t('home.items')}
+                    <Text style={styles.numberText}>{category.id ? getCategoryItemCounts()[category.id] || 0 : 0}</Text>
+                    <Text style={styles.greyText}> {t('home.items')}</Text>
                   </Text>
                 </TouchableOpacity>
               ))}
