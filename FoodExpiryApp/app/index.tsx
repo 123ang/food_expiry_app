@@ -244,7 +244,7 @@ export default function DashboardScreen() {
     },
     welcomeTitle: {
       ...typography.h3,
-      color: '#FFFFFF',
+      color: '#594D3E',
       marginBottom: 4,
     },
     welcomeSubtitle: {
