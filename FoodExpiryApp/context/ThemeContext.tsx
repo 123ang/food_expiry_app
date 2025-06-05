@@ -13,7 +13,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: originalTheme,
-  currentThemeType: 'recycled',
+  currentThemeType: 'original',
   setTheme: () => {},
   isDark: false,
   toggleTheme: () => {},
@@ -22,7 +22,7 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_STORAGE_KEY = '@food_expiry_theme';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [currentThemeType, setCurrentThemeType] = useState<ThemeType>('recycled'); // Default to current theme
+  const [currentThemeType, setCurrentThemeType] = useState<ThemeType>('original'); // Default to original theme for new users
   const [isLoading, setIsLoading] = useState(true);
 
   // Load saved theme on app start
@@ -35,9 +35,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
       if (savedTheme && (savedTheme as ThemeType) in themes) {
         setCurrentThemeType(savedTheme as ThemeType);
+      } else {
+        // For existing users who don't have a saved theme preference, 
+        // default to recycled theme (current design)
+        setCurrentThemeType('recycled');
       }
     } catch (error) {
       console.log('Error loading saved theme:', error);
+      // Fallback to recycled theme on error
+      setCurrentThemeType('recycled');
     } finally {
       setIsLoading(false);
     }
