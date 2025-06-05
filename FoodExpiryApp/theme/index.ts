@@ -27,8 +27,37 @@ export interface Theme {
   borderRadius: number;
 }
 
-export const lightTheme: Theme = {
-  // Main Colors - updated to match the warm peach/beige design
+export type ThemeType = 'original' | 'recycled' | 'dark';
+
+export const originalTheme: Theme = {
+  // Original white theme - clean and minimal
+  backgroundColor: '#FFFFFF',     // Pure white background
+  primaryColor: '#2E7D32',        // Dark green (darker than current green)
+  secondaryColor: '#F5F5F5',      // Light gray for secondary elements
+  textColor: '#000000',           // Pure black text
+  tertiaryColor: '#4CAF50',       // Medium green
+
+  // UI Colors
+  cardBackground: '#FFFFFF',      // White cards
+  borderColor: '#E0E0E0',         // Light gray borders
+  shadowColor: 'rgba(0, 0, 0, 0.1)',
+  textSecondary: '#666666',       // Gray secondary text
+  successColor: '#2E7D32',        // Dark green for success
+  warningColor: '#FF9800',        // Orange for warnings
+  dangerColor: '#F44336',         // Red for danger
+
+  // Header
+  headerBackground: '#FFFFFF',    // White header
+
+  // Gradients
+  gradientPrimary: ['#2E7D32', '#1B5E20'],  // Dark green gradient
+  gradientSecondary: ['#F5F5F5', '#EEEEEE'], // Light gray gradient
+  
+  borderRadius: 8,  // Smaller radius for cleaner look
+};
+
+export const recycledTheme: Theme = {
+  // Current recycled/eco theme - warm peach/beige design
   backgroundColor: '#F3C88B',     // Overall page background (pale peach/beige)
   primaryColor: '#4CAF50',        // Accent green (buttons, "0 items," bottom tab highlight)
   secondaryColor: '#FFF1D6',      // Header/"Expiry Alert" banner background (cream)
@@ -81,14 +110,28 @@ export const darkTheme: Theme = {
   borderRadius: 16,
 };
 
-export const navigationTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#4CAF50',    // Updated to match new accent green
-    background: '#F3C88B', // Updated to match new page background
-    card: '#FDF0C0',       // Updated to match new card background
-    text: '#2E2E2E',       // Updated to match new text color
-    border: '#E8DCC6',     // Updated to match border color
-  },
-}; 
+export const themes = {
+  original: originalTheme,
+  recycled: recycledTheme,
+  dark: darkTheme,
+};
+
+// Keep lightTheme as recycledTheme for backward compatibility
+export const lightTheme = recycledTheme;
+
+export const getNavigationTheme = (themeType: ThemeType) => {
+  const theme = themes[themeType];
+  return {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: theme.primaryColor,
+      background: theme.backgroundColor,
+      card: theme.cardBackground,
+      text: theme.textColor,
+      border: theme.borderColor,
+    },
+  };
+};
+
+export const navigationTheme = getNavigationTheme('recycled'); 

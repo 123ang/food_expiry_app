@@ -552,6 +552,30 @@ const createStyles = (theme: any) => StyleSheet.create({
   iconText: {
     fontSize: 16,
   },
+  themeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themePreview: {
+    flexDirection: 'row',
+    width: 60,
+    height: 20,
+    borderRadius: 4,
+    marginRight: 12,
+    overflow: 'hidden',
+  },
+  themeColorBox: {
+    flex: 1,
+    height: 20,
+  },
+  themeInfo: {
+    flex: 1,
+  },
+  themeDescription: {
+    fontSize: 12,
+    color: theme.textSecondary,
+    marginTop: 2,
+  },
 });
 
 const EditModal: React.FC<EditModalProps> = ({
@@ -667,16 +691,30 @@ const EditModal: React.FC<EditModalProps> = ({
 };
 
 export default function SettingsScreen() {
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation } = useDatabase();
   const router = useRouter();
 
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [editItem, setEditItem] = useState<Category | Location | null>(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
+
+  const getThemeDisplayName = (themeType: string) => {
+    switch (themeType) {
+      case 'original':
+        return t('settings.themeOriginal') || 'Original (White & Green)';
+      case 'recycled':
+        return t('settings.themeRecycled') || 'Recycled (Warm & Eco)';
+      case 'dark':
+        return t('settings.themeDark') || 'Dark Mode';
+      default:
+        return themeType;
+    }
+  };
 
   const settings: SettingItem[] = [
     {
@@ -689,12 +727,11 @@ export default function SettingsScreen() {
     },
     {
       id: 'theme',
-      icon: 'moon-o',
-      title: t('settings.darkMode'),
-      description: t('settings.darkModeDescription'),
-      type: 'switch',
-      value: isDark,
-      onValueChange: toggleTheme,
+      icon: 'paint-brush',
+      title: t('settings.theme') || 'Theme',
+      description: `${t('settings.themeDescription') || 'Choose your preferred theme'}: ${getThemeDisplayName(currentThemeType)}`,
+      type: 'navigation',
+      onPress: () => setShowThemeModal(true),
     },
     {
       id: 'categories',
@@ -892,6 +929,132 @@ export default function SettingsScreen() {
     </Modal>
   );
 
+  const renderThemeModal = () => (
+    <Modal
+      visible={showThemeModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowThemeModal(false)}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowThemeModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.languageModal}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+              {t('settings.theme') || 'Choose Theme'}
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowThemeModal(false)}
+            >
+              <FontAwesome name="times" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Original Theme */}
+          <TouchableOpacity
+            style={styles.languageOption}
+            onPress={() => {
+              setTheme('original');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#FFFFFF', borderColor: '#E0E0E0', borderWidth: 1 }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#2E7D32' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#000000' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'original' && styles.languageSelected
+                ]}>
+                  {t('settings.themeOriginal') || 'Original'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeOriginalDesc') || 'Clean white background with dark green accents'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'original' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Recycled Theme */}
+          <TouchableOpacity
+            style={styles.languageOption}
+            onPress={() => {
+              setTheme('recycled');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#F3C88B' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#4CAF50' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#FDF0C0' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'recycled' && styles.languageSelected
+                ]}>
+                  {t('settings.themeRecycled') || 'Recycled'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeRecycledDesc') || 'Warm eco-friendly peach and cream tones'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'recycled' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Dark Theme */}
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setTheme('dark');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#2C2417' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#4CAF50' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#3D3426' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'dark' && styles.languageSelected
+                ]}>
+                  {t('settings.themeDark') || 'Dark'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeDarkDesc') || 'Dark warm brown with green accents'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'dark' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   const renderAboutModal = () => (
     <Modal
       visible={showAboutModal}
@@ -1042,6 +1205,7 @@ export default function SettingsScreen() {
         />
 
         {renderLanguageModal()}
+        {renderThemeModal()}
         {renderAboutModal()}
         <BottomNav />
       </View>
