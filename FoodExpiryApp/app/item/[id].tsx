@@ -337,11 +337,17 @@ export default function ItemDetailsScreen() {
           </View>
 
           {item.image_uri && !imageError ? (
-            <Image 
-              source={{ uri: item.image_uri }} 
-              style={styles.itemImage}
-              onError={() => setImageError(true)}
-            />
+            item.image_uri.startsWith('emoji:') ? (
+              <View style={[styles.itemImage, { backgroundColor: `${theme?.primaryColor}10`, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ fontSize: 60 }}>{item.image_uri.replace('emoji:', '')}</Text>
+              </View>
+            ) : (
+              <Image 
+                source={{ uri: item.image_uri }} 
+                style={styles.itemImage}
+                onError={() => setImageError(true)}
+              />
+            )
           ) : (
             <View style={styles.placeholderImage}>
               <CategoryIcon iconName={item.category_icon} size={40} />

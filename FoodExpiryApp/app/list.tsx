@@ -370,7 +370,13 @@ export default function ListScreen() {
         onPress={() => router.push(`/item/${item.id}`)}
       >
         {item.image_uri ? (
-          <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
+          item.image_uri.startsWith('emoji:') ? (
+            <View style={[styles.foodImage, { backgroundColor: `${colors.primaryColor}10`, justifyContent: 'center', alignItems: 'center' }]}>
+              <Text style={{ fontSize: 24 }}>{item.image_uri.replace('emoji:', '')}</Text>
+            </View>
+          ) : (
+            <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
+          )
         ) : (
           <View style={[styles.foodImage, { backgroundColor: `${colors.primaryColor}20` }]}>
             <CategoryIcon iconName={item.category_icon} size={24} />
