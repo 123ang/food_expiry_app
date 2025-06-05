@@ -26,7 +26,7 @@
       "ios": {
         "resourceClass": "m-medium",
         "buildConfiguration": "Release",
-        "scheme": "ExpiredAlert"
+        "autoIncrement": "buildNumber"
       },
       "android": {
         "buildType": "app-bundle"
