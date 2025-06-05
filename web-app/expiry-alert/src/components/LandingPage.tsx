@@ -151,6 +151,59 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer style={{ 
+        backgroundColor: '#2c3e50', 
+        color: 'white', 
+        padding: '40px 0', 
+        marginTop: '50px' 
+      }}>
+        <div className="container">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '20px'
+          }}>
+            <div>
+              <p style={{ margin: '0', fontSize: '14px', color: '#bdc3c7' }}>
+                © 2024 Expiry Alert. All rights reserved.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+              <Link 
+                to="/privacy" 
+                style={{ 
+                  color: '#ecf0f1', 
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  transition: 'color 0.3s ease'
+                }}
+                onMouseOver={(e) => (e.target as HTMLElement).style.color = '#3498db'}
+                onMouseOut={(e) => (e.target as HTMLElement).style.color = '#ecf0f1'}
+              >
+                Privacy Policy
+              </Link>
+              <span style={{ color: '#7f8c8d' }}>|</span>
+              <a 
+                href="mailto:support@expiryalert.com" 
+                style={{ 
+                  color: '#ecf0f1', 
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  transition: 'color 0.3s ease'
+                }}
+                onMouseOver={(e) => (e.target as HTMLElement).style.color = '#3498db'}
+                onMouseOut={(e) => (e.target as HTMLElement).style.color = '#ecf0f1'}
+              >
+                Contact Support
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

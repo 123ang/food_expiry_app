@@ -10,6 +10,7 @@ import CategoryList from './components/CategoryList';
 import AddCategory from './components/AddCategory';
 import ItemDetails from './components/ItemDetails';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { initializeUserData } from './services/firestoreService';
@@ -222,6 +223,18 @@ const AppContent: React.FC = () => {
               <main>
                 <div className="container">
                   {user ? <Dashboard filter="expired" /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
+
+          {/* Public pages */}
+          <Route path="/privacy" element={
+            <div>
+              {renderAppHeader(false)}
+              <main>
+                <div className="container">
+                  <PrivacyPolicy />
                 </div>
               </main>
             </div>

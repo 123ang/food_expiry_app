@@ -1,0 +1,17 @@
+{
+  "name": "tablet-screenshots",
+  "version": "1.0.0",
+  "description": "Generate tablet screenshots for Google Play Store",
+  "main": "generate-screenshots.js",
+  "scripts": {
+    "generate": "node generate-screenshots.js",
+    "install-deps": "npm install puppeteer"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {},
+  "keywords": ["tablet", "screenshots", "google-play"],
+  "author": "Expiry Alert Team",
+  "license": "MIT"
+} 
