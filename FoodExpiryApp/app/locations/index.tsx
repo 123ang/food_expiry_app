@@ -21,19 +21,17 @@ import LocationIcon from '../../components/LocationIcon';
 import { Location } from '../../database/models';
 import { useLanguage } from '../../context/LanguageContext';
 
-// Location emojis for selection (same as settings)
+// Location emojis for selection - All 9 location emojis
 const LOCATION_EMOJIS = [
-  { key: 'fridge', emoji: '❄️', label: 'Fridge' },
   { key: 'freezer', emoji: '🧊', label: 'Freezer' },
+  { key: 'fridge', emoji: '❄️', label: 'Fridge' },
+  { key: 'cabinet', emoji: '📦', label: 'Cabinet' },
+  { key: 'lunch_box', emoji: '🍱', label: 'Lunch Box' },
+  { key: 'takeout_container', emoji: '🥡', label: 'Takeout Container' },
   { key: 'pantry', emoji: '🏠', label: 'Pantry' },
-  { key: 'cabinet', emoji: '🗄️', label: 'Cabinet' },
-  { key: 'counter', emoji: '🍽️', label: 'Counter' },
-  { key: 'basement', emoji: '⬇️', label: 'Basement' },
-  { key: 'garage', emoji: '🏢', label: 'Garage' },
-  { key: 'kitchen', emoji: '🍳', label: 'Kitchen' },
-  { key: 'cupboard', emoji: '🗃️', label: 'Cupboard' },
-  { key: 'shelf', emoji: '📚', label: 'Shelf' },
-  { key: 'storage', emoji: '📦', label: 'Storage' },
+  { key: 'dining_area', emoji: '🍽️', label: 'Dining Area' },
+  { key: 'storage_box', emoji: '📦', label: 'Storage Box' },
+  { key: 'shopping_cart', emoji: '🛒', label: 'Shopping Cart' },
 ];
 
 // Emoji Selector Component
@@ -69,15 +67,15 @@ const EmojiSelector: React.FC<{
     emojiGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       paddingVertical: 8,
+      gap: 8,
     },
     emojiButton: {
-      width: '22%',
-      aspectRatio: 1,
+      width: 70,
+      height: 70,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 12,
       borderRadius: 12,
       backgroundColor: theme.backgroundColor,
       borderWidth: 2,
@@ -88,13 +86,7 @@ const EmojiSelector: React.FC<{
       backgroundColor: `${theme.primaryColor}20`,
     },
     emojiText: {
-      fontSize: 28,
-      marginBottom: 4,
-      textAlign: 'center',
-    },
-    emojiLabel: {
-      fontSize: 10,
-      color: theme.textSecondary,
+      fontSize: 32,
       textAlign: 'center',
     },
     closeButton: {
@@ -128,7 +120,6 @@ const EmojiSelector: React.FC<{
                   onPress={() => onSelect(item.key)}
                 >
                   <Text style={styles.emojiText}>{item.emoji}</Text>
-                  <Text style={styles.emojiLabel}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>

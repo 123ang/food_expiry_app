@@ -24,37 +24,138 @@ import LocationIcon from '../components/LocationIcon';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-// Category emojis for selection
+// Category emojis for selection - All 91 food emojis
 const CATEGORY_EMOJIS = [
-  { key: 'apple', emoji: '🍎', label: 'Apple' },
-  { key: 'dairy', emoji: '🥛', label: 'Dairy' },
-  { key: 'fruits', emoji: '🍇', label: 'Fruits' },
-  { key: 'vegetables', emoji: '🥕', label: 'Vegetables' },
-  { key: 'meat', emoji: '🥩', label: 'Meat' },
+  // Fruits (15 emojis)
+  { key: 'apples', emoji: '🍎', label: 'Apples' },
+  { key: 'green_apples', emoji: '🍏', label: 'Green Apples' },
+  { key: 'pears', emoji: '🍐', label: 'Pears' },
+  { key: 'oranges', emoji: '🍊', label: 'Oranges' },
+  { key: 'lemons', emoji: '🍋', label: 'Lemons' },
+  { key: 'bananas', emoji: '🍌', label: 'Bananas' },
+  { key: 'watermelon', emoji: '🍉', label: 'Watermelon' },
+  { key: 'grapes', emoji: '🍇', label: 'Grapes' },
+  { key: 'strawberries', emoji: '🍓', label: 'Strawberries' },
+  { key: 'melon', emoji: '🍈', label: 'Melon' },
+  { key: 'cherries', emoji: '🍒', label: 'Cherries' },
+  { key: 'peaches', emoji: '🍑', label: 'Peaches' },
+  { key: 'pineapple', emoji: '🍍', label: 'Pineapple' },
+  { key: 'mango', emoji: '🥭', label: 'Mango' },
+  { key: 'coconut', emoji: '🥥', label: 'Coconut' },
+  
+  // Vegetables (11 emojis)
+  { key: 'tomatoes', emoji: '🍅', label: 'Tomatoes' },
+  { key: 'eggplant', emoji: '🍆', label: 'Eggplant' },
+  { key: 'corn', emoji: '🌽', label: 'Corn' },
+  { key: 'peppers', emoji: '🌶️', label: 'Peppers' },
+  { key: 'cucumber', emoji: '🥒', label: 'Cucumber' },
+  { key: 'carrots', emoji: '🥕', label: 'Carrots' },
+  { key: 'potatoes', emoji: '🥔', label: 'Potatoes' },
+  { key: 'garlic', emoji: '🧄', label: 'Garlic' },
+  { key: 'onions', emoji: '🧅', label: 'Onions' },
+  { key: 'broccoli', emoji: '🥦', label: 'Broccoli' },
+  { key: 'chestnuts', emoji: '🌰', label: 'Chestnuts' },
+  
+  // Bread & Grains (8 emojis)
   { key: 'bread', emoji: '🍞', label: 'Bread' },
-  { key: 'beverages', emoji: '🥤', label: 'Beverages' },
-  { key: 'snacks', emoji: '🍿', label: 'Snacks' },
-  { key: 'frozen', emoji: '🧊', label: 'Frozen' },
-  { key: 'canned', emoji: '🥫', label: 'Canned' },
-  { key: 'seafood', emoji: '🐟', label: 'Seafood' },
-  { key: 'spices', emoji: '🌶️', label: 'Spices' },
-  { key: 'dessert', emoji: '🍰', label: 'Dessert' },
-  { key: 'grains', emoji: '🌾', label: 'Grains' },
+  { key: 'baguette', emoji: '🥖', label: 'Baguette' },
+  { key: 'croissant', emoji: '🥐', label: 'Croissant' },
+  { key: 'bagel', emoji: '🥯', label: 'Bagel' },
+  { key: 'pancakes', emoji: '🥞', label: 'Pancakes' },
+  { key: 'pretzel', emoji: '🥨', label: 'Pretzel' },
+  { key: 'rice', emoji: '🍚', label: 'Rice' },
+  { key: 'rice_ball', emoji: '🍙', label: 'Rice Ball' },
+  
+  // Prepared Foods (16 emojis)
+  { key: 'salad', emoji: '🥗', label: 'Salad' },
+  { key: 'sandwich', emoji: '🥪', label: 'Sandwich' },
+  { key: 'curry', emoji: '🍛', label: 'Curry' },
+  { key: 'ramen', emoji: '🍜', label: 'Ramen' },
+  { key: 'pasta', emoji: '🍝', label: 'Pasta' },
+  { key: 'sushi', emoji: '🍣', label: 'Sushi' },
+  { key: 'oden', emoji: '🍢', label: 'Oden' },
+  { key: 'rice_cracker', emoji: '🍘', label: 'Rice Cracker' },
+  { key: 'tacos', emoji: '🌮', label: 'Tacos' },
+  { key: 'burrito', emoji: '🌯', label: 'Burrito' },
+  { key: 'burger', emoji: '🍔', label: 'Burger' },
+  { key: 'fries', emoji: '🍟', label: 'Fries' },
+  { key: 'hot_dog', emoji: '🌭', label: 'Hot Dog' },
+  { key: 'pizza', emoji: '🍕', label: 'Pizza' },
+  { key: 'flatbread', emoji: '🥙', label: 'Flatbread' },
+  { key: 'paella', emoji: '🥘', label: 'Paella' },
+  
+  // Meat & Protein (9 emojis)
+  { key: 'chicken', emoji: '🍗', label: 'Chicken' },
+  { key: 'meat', emoji: '🍖', label: 'Meat' },
+  { key: 'bacon', emoji: '🥓', label: 'Bacon' },
+  { key: 'steak', emoji: '🥩', label: 'Steak' },
+  { key: 'fish', emoji: '🐟', label: 'Fish' },
+  { key: 'shrimp', emoji: '🍤', label: 'Shrimp' },
+  { key: 'prawns', emoji: '🦐', label: 'Prawns' },
+  { key: 'eggs', emoji: '🥚', label: 'Eggs' },
+  { key: 'fried_egg', emoji: '🍳', label: 'Fried Egg' },
+  
+  // Dairy (3 emojis)
+  { key: 'milk', emoji: '🥛', label: 'Milk' },
+  { key: 'cheese', emoji: '🧀', label: 'Cheese' },
+  { key: 'butter', emoji: '🧈', label: 'Butter' },
+  
+  // Snacks (2 emojis)
+  { key: 'popcorn', emoji: '🍿', label: 'Popcorn' },
+  { key: 'nuts', emoji: '🥜', label: 'Nuts' },
+  
+  // Desserts & Sweets (11 emojis)
+  { key: 'cookies', emoji: '🍪', label: 'Cookies' },
+  { key: 'donuts', emoji: '🍩', label: 'Donuts' },
+  { key: 'cupcake', emoji: '🧁', label: 'Cupcake' },
+  { key: 'birthday_cake', emoji: '🎂', label: 'Birthday Cake' },
+  { key: 'cake', emoji: '🍰', label: 'Cake' },
+  { key: 'chocolate', emoji: '🍫', label: 'Chocolate' },
+  { key: 'candy', emoji: '🍬', label: 'Candy' },
+  { key: 'lollipop', emoji: '🍭', label: 'Lollipop' },
+  { key: 'ice_cream', emoji: '🍦', label: 'Ice Cream' },
+  { key: 'ice_cream_cup', emoji: '🍨', label: 'Ice Cream Cup' },
+  { key: 'shaved_ice', emoji: '🍧', label: 'Shaved Ice' },
+  
+  // Beverages (13 emojis)
+  { key: 'coffee', emoji: '☕', label: 'Coffee' },
+  { key: 'tea', emoji: '🍵', label: 'Tea' },
+  { key: 'baby_bottle', emoji: '🍼', label: 'Baby Bottle' },
+  { key: 'soft_drink', emoji: '🥤', label: 'Soft Drink' },
+  { key: 'juice_box', emoji: '🧃', label: 'Juice Box' },
+  { key: 'sake', emoji: '🍶', label: 'Sake' },
+  { key: 'beer_mugs', emoji: '🍻', label: 'Beer Mugs' },
+  { key: 'beer', emoji: '🍺', label: 'Beer' },
+  { key: 'wine', emoji: '🍷', label: 'Wine' },
+  { key: 'champagne', emoji: '🥂', label: 'Champagne' },
+  { key: 'martini', emoji: '🍸', label: 'Martini' },
+  { key: 'cocktail', emoji: '🍹', label: 'Cocktail' },
+  { key: 'whiskey', emoji: '🥃', label: 'Whiskey' },
+  
+  // Condiments & Seasonings (2 emojis)
+  { key: 'salt', emoji: '🧂', label: 'Salt' },
+  { key: 'honey', emoji: '🍯', label: 'Honey' },
+  
+  // Kitchen Items (1 emoji)
+  { key: 'bowl', emoji: '🥣', label: 'Bowl' },
+  
+  // Payment & Cards (3 emojis)
+  { key: 'credit_card', emoji: '💳', label: 'Credit Card' },
+  { key: 'gift_card', emoji: '🎁', label: 'Gift Card' },
+  { key: 'receipt', emoji: '🧾', label: 'Receipt' }
 ];
 
-// Location emojis for selection
+// Location emojis for selection - All 9 location emojis
 const LOCATION_EMOJIS = [
-  { key: 'fridge', emoji: '❄️', label: 'Fridge' },
   { key: 'freezer', emoji: '🧊', label: 'Freezer' },
+  { key: 'fridge', emoji: '❄️', label: 'Fridge' },
+  { key: 'cabinet', emoji: '📦', label: 'Cabinet' },
+  { key: 'lunch_box', emoji: '🍱', label: 'Lunch Box' },
+  { key: 'takeout_container', emoji: '🥡', label: 'Takeout Container' },
   { key: 'pantry', emoji: '🏠', label: 'Pantry' },
-  { key: 'cabinet', emoji: '🗄️', label: 'Cabinet' },
-  { key: 'counter', emoji: '🍽️', label: 'Counter' },
-  { key: 'basement', emoji: '⬇️', label: 'Basement' },
-  { key: 'garage', emoji: '🏢', label: 'Garage' },
-  { key: 'kitchen', emoji: '🍳', label: 'Kitchen' },
-  { key: 'cupboard', emoji: '🗃️', label: 'Cupboard' },
-  { key: 'shelf', emoji: '📚', label: 'Shelf' },
-  { key: 'storage', emoji: '📦', label: 'Storage' },
+  { key: 'dining_area', emoji: '🍽️', label: 'Dining Area' },
+  { key: 'storage_box', emoji: '📦', label: 'Storage Box' },
+  { key: 'shopping_cart', emoji: '🛒', label: 'Shopping Cart' }
 ];
 
 type SettingItem = {
@@ -123,15 +224,15 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
     emojiGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       paddingVertical: 8,
+      gap: 8,
     },
     emojiItem: {
-      width: '22%',
-      aspectRatio: 1,
+      width: 70,
+      height: 70,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 12,
       borderRadius: 12,
       backgroundColor: theme.backgroundColor,
       borderWidth: 2,
@@ -142,13 +243,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
       backgroundColor: `${theme.primaryColor}20`,
     },
     emojiIcon: {
-      fontSize: 28,
-      marginBottom: 4,
-      textAlign: 'center',
-    },
-    emojiName: {
-      fontSize: 10,
-      color: theme.textSecondary,
+      fontSize: 32,
       textAlign: 'center',
     },
     closeButton: {
@@ -186,7 +281,6 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
                   }}
                 >
                   <Text style={styles.emojiIcon}>{item.emoji}</Text>
-                  <Text style={styles.emojiName}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -693,7 +787,7 @@ const EditModal: React.FC<EditModalProps> = ({
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation } = useDatabase();
+  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase } = useDatabase();
   const router = useRouter();
 
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -766,6 +860,16 @@ export default function SettingsScreen() {
     //   onPress: () => router.push('/backup'),
     // },
     {
+      id: 'reset',
+      icon: 'refresh',
+      title: t('settings.resetDatabase') || 'Reset Database',
+      description: t('settings.resetDatabaseDescription') || 'Reset to original 8 categories and 4 locations',
+      type: 'navigation',
+      onPress: () => {
+        handleResetDatabase();
+      },
+    },
+    {
       id: 'about',
       icon: 'info-circle',
       title: t('settings.about'),
@@ -806,6 +910,37 @@ export default function SettingsScreen() {
           text: t('delete'),
           style: 'destructive',
           onPress: () => deleteLocation(id)
+        }
+      ]
+    );
+  };
+
+  const handleResetDatabase = async () => {
+    Alert.alert(
+      t('settings.resetDatabase') || 'Reset Database',
+      t('settings.resetDatabaseConfirmation') || 'This will reset all categories and locations to the original 8 categories and 4 locations. Your food items will be preserved. This action cannot be undone.',
+      [
+        {
+          text: t('common.cancel') || 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: t('settings.reset') || 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await resetDatabase();
+              Alert.alert(
+                t('common.success') || 'Success', 
+                t('settings.resetDatabaseSuccess') || 'Database has been reset to original defaults!'
+              );
+            } catch (error) {
+              Alert.alert(
+                t('common.error') || 'Error', 
+                t('settings.resetDatabaseError') || 'Failed to reset database. Please try again.'
+              );
+            }
+          }
         }
       ]
     );

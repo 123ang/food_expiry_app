@@ -106,6 +106,11 @@ const translations: Record<Language, Record<string, string>> = {
     'alert.deleteFailed': 'Failed to delete item',
     'alert.loadFailed': 'Failed to load data',
     
+    // Common
+    'common.cancel': 'Cancel',
+    'common.success': 'Success',
+    'common.error': 'Error',
+    
     // Months
     'month.january': 'January',
     'month.february': 'February',
@@ -152,6 +157,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.backupSyncDescription': 'Backup and sync your data',
     'settings.about': 'About',
     'settings.aboutDescription': 'App information and version',
+    'settings.resetDatabase': 'Reset Database',
+    'settings.resetDatabaseDescription': 'Reset to original 8 categories and 4 locations',
+    'settings.resetDatabaseConfirmation': 'This will reset all categories and locations to the original 8 categories and 4 locations. Your food items will be preserved. This action cannot be undone.',
+    'settings.reset': 'Reset',
+    'settings.resetDatabaseSuccess': 'Database has been reset to original defaults!',
+    'settings.resetDatabaseError': 'Failed to reset database. Please try again.',
     
     // Language Names
     'language.english': 'English',
@@ -394,6 +405,11 @@ const translations: Record<Language, Record<string, string>> = {
     'alert.deleteFailed': '删除食品失败',
     'alert.loadFailed': '加载数据失败',
     
+    // Common
+    'common.cancel': '取消',
+    'common.success': '成功',
+    'common.error': '错误',
+    
     // Months
     'month.january': '一月',
     'month.february': '二月',
@@ -440,6 +456,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.backupSyncDescription': '备份和同步您的数据',
     'settings.about': '关于',
     'settings.aboutDescription': '应用信息和版本',
+    'settings.resetDatabase': '重置数据库',
+    'settings.resetDatabaseDescription': '重置为原始的8个分类和4个位置',
+    'settings.resetDatabaseConfirmation': '这将重置所有分类和位置为原始的8个分类和4个位置。您的食品项目将被保留。此操作无法撤销。',
+    'settings.reset': '重置',
+    'settings.resetDatabaseSuccess': '数据库已重置为原始默认设置！',
+    'settings.resetDatabaseError': '重置数据库失败。请重试。',
     
     // Language Names
     'language.english': '英语',
@@ -685,6 +707,11 @@ const translations: Record<Language, Record<string, string>> = {
     'alert.deleteFailed': 'アイテムの削除に失敗しました',
     'alert.loadFailed': 'データの読み込みに失敗しました',
     
+    // Common
+    'common.cancel': 'キャンセル',
+    'common.success': '成功',
+    'common.error': 'エラー',
+    
     // Months
     'month.january': '1月',
     'month.february': '2月',
@@ -731,6 +758,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.backupSyncDescription': 'データをバックアップして同期',
     'settings.about': 'について',
     'settings.aboutDescription': 'アプリの情報とバージョン',
+    'settings.resetDatabase': 'データベースをリセット',
+    'settings.resetDatabaseDescription': '元の8つのカテゴリと4つの場所にリセット',
+    'settings.resetDatabaseConfirmation': 'これにより、すべてのカテゴリと場所が元の8つのカテゴリと4つの場所にリセットされます。食品アイテムは保持されます。この操作は元に戻せません。',
+    'settings.reset': 'リセット',
+    'settings.resetDatabaseSuccess': 'データベースが元のデフォルト設定にリセットされました！',
+    'settings.resetDatabaseError': 'データベースのリセットに失敗しました。もう一度お試しください。',
     
     // Language Names
     'language.english': '英語',

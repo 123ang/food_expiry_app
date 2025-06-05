@@ -20,22 +20,125 @@ import { Category } from '../../database/models';
 import { useLanguage } from '../../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 
-// Category emojis for selection (same as settings)
+// Category emojis for selection - All 91 food emojis
 const CATEGORY_EMOJIS = [
-  { key: 'apple', emoji: '🍎', label: 'Apple' },
-  { key: 'dairy', emoji: '🥛', label: 'Dairy' },
-  { key: 'fruits', emoji: '🍇', label: 'Fruits' },
-  { key: 'vegetables', emoji: '🥕', label: 'Vegetables' },
-  { key: 'meat', emoji: '🥩', label: 'Meat' },
+  // Fruits (15 emojis)
+  { key: 'apples', emoji: '🍎', label: 'Apples' },
+  { key: 'green_apples', emoji: '🍏', label: 'Green Apples' },
+  { key: 'pears', emoji: '🍐', label: 'Pears' },
+  { key: 'oranges', emoji: '🍊', label: 'Oranges' },
+  { key: 'lemons', emoji: '🍋', label: 'Lemons' },
+  { key: 'bananas', emoji: '🍌', label: 'Bananas' },
+  { key: 'watermelon', emoji: '🍉', label: 'Watermelon' },
+  { key: 'grapes', emoji: '🍇', label: 'Grapes' },
+  { key: 'strawberries', emoji: '🍓', label: 'Strawberries' },
+  { key: 'melon', emoji: '🍈', label: 'Melon' },
+  { key: 'cherries', emoji: '🍒', label: 'Cherries' },
+  { key: 'peaches', emoji: '🍑', label: 'Peaches' },
+  { key: 'pineapple', emoji: '🍍', label: 'Pineapple' },
+  { key: 'mango', emoji: '🥭', label: 'Mango' },
+  { key: 'coconut', emoji: '🥥', label: 'Coconut' },
+  
+  // Vegetables (11 emojis)
+  { key: 'tomatoes', emoji: '🍅', label: 'Tomatoes' },
+  { key: 'eggplant', emoji: '🍆', label: 'Eggplant' },
+  { key: 'corn', emoji: '🌽', label: 'Corn' },
+  { key: 'peppers', emoji: '🌶️', label: 'Peppers' },
+  { key: 'cucumber', emoji: '🥒', label: 'Cucumber' },
+  { key: 'carrots', emoji: '🥕', label: 'Carrots' },
+  { key: 'potatoes', emoji: '🥔', label: 'Potatoes' },
+  { key: 'garlic', emoji: '🧄', label: 'Garlic' },
+  { key: 'onions', emoji: '🧅', label: 'Onions' },
+  { key: 'broccoli', emoji: '🥦', label: 'Broccoli' },
+  { key: 'chestnuts', emoji: '🌰', label: 'Chestnuts' },
+  
+  // Bread & Grains (8 emojis)
   { key: 'bread', emoji: '🍞', label: 'Bread' },
-  { key: 'beverages', emoji: '🥤', label: 'Beverages' },
-  { key: 'snacks', emoji: '🍿', label: 'Snacks' },
-  { key: 'frozen', emoji: '🧊', label: 'Frozen' },
-  { key: 'canned', emoji: '🥫', label: 'Canned' },
-  { key: 'seafood', emoji: '🐟', label: 'Seafood' },
-  { key: 'spices', emoji: '🌶️', label: 'Spices' },
-  { key: 'dessert', emoji: '🍰', label: 'Dessert' },
-  { key: 'grains', emoji: '🌾', label: 'Grains' },
+  { key: 'baguette', emoji: '🥖', label: 'Baguette' },
+  { key: 'croissant', emoji: '🥐', label: 'Croissant' },
+  { key: 'bagel', emoji: '🥯', label: 'Bagel' },
+  { key: 'pancakes', emoji: '🥞', label: 'Pancakes' },
+  { key: 'pretzel', emoji: '🥨', label: 'Pretzel' },
+  { key: 'rice', emoji: '🍚', label: 'Rice' },
+  { key: 'rice_ball', emoji: '🍙', label: 'Rice Ball' },
+  
+  // Prepared Foods (16 emojis)
+  { key: 'salad', emoji: '🥗', label: 'Salad' },
+  { key: 'sandwich', emoji: '🥪', label: 'Sandwich' },
+  { key: 'curry', emoji: '🍛', label: 'Curry' },
+  { key: 'ramen', emoji: '🍜', label: 'Ramen' },
+  { key: 'pasta', emoji: '🍝', label: 'Pasta' },
+  { key: 'sushi', emoji: '🍣', label: 'Sushi' },
+  { key: 'oden', emoji: '🍢', label: 'Oden' },
+  { key: 'rice_cracker', emoji: '🍘', label: 'Rice Cracker' },
+  { key: 'tacos', emoji: '🌮', label: 'Tacos' },
+  { key: 'burrito', emoji: '🌯', label: 'Burrito' },
+  { key: 'burger', emoji: '🍔', label: 'Burger' },
+  { key: 'fries', emoji: '🍟', label: 'Fries' },
+  { key: 'hot_dog', emoji: '🌭', label: 'Hot Dog' },
+  { key: 'pizza', emoji: '🍕', label: 'Pizza' },
+  { key: 'flatbread', emoji: '🥙', label: 'Flatbread' },
+  { key: 'paella', emoji: '🥘', label: 'Paella' },
+  
+  // Meat & Protein (9 emojis)
+  { key: 'chicken', emoji: '🍗', label: 'Chicken' },
+  { key: 'meat', emoji: '🍖', label: 'Meat' },
+  { key: 'bacon', emoji: '🥓', label: 'Bacon' },
+  { key: 'steak', emoji: '🥩', label: 'Steak' },
+  { key: 'fish', emoji: '🐟', label: 'Fish' },
+  { key: 'shrimp', emoji: '🍤', label: 'Shrimp' },
+  { key: 'prawns', emoji: '🦐', label: 'Prawns' },
+  { key: 'eggs', emoji: '🥚', label: 'Eggs' },
+  { key: 'fried_egg', emoji: '🍳', label: 'Fried Egg' },
+  
+  // Dairy (3 emojis)
+  { key: 'milk', emoji: '🥛', label: 'Milk' },
+  { key: 'cheese', emoji: '🧀', label: 'Cheese' },
+  { key: 'butter', emoji: '🧈', label: 'Butter' },
+  
+  // Snacks (2 emojis)
+  { key: 'popcorn', emoji: '🍿', label: 'Popcorn' },
+  { key: 'nuts', emoji: '🥜', label: 'Nuts' },
+  
+  // Desserts & Sweets (11 emojis)
+  { key: 'cookies', emoji: '🍪', label: 'Cookies' },
+  { key: 'donuts', emoji: '🍩', label: 'Donuts' },
+  { key: 'cupcake', emoji: '🧁', label: 'Cupcake' },
+  { key: 'birthday_cake', emoji: '🎂', label: 'Birthday Cake' },
+  { key: 'cake', emoji: '🍰', label: 'Cake' },
+  { key: 'chocolate', emoji: '🍫', label: 'Chocolate' },
+  { key: 'candy', emoji: '🍬', label: 'Candy' },
+  { key: 'lollipop', emoji: '🍭', label: 'Lollipop' },
+  { key: 'ice_cream', emoji: '🍦', label: 'Ice Cream' },
+  { key: 'ice_cream_cup', emoji: '🍨', label: 'Ice Cream Cup' },
+  { key: 'shaved_ice', emoji: '🍧', label: 'Shaved Ice' },
+  
+  // Beverages (13 emojis)
+  { key: 'coffee', emoji: '☕', label: 'Coffee' },
+  { key: 'tea', emoji: '🍵', label: 'Tea' },
+  { key: 'baby_bottle', emoji: '🍼', label: 'Baby Bottle' },
+  { key: 'soft_drink', emoji: '🥤', label: 'Soft Drink' },
+  { key: 'juice_box', emoji: '🧃', label: 'Juice Box' },
+  { key: 'sake', emoji: '🍶', label: 'Sake' },
+  { key: 'beer_mugs', emoji: '🍻', label: 'Beer Mugs' },
+  { key: 'beer', emoji: '🍺', label: 'Beer' },
+  { key: 'wine', emoji: '🍷', label: 'Wine' },
+  { key: 'champagne', emoji: '🥂', label: 'Champagne' },
+  { key: 'martini', emoji: '🍸', label: 'Martini' },
+  { key: 'cocktail', emoji: '🍹', label: 'Cocktail' },
+  { key: 'whiskey', emoji: '🥃', label: 'Whiskey' },
+  
+  // Condiments & Seasonings (2 emojis)
+  { key: 'salt', emoji: '🧂', label: 'Salt' },
+  { key: 'honey', emoji: '🍯', label: 'Honey' },
+  
+  // Kitchen Items (1 emoji)
+  { key: 'bowl', emoji: '🥣', label: 'Bowl' },
+  
+  // Payment & Cards (3 emojis)
+  { key: 'credit_card', emoji: '💳', label: 'Credit Card' },
+  { key: 'gift_card', emoji: '🎁', label: 'Gift Card' },
+  { key: 'receipt', emoji: '🧾', label: 'Receipt' }
 ];
 
 // Emoji Selector Component
@@ -71,15 +174,15 @@ const EmojiSelector: React.FC<{
     emojiGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       paddingVertical: 8,
+      gap: 8,
     },
     emojiButton: {
-      width: '22%',
-      aspectRatio: 1,
+      width: 70,
+      height: 70,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 12,
       borderRadius: 12,
       backgroundColor: theme.backgroundColor,
       borderWidth: 2,
@@ -90,13 +193,7 @@ const EmojiSelector: React.FC<{
       backgroundColor: `${theme.primaryColor}20`,
     },
     emojiText: {
-      fontSize: 28,
-      marginBottom: 4,
-      textAlign: 'center',
-    },
-    emojiLabel: {
-      fontSize: 10,
-      color: theme.textSecondary,
+      fontSize: 32,
       textAlign: 'center',
     },
     closeButton: {
@@ -130,7 +227,6 @@ const EmojiSelector: React.FC<{
                   onPress={() => onSelect(item.key)}
                 >
                   <Text style={styles.emojiText}>{item.emoji}</Text>
-                  <Text style={styles.emojiLabel}>{item.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
