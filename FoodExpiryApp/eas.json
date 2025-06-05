@@ -24,7 +24,9 @@
     },
     "production": {
       "ios": {
-        "resourceClass": "m-medium"
+        "resourceClass": "m-medium",
+        "buildConfiguration": "Release",
+        "scheme": "ExpiredAlert"
       },
       "android": {
         "buildType": "app-bundle"

@@ -58,9 +58,14 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
+          },
+          "ios": {
+            "newArchEnabled": false,
+            "flipper": false
           }
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "extra": {
       "eas": {
