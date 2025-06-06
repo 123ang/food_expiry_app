@@ -42,6 +42,7 @@ const EmojiSelector: React.FC<{
   selectedEmoji?: string;
 }> = ({ visible, onClose, onSelect, selectedEmoji }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const styles = StyleSheet.create({
     modalOverlay: {
@@ -107,7 +108,7 @@ const EmojiSelector: React.FC<{
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.title}>Select Location Icon</Text>
+          <Text style={styles.title}>{t('selectIcon')}</Text>
           <ScrollView showsVerticalScrollIndicator={true}>
             <View style={styles.emojiGrid}>
               {LOCATION_EMOJIS.map((item) => (
@@ -115,9 +116,9 @@ const EmojiSelector: React.FC<{
                   key={item.key}
                   style={[
                     styles.emojiButton,
-                    selectedEmoji === item.key && styles.selectedEmoji,
+                    selectedEmoji === item.emoji && styles.selectedEmoji,
                   ]}
-                  onPress={() => onSelect(item.key)}
+                  onPress={() => onSelect(item.emoji)}
                 >
                   <Text style={styles.emojiText}>{item.emoji}</Text>
                 </TouchableOpacity>
@@ -125,7 +126,7 @@ const EmojiSelector: React.FC<{
             </View>
           </ScrollView>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={styles.closeButtonText}>{t('close')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -135,12 +136,13 @@ const EmojiSelector: React.FC<{
 
 export default function LocationsScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { locations, createLocation, updateLocation, deleteLocation, refreshLocations } = useDatabase();
   const router = useRouter();
   const [showIconSelector, setShowIconSelector] = useState(false);
   const [editingLocation, setEditingLocation] = useState<Location | null>(null);
   const [newName, setNewName] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState<string>('fridge');
+  const [selectedIcon, setSelectedIcon] = useState<string>('❄️');
 
   const styles = StyleSheet.create({
     container: {
@@ -263,7 +265,7 @@ export default function LocationsScreen() {
 
   const handleSave = async () => {
     if (!newName.trim()) {
-      Alert.alert('Error', 'Please enter a location name');
+      Alert.alert(t('alert.error'), t('alert.nameRequired'));
       return;
     }
 
@@ -282,11 +284,11 @@ export default function LocationsScreen() {
       }
 
       setNewName('');
-      setSelectedIcon('fridge');
+      setSelectedIcon('❄️');
       setEditingLocation(null);
       await refreshLocations();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save location');
+      Alert.alert(t('alert.error'), t('alert.saveFailed'));
     }
   };
 
@@ -300,18 +302,18 @@ export default function LocationsScreen() {
     if (!location.id) return;
 
     Alert.alert(
-      'Delete Location',
-      `Are you sure you want to delete "${location.name}"?`,
+      t('locations.deleteLocation'),
+      `${t('locations.deleteConfirm')} "${location.name}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteLocation(location.id!);
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete location');
+              Alert.alert(t('alert.error'), t('locations.errorDelete'));
             }
           },
         },
@@ -326,7 +328,7 @@ export default function LocationsScreen() {
           <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>Storage Locations</Text>
+          <Text style={styles.title}>{t('locations.title')}</Text>
           <TouchableOpacity style={styles.addButton} onPress={() => setEditingLocation(null)}>
             <FontAwesome name="plus" size={20} color="#FFFFFF" />
           </TouchableOpacity>
@@ -337,7 +339,7 @@ export default function LocationsScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Location Name"
+            placeholder={t('locationName')}
             placeholderTextColor={theme.textSecondary}
             value={newName}
             onChangeText={setNewName}
@@ -350,12 +352,12 @@ export default function LocationsScreen() {
             <View style={styles.iconPreview}>
               <LocationIcon iconName={selectedIcon} size={20} />
             </View>
-            <Text style={styles.iconText}>Select Icon</Text>
+            <Text style={styles.iconText}>{t('selectIcon')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
             <Text style={styles.saveButtonText}>
-              {editingLocation ? 'Update Location' : 'Add Location'}
+              {editingLocation ? t('locations.updateLocation') : t('locations.addLocation')}
             </Text>
           </TouchableOpacity>
         </View>

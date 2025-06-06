@@ -149,6 +149,7 @@ const EmojiSelector: React.FC<{
   selectedEmoji?: string;
 }> = ({ visible, onClose, onSelect, selectedEmoji }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const styles = StyleSheet.create({
     modalOverlay: {
@@ -214,7 +215,7 @@ const EmojiSelector: React.FC<{
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.title}>Select Category Icon</Text>
+          <Text style={styles.title}>{t('selectIcon')}</Text>
           <ScrollView showsVerticalScrollIndicator={true}>
             <View style={styles.emojiGrid}>
               {CATEGORY_EMOJIS.map((item) => (
@@ -222,9 +223,9 @@ const EmojiSelector: React.FC<{
                   key={item.key}
                   style={[
                     styles.emojiButton,
-                    selectedEmoji === item.key && styles.selectedEmoji,
+                    selectedEmoji === item.emoji && styles.selectedEmoji,
                   ]}
-                  onPress={() => onSelect(item.key)}
+                  onPress={() => onSelect(item.emoji)}
                 >
                   <Text style={styles.emojiText}>{item.emoji}</Text>
                 </TouchableOpacity>
@@ -232,7 +233,7 @@ const EmojiSelector: React.FC<{
             </View>
           </ScrollView>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={styles.closeButtonText}>{t('close')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -242,12 +243,13 @@ const EmojiSelector: React.FC<{
 
 export default function CategoriesScreen() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { categories, createCategory, updateCategory, deleteCategory, refreshCategories } = useDatabase();
   const router = useRouter();
   const [showIconSelector, setShowIconSelector] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newName, setNewName] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState<string>('apple');
+  const [selectedIcon, setSelectedIcon] = useState<string>('🍎');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -387,7 +389,7 @@ export default function CategoriesScreen() {
     try {
       setIsLoading(true);
       if (!newName.trim()) {
-        Alert.alert('Error', 'Please enter a category name');
+        Alert.alert(t('alert.error'), t('alert.nameRequired'));
         return;
       }
 
@@ -405,11 +407,11 @@ export default function CategoriesScreen() {
       }
 
       setNewName('');
-      setSelectedIcon('apple');
+      setSelectedIcon('🍎');
       setEditingCategory(null);
       await refreshCategories();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save category');
+      Alert.alert(t('alert.error'), t('alert.saveFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -425,12 +427,12 @@ export default function CategoriesScreen() {
     if (!category.id) return;
 
     Alert.alert(
-      'Delete Category',
-      `Are you sure you want to delete "${category.name}"?`,
+      t('categories.deleteCategory'),
+      `${t('categories.deleteConfirm')} "${category.name}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -438,7 +440,7 @@ export default function CategoriesScreen() {
               await deleteCategory(category.id!);
               await refreshCategories();
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete category');
+              Alert.alert(t('alert.error'), t('categories.errorDelete'));
             } finally {
               setIsLoading(false);
             }
@@ -454,7 +456,7 @@ export default function CategoriesScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Categories</Text>
+        <Text style={styles.headerTitle}>{t('categories.title')}</Text>
         <TouchableOpacity 
           style={styles.addButton} 
           onPress={() => setEditingCategory(null)}
@@ -467,7 +469,7 @@ export default function CategoriesScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Category Name"
+            placeholder={t('categoryName')}
             placeholderTextColor={theme.textSecondary}
             value={newName}
             onChangeText={setNewName}
@@ -480,7 +482,7 @@ export default function CategoriesScreen() {
             <View style={styles.iconPreview}>
               <CategoryIcon iconName={selectedIcon} size={20} />
             </View>
-            <Text style={styles.iconText}>Select Icon</Text>
+            <Text style={styles.iconText}>{t('selectIcon')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -492,7 +494,7 @@ export default function CategoriesScreen() {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text style={styles.saveButtonText}>
-                {editingCategory ? 'Update Category' : 'Add Category'}
+                {editingCategory ? t('categories.updateCategory') : t('categories.addCategory')}
               </Text>
             )}
           </TouchableOpacity>

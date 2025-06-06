@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { Platform, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Theme } from '../theme';
 
@@ -13,6 +13,13 @@ interface DatePickerProps {
 export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerProps) {
   const [show, setShow] = useState(false);
 
+  // Enhanced theme detection logic
+  const isDarkTheme = 
+    theme.backgroundColor === '#2C2417' || // Dark theme background
+    theme.textColor === '#F5EFE7' || // Dark theme text color
+    (theme.backgroundColor?.toLowerCase().includes('#2c')) || // Any dark background
+    (theme.textColor?.toLowerCase().includes('#f5')); // Any light text color
+
   if (Platform.OS === 'web') {
     return (
       <input
@@ -22,7 +29,7 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
           padding: 12,
           borderRadius: 8,
           marginBottom: 16,
-          color: theme.textColor,
+          color: isDarkTheme ? '#FFFFFF' : '#000000', // White text in dark theme, black in light
           borderWidth: 1,
           borderColor: theme.borderColor,
           width: '100%',
@@ -46,6 +53,27 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
     }
   };
 
+  // Platform-specific theme configuration
+  const getThemeProps = () => {
+    if (Platform.OS === 'ios') {
+      return {
+        // iOS supports these theme props
+        textColor: isDarkTheme ? '#FFFFFF' : '#000000', // White text in dark theme, black in light
+        themeVariant: (isDarkTheme ? 'dark' : 'light') as 'dark' | 'light',
+        accentColor: theme.primaryColor || '#4CAF50',
+        // Use spinner display for better text color control on iOS
+        display: 'spinner' as const,
+      };
+    } else {
+      // Android - we can't control the theme, so just use default
+      return {
+        display: 'default' as const,
+      };
+    }
+  };
+
+  const themeProps = getThemeProps();
+
   return (
     <>
       <TouchableOpacity
@@ -68,9 +96,9 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
         <DateTimePicker
           value={value}
           mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={onDateChange}
           minimumDate={minimumDate}
+          {...themeProps}
         />
       )}
     </>

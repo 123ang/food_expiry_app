@@ -279,6 +279,26 @@ const translations: Record<Language, Record<string, string>> = {
     'categoryName': 'Category Name',
     'locationName': 'Location Name',
     'selectIcon': 'Select Icon',
+    
+    // Categories Screen
+    'categories.title': 'Categories',
+    'categories.updateCategory': 'Update Category',
+    'categories.addCategory': 'Add Category',
+    'categories.deleteCategory': 'Delete Category',
+    'categories.deleteConfirm': 'Are you sure you want to delete this category?',
+    'categories.errorDelete': 'Failed to delete category',
+    
+    // Locations Screen
+    'locations.title': 'Storage Locations',
+    'locations.updateLocation': 'Update Location',
+    'locations.addLocation': 'Add Location',
+    'locations.deleteLocation': 'Delete Location',
+    'locations.deleteConfirm': 'Are you sure you want to delete this location?',
+    'locations.errorDelete': 'Failed to delete location',
+
+    // Calendar Theme Instructions
+    'calendar.androidThemeNote': 'Note: Calendar appearance on Android follows your device\'s system theme settings, not the app theme.',
+    'calendar.systemThemeInstructions': 'To change calendar colors, adjust your device\'s dark/light mode in system settings.',
 
     // Default Categories
     'defaultCategory.vegetables': 'Vegetables',
@@ -602,6 +622,26 @@ const translations: Record<Language, Record<string, string>> = {
     'categoryName': '分类名称',
     'locationName': '位置名称',
     'selectIcon': '选择图标',
+    
+    // Categories Screen
+    'categories.title': '分类',
+    'categories.updateCategory': '更新分类',
+    'categories.addCategory': '添加分类',
+    'categories.deleteCategory': '删除分类',
+    'categories.deleteConfirm': '您确定要删除这个分类吗？',
+    'categories.errorDelete': '删除分类失败',
+    
+    // Locations Screen
+    'locations.title': '储存位置',
+    'locations.updateLocation': '更新位置',
+    'locations.addLocation': '添加位置',
+    'locations.deleteLocation': '删除位置',
+    'locations.deleteConfirm': '您确定要删除这个位置吗？',
+    'locations.errorDelete': '删除位置失败',
+
+    // Calendar Theme Instructions
+    'calendar.androidThemeNote': '注意：Android上的日历外观遵循设备系统主题设置，而不是应用程序主题。',
+    'calendar.systemThemeInstructions': '要更改日历颜色，请在系统设置中调整设备暗/亮模式。',
 
     // Default Categories
     'defaultCategory.vegetables': '蔬菜',
@@ -928,6 +968,26 @@ const translations: Record<Language, Record<string, string>> = {
     'categoryName': 'カテゴリ名',
     'locationName': '場所名',
     'selectIcon': 'アイコンを選択',
+    
+    // Categories Screen
+    'categories.title': 'カテゴリ',
+    'categories.updateCategory': 'カテゴリを更新',
+    'categories.addCategory': 'カテゴリを追加',
+    'categories.deleteCategory': 'カテゴリを削除',
+    'categories.deleteConfirm': 'このカテゴリを削除してもよろしいですか？',
+    'categories.errorDelete': 'カテゴリの削除に失敗しました',
+    
+    // Locations Screen
+    'locations.title': '保存場所',
+    'locations.updateLocation': '場所を更新',
+    'locations.addLocation': '場所を追加',
+    'locations.deleteLocation': '場所を削除',
+    'locations.deleteConfirm': 'この場所を削除してもよろしいですか？',
+    'locations.errorDelete': '場所の削除に失敗しました',
+
+    // Calendar Theme Instructions
+    'calendar.androidThemeNote': '注意：Androidのカレンダー外観はデバイスのシステムテーマ設定に従います。アプリのテーマではありません。',
+    'calendar.systemThemeInstructions': 'カレンダーの色を変更するには、デバイスの暗/明モードをシステム設定で調整してください。',
 
     // Default Categories
     'defaultCategory.vegetables': '野菜',
