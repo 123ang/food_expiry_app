@@ -134,4 +134,4 @@ export const getNavigationTheme = (themeType: ThemeType) => {
   };
 };
 
-export const navigationTheme = getNavigationTheme('recycled'); 
+export const navigationTheme = getNavigationTheme('original'); 

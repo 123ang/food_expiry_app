@@ -36,14 +36,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (savedTheme && (savedTheme as ThemeType) in themes) {
         setCurrentThemeType(savedTheme as ThemeType);
       } else {
-        // For existing users who don't have a saved theme preference, 
-        // default to recycled theme (current design)
-        setCurrentThemeType('recycled');
+        // Default to original theme (white background) for all users
+        setCurrentThemeType('original');
       }
     } catch (error) {
       console.log('Error loading saved theme:', error);
-      // Fallback to recycled theme on error
-      setCurrentThemeType('recycled');
+      // Fallback to original theme on error
+      setCurrentThemeType('original');
     } finally {
       setIsLoading(false);
     }
