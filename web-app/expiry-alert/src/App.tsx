@@ -1,30 +1,43 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, Link } from 'react-router-dom';
-import LandingPage from './components/LandingPage';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import AddItem from './components/AddItem';
-import LocationList from './components/LocationList';
-import AddLocation from './components/AddLocation';
-import CategoryList from './components/CategoryList';
-import AddCategory from './components/AddCategory';
-import ItemDetails from './components/ItemDetails';
+import { Toaster } from 'react-hot-toast';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import PrivacyPolicy from './components/PrivacyPolicy';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { initializeUserData } from './services/firestoreService';
+import { notificationService } from './services/notificationService';
 import './App.css';
+
+// Lazy load components for better performance
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const Login = lazy(() => import('./components/Login'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const AddItem = lazy(() => import('./components/AddItem'));
+const LocationList = lazy(() => import('./components/LocationList'));
+const AddLocation = lazy(() => import('./components/AddLocation'));
+const CategoryList = lazy(() => import('./components/CategoryList'));
+const AddCategory = lazy(() => import('./components/AddCategory'));
+const ItemDetails = lazy(() => import('./components/ItemDetails'));
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
+const Settings = lazy(() => import('./components/Settings'));
+const GoogleDriveAuth = lazy(() => import('./components/GoogleDriveAuth'));
+const GoogleDriveOwnerAuth = lazy(() => import('./components/GoogleDriveOwnerAuth'));
 
 const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
   const { t, language } = useLanguage();
 
-  // Initialize user data when user first signs in
+  // Initialize user data and notifications when user first signs in
   useEffect(() => {
     if (user) {
       initializeUserData(user.uid, language).catch(error => {
         console.error('Failed to initialize user data:', error);
+      });
+      
+      // Initialize notification service
+      notificationService.initialize().catch(error => {
+        console.error('Failed to initialize notifications:', error);
       });
     }
   }, [user, language]);
@@ -53,6 +66,7 @@ const AppContent: React.FC = () => {
             <Link to="/add-item" className="btn btn-secondary">➕ {t('nav.addItem')}</Link>
             <Link to="/locations" className="btn btn-secondary">📍 {t('nav.locations')}</Link>
             <Link to="/categories" className="btn btn-secondary">🏷️ {t('nav.categories')}</Link>
+            <Link to="/settings" className="btn btn-secondary">⚙️ Settings</Link>
             <LanguageSwitcher />
             <button onClick={signOut} className="btn btn-danger">🚪 {t('nav.logout')}</button>
           </nav>
@@ -70,8 +84,40 @@ const AppContent: React.FC = () => {
   return (
     <Router>
       <div className="App">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#4caf50',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 5000,
+              iconTheme: {
+                primary: '#f44336',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
+        <Suspense fallback={
+          <div className="loading">
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+              <p>Loading...</p>
+            </div>
+          </div>
+        }>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
           
           <Route path="/login" element={
             <div>
@@ -183,16 +229,27 @@ const AppContent: React.FC = () => {
             </div>
           } />
 
-          <Route path="/edit-category/:id" element={
-            <div>
-              {renderAppHeader()}
-              <main>
-                <div className="container">
-                  {user ? <AddCategory /> : <Navigate to="/login" />}
-                </div>
-              </main>
-            </div>
-          } />
+                      <Route path="/edit-category/:id" element={
+              <div>
+                {renderAppHeader()}
+                <main>
+                  <div className="container">
+                    {user ? <AddCategory /> : <Navigate to="/login" />}
+                  </div>
+                </main>
+              </div>
+            } />
+
+            <Route path="/settings" element={
+              <div>
+                {renderAppHeader()}
+                <main>
+                  <div className="container">
+                    {user ? <Settings /> : <Navigate to="/login" />}
+                  </div>
+                </main>
+              </div>
+            } />
 
           {/* Status pages for viewing items by status */}
           <Route path="/items/fresh" element={
@@ -240,9 +297,14 @@ const AppContent: React.FC = () => {
             </div>
           } />
 
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+          {/* OAuth callbacks */}
+          <Route path="/auth/google" element={<GoogleDriveAuth />} />
+          <Route path="/auth/google/owner" element={<GoogleDriveOwnerAuth />} />
+
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </div>
     </Router>
   );
@@ -250,11 +312,13 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <AppContent />
-      </LanguageProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <LanguageProvider>
+          <AppContent />
+        </LanguageProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

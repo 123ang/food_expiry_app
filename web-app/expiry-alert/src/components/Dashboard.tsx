@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -12,10 +13,14 @@ import {
   Location,
   cleanupUserData
 } from '../services/firestoreService';
+import { notificationService } from '../services/notificationService';
 
 interface DashboardProps {
   filter?: 'fresh' | 'expiring-soon' | 'expired';
 }
+
+type SortOption = 'name' | 'expiryDate' | 'category' | 'location' | 'addedDate';
+type SortDirection = 'asc' | 'desc';
 
 const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
@@ -31,6 +36,15 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const [error, setError] = useState<string | null>(null);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   
+  // New state for enhanced functionality
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [sortBy, setSortBy] = useState<SortOption>('expiryDate');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -38,6 +52,13 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   useEffect(() => {
     loadData();
   }, [user, filter]);
+
+  // Check for notifications when items are loaded
+  useEffect(() => {
+    if (foodItems.length > 0) {
+      notificationService.checkItemsForNotifications(foodItems);
+    }
+  }, [foodItems]);
 
   const loadData = async () => {
     if (!user) return;
@@ -95,6 +116,61 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     }
   };
 
+  // Filtered and sorted items using useMemo for performance
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = foodItems.filter(item => {
+      // Search filter
+      const matchesSearch = searchQuery === '' || 
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.notes.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Category filter
+      const matchesCategory = selectedCategory === '' || item.categoryId === selectedCategory;
+      
+      // Location filter
+      const matchesLocation = selectedLocation === '' || item.locationId === selectedLocation;
+      
+      return matchesSearch && matchesCategory && matchesLocation;
+    });
+
+    // Sort items
+    filtered.sort((a, b) => {
+      let valueA: any, valueB: any;
+      
+      switch (sortBy) {
+        case 'name':
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+          break;
+        case 'expiryDate':
+          valueA = new Date(a.expiryDate);
+          valueB = new Date(b.expiryDate);
+          break;
+        case 'category':
+          valueA = getCategoryName(a.categoryId).toLowerCase();
+          valueB = getCategoryName(b.categoryId).toLowerCase();
+          break;
+        case 'location':
+          valueA = getLocationName(a.locationId).toLowerCase();
+          valueB = getLocationName(b.locationId).toLowerCase();
+          break;
+        case 'addedDate':
+          valueA = new Date(a.addedDate);
+          valueB = new Date(b.addedDate);
+          break;
+        default:
+          valueA = a.name.toLowerCase();
+          valueB = b.name.toLowerCase();
+      }
+
+      if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [foodItems, searchQuery, selectedCategory, selectedLocation, sortBy, sortDirection, categories, locations]);
+
   const handleCardClick = (itemId: string) => {
     navigate(`/item/${itemId}`);
   };
@@ -107,11 +183,58 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
         await FoodItemsService.deleteItem(itemId);
         // Reload data to refresh the list
         await loadData();
-        alert(`${t('alert.success')}: "${itemName}" ${t('action.delete')}`);
+        toast.success(`"${itemName}" ${t('action.delete')}`);
       } catch (error) {
         console.error('Error deleting item:', error);
-        alert(`${t('alert.deleteFailed')}: ${itemName}`);
+        toast.error(`${t('alert.deleteFailed')}: ${itemName}`);
       }
+    }
+  };
+
+  // Bulk operations
+  const handleSelectItem = (itemId: string, isSelected: boolean) => {
+    const newSelected = new Set(selectedItems);
+    if (isSelected) {
+      newSelected.add(itemId);
+    } else {
+      newSelected.delete(itemId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === filteredAndSortedItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(filteredAndSortedItems.map(item => item.id!)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    if (window.confirm(`Delete ${selectedItems.size} selected items?`)) {
+      const loadingToast = toast.loading('Deleting items...');
+      try {
+        await Promise.all(
+          Array.from(selectedItems).map(itemId => FoodItemsService.deleteItem(itemId))
+        );
+        setSelectedItems(new Set());
+        await loadData();
+        toast.success(`Successfully deleted ${selectedItems.size} items`, { id: loadingToast });
+      } catch (error) {
+        console.error('Error deleting items:', error);
+        toast.error('Failed to delete some items', { id: loadingToast });
+      }
+    }
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      await notificationService.testNotification();
+      toast.success('Test notification sent!');
+    } catch (error) {
+      toast.error('Failed to send test notification');
     }
   };
 
@@ -122,13 +245,14 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     if (!confirmed) return;
     
     setIsCleaningUp(true);
+    const loadingToast = toast.loading('Cleaning up expired items...');
     try {
       const deletedCount = await FoodItemsService.cleanupExpiredItems(user.uid);
-      alert(`${t('cleanup.success')}: ${deletedCount} ${t('cleanup.itemsDeleted')}`);
+      toast.success(`${t('cleanup.success')}: ${deletedCount} ${t('cleanup.itemsDeleted')}`, { id: loadingToast });
       await loadData(); // Refresh the data
     } catch (error) {
       console.error('Error cleaning up expired items:', error);
-      alert(t('cleanup.failed'));
+      toast.error(t('cleanup.failed'), { id: loadingToast });
     } finally {
       setIsCleaningUp(false);
     }
@@ -141,13 +265,14 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     if (!confirmed) return;
     
     setIsCleaningUp(true);
+    const loadingToast = toast.loading('Cleaning up data...');
     try {
       const result = await cleanupUserData(user.uid);
-      alert(`Data cleanup completed! Duplicates removed: ${result.duplicatesRemoved}, Orphaned references fixed: ${result.orphansFixed}, Locations migrated: ${result.locationsMigrated}, Categories migrated: ${result.categoriesMigrated}`);
+      toast.success(`Data cleanup completed! Duplicates removed: ${result.duplicatesRemoved}, Orphaned references fixed: ${result.orphansFixed}, Locations migrated: ${result.locationsMigrated}, Categories migrated: ${result.categoriesMigrated}`, { id: loadingToast });
       await loadData(); // Refresh the data
     } catch (error) {
       console.error('Error cleaning up data:', error);
-      alert('Failed to clean up data');
+      toast.error('Failed to clean up data', { id: loadingToast });
     } finally {
       setIsCleaningUp(false);
     }
@@ -434,6 +559,192 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
           <div className="stat-label">{t('status.items')}</div>
         </div>
       </div>
+
+      {/* Search and Filter Controls */}
+      <div className="controls-section">
+        <div className="search-filter-bar">
+          <div className="search-control">
+            <input
+              type="text"
+              placeholder="🔍 Search items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div className="filter-controls">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.icon} {category.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="filter-select"
+            >
+              <option value="">All Locations</option>
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  📍 {location.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="filter-select"
+            >
+              <option value="expiryDate">Sort by Expiry Date</option>
+              <option value="name">Sort by Name</option>
+              <option value="category">Sort by Category</option>
+              <option value="location">Sort by Location</option>
+              <option value="addedDate">Sort by Date Added</option>
+            </select>
+
+            <button
+              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+              className="sort-direction-btn"
+              title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}
+            >
+              {sortDirection === 'asc' ? '↑' : '↓'}
+            </button>
+
+            <button
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              className="view-mode-btn"
+              title={`Switch to ${viewMode === 'grid' ? 'List' : 'Grid'} View`}
+            >
+              {viewMode === 'grid' ? '☰' : '⊞'}
+            </button>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {selectedItems.size > 0 && (
+          <div className="bulk-actions">
+            <span className="selection-count">
+              {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+            </span>
+            <button onClick={handleBulkDelete} className="btn btn-danger btn-small">
+              🗑️ Delete Selected
+            </button>
+            <button onClick={() => setSelectedItems(new Set())} className="btn btn-secondary btn-small">
+              Clear Selection
+            </button>
+          </div>
+        )}
+
+        {/* Notification Actions */}
+        <div className="notification-actions">
+          <button onClick={handleTestNotification} className="btn btn-secondary btn-small">
+            🔔 Test Notification
+          </button>
+        </div>
+      </div>
+
+      {/* Items Display */}
+      {filteredAndSortedItems.length > 0 && (
+        <div className="items-section">
+          <div className="section-header">
+            <h2>Your Items ({filteredAndSortedItems.length})</h2>
+            <div className="bulk-select">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={selectedItems.size === filteredAndSortedItems.length && filteredAndSortedItems.length > 0}
+                  onChange={handleSelectAll}
+                />
+                Select All
+              </label>
+            </div>
+          </div>
+          
+          <div className={`items-${viewMode}`}>
+            {filteredAndSortedItems.map((item) => (
+              <div 
+                key={item.id} 
+                className={`item-card ${item.status} ${viewMode}`}
+                onClick={() => handleCardClick(item.id!)}
+              >
+                <div className="item-select" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.has(item.id!)}
+                    onChange={(e) => handleSelectItem(item.id!, e.target.checked)}
+                  />
+                </div>
+                
+                <div className="item-header">
+                  <div className="item-title">
+                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
+                    <h3>{item.name}</h3>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <Link 
+                      to={`/edit-item/${item.id}`}
+                      className="btn btn-small btn-secondary"
+                      onClick={(e) => e.stopPropagation()}
+                      title={t('action.edit')}
+                      style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        fontSize: '0.75rem',
+                        minWidth: 'auto',
+                        textDecoration: 'none'
+                      }}
+                    >
+                      ✏️
+                    </Link>
+                    <button 
+                      className="delete-btn"
+                      onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
+                      title={t('action.delete')}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="item-details">
+                  <div className="detail-row">
+                    <span>{t('item.quantity')}: {item.quantity}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
+                    <span>{getCategoryName(item.categoryId)}</span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="location-icon">{getLocationIcon(item.locationId)}</span>
+                    <span>{getLocationName(item.locationId)}</span>
+                  </div>
+                </div>
+                
+                <div className="item-status">
+                  <span 
+                    className="status-badge" 
+                    style={{ backgroundColor: getStatusColor(item.status!) }}
+                  >
+                    {getStatusText(item.status!)}
+                  </span>
+                  <span className="days-text">
+                    {getDaysText(item.daysUntilExpiry!)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="quick-actions">

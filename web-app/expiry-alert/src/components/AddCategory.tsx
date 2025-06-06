@@ -20,16 +20,64 @@ const AddCategory: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  const commonIcons = [
-    '🍎', '🍇', '🥕', '🥛', '🥩', '🍞', '🥤', '🍿', 
-    '🧊', '🐟', '🌶️', '🍰', '🌾', '🥫', '🍋', '🍌',
-    '🥔', '🧄', '🧅', '🥬', '🍅', '🥒', '🌽', '🥑'
+  const foodCategoryIcons = [
+    // Fruits
+    '🍎', '🍏', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🍍', '🥭', '🥥',
+    // Vegetables  
+    '🍅', '🍆', '🌽', '🌶️', '🥒', '🥕', '🥔', '🧄', '🧅', '🥦', '🌰',
+    // Grains & Bread
+    '🍞', '🥖', '🥐', '🥯', '🥞', '🥨', '🍚', '🍙', '🍛', '🍜', '🍝',
+    // Proteins & Seafood
+    '🍗', '🍖', '🥓', '🥩', '🐟', '🍤', '🦐', '🥚', '🍳', '🍣', '🍢', '🍘',
+    // Dairy & Alternatives
+    '🥛', '🧀', '🧈',
+    // Prepared Foods
+    '🥗', '🥪', '🌮', '🌯', '🍔', '🍟', '🌭', '🍕', '🥙', '🥘',
+    // Snacks
+    '🍿', '🥜',
+    // Desserts & Sweets
+    '🍪', '🍩', '🧁', '🎂', '🍰', '🍫', '🍬', '🍭', '🍦', '🍨', '🍧',
+    // Beverages
+    '☕', '🍵', '🍼', '🥤', '🧃', '🍶', '🍻', '🍺', '🍷', '🥂', '🍸', '🍹', '🥃',
+    // Condiments & Seasonings
+    '🧂', '🍯',
+    // Containers & Serving
+    '🥣', '🍽️', '🍱', '🥡', '🥫', '📦', '🛒'
   ];
 
-  const commonColors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', 
-    '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
-    '#1DD1A1', '#FD79A8', '#A29BFE', '#6C5CE7', '#E17055'
+  const extendedColors = [
+    // Transparent option
+    { name: 'Transparent', value: 'transparent', preview: 'rgba(0,0,0,0.1)' },
+    
+    // Primary Colors
+    { name: 'Red', value: '#FF6B6B', preview: '#FF6B6B' },
+    { name: 'Pink', value: '#FF9FF3', preview: '#FF9FF3' },
+    { name: 'Orange', value: '#FF9F43', preview: '#FF9F43' },
+    { name: 'Yellow', value: '#FECA57', preview: '#FECA57' },
+    { name: 'Green', value: '#1DD1A1', preview: '#1DD1A1' },
+    { name: 'Teal', value: '#4ECDC4', preview: '#4ECDC4' },
+    { name: 'Blue', value: '#45B7D1', preview: '#45B7D1' },
+    { name: 'Purple', value: '#A29BFE', preview: '#A29BFE' },
+    
+    // Pastel Colors
+    { name: 'Light Pink', value: '#FFB3BA', preview: '#FFB3BA' },
+    { name: 'Light Orange', value: '#FFDFBA', preview: '#FFDFBA' },
+    { name: 'Light Yellow', value: '#FFFFBA', preview: '#FFFFBA' },
+    { name: 'Light Green', value: '#BAFFC9', preview: '#BAFFC9' },
+    { name: 'Light Blue', value: '#BAE1FF', preview: '#BAE1FF' },
+    { name: 'Light Purple', value: '#E1BAFF', preview: '#E1BAFF' },
+    
+    // Dark Colors
+    { name: 'Dark Red', value: '#C0392B', preview: '#C0392B' },
+    { name: 'Dark Green', value: '#27AE60', preview: '#27AE60' },
+    { name: 'Dark Blue', value: '#2980B9', preview: '#2980B9' },
+    { name: 'Dark Purple', value: '#8E44AD', preview: '#8E44AD' },
+    
+    // Neutral Colors
+    { name: 'Gray', value: '#95A5A6', preview: '#95A5A6' },
+    { name: 'Dark Gray', value: '#34495E', preview: '#34495E' },
+    { name: 'Brown', value: '#8B4513', preview: '#8B4513' },
+    { name: 'Black', value: '#2C3E50', preview: '#2C3E50' }
   ];
 
   useEffect(() => {
@@ -182,11 +230,17 @@ const AddCategory: React.FC = () => {
               {t('categories.icon')}
             </label>
             <div className="icon-selector">
-              <div className="selected-icon" style={{ backgroundColor: formData.color }}>
+              <div 
+                className="selected-icon" 
+                style={{ 
+                  backgroundColor: formData.color,
+                  border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none'
+                }}
+              >
                 {formData.icon}
               </div>
               <div className="icon-grid">
-                {commonIcons.map((icon) => (
+                {foodCategoryIcons.map((icon) => (
                   <button
                     key={icon}
                     type="button"
@@ -205,19 +259,29 @@ const AddCategory: React.FC = () => {
               {t('categories.color')}
             </label>
             <div className="color-selector">
-              <div className="color-preview" style={{ backgroundColor: formData.color }}>
+              <div 
+                className="color-preview" 
+                style={{ 
+                  backgroundColor: formData.color,
+                  border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none'
+                }}
+              >
                 <span>{formData.icon}</span>
               </div>
               <div className="color-grid">
-                {commonColors.map((color) => (
+                {extendedColors.map((colorOption) => (
                   <button
-                    key={color}
+                    key={colorOption.value}
                     type="button"
-                    onClick={() => handleColorSelect(color)}
-                    className={`color-option ${formData.color === color ? 'active' : ''}`}
-                    style={{ backgroundColor: color }}
-                    title={color}
-                  />
+                    onClick={() => handleColorSelect(colorOption.value)}
+                    className={`color-option ${formData.color === colorOption.value ? 'active' : ''}`}
+                    style={{ backgroundColor: colorOption.preview }}
+                    title={colorOption.name}
+                  >
+                    {colorOption.value === 'transparent' && (
+                      <span style={{ fontSize: '12px', color: '#666' }}>∅</span>
+                    )}
+                  </button>
                 ))}
               </div>
               <input
@@ -253,7 +317,13 @@ const AddCategory: React.FC = () => {
           <h3>{t('categories.preview')}</h3>
           <div className="category-card preview">
             <div className="category-header">
-              <div className="category-icon" style={{ backgroundColor: formData.color }}>
+              <div 
+                className="category-icon" 
+                style={{ 
+                  backgroundColor: formData.color,
+                  border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none'
+                }}
+              >
                 {formData.icon}
               </div>
             </div>

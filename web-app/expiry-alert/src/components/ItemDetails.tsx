@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { FoodItemsService, CategoriesService, LocationsService, FoodItem, Category, Location } from '../services/firestoreService';
@@ -55,13 +56,14 @@ const ItemDetails: React.FC = () => {
     if (!item || !item.id) return;
     
     if (window.confirm(`${t('alert.deleteMessage')} "${item.name}"?`)) {
+      const loadingToast = toast.loading('Deleting item...');
       try {
         await FoodItemsService.deleteItem(item.id);
-        alert(`${t('alert.success')}: "${item.name}" ${t('action.delete')}`);
+        toast.success(`"${item.name}" ${t('action.delete')}`, { id: loadingToast });
         navigate('/dashboard');
       } catch (error) {
         console.error('Error deleting item:', error);
-        alert(`${t('alert.deleteFailed')}: ${item.name}`);
+        toast.error(`${t('alert.deleteFailed')}: ${item.name}`, { id: loadingToast });
       }
     }
   };

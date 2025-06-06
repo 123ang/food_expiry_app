@@ -7,7 +7,9 @@ import { LocationsService, Location } from '../services/firestoreService';
 const AddLocation: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    icon: '📍',
+    color: '#45B7D1'
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +19,56 @@ const AddLocation: React.FC = () => {
   const { id } = useParams();
   const { t } = useLanguage();
   const { user } = useAuth();
+
+  const storageLocationIcons = [
+    // Refrigerated/Cold Storage
+    '❄️', '🧊', '🥛', '🧀', '🥩', '🐟', '🍤', '🦐', '🥚', '🧈', '🍇', '🍓', '🥕', '🥦',
+    // Freezer
+    '🧊', '❄️', '🍦', '🍧', '🍖', '🍗', '🦐', '🥟', '🍨', '📦',
+    // Pantry/Dry Storage  
+    '📦', '🥫', '🍱', '🥡', '🍞', '🥖', '🥐', '🍝', '🍚', '🥜', '🍯', '☕', '🧂', '🍪', '🛒',
+    // Counter/Room Temperature
+    '🍎', '🍏', '🍌', '🍊', '🍋', '🍅', '🧄', '🧅', '🥔', '🌰', '🥥', '🍍', '🥭', '🍑', '🍈', '🍉',
+    // Cabinet/Cupboard Storage
+    '🗄️', '📦', '🍽️', '🥫', '🍱', '🥡', '🥤', '🧃', '🍳', '🥄', '🔪', '🍴', '🛒',
+    // Wine/Beverage Storage
+    '🍷', '🍺', '🍻', '🥂', '🍸', '🍹', '🥃', '🍶', '🧃', '🥤',
+    // General Storage Icons
+    '📍', '🏠', '🗃️', '🗂️', '📋', '📌', '🎯', '🏷️', '🔖', '📦', '🗄️'
+  ];
+
+  const extendedColors = [
+    // Transparent option
+    { name: 'Transparent', value: 'transparent', preview: 'rgba(0,0,0,0.1)' },
+    
+    // Primary Colors  
+    { name: 'Blue', value: '#45B7D1', preview: '#45B7D1' },
+    { name: 'Teal', value: '#4ECDC4', preview: '#4ECDC4' },
+    { name: 'Green', value: '#1DD1A1', preview: '#1DD1A1' },
+    { name: 'Purple', value: '#A29BFE', preview: '#A29BFE' },
+    { name: 'Red', value: '#FF6B6B', preview: '#FF6B6B' },
+    { name: 'Orange', value: '#FF9F43', preview: '#FF9F43' },
+    { name: 'Yellow', value: '#FECA57', preview: '#FECA57' },
+    { name: 'Pink', value: '#FF9FF3', preview: '#FF9FF3' },
+    
+    // Cool Colors (for refrigerated)
+    { name: 'Ice Blue', value: '#E3F2FD', preview: '#E3F2FD' },
+    { name: 'Frost', value: '#F1F8E9', preview: '#F1F8E9' },
+    { name: 'Cool Gray', value: '#ECEFF1', preview: '#ECEFF1' },
+    { name: 'Arctic', value: '#E8F5E8', preview: '#E8F5E8' },
+    
+    // Warm Colors (for pantry/room temp)
+    { name: 'Warm Beige', value: '#FFF8E1', preview: '#FFF8E1' },
+    { name: 'Cream', value: '#FFFDE7', preview: '#FFFDE7' },
+    { name: 'Light Brown', value: '#EFEBE9', preview: '#EFEBE9' },
+    { name: 'Sand', value: '#FDF4E3', preview: '#FDF4E3' },
+    
+    // Dark Colors
+    { name: 'Dark Blue', value: '#2980B9', preview: '#2980B9' },
+    { name: 'Dark Green', value: '#27AE60', preview: '#27AE60' },
+    { name: 'Dark Gray', value: '#34495E', preview: '#34495E' },
+    { name: 'Brown', value: '#8B4513', preview: '#8B4513' }
+  ];
 
   useEffect(() => {
     if (id) {
@@ -34,7 +86,9 @@ const AddLocation: React.FC = () => {
       if (location) {
         setFormData({
           name: location.name,
-          description: location.description
+          description: location.description,
+          icon: location.icon || '📍',
+          color: location.color || '#45B7D1'
         });
       } else {
         setError('Location not found');
@@ -51,6 +105,14 @@ const AddLocation: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError(null);
+  };
+
+  const handleIconSelect = (icon: string) => {
+    setFormData(prev => ({ ...prev, icon }));
+  };
+
+  const handleColorSelect = (color: string) => {
+    setFormData(prev => ({ ...prev, color }));
   };
 
   const validateForm = () => {
@@ -147,6 +209,74 @@ const AddLocation: React.FC = () => {
             />
           </div>
 
+          <div className="form-group">
+            <label className="form-label">
+              {t('categories.icon')}
+            </label>
+            <div className="icon-selector">
+              <div 
+                className="selected-icon" 
+                style={{ 
+                  backgroundColor: formData.color,
+                  border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none'
+                }}
+              >
+                {formData.icon}
+              </div>
+              <div className="icon-grid">
+                {storageLocationIcons.map((icon) => (
+                  <button
+                    key={icon}
+                    type="button"
+                    onClick={() => handleIconSelect(icon)}
+                    className={`icon-option ${formData.icon === icon ? 'active' : ''}`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              {t('categories.color')}
+            </label>
+            <div className="color-selector">
+              <div 
+                className="color-preview" 
+                style={{ 
+                  backgroundColor: formData.color,
+                  border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none'
+                }}
+              >
+                <span>{formData.icon}</span>
+              </div>
+              <div className="color-grid">
+                {extendedColors.map((colorOption) => (
+                  <button
+                    key={colorOption.value}
+                    type="button"
+                    onClick={() => handleColorSelect(colorOption.value)}
+                    className={`color-option ${formData.color === colorOption.value ? 'active' : ''}`}
+                    style={{ backgroundColor: colorOption.preview }}
+                    title={colorOption.name}
+                  >
+                    {colorOption.value === 'transparent' && (
+                      <span style={{ fontSize: '12px', color: '#666' }}>∅</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="color"
+                value={formData.color === 'transparent' ? '#ffffff' : formData.color}
+                onChange={(e) => handleColorSelect(e.target.value)}
+                className="color-input"
+              />
+            </div>
+          </div>
+
           {error && <div className="error-message">{error}</div>}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
@@ -159,14 +289,46 @@ const AddLocation: React.FC = () => {
           </div>
         </form>
 
+        {/* Preview Card */}
+        <div className="location-preview" style={{ marginTop: '2rem' }}>
+          <h3>{t('categories.preview')}</h3>
+          <div className="location-card preview" style={{ padding: '1rem', background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div 
+              className="location-icon" 
+              style={{ 
+                backgroundColor: formData.color,
+                border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none',
+                borderRadius: '8px',
+                width: '48px',
+                height: '48px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px'
+              }}
+            >
+              {formData.icon}
+            </div>
+            <div className="location-content">
+              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.125rem', fontWeight: '600' }}>
+                {formData.name || t('locations.name')}
+              </h3>
+              <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                {formData.description || t('locations.description')}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div style={{ marginTop: '2rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px' }}>
           <h4 style={{ marginBottom: '0.5rem', color: '#374151' }}>Tips for Storage Locations:</h4>
           <ul style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0, paddingLeft: '1rem' }}>
-            <li><strong>Refrigerated:</strong> Fridge, refrigerator, cold storage</li>
-            <li><strong>Frozen:</strong> Freezer, deep freeze, ice chest</li>
-            <li><strong>Room Temperature:</strong> Pantry, counter, cupboards, cabinet</li>
-            <li>Be specific with names to easily identify locations</li>
-            <li>Use descriptive names like "Kitchen Pantry" or "Main Fridge"</li>
+            <li><strong>Refrigerated:</strong> Fridge, refrigerator, cold storage (❄️🧊)</li>
+            <li><strong>Frozen:</strong> Freezer, deep freeze, ice chest (🧊❄️)</li>
+            <li><strong>Pantry:</strong> Dry storage, cupboard, cabinet (📦🏺)</li>
+            <li><strong>Counter:</strong> Room temperature, fruit bowl (🍎🍌)</li>
+            <li>Use icons and colors to easily identify storage types</li>
+            <li>Choose transparent backgrounds for minimal designs</li>
           </ul>
         </div>
       </div>

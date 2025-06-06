@@ -31,6 +31,9 @@ export interface FoodItem {
   status?: 'fresh' | 'expiring-soon' | 'expired';
   daysUntilExpiry?: number;
   reminderDays?: number;
+  imageId?: string;        // Google Drive file ID
+  imageUrl?: string;       // Public image URL
+  imageThumbnail?: string; // Thumbnail URL for faster loading
   createdAt?: any;
   updatedAt?: any;
 }
@@ -51,6 +54,8 @@ export interface Location {
   id?: string;
   name: string;
   description: string;
+  icon?: string;
+  color?: string;
   userId: string;
   createdAt: string;
   createdAtTimestamp?: any;

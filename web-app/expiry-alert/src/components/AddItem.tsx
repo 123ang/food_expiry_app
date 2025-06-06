@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -10,6 +11,7 @@ import {
   Category,
   Location 
 } from '../services/firestoreService';
+import FirebaseImageUpload from './FirebaseImageUpload';
 
 const AddItem: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +28,11 @@ const AddItem: React.FC = () => {
     quantity: '',
     notes: '',
     reminderDays: '3'
+  });
+  const [imageData, setImageData] = useState({
+    imageId: '',
+    imageUrl: '',
+    imageThumbnail: ''
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -81,6 +88,11 @@ const AddItem: React.FC = () => {
           notes: item.notes,
           reminderDays: item.reminderDays?.toString() || '3'
         });
+        setImageData({
+          imageId: item.imageId || '',
+          imageUrl: item.imageUrl || '',
+          imageThumbnail: item.imageThumbnail || ''
+        });
       } else {
         setError('Item not found');
       }
@@ -96,6 +108,14 @@ const AddItem: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError(null);
+  };
+
+  const handleImageUploaded = (fileId: string, imageUrl: string) => {
+    setImageData({
+      imageId: fileId,
+      imageUrl: imageUrl,
+      imageThumbnail: imageUrl // We can use the same URL for now
+    });
   };
 
   const validateForm = () => {
@@ -133,16 +153,17 @@ const AddItem: React.FC = () => {
     try {
       const itemData = {
         ...formData,
+        ...imageData,
         reminderDays: parseInt(formData.reminderDays) || 3,
         userId: user.uid
       };
       
       if (isEditing && id) {
         await FoodItemsService.updateItem(id, itemData);
-        alert(`${t('alert.success')}: ${t('foodItems.edit')}`);
+        toast.success(`${t('alert.success')}: ${t('foodItems.edit')}`);
       } else {
         await FoodItemsService.addItem(itemData, user.uid);
-        alert(`${t('alert.success')}: ${t('foodItems.save')}`);
+        toast.success(`${t('alert.success')}: ${t('foodItems.save')}`);
       }
       navigate('/dashboard');
     } catch (error) {
@@ -293,6 +314,14 @@ const AddItem: React.FC = () => {
               style={{ resize: 'vertical', minHeight: '80px' }}
             />
           </div>
+
+                                      <FirebaseImageUpload
+                onImageUploaded={handleImageUploaded}
+                itemName={formData.name}
+              currentImageId={imageData.imageId}
+              currentImageUrl={imageData.imageUrl}
+              disabled={isLoading}
+              />
 
           {error && <div className="error-message">{error}</div>}
 
