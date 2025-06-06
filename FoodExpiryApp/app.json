@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expiry Alert",
     "slug": "expiry-alert-app",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/food_expiry_logo_adaptive.png",
     "userInterfaceStyle": "automatic",
@@ -21,7 +21,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.expiryalert.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to scan barcodes for adding food items quickly.",
         "NSPhotoLibraryUsageDescription": "This app accesses photo library to save food item images for better organization.",
@@ -34,7 +34,7 @@
         "backgroundColor": "#0f7714"
       },
       "package": "com.expiryalert.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "permissions": [
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
