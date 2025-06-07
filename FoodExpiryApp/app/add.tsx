@@ -47,6 +47,7 @@ export default function AddScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [showEmojiModal, setShowEmojiModal] = useState(false);
   const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showImageOptionsModal, setShowImageOptionsModal] = useState(false);
   const [savedPhotos, setSavedPhotos] = useState<string[]>([]);
 
@@ -234,6 +235,8 @@ export default function AddScreen() {
   };
 
   const handleSave = async () => {
+    if (isSaving) return; // Prevent duplicate submissions
+    
     if (!itemName.trim()) {
       Alert.alert(t('alert.error'), t('error.enterItemName'));
       return;
@@ -244,6 +247,7 @@ export default function AddScreen() {
       return;
     }
 
+    setIsSaving(true);
     try {
       const item: Omit<FoodItem, 'id'> = {
         name: itemName.trim(),
@@ -267,6 +271,8 @@ export default function AddScreen() {
         t('alert.error'), 
         error instanceof Error ? error.message : t('error.failedToCreate')
       );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -364,6 +370,10 @@ export default function AddScreen() {
       paddingHorizontal: 16,
       borderRadius: 4,
       alignItems: 'center',
+    },
+    saveButtonDisabled: {
+      backgroundColor: theme.textSecondary,
+      opacity: 0.6,
     },
     saveButtonText: {
       color: '#FFFFFF',
@@ -545,8 +555,14 @@ export default function AddScreen() {
             <FontAwesome name="arrow-left" size={24} color={theme.textColor} />
           </TouchableOpacity>
           <Text style={styles.title}>{t('addItem.title')}</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>{t('form.save')}</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]} 
+            onPress={handleSave}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveButtonText}>
+              {isSaving ? t('status.loading') : t('form.save')}
+            </Text>
           </TouchableOpacity>
         </View>
 

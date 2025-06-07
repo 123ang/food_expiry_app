@@ -56,7 +56,7 @@ const FoodItemCard: React.FC<{
     } else if (item.days_until_expiry <= 5) {
       return { icon: '⏰', color: '#FF9800', text: t('foodStatus.expiring') };
     } else {
-      return { icon: '✅', color: '#4CAF50', text: t('foodStatus.fresh') };
+      return { icon: '✅', color: '#4CAF50', text: t('foodStatus.indate') };
     }
   };
 
@@ -127,7 +127,7 @@ export default function ItemStatusScreen() {
   
   // Map status to display information
   const statusConfig = {
-    fresh: { title: t('status.freshItems'), color: '#4CAF50', icon: '✅' },
+    fresh: { title: t('status.indateItems'), color: '#4CAF50', icon: '✅' },
     expiring: { title: t('status.expiringSoon'), color: '#FF9800', icon: '⏰' },
     expired: { title: t('status.expiredItems'), color: '#F44336', icon: '⚠️' }
   };

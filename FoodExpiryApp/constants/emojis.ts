@@ -16,7 +16,7 @@ export interface EmojiCategory {
 // Category emojis organized by collapsible sections
 export const EMOJI_CATEGORIES: EmojiCategory[] = [
   {
-    title: 'Food',
+    title: 'emojiCategory.food',
     icon: '🍎',
     items: [
       // Fruits
@@ -131,53 +131,108 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       
       // Kitchen Items
       { key: '🥣', emoji: '🥣', label: 'Bowl' },
+      
+      // Canned & Packaged Foods
+      { key: '🥫', emoji: '🥫', label: 'Canned Goods' },
+      { key: '🍱', emoji: '🍱', label: 'Bento Box' },
+      { key: '🥡', emoji: '🥡', label: 'Takeout Box' },
+      
+      // Frozen Foods
+      { key: '🧊', emoji: '🧊', label: 'Frozen Foods' },
+      { key: '❄️', emoji: '❄️', label: 'Frozen Items' },
+      { key: '🥶', emoji: '🥶', label: 'Frozen Products' },
+      
+      // Spices & Herbs
+      { key: '🌿', emoji: '🌿', label: 'Herbs' },
+      { key: '🌱', emoji: '🌱', label: 'Sprouts' },
+      { key: '🍃', emoji: '🍃', label: 'Leaves' },
     ]
   },
   {
-    title: 'Personal Care & Beauty',
+    title: 'emojiCategory.personalCare',
     icon: '💅',
     items: [
       { key: '💄', emoji: '💄', label: 'Makeup' },
+      { key: '💅', emoji: '💅', label: 'Nail Polish' },
+      { key: '💋', emoji: '💋', label: 'Lipstick' },
+      { key: '👄', emoji: '👄', label: 'Lip Care' },
+      { key: '👁️‍🗨️', emoji: '👁️‍🗨️', label: 'Eye Makeup' },
       { key: '🌞', emoji: '🌞', label: 'Sunscreen' },
       { key: '🧴', emoji: '🧴', label: 'Moisturizers & Lotions' },
       { key: '🧼', emoji: '🧼', label: 'Shampoo & Conditioner' },
-      { key: '🌸', emoji: '🌸', label: 'Perfume' },
       { key: '🧽', emoji: '🧽', label: 'Beauty Sponge' },
+      { key: '🪒', emoji: '🪒', label: 'Razor' },
+      { key: '🪥', emoji: '🪥', label: 'Toothbrush' },
+      { key: '🦷', emoji: '🦷', label: 'Dental Care' },
+      { key: '🧻', emoji: '🧻', label: 'Toilet Paper' },
+      { key: '🌸', emoji: '🌸', label: 'Perfume' },
+      { key: '🌺', emoji: '🌺', label: 'Floral Fragrance' },
+      { key: '🌹', emoji: '🌹', label: 'Rose Products' },
+      { key: '🧖‍♀️', emoji: '🧖‍♀️', label: 'Hair Treatment' },
+      { key: '💆‍♀️', emoji: '💆‍♀️', label: 'Face Mask' },
     ]
   },
   {
-    title: 'Medical & Health',
+    title: 'emojiCategory.medical',
     icon: '🏥',
     items: [
       { key: '💊', emoji: '💊', label: 'Medication' },
       { key: '🍀', emoji: '🍀', label: 'Vitamins & Supplements' },
-      { key: '🩹', emoji: '🩹', label: 'First-aid Supplies' },
-      { key: '👁️', emoji: '👁️', label: 'Contact Lenses & Solution' },
-      { key: '🩸', emoji: '🩸', label: 'Blood Test' },
-      { key: '🧪', emoji: '🧪', label: 'Test Tube' },
+      { key: '🩹', emoji: '🩹', label: 'First Aid' },
+      { key: '🩺', emoji: '🩺', label: 'Stethoscope' },
+      { key: '💉', emoji: '💉', label: 'Syringe' },
+      { key: '🌡️', emoji: '🌡️', label: 'Thermometer' },
+      { key: '🩼', emoji: '🩼', label: 'Crutch' },
+      { key: '🦽', emoji: '🦽', label: 'Wheelchair' },
+      { key: '🧬', emoji: '🧬', label: 'DNA' },
+      { key: '🔬', emoji: '🔬', label: 'Microscope' },
+      { key: '⚗️', emoji: '⚗️', label: 'Alembic' },
+      { key: '🧪', emoji: '🧪', label: 'Medical Devices' },
+      { key: '👁️', emoji: '👁️', label: 'Contact Lenses' },
+      { key: '🩸', emoji: '🩸', label: 'Blood Test Kits' },
+      { key: '🏥', emoji: '🏥', label: 'Hospital' },
+      { key: '🚑', emoji: '🚑', label: 'Ambulance' },
+      { key: '⛑️', emoji: '⛑️', label: 'Rescue Helmet' },
     ]
   },
   {
-    title: 'Household Items',
+    title: 'emojiCategory.household',
     icon: '🏠',
     items: [
       { key: '🧺', emoji: '🧺', label: 'Laundry Detergent' },
-      { key: '🔋', emoji: '🔋', label: 'Batteries' },
-      { key: '🧯', emoji: '🧯', label: 'Fire Extinguisher' },
       { key: '🧹', emoji: '🧹', label: 'Cleaning Supplies' },
+      { key: '🪣', emoji: '🪣', label: 'Bucket' },
+      { key: '🧯', emoji: '🧯', label: 'Safety Equipment' },
+      { key: '🔋', emoji: '🔋', label: 'Batteries' },
+      { key: '💡', emoji: '💡', label: 'Light Bulbs' },
+      { key: '🕯️', emoji: '🕯️', label: 'Candles' },
+      { key: '🔦', emoji: '🔦', label: 'Flashlight' },
+      { key: '🪜', emoji: '🪜', label: 'Ladder' },
+      { key: '🔨', emoji: '🔨', label: 'Hammer' },
+      { key: '🪚', emoji: '🪚', label: 'Saw' },
+      { key: '🪛', emoji: '🪛', label: 'Screwdriver' },
+      { key: '⚡', emoji: '⚡', label: 'Electrical' },
     ]
   },
   {
-    title: 'Chemical & Automotive',
+    title: 'emojiCategory.chemical',
     icon: '⚗️',
     items: [
       { key: '🎨', emoji: '🎨', label: 'Paint' },
+      { key: '🖌️', emoji: '🖌️', label: 'Paint Brush' },
+      { key: '🖍️', emoji: '🖍️', label: 'Crayon' },
       { key: '🛢️', emoji: '🛢️', label: 'Oil Drum' },
       { key: '⛽', emoji: '⛽', label: 'Fuel' },
+      { key: '🚗', emoji: '🚗', label: 'Car Products' },
+      { key: '⚙️', emoji: '⚙️', label: 'Car Parts' },
+      { key: '🛞', emoji: '🛞', label: 'Tire' },
+      { key: '☢️', emoji: '☢️', label: 'Radioactive' },
+      { key: '⚠️', emoji: '⚠️', label: 'Warning Chemical' },
+      { key: '🧪', emoji: '🧪', label: 'Chemical Test' },
     ]
   },
   {
-    title: 'Other',
+    title: 'emojiCategory.other',
     icon: '📋',
     items: [
       { key: '💳', emoji: '💳', label: 'Credit Card' },
@@ -186,8 +241,18 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       { key: '🏷️', emoji: '🏷️', label: 'Label' },
       { key: '🎟️', emoji: '🎟️', label: 'Ticket' },
       { key: '📱', emoji: '📱', label: 'Phone' },
-      { key: '🌱', emoji: '🌱', label: 'Plant' },
-      { key: '🌿', emoji: '🌿', label: 'Leaves' }
+      { key: '📦', emoji: '📦', label: 'Package' },
+      { key: '📋', emoji: '📋', label: 'Clipboard' },
+      { key: '📝', emoji: '📝', label: 'Note' },
+      { key: '📄', emoji: '📄', label: 'Document' },
+      { key: '📊', emoji: '📊', label: 'Chart' },
+      { key: '🎯', emoji: '🎯', label: 'Target' },
+      { key: '⭐', emoji: '⭐', label: 'Star' },
+      { key: '❤️', emoji: '❤️', label: 'Heart' },
+      { key: '🔥', emoji: '🔥', label: 'Fire' },
+      { key: '💎', emoji: '💎', label: 'Diamond' },
+      { key: '🎪', emoji: '🎪', label: 'Circus' },
+      { key: '🎭', emoji: '🎭', label: 'Theater' },
     ]
   }
 ];

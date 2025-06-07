@@ -42,7 +42,7 @@ const FoodItemCard: React.FC<{
     } else if (item.days_until_expiry <= 5) {
       return { icon: '⏰', color: '#FF9800', text: 'Expiring' };
     } else {
-      return { icon: '✅', color: '#4CAF50', text: 'Fresh' };
+      return { icon: '✅', color: '#4CAF50', text: 'In-date' };
     }
   };
 

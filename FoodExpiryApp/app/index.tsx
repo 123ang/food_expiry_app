@@ -61,6 +61,7 @@ export default function DashboardScreen() {
   const [quantity, setQuantity] = useState('1');
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const lastLanguage = React.useRef(language);
 
   // Load data when screen comes into focus or language changes
@@ -133,6 +134,8 @@ export default function DashboardScreen() {
   };
 
   const handleSave = async () => {
+    if (isSaving) return; // Prevent duplicate submissions
+    
     if (!itemName.trim()) {
       Alert.alert(t('alert.error'), t('form.nameRequired'));
       return;
@@ -148,6 +151,7 @@ export default function DashboardScreen() {
       return;
     }
 
+    setIsSaving(true);
     try {
       const item: FoodItem = {
         name: itemName.trim(),
@@ -172,6 +176,8 @@ export default function DashboardScreen() {
       await refreshAll();
     } catch (error) {
       Alert.alert(t('alert.error'), t('alert.saveFailed'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -743,7 +749,7 @@ export default function DashboardScreen() {
               onPress={() => router.push('/items/fresh')}
             >
               <Text style={{ fontSize: 24, color: theme.successColor, marginBottom: 8 }}>✅</Text>
-              <Text style={styles.statLabel}>{t('home.fresh')}</Text>
+              <Text style={styles.statLabel}>{t('home.indate')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
             </TouchableOpacity>
             <TouchableOpacity 

@@ -65,7 +65,8 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   selectedEmoji,
 }) => {
   const { theme } = useTheme();
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Food'])); // Food expanded by default
+  const { t } = useLanguage();
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['emojiCategory.food'])); // Food expanded by default
   
   const emojis = isCategory ? CATEGORY_EMOJIS : LOCATION_EMOJIS;
   const categories = isCategory ? EMOJI_CATEGORIES : [{ title: 'Locations', icon: '📍', items: LOCATION_EMOJIS }];
@@ -182,7 +183,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
                   onPress={() => toggleCategory(category.title)}
                 >
                   <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  <Text style={styles.categoryTitle}>{category.title}</Text>
+                  <Text style={styles.categoryTitle}>{t(category.title)}</Text>
                   <Text style={styles.expandIcon}>
                     {expandedCategories.has(category.title) ? '▼' : '▶'}
                   </Text>

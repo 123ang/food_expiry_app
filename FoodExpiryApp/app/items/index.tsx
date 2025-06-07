@@ -22,7 +22,7 @@ export default function ItemsScreen() {
   const statusCategories = [
     {
       id: 'fresh',
-      name: t('status.freshItems'),
+      name: t('status.indateItems'),
       icon: 'check-circle' as IconName,
       color: '#4CAF50',
     },

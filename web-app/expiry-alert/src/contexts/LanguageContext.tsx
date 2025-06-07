@@ -57,7 +57,7 @@ const translations: Record<Language, Record<string, string>> = {
     'home.categories': 'Categories',
     
     // Status
-    'status.fresh': 'Fresh',
+    'status.indate': 'In-date',
     'status.expiring': 'Expiring Soon',
     'status.expired': 'Expired',
     'status.items': 'Items',
@@ -231,7 +231,7 @@ const translations: Record<Language, Record<string, string>> = {
     'home.categories': '分类',
     
     // Status
-    'status.fresh': '新鲜',
+    'status.indate': '未过期',
     'status.expiring': '即将过期',
     'status.expired': '已过期',
     'status.items': '项目',
@@ -405,7 +405,7 @@ const translations: Record<Language, Record<string, string>> = {
     'home.categories': 'カテゴリ',
     
     // Status
-    'status.fresh': '新鮮',
+    'status.indate': '期限内',
     'status.expiring': '期限間近',
     'status.expired': '期限切れ',
     'status.items': 'アイテム',

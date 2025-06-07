@@ -353,7 +353,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'fresh': return t('status.fresh');
+      case 'fresh': return t('status.indate');
       case 'expiring-soon': return t('status.expiring');
       case 'expired': return t('status.expired');
       default: return status;
@@ -395,7 +395,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   // Filter view
   if (filter) {
     const filteredItems = foodItems.filter(item => item.status === filter);
-    const pageTitle = filter === 'fresh' ? t('status.fresh') : 
+    const pageTitle = filter === 'fresh' ? t('status.indate') : 
                      filter === 'expiring-soon' ? t('status.expiring') :
                      t('status.expired');
 
@@ -525,7 +525,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
       <div className="stats-grid">
         <Link to="/items/fresh" className="stat-card fresh">
           <div className="stat-header">
-            <h3>{t('status.fresh')}</h3>
+            <h3>{t('status.indate')}</h3>
             <span className="stat-icon">✅</span>
           </div>
           <div className="stat-number">{stats.fresh}</div>

@@ -497,7 +497,7 @@ export default function ListScreen() {
               disabled={isLoading || isRefreshing}
             >
               <Text style={{ fontSize: 16, color: activeFilter === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759' }}>✅</Text>
-              <Text style={[styles.filterButtonText, activeFilter === 'fresh' && styles.filterButtonTextActive]}>{t('list.fresh')}</Text>
+              <Text style={[styles.filterButtonText, activeFilter === 'fresh' && styles.filterButtonTextActive]}>{t('list.indate')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
