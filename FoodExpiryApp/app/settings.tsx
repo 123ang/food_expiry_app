@@ -616,7 +616,14 @@ const EditModal: React.FC<EditModalProps> = ({
   React.useEffect(() => {
     if (visible) {
       setName(initialName);
-      setIcon(initialIcon || (isCategory ? '🍎' : '❄️'));
+      // Only set default icon if no initialIcon is provided AND it's a new item (no initialName)
+      if (initialIcon) {
+        setIcon(initialIcon);
+      } else if (!initialName) {
+        // Creating new item - use default
+        setIcon(isCategory ? '🍎' : '❄️');
+      }
+      // If editing existing item (has initialName) but no initialIcon, keep current icon
     }
   }, [visible, initialName, initialIcon, isCategory]);
 
@@ -629,7 +636,7 @@ const EditModal: React.FC<EditModalProps> = ({
 
   const handleClose = () => {
     setName('');
-    setIcon(isCategory ? '🍎' : '❄️');
+    // Don't reset icon here - let the useEffect handle icon state properly
     onClose();
   };
 

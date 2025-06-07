@@ -248,9 +248,21 @@ export default function DashboardScreen() {
     },
     welcomeBanner: {
       backgroundColor: theme.primaryColor,
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 20,
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
+      padding: responsive.getResponsiveValue({
+        tablet: 24,
+        largeTablet: 32,
+        default: 20,
+      }),
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 24,
+        largeTablet: 32,
+        default: 20,
+      }),
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -262,31 +274,60 @@ export default function DashboardScreen() {
       ...typography.h3,
       color: '#FFFFFF',
       marginBottom: 4,
+      fontSize: responsive.layout.fontSize.large,
     },
     welcomeSubtitle: {
       ...typography.body1,
       color: '#FFFFFF',
       opacity: 0.9,
+      fontSize: responsive.layout.fontSize.medium,
     },
     bannerIcon: {
       backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      width: responsive.getResponsiveValue({
+        tablet: 60,
+        largeTablet: 70,
+        default: 50,
+      }),
+      height: responsive.getResponsiveValue({
+        tablet: 60,
+        largeTablet: 70,
+        default: 50,
+      }),
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 30,
+        largeTablet: 35,
+        default: 25,
+      }),
       justifyContent: 'center',
       alignItems: 'center',
     },
     quickStats: {
       flexDirection: responsive.breakpoints.isSmall ? 'column' : 'row',
-      marginBottom: 24,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 32,
+        largeTablet: 40,
+        default: 24,
+      }),
       gap: responsive.layout.spacing.grid,
+      // For tablets, ensure stats take full width efficiently
+      justifyContent: responsive.breakpoints.isTablet ? 'space-between' : 'flex-start',
     },
     statCard: {
       flex: responsive.breakpoints.isSmall ? undefined : 1,
       width: responsive.breakpoints.isSmall ? '100%' : undefined,
       backgroundColor: theme.cardBackground,
-      borderRadius: 16,
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
       padding: responsive.layout.spacing.card,
+      paddingVertical: responsive.getResponsiveValue({
+        tablet: 24,
+        largeTablet: 32,
+        default: responsive.layout.spacing.card,
+      }),
       alignItems: 'center',
       ...Platform.select({
         ios: {
@@ -307,28 +348,54 @@ export default function DashboardScreen() {
       ...typography.body3,
       color: theme.textSecondary,
       marginBottom: 4,
+      fontSize: responsive.layout.fontSize.small,
+      textAlign: 'center',
     },
     statValue: {
       ...typography.h2,
       color: theme.primaryColor,
+      fontSize: responsive.layout.fontSize.xlarge,
+      fontWeight: 'bold',
     },
     sectionTitle: {
       ...typography.h4,
       color: theme.textColor,
-      marginBottom: 12,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 16,
+        largeTablet: 20,
+        default: 12,
+      }),
+      fontSize: responsive.layout.fontSize.large,
+      fontWeight: '600',
     },
     locationGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: responsive.layout.spacing.grid,
-      marginBottom: 24,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 32,
+        largeTablet: 40,
+        default: 24,
+      }),
+      // For tablets, better justify content
+      justifyContent: responsive.breakpoints.isTablet ? 'flex-start' : 'space-between',
     },
     locationCard: {
       width: responsive.getGridItemWidth(responsive.layout.gridColumns.locations, responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
-      borderRadius: 16,
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
       padding: responsive.layout.spacing.card,
       alignItems: 'center',
+      minHeight: responsive.getResponsiveValue({
+        tablet: 140,
+        largeTablet: 160,
+        default: 120,
+      }),
+      justifyContent: 'center',
       ...Platform.select({
         ios: {
           shadowColor: theme.shadowColor,
@@ -342,21 +409,35 @@ export default function DashboardScreen() {
       }),
     },
     locationIcon: {
-      width: 60,
-      height: 60,
+      width: responsive.getResponsiveValue({
+        tablet: 70,
+        largeTablet: 80,
+        default: 60,
+      }),
+      height: responsive.getResponsiveValue({
+        tablet: 70,
+        largeTablet: 80,
+        default: 60,
+      }),
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
     },
     locationName: {
       color: theme.textColor,
-      fontSize: 16,
+      fontSize: responsive.layout.fontSize.medium,
       fontWeight: '500',
       marginBottom: 4,
+      textAlign: 'center',
     },
     locationCount: {
       color: theme.textSecondary,
-      fontSize: 14,
+      fontSize: responsive.layout.fontSize.small,
+      textAlign: 'center',
     },
     addLocationCard: {
       width: responsive.getGridItemWidth(responsive.layout.gridColumns.locations, responsive.layout.spacing.grid),
@@ -416,29 +497,59 @@ export default function DashboardScreen() {
     },
     modalContent: {
       backgroundColor: theme.cardBackground,
-      borderRadius: 12,
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 12,
+      }),
       padding: responsive.layout.spacing.container,
       maxHeight: responsive.breakpoints.isSmall ? '90%' : '80%',
-      width: responsive.breakpoints.isTablet ? '80%' : '100%',
+      width: responsive.getResponsiveValue({
+        largeTablet: '70%',
+        tablet: '80%',
+        default: '100%',
+      }),
       alignSelf: 'center',
+      maxWidth: responsive.getResponsiveValue({
+        largeTablet: 800,
+        tablet: 600,
+        default: undefined,
+      }),
     },
     modalScrollContent: {
       flexGrow: 1,
     },
     modalTitle: {
-      fontSize: 20,
+      fontSize: responsive.layout.fontSize.large,
       fontWeight: 'bold',
       color: theme.textColor,
-      marginBottom: 24,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 32,
+        largeTablet: 40,
+        default: 24,
+      }),
     },
     input: {
       backgroundColor: theme.backgroundColor,
-      padding: 12,
-      borderRadius: 8,
-      marginBottom: 16,
+      padding: responsive.getResponsiveValue({
+        tablet: 16,
+        largeTablet: 20,
+        default: 12,
+      }),
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
       color: theme.textColor,
       borderWidth: 1,
       borderColor: theme.borderColor,
+      fontSize: responsive.layout.fontSize.medium,
     },
     pickerContainer: {
       backgroundColor: theme.backgroundColor,
@@ -527,13 +638,24 @@ export default function DashboardScreen() {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: responsive.layout.spacing.grid,
+      justifyContent: responsive.breakpoints.isTablet ? 'flex-start' : 'space-between',
     },
     categoryCard: {
       width: responsive.getGridItemWidth(responsive.layout.gridColumns.categories, responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
-      borderRadius: 16,
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
       padding: responsive.layout.spacing.card,
       alignItems: 'center',
+      minHeight: responsive.getResponsiveValue({
+        tablet: 140,
+        largeTablet: 160,
+        default: 120,
+      }),
+      justifyContent: 'center',
       ...Platform.select({
         ios: {
           shadowColor: theme.shadowColor,
@@ -547,16 +669,29 @@ export default function DashboardScreen() {
       }),
     },
     categoryIcon: {
-      width: 60,
-      height: 60,
+      width: responsive.getResponsiveValue({
+        tablet: 70,
+        largeTablet: 80,
+        default: 60,
+      }),
+      height: responsive.getResponsiveValue({
+        tablet: 70,
+        largeTablet: 80,
+        default: 60,
+      }),
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
     },
     categoryName: {
       color: theme.textColor,
-      fontSize: 16,
+      fontSize: responsive.layout.fontSize.medium,
       fontWeight: '500',
+      textAlign: 'center',
     },
     addCategoryCard: {
       width: '48%',
@@ -739,7 +874,11 @@ export default function DashboardScreen() {
               <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
             </View>
             <View style={styles.bannerIcon}>
-              <FontAwesome name={'cutlery' as IconName} size={24} color="#FFFFFF" />
+              <FontAwesome name={'cutlery' as IconName} size={responsive.getResponsiveValue({
+                tablet: 32,
+                largeTablet: 40,
+                default: 24,
+              })} color="#FFFFFF" />
             </View>
           </View>
 
@@ -779,7 +918,11 @@ export default function DashboardScreen() {
                 onPress={() => router.push(`/locations/${location.id}`)}
               >
                 <View style={styles.locationIcon}>
-                  <LocationIcon iconName={location.icon} size={32} />
+                  <LocationIcon iconName={location.icon} size={responsive.getResponsiveValue({
+                    tablet: 40,
+                    largeTablet: 48,
+                    default: 32,
+                  })} />
                 </View>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationCount}>
@@ -802,7 +945,11 @@ export default function DashboardScreen() {
                   onPress={() => router.push(`/categories/${category.id}`)}
                 >
                   <View style={styles.categoryIcon}>
-                    <CategoryIcon iconName={category.icon} size={32} />
+                    <CategoryIcon iconName={category.icon} size={responsive.getResponsiveValue({
+                      tablet: 40,
+                      largeTablet: 48,
+                      default: 32,
+                    })} />
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <Text style={styles.locationCount}>
