@@ -17,6 +17,7 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   '🍰': '🍰',           // Desserts
   '🐟': '🐟',           // Seafood
   '🍞': '🍞',           // Bread
+  '🩸': '🩸',           // Blood/Health
   
   // Legacy FontAwesome icon names (for backward compatibility)
   leaf: '🥬',           // Vegetables
@@ -53,6 +54,7 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   soap: '🧼',
   perfume: '🌸',
   pills: '💊',
+  medicine: '💊',
   bandage: '🩹',
   eye_drops: '👁️',
   sponge: '🧽',
@@ -64,6 +66,7 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   fuel: '⛽',
   sun_protection: '🌞',
   blood_test: '🩸',
+  health: '🩸',
   herbs: '🍀',
   test_tube: '🧪',
   label: '🏷️',
@@ -76,46 +79,65 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
 };
 
 const CategoryIcon: React.FC<CategoryIconProps> = ({ iconName, size = 24 }) => {
-  // First check if it's already an emoji (length 1-4 Unicode characters)
-  if (iconName && /^[\u{1F300}-\u{1F9FF}]$/u.test(iconName)) {
+  if (!iconName) {
+    return (
+      <Text style={[styles.emoji, { fontSize: size }]}>
+        {CATEGORY_EMOJIS.default}
+      </Text>
+    );
+  }
+
+  // Check if iconName is already an emoji (Unicode emoji characters)
+  const isEmoji = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(iconName);
+  
+  if (isEmoji) {
+    // If it's already an emoji, display it directly
     return (
       <Text style={[styles.emoji, { fontSize: size }]}>
         {iconName}
       </Text>
     );
   }
+
+  // Try exact match first (this handles FontAwesome icon names)
+  if (CATEGORY_EMOJIS[iconName]) {
+    return (
+      <Text style={[styles.emoji, { fontSize: size }]}>
+        {CATEGORY_EMOJIS[iconName]}
+      </Text>
+    );
+  }
   
-  // Otherwise use mapping
+  // Try lowercase match
+  if (CATEGORY_EMOJIS[iconName.toLowerCase()]) {
+    return (
+      <Text style={[styles.emoji, { fontSize: size }]}>
+        {CATEGORY_EMOJIS[iconName.toLowerCase()]}
+      </Text>
+    );
+  }
+  
+  // Try partial matches for common patterns
   let emoji = CATEGORY_EMOJIS.default;
+  const lowerIconName = iconName.toLowerCase();
   
-  if (iconName) {
-    // Try exact match first
-    if (CATEGORY_EMOJIS[iconName]) {
-      emoji = CATEGORY_EMOJIS[iconName];
-    } 
-    // Try lowercase match
-    else if (CATEGORY_EMOJIS[iconName.toLowerCase()]) {
-      emoji = CATEGORY_EMOJIS[iconName.toLowerCase()];
-    }
-    // Try partial matches for common patterns
-    else if (iconName.toLowerCase().includes('fruit')) {
-      emoji = '🍊';
-    }
-    else if (iconName.toLowerCase().includes('vegetable')) {
-      emoji = '🥬';
-    }
-    else if (iconName.toLowerCase().includes('dairy')) {
-      emoji = '🥛';
-    }
-    else if (iconName.toLowerCase().includes('meat')) {
-      emoji = '🥩';
-    }
-    else if (iconName.toLowerCase().includes('bread') || iconName.toLowerCase().includes('grain')) {
-      emoji = '🍞';
-    }
-    else if (iconName.toLowerCase().includes('drink') || iconName.toLowerCase().includes('beverage')) {
-      emoji = '🥤';
-    }
+  if (lowerIconName.includes('fruit')) {
+    emoji = '🍊';
+  }
+  else if (lowerIconName.includes('vegetable')) {
+    emoji = '🥬';
+  }
+  else if (lowerIconName.includes('dairy')) {
+    emoji = '🥛';
+  }
+  else if (lowerIconName.includes('meat')) {
+    emoji = '🥩';
+  }
+  else if (lowerIconName.includes('bread') || lowerIconName.includes('grain')) {
+    emoji = '🍞';
+  }
+  else if (lowerIconName.includes('drink') || lowerIconName.includes('beverage')) {
+    emoji = '🥤';
   }
   
   return (

@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,6 +30,7 @@ Notifications.setNotificationHandler({
 export default function NotificationsScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const router = useRouter();
 
   // Notification states
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -143,12 +145,20 @@ export default function NotificationsScreen() {
       paddingTop: Platform.OS === 'ios' ? 60 : 40,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      padding: 8,
+      marginRight: 8,
     },
     headerTitle: {
       fontSize: 20,
       fontWeight: 'bold',
       color: theme.textColor,
+      flex: 1,
       textAlign: 'center',
+      marginRight: 40, // Balance the back button
     },
     content: {
       flex: 1,
@@ -261,6 +271,12 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('header.notifications')}</Text>
       </View>
 

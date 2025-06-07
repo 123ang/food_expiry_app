@@ -5,7 +5,7 @@ import { Language } from '../context/LanguageContext';
 import { Category, Location } from './models';
 
 // Database configuration
-const DATABASE_VERSION = 3;
+const DATABASE_VERSION = 5;
 const DATABASE_NAME = 'expiry_alert.db';
 
 // Fallback storage for when SQLite is not available
@@ -388,8 +388,38 @@ export const initDatabase = async (): Promise<void> => {
     
     const currentLanguage = await getStoredLanguage();
     await insertDefaultData(database, currentLanguage);
+    
+    // Run migration to add new categories for existing databases
+    await migrateToNewCategories(database, currentLanguage);
   } catch (error) {
     throw error;
+  }
+};
+
+const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
+  try {
+    // Check if we have more than 8 categories (need to remove extra ones)
+    const categoryCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM categories');
+    const count = (categoryCount as any)?.count || 0;
+    
+    if (count > 8) {
+      // Remove extra categories (keep only the first 8)
+      await database.runAsync('DELETE FROM categories WHERE id > 8');
+    } else if (count < 8) {
+      // Add missing categories if we have less than 8
+      const defaultCategories = getDefaultCategories(language);
+      
+      for (let i = count; i < defaultCategories.length; i++) {
+        const category = defaultCategories[i];
+        await database.runAsync(
+          'INSERT INTO categories (name, icon) VALUES (?, ?)',
+          [category.name, category.icon]
+        );
+      }
+    }
+  } catch (error) {
+    // Silent error handling for migration
+    console.log('Migration completed or skipped:', error);
   }
 };
 
@@ -457,11 +487,22 @@ export const updateDefaultDataForLanguage = async (language: Language): Promise<
       const data: FallbackStorage = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
       
       // Always update default categories and locations with new language
-      data.categories = getDefaultCategories(language).map((cat, index) => ({
-        ...cat,
-        id: index + 1,
-        created_at: getCurrentDate()
-      }));
+      const defaultCategories = getDefaultCategories(language);
+      
+      // Preserve existing user-created categories (those with id > default count)
+      const existingUserCategories = data.categories.filter(cat => 
+        cat.id && cat.id > defaultCategories.length
+      );
+      
+      // Combine default categories with user-created ones
+      data.categories = [
+        ...defaultCategories.map((cat, index) => ({
+          ...cat,
+          id: index + 1,
+          created_at: getCurrentDate()
+        })),
+        ...existingUserCategories
+      ];
       
       data.locations = getDefaultLocations(language).map((loc, index) => ({
         ...loc,
@@ -473,14 +514,31 @@ export const updateDefaultDataForLanguage = async (language: Language): Promise<
       return;
     }
 
-    // Update existing default categories (IDs 1-8) with new language
+    // Update existing default categories and add new ones if they don't exist
     const defaultCategories = getDefaultCategories(language);
     for (let i = 0; i < defaultCategories.length; i++) {
       const category = defaultCategories[i];
-      await database.runAsync(
-        'UPDATE categories SET name = ? WHERE id = ?',
-        [category.name, i + 1]
+      const categoryId = i + 1;
+      
+      // Check if category exists
+      const existingCategory = await database.getFirstAsync(
+        'SELECT id FROM categories WHERE id = ?',
+        [categoryId]
       );
+      
+      if (existingCategory) {
+        // Update existing category
+        await database.runAsync(
+          'UPDATE categories SET name = ? WHERE id = ?',
+          [category.name, categoryId]
+        );
+      } else {
+        // Insert new category
+        await database.runAsync(
+          'INSERT INTO categories (name, icon) VALUES (?, ?)',
+          [category.name, category.icon]
+        );
+      }
     }
 
     // Update existing default locations (IDs 1-4) with new language  

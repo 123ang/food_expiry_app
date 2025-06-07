@@ -23,15 +23,15 @@ import { useLanguage } from '../../context/LanguageContext';
 
 // Location emojis for selection - All 9 location emojis
 const LOCATION_EMOJIS = [
-  { key: 'freezer', emoji: '🧊', label: 'Freezer' },
-  { key: 'fridge', emoji: '❄️', label: 'Fridge' },
-  { key: 'cabinet', emoji: '📦', label: 'Cabinet' },
-  { key: 'lunch_box', emoji: '🍱', label: 'Lunch Box' },
-  { key: 'takeout_container', emoji: '🥡', label: 'Takeout Container' },
-  { key: 'pantry', emoji: '🏠', label: 'Pantry' },
-  { key: 'dining_area', emoji: '🍽️', label: 'Dining Area' },
-  { key: 'storage_box', emoji: '📦', label: 'Storage Box' },
-  { key: 'shopping_cart', emoji: '🛒', label: 'Shopping Cart' },
+  { key: '🧊', emoji: '🧊', label: 'Freezer' },
+  { key: '❄️', emoji: '❄️', label: 'Fridge' },
+  { key: '📦', emoji: '📦', label: 'Cabinet' },
+  { key: '🍱', emoji: '🍱', label: 'Lunch Box' },
+  { key: '🥡', emoji: '🥡', label: 'Takeout Container' },
+  { key: '🏠', emoji: '🏠', label: 'Pantry' },
+  { key: '🍽️', emoji: '🍽️', label: 'Dining Area' },
+  { key: '📦2', emoji: '📦', label: 'Storage Box' },
+  { key: '🛒', emoji: '🛒', label: 'Shopping Cart' },
 ];
 
 // Emoji Selector Component

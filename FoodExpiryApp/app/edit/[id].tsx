@@ -783,7 +783,6 @@ export default function EditScreen() {
                 value={expiryDate}
                 onChange={setExpiryDate}
                 theme={theme}
-                minimumDate={new Date()}
               />
             </View>
           </View>

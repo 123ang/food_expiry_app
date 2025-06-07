@@ -19,168 +19,17 @@ import CategoryIcon from '../../components/CategoryIcon';
 import { Category } from '../../database/models';
 import { useLanguage } from '../../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
-
-// Category emojis for selection - All 91 food emojis
-const CATEGORY_EMOJIS = [
-  // Fruits (15 emojis)
-  { key: 'apples', emoji: '🍎', label: 'Apples' },
-  { key: 'green_apples', emoji: '🍏', label: 'Green Apples' },
-  { key: 'pears', emoji: '🍐', label: 'Pears' },
-  { key: 'oranges', emoji: '🍊', label: 'Oranges' },
-  { key: 'lemons', emoji: '🍋', label: 'Lemons' },
-  { key: 'bananas', emoji: '🍌', label: 'Bananas' },
-  { key: 'watermelon', emoji: '🍉', label: 'Watermelon' },
-  { key: 'grapes', emoji: '🍇', label: 'Grapes' },
-  { key: 'strawberries', emoji: '🍓', label: 'Strawberries' },
-  { key: 'melon', emoji: '🍈', label: 'Melon' },
-  { key: 'cherries', emoji: '🍒', label: 'Cherries' },
-  { key: 'peaches', emoji: '🍑', label: 'Peaches' },
-  { key: 'pineapple', emoji: '🍍', label: 'Pineapple' },
-  { key: 'mango', emoji: '🥭', label: 'Mango' },
-  { key: 'coconut', emoji: '🥥', label: 'Coconut' },
-  
-  // Vegetables (11 emojis)
-  { key: 'tomatoes', emoji: '🍅', label: 'Tomatoes' },
-  { key: 'eggplant', emoji: '🍆', label: 'Eggplant' },
-  { key: 'corn', emoji: '🌽', label: 'Corn' },
-  { key: 'peppers', emoji: '🌶️', label: 'Peppers' },
-  { key: 'cucumber', emoji: '🥒', label: 'Cucumber' },
-  { key: 'carrots', emoji: '🥕', label: 'Carrots' },
-  { key: 'potatoes', emoji: '🥔', label: 'Potatoes' },
-  { key: 'garlic', emoji: '🧄', label: 'Garlic' },
-  { key: 'onions', emoji: '🧅', label: 'Onions' },
-  { key: 'broccoli', emoji: '🥦', label: 'Broccoli' },
-  { key: 'chestnuts', emoji: '🌰', label: 'Chestnuts' },
-  
-  // Bread & Grains (8 emojis)
-  { key: 'bread', emoji: '🍞', label: 'Bread' },
-  { key: 'baguette', emoji: '🥖', label: 'Baguette' },
-  { key: 'croissant', emoji: '🥐', label: 'Croissant' },
-  { key: 'bagel', emoji: '🥯', label: 'Bagel' },
-  { key: 'pancakes', emoji: '🥞', label: 'Pancakes' },
-  { key: 'pretzel', emoji: '🥨', label: 'Pretzel' },
-  { key: 'rice', emoji: '🍚', label: 'Rice' },
-  { key: 'rice_ball', emoji: '🍙', label: 'Rice Ball' },
-  
-  // Prepared Foods (16 emojis)
-  { key: 'salad', emoji: '🥗', label: 'Salad' },
-  { key: 'sandwich', emoji: '🥪', label: 'Sandwich' },
-  { key: 'curry', emoji: '🍛', label: 'Curry' },
-  { key: 'ramen', emoji: '🍜', label: 'Ramen' },
-  { key: 'pasta', emoji: '🍝', label: 'Pasta' },
-  { key: 'sushi', emoji: '🍣', label: 'Sushi' },
-  { key: 'oden', emoji: '🍢', label: 'Oden' },
-  { key: 'rice_cracker', emoji: '🍘', label: 'Rice Cracker' },
-  { key: 'tacos', emoji: '🌮', label: 'Tacos' },
-  { key: 'burrito', emoji: '🌯', label: 'Burrito' },
-  { key: 'burger', emoji: '🍔', label: 'Burger' },
-  { key: 'fries', emoji: '🍟', label: 'Fries' },
-  { key: 'hot_dog', emoji: '🌭', label: 'Hot Dog' },
-  { key: 'pizza', emoji: '🍕', label: 'Pizza' },
-  { key: 'flatbread', emoji: '🥙', label: 'Flatbread' },
-  { key: 'paella', emoji: '🥘', label: 'Paella' },
-  
-  // Meat & Protein (9 emojis)
-  { key: 'chicken', emoji: '🍗', label: 'Chicken' },
-  { key: 'meat', emoji: '🍖', label: 'Meat' },
-  { key: 'bacon', emoji: '🥓', label: 'Bacon' },
-  { key: 'steak', emoji: '🥩', label: 'Steak' },
-  { key: 'fish', emoji: '🐟', label: 'Fish' },
-  { key: 'shrimp', emoji: '🍤', label: 'Shrimp' },
-  { key: 'prawns', emoji: '🦐', label: 'Prawns' },
-  { key: 'eggs', emoji: '🥚', label: 'Eggs' },
-  { key: 'fried_egg', emoji: '🍳', label: 'Fried Egg' },
-  
-  // Dairy (3 emojis)
-  { key: 'milk', emoji: '🥛', label: 'Milk' },
-  { key: 'cheese', emoji: '🧀', label: 'Cheese' },
-  { key: 'butter', emoji: '🧈', label: 'Butter' },
-  
-  // Snacks (2 emojis)
-  { key: 'popcorn', emoji: '🍿', label: 'Popcorn' },
-  { key: 'nuts', emoji: '🥜', label: 'Nuts' },
-  
-  // Desserts & Sweets (11 emojis)
-  { key: 'cookies', emoji: '🍪', label: 'Cookies' },
-  { key: 'donuts', emoji: '🍩', label: 'Donuts' },
-  { key: 'cupcake', emoji: '🧁', label: 'Cupcake' },
-  { key: 'birthday_cake', emoji: '🎂', label: 'Birthday Cake' },
-  { key: 'cake', emoji: '🍰', label: 'Cake' },
-  { key: 'chocolate', emoji: '🍫', label: 'Chocolate' },
-  { key: 'candy', emoji: '🍬', label: 'Candy' },
-  { key: 'lollipop', emoji: '🍭', label: 'Lollipop' },
-  { key: 'ice_cream', emoji: '🍦', label: 'Ice Cream' },
-  { key: 'ice_cream_cup', emoji: '🍨', label: 'Ice Cream Cup' },
-  { key: 'shaved_ice', emoji: '🍧', label: 'Shaved Ice' },
-  
-  // Beverages (13 emojis)
-  { key: 'coffee', emoji: '☕', label: 'Coffee' },
-  { key: 'tea', emoji: '🍵', label: 'Tea' },
-  { key: 'baby_bottle', emoji: '🍼', label: 'Baby Bottle' },
-  { key: 'soft_drink', emoji: '🥤', label: 'Soft Drink' },
-  { key: 'juice_box', emoji: '🧃', label: 'Juice Box' },
-  { key: 'sake', emoji: '🍶', label: 'Sake' },
-  { key: 'beer_mugs', emoji: '🍻', label: 'Beer Mugs' },
-  { key: 'beer', emoji: '🍺', label: 'Beer' },
-  { key: 'wine', emoji: '🍷', label: 'Wine' },
-  { key: 'champagne', emoji: '🥂', label: 'Champagne' },
-  { key: 'martini', emoji: '🍸', label: 'Martini' },
-  { key: 'cocktail', emoji: '🍹', label: 'Cocktail' },
-  { key: 'whiskey', emoji: '🥃', label: 'Whiskey' },
-  
-  // Condiments & Seasonings (2 emojis)
-  { key: 'salt', emoji: '🧂', label: 'Salt' },
-  { key: 'honey', emoji: '🍯', label: 'Honey' },
-  
-  // Kitchen Items (1 emoji)
-  { key: 'bowl', emoji: '🥣', label: 'Bowl' },
-  
-  // Payment & Cards (3 emojis)
-  { key: 'credit_card', emoji: '💳', label: 'Credit Card' },
-  { key: 'gift_card', emoji: '🎁', label: 'Gift Card' },
-  { key: 'receipt', emoji: '🧾', label: 'Receipt' },
-  
-  // Beauty & Personal Care (8 emojis)
-  { key: 'lipstick', emoji: '💄', label: 'Lipstick' },
-  { key: 'lotion', emoji: '🧴', label: 'Lotion' },
-  { key: 'soap', emoji: '🧼', label: 'Soap' },
-  { key: 'perfume', emoji: '🌸', label: 'Perfume' },
-  { key: 'pills', emoji: '💊', label: 'Pills' },
-  { key: 'bandage', emoji: '🩹', label: 'Bandage' },
-  { key: 'eye_drops', emoji: '👁️', label: 'Eye Drops' },
-  { key: 'sponge', emoji: '🧽', label: 'Sponge' },
-  
-  // Household & Cleaning (7 emojis)
-  { key: 'laundry_basket', emoji: '🧺', label: 'Laundry Basket' },
-  { key: 'battery', emoji: '🔋', label: 'Battery' },
-  { key: 'fire_extinguisher', emoji: '🧯', label: 'Fire Extinguisher' },
-  { key: 'paint', emoji: '🎨', label: 'Paint' },
-  { key: 'oil_drum', emoji: '🛢️', label: 'Oil Drum' },
-  { key: 'fuel', emoji: '⛽', label: 'Fuel' },
-  { key: 'sun_protection', emoji: '🌞', label: 'Sun Protection' },
-  
-  // Health & Medical (3 emojis)
-  { key: 'blood_test', emoji: '🩸', label: 'Blood Test' },
-  { key: 'herbs', emoji: '🍀', label: 'Herbs' },
-  { key: 'test_tube', emoji: '🧪', label: 'Test Tube' },
-  
-  // Office & Tech (4 emojis)
-  { key: 'label', emoji: '🏷️', label: 'Label' },
-  { key: 'ticket', emoji: '🎟️', label: 'Ticket' },
-  { key: 'phone', emoji: '📱', label: 'Phone' },
-  { key: 'plant', emoji: '🌱', label: 'Plant' },
-  
-  // Garden & Nature (1 emoji)
-  { key: 'leaves', emoji: '🌿', label: 'Leaves' }
-];
+import { CATEGORY_EMOJIS, EmojiItem } from '../../constants/emojis';
 
 // Emoji Selector Component
-const EmojiSelector: React.FC<{
+interface EmojiSelectorProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (emoji: string) => void;
   selectedEmoji?: string;
-}> = ({ visible, onClose, onSelect, selectedEmoji }) => {
+}
+
+const EmojiSelector: React.FC<EmojiSelectorProps> = ({ visible, onClose, onSelect, selectedEmoji }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
 
@@ -490,12 +339,7 @@ export default function CategoriesScreen() {
           <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('categories.title')}</Text>
-        <TouchableOpacity 
-          style={styles.addButton} 
-          onPress={() => setEditingCategory(null)}
-        >
-          <FontAwesome name="plus" size={16} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={styles.headerSpacer} />
       </View>
       
       <ScrollView style={styles.content}>
