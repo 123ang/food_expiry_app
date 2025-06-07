@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, TextInput, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { Platform, TextInput, StyleSheet, TouchableOpacity, Text, Alert, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Theme } from '../theme';
 
@@ -47,9 +47,23 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
   };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
-    setShow(false);
-    if (selectedDate) {
-      onChange(selectedDate);
+    // Handle different platforms and event types
+    if (Platform.OS === 'android') {
+      // On Android, close picker after selection
+      if (event.type === 'set' && selectedDate) {
+        onChange(selectedDate);
+      }
+      setShow(false);
+    } else {
+      // On iOS, handle different event types
+      if (event.type === 'dismissed') {
+        // User cancelled or tapped outside
+        setShow(false);
+      } else if (selectedDate) {
+        // User is scrolling/selecting - update value but keep picker open
+        onChange(selectedDate);
+        // Don't close the picker, let user continue scrolling
+      }
     }
   };
 
@@ -93,13 +107,38 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
       </TouchableOpacity>
 
       {show && (
-        <DateTimePicker
-          value={value}
-          mode="date"
-          onChange={onDateChange}
-          minimumDate={minimumDate}
-          {...themeProps}
-        />
+        <>
+          {Platform.OS === 'ios' && (
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              backgroundColor: theme.cardBackground,
+              borderTopWidth: 1,
+              borderTopColor: theme.borderColor,
+            }}>
+              <TouchableOpacity
+                onPress={() => setShow(false)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  backgroundColor: theme.primaryColor,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <DateTimePicker
+            value={value}
+            mode="date"
+            onChange={onDateChange}
+            minimumDate={minimumDate}
+            {...themeProps}
+          />
+        </>
       )}
     </>
   );

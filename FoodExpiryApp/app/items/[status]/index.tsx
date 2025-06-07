@@ -17,6 +17,7 @@ import { FoodItemWithDetails } from '../../../database/models';
 import CategoryIcon from '../../../components/CategoryIcon';
 import LocationIcon from '../../../components/LocationIcon';
 import { useLanguage } from '../../../context/LanguageContext';
+import { Alert } from 'react-native';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -115,7 +116,7 @@ export default function ItemStatusScreen() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const { status } = useLocalSearchParams();
-  const { getByStatus, refreshAll, foodItems } = useDatabase();
+  const { getByStatus, refreshAll, foodItems, deleteAllExpired } = useDatabase();
   
   const [currentItems, setCurrentItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -132,6 +133,42 @@ export default function ItemStatusScreen() {
   };
   
   const statusData = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.fresh;
+
+  // Handle clear expired items
+  const handleClearExpired = async () => {
+    Alert.alert(
+      t('settings.clearExpiredConfirmTitle'),
+      t('settings.clearExpiredConfirmMessage'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('settings.clearExpiredButton'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const deletedCount = await deleteAllExpired();
+              const plural = deletedCount === 1 ? '' : 's';
+              Alert.alert(
+                t('common.success'), 
+                t('settings.clearExpiredSuccess').replace('{count}', deletedCount.toString()).replace('{plural}', plural)
+              );
+              // Refresh the current items list
+              const items = await getByStatus('expired');
+              setCurrentItems(items || []);
+            } catch (error) {
+              Alert.alert(
+                t('common.error'), 
+                t('settings.clearExpiredError')
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
 
   // Safety check for theme
   if (!theme) {
@@ -319,6 +356,19 @@ export default function ItemStatusScreen() {
       fontSize: 24,
       color: theme.textColor,
     },
+    clearButton: {
+      backgroundColor: theme.dangerColor || '#FF3B30',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 8,
+      marginBottom: 16,
+      alignItems: 'center',
+    },
+    clearButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
   });
 
   // Dynamic styles
@@ -370,6 +420,12 @@ export default function ItemStatusScreen() {
           <Text style={styles.statsTitle}>{t('status.items')}</Text>
           <Text style={styles.statsCount}>{currentItems.length}</Text>
         </View>
+        
+        {currentStatus === 'expired' && currentItems.length > 0 && (
+          <TouchableOpacity style={styles.clearButton} onPress={handleClearExpired}>
+            <Text style={styles.clearButtonText}>{t('settings.clearExpiredItems')}</Text>
+          </TouchableOpacity>
+        )}
         
         {error ? (
           <View style={{ padding: 20, alignItems: 'center' }}>

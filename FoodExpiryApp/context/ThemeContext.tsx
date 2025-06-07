@@ -33,8 +33,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const loadSavedTheme = async () => {
     try {
       const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      if (savedTheme && (savedTheme as ThemeType) in themes) {
-        setCurrentThemeType(savedTheme as ThemeType);
+      if (savedTheme) {
+        // Handle legacy 'dark' theme by mapping it to 'darkBrown'
+        if (savedTheme === 'dark') {
+          setCurrentThemeType('darkBrown');
+        } else if ((savedTheme as ThemeType) in themes) {
+          setCurrentThemeType(savedTheme as ThemeType);
+        } else {
+          // Default to original theme (white background) for all users
+          setCurrentThemeType('original');
+        }
       } else {
         // Default to original theme (white background) for all users
         setCurrentThemeType('original');
@@ -58,9 +66,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Legacy support for dark theme toggle
-  const isDark = currentThemeType === 'dark';
+  const isDark = currentThemeType === 'darkBrown' || currentThemeType === 'black';
   const toggleTheme = () => {
-    const newTheme = isDark ? 'recycled' : 'dark';
+    const newTheme = isDark ? 'recycled' : 'darkBrown';
     setTheme(newTheme);
   };
 

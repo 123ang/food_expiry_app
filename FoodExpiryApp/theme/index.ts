@@ -27,31 +27,31 @@ export interface Theme {
   borderRadius: number;
 }
 
-export type ThemeType = 'original' | 'recycled' | 'dark';
+export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black';
 
 export const originalTheme: Theme = {
-  // Original white theme - clean and minimal
-  backgroundColor: '#FFFFFF',     // Pure white background
+  // Original white theme - improved contrast for iPhone visibility
+  backgroundColor: '#F8F9FA',     // Very light gray background (better than pure white)
   primaryColor: '#2E7D32',        // Dark green (darker than current green)
-  secondaryColor: '#F5F5F5',      // Light gray for secondary elements
-  textColor: '#000000',           // Pure black text
+  secondaryColor: '#E9ECEF',      // Light gray for secondary elements
+  textColor: '#212529',           // Dark gray text (better contrast than pure black)
   tertiaryColor: '#4CAF50',       // Medium green
 
   // UI Colors
-  cardBackground: '#FFFFFF',      // White cards
-  borderColor: '#E0E0E0',         // Light gray borders
-  shadowColor: 'rgba(0, 0, 0, 0.1)',
-  textSecondary: '#666666',       // Gray secondary text
+  cardBackground: '#FFFFFF',      // White cards with better border contrast
+  borderColor: '#CED4DA',         // Darker gray borders for better visibility
+  shadowColor: 'rgba(0, 0, 0, 0.15)', // Stronger shadow for better card definition
+  textSecondary: '#6C757D',       // Darker gray secondary text
   successColor: '#2E7D32',        // Dark green for success
   warningColor: '#FF9800',        // Orange for warnings
   dangerColor: '#F44336',         // Red for danger
 
   // Header
-  headerBackground: '#FFFFFF',    // White header
+  headerBackground: '#FFFFFF',    // White header with border
 
   // Gradients
   gradientPrimary: ['#2E7D32', '#1B5E20'],  // Dark green gradient
-  gradientSecondary: ['#F5F5F5', '#EEEEEE'], // Light gray gradient
+  gradientSecondary: ['#F8F9FA', '#E9ECEF'], // Light gray gradient
   
   borderRadius: 8,  // Smaller radius for cleaner look
 };
@@ -83,8 +83,8 @@ export const recycledTheme: Theme = {
   borderRadius: 16,
 };
 
-export const darkTheme: Theme = {
-  // Main Colors - dark version with warm tones
+export const darkBrownTheme: Theme = {
+  // Dark brown theme - warm dark tones
   backgroundColor: '#2C2417',    // Dark warm brown
   primaryColor: '#4CAF50',       // Updated to match new accent green
   secondaryColor: '#B8860B',     // Gold accent
@@ -110,14 +110,43 @@ export const darkTheme: Theme = {
   borderRadius: 16,
 };
 
+export const blackTheme: Theme = {
+  // Pure black theme - high contrast dark theme
+  backgroundColor: '#000000',    // Pure black background
+  primaryColor: '#4CAF50',       // Bright green for contrast
+  secondaryColor: '#1A1A1A',     // Very dark gray for secondary elements
+  textColor: '#FFFFFF',          // Pure white text
+  tertiaryColor: '#66BB6A',      // Lighter green
+
+  // UI Colors
+  cardBackground: '#1A1A1A',     // Very dark gray for cards
+  borderColor: 'rgba(255, 255, 255, 0.1)', // Subtle white borders
+  shadowColor: 'rgba(0, 0, 0, 0.5)', // Strong shadow
+  textSecondary: '#B0B0B0',      // Light gray for secondary text
+  successColor: '#4CAF50',       // Bright green for success
+  warningColor: '#FFA726',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#1A1A1A',   // Very dark gray header
+
+  // Gradients
+  gradientPrimary: ['#4CAF50', '#388E3C'], // Green gradient
+  gradientSecondary: ['#1A1A1A', '#000000'], // Dark gradient
+  
+  borderRadius: 16,
+};
+
 export const themes = {
   original: originalTheme,
   recycled: recycledTheme,
-  dark: darkTheme,
+  darkBrown: darkBrownTheme,
+  black: blackTheme,
 };
 
-// Keep lightTheme as recycledTheme for backward compatibility
+// Keep lightTheme and darkTheme for backward compatibility
 export const lightTheme = recycledTheme;
+export const darkTheme = darkBrownTheme;
 
 export const getNavigationTheme = (themeType: ThemeType) => {
   const theme = themes[themeType];

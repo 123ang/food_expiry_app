@@ -57,6 +57,8 @@ interface DatabaseContextType {
   createFoodItem: (item: FoodItem) => Promise<number>;
   updateFoodItem: (item: FoodItem) => Promise<void>;
   deleteFoodItem: (id: number) => Promise<void>;
+  deleteAllExpired: () => Promise<number>;
+  deleteMultipleItems: (ids: number[]) => Promise<number>;
   getByStatus: (status: 'fresh' | 'expiring_soon' | 'expired') => Promise<FoodItemWithDetails[]>;
 
   // Dashboard Data
@@ -613,6 +615,44 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     incrementDataVersion();
   };
 
+  const deleteAllExpired = async (): Promise<number> => {
+    try {
+      const deletedCount = await FoodItemRepository.deleteAllExpired();
+      
+      // Invalidate related caches
+      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
+      
+      // Refresh data
+      await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
+      
+      // Increment data version to notify screens of changes
+      incrementDataVersion();
+      
+      return deletedCount;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const deleteMultipleItems = async (ids: number[]): Promise<number> => {
+    try {
+      const deletedCount = await FoodItemRepository.deleteMultiple(ids);
+      
+      // Invalidate related caches
+      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
+      
+      // Refresh data
+      await Promise.all([refreshFoodItems(), refreshDashboardCounts()]);
+      
+      // Increment data version to notify screens of changes
+      incrementDataVersion();
+      
+      return deletedCount;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   // Add getByStatus function with caching
   const getByStatus = async (status: 'fresh' | 'expiring_soon' | 'expired'): Promise<FoodItemWithDetails[]> => {
     try {
@@ -677,6 +717,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     createFoodItem,
     updateFoodItem,
     deleteFoodItem,
+    deleteAllExpired,
+    deleteMultipleItems,
     getByStatus,
     refreshCategories,
     refreshLocations,

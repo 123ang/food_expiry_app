@@ -27,6 +27,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Home Screen
     'home.welcome': 'Welcome Back!',
+    'home.welcomeToApp': 'Welcome to Expiry Alert',
     'home.expiring': 'expiring',
     'home.item': 'item',
     'home.items': 'items',
@@ -188,6 +189,42 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.reset': 'Reset',
     'settings.resetDatabaseSuccess': 'Database has been reset to original defaults!',
     'settings.resetDatabaseError': 'Failed to reset database. Please try again.',
+    'settings.clearExpiredItems': 'Clear Expired Items',
+    'settings.clearExpiredItemsDescription': 'Remove all expired items from your inventory',
+    'settings.clearUsedItems': 'Clear Used Items',
+    'settings.clearUsedItemsDescription': 'Mark items as used or removed from inventory',
+    'settings.clearExpiredConfirmTitle': 'Clear Expired Items',
+    'settings.clearExpiredConfirmMessage': 'This will permanently delete all expired items. This action cannot be undone.',
+    'settings.clearExpiredButton': 'Clear Expired',
+    'settings.clearExpiredSuccess': 'Successfully deleted {count} expired item{plural}.',
+    'settings.clearExpiredError': 'Failed to delete expired items. Please try again.',
+    
+    // Clear Items Screen
+    'clearItems.title': 'Clear Used Items',
+    'clearItems.selectAll': 'Select All',
+    'clearItems.clearSelection': 'Clear Selection',
+    'clearItems.selectedCount': '{count} selected',
+    'clearItems.clearSelected': 'Clear Selected',
+    'clearItems.confirmTitle': 'Clear Selected Items',
+    'clearItems.confirmMessage': 'This will permanently delete {count} selected item{plural}. This action cannot be undone.',
+    'clearItems.success': 'Successfully deleted {count} item{plural}.',
+    'clearItems.error': 'Failed to delete items. Please try again.',
+    'clearItems.noItems': 'No items to clear',
+    
+    // Item Actions
+    'item.useItem': 'Use Item',
+    'item.throwAway': 'Throw Away',
+    'item.reduceQuantity': 'Reduce Quantity',
+    'item.useQuantity': 'How many did you use?',
+    'item.throwQuantity': 'How many to throw away?',
+    'item.quantityUsed': 'Quantity used successfully!',
+    'item.quantityThrown': 'Items thrown away successfully!',
+    'item.itemDeleted': 'Item deleted (quantity reached 0)',
+    'item.invalidQuantity': 'Please enter a valid quantity',
+    'item.quantityTooHigh': 'Quantity cannot be higher than available ({available})',
+    
+    // App Name
+    'app.name': 'Expiry Alert',
     
     // Language Names
     'language.english': 'English',
@@ -370,6 +407,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Home Screen
     'home.welcome': '欢迎回来！',
+    'home.welcomeToApp': '欢迎使用过期警报',
     'home.expiring': '即将过期',
     'home.item': '项',
     'home.items': '食品',
@@ -531,6 +569,42 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.reset': '重置',
     'settings.resetDatabaseSuccess': '数据库已重置为原始默认设置！',
     'settings.resetDatabaseError': '重置数据库失败。请重试。',
+    'settings.clearExpiredItems': '清除过期食品',
+    'settings.clearExpiredItemsDescription': '从您的库存中删除所有过期食品',
+    'settings.clearUsedItems': '清除已使用食品',
+    'settings.clearUsedItemsDescription': '将食品标记为已使用或从库存中删除',
+    'settings.clearExpiredConfirmTitle': '清除过期食品',
+    'settings.clearExpiredConfirmMessage': '这将永久删除所有过期食品。此操作无法撤销。',
+    'settings.clearExpiredButton': '清除过期',
+    'settings.clearExpiredSuccess': '成功删除了 {count} 个过期食品{plural}。',
+    'settings.clearExpiredError': '删除过期食品失败。请重试。',
+    
+    // Clear Items Screen
+    'clearItems.title': '清除已使用食品',
+    'clearItems.selectAll': '全选',
+    'clearItems.clearSelection': '清除选择',
+    'clearItems.selectedCount': '已选择 {count} 个',
+    'clearItems.clearSelected': '清除选中项',
+    'clearItems.confirmTitle': '清除选中食品',
+    'clearItems.confirmMessage': '这将永久删除 {count} 个选中的食品{plural}。此操作无法撤销。',
+    'clearItems.success': '成功删除了 {count} 个食品{plural}。',
+    'clearItems.error': '删除食品失败。请重试。',
+    'clearItems.noItems': '没有要清除的食品',
+    
+    // Item Actions
+    'item.useItem': '使用食品',
+    'item.throwAway': '丢弃',
+    'item.reduceQuantity': '减少数量',
+    'item.useQuantity': '您使用了多少？',
+    'item.throwQuantity': '要丢弃多少？',
+    'item.quantityUsed': '数量使用成功！',
+    'item.quantityThrown': '食品丢弃成功！',
+    'item.itemDeleted': '食品已删除（数量为0）',
+    'item.invalidQuantity': '请输入有效数量',
+    'item.quantityTooHigh': '数量不能超过可用数量（{available}）',
+    
+    // App Name
+    'app.name': '截至预警',
     
     // Language Names
     'language.english': '英语',
@@ -716,6 +790,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Home Screen
     'home.welcome': 'おかえりなさい！',
+    'home.welcomeToApp': '期限警報へようこそ',
     'home.expiring': '期限切れ間近',
     'home.item': '項目',
     'home.items': '項目',
@@ -877,6 +952,42 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.reset': 'リセット',
     'settings.resetDatabaseSuccess': 'データベースが元のデフォルト設定にリセットされました！',
     'settings.resetDatabaseError': 'データベースのリセットに失敗しました。もう一度お試しください。',
+    'settings.clearExpiredItems': '期限切れアイテムをクリア',
+    'settings.clearExpiredItemsDescription': '在庫からすべての期限切れアイテムを削除',
+    'settings.clearUsedItems': '使用済みアイテムをクリア',
+    'settings.clearUsedItemsDescription': 'アイテムを使用済みまたは在庫から削除済みとしてマーク',
+    'settings.clearExpiredConfirmTitle': '期限切れアイテムをクリア',
+    'settings.clearExpiredConfirmMessage': 'これにより、すべての期限切れアイテムが永久に削除されます。この操作は元に戻せません。',
+    'settings.clearExpiredButton': '期限切れをクリア',
+    'settings.clearExpiredSuccess': '{count}個の期限切れアイテム{plural}を正常に削除しました。',
+    'settings.clearExpiredError': '期限切れアイテムの削除に失敗しました。もう一度お試しください。',
+    
+    // Clear Items Screen
+    'clearItems.title': '使用済みアイテムをクリア',
+    'clearItems.selectAll': 'すべて選択',
+    'clearItems.clearSelection': '選択をクリア',
+    'clearItems.selectedCount': '{count}個選択済み',
+    'clearItems.clearSelected': '選択済みをクリア',
+    'clearItems.confirmTitle': '選択したアイテムをクリア',
+    'clearItems.confirmMessage': 'これにより、選択した{count}個のアイテム{plural}が永久に削除されます。この操作は元に戻せません。',
+    'clearItems.success': '{count}個のアイテム{plural}を正常に削除しました。',
+    'clearItems.error': 'アイテムの削除に失敗しました。もう一度お試しください。',
+    'clearItems.noItems': 'クリアするアイテムがありません',
+    
+    // Item Actions
+    'item.useItem': 'アイテムを使用',
+    'item.throwAway': '捨てる',
+    'item.reduceQuantity': '数量を減らす',
+    'item.useQuantity': 'いくつ使用しましたか？',
+    'item.throwQuantity': 'いくつ捨てますか？',
+    'item.quantityUsed': '数量が正常に使用されました！',
+    'item.quantityThrown': 'アイテムが正常に捨てられました！',
+    'item.itemDeleted': 'アイテムが削除されました（数量が0になりました）',
+    'item.invalidQuantity': '有効な数量を入力してください',
+    'item.quantityTooHigh': '数量は利用可能数量を超えることはできません（{available}）',
+    
+    // App Name
+    'app.name': 'エクスパイリーアラート',
     
     // Language Names
     'language.english': '英語',

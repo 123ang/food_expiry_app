@@ -138,7 +138,40 @@ const CATEGORY_EMOJIS = [
   // Payment & Cards (3 emojis)
   { key: 'credit_card', emoji: '💳', label: 'Credit Card' },
   { key: 'gift_card', emoji: '🎁', label: 'Gift Card' },
-  { key: 'receipt', emoji: '🧾', label: 'Receipt' }
+  { key: 'receipt', emoji: '🧾', label: 'Receipt' },
+  
+  // Beauty & Personal Care (8 emojis)
+  { key: 'lipstick', emoji: '💄', label: 'Lipstick' },
+  { key: 'lotion', emoji: '🧴', label: 'Lotion' },
+  { key: 'soap', emoji: '🧼', label: 'Soap' },
+  { key: 'perfume', emoji: '🌸', label: 'Perfume' },
+  { key: 'pills', emoji: '💊', label: 'Pills' },
+  { key: 'bandage', emoji: '🩹', label: 'Bandage' },
+  { key: 'eye_drops', emoji: '👁️', label: 'Eye Drops' },
+  { key: 'sponge', emoji: '🧽', label: 'Sponge' },
+  
+  // Household & Cleaning (7 emojis)
+  { key: 'laundry_basket', emoji: '🧺', label: 'Laundry Basket' },
+  { key: 'battery', emoji: '🔋', label: 'Battery' },
+  { key: 'fire_extinguisher', emoji: '🧯', label: 'Fire Extinguisher' },
+  { key: 'paint', emoji: '🎨', label: 'Paint' },
+  { key: 'oil_drum', emoji: '🛢️', label: 'Oil Drum' },
+  { key: 'fuel', emoji: '⛽', label: 'Fuel' },
+  { key: 'sun_protection', emoji: '🌞', label: 'Sun Protection' },
+  
+  // Health & Medical (3 emojis)
+  { key: 'blood_test', emoji: '🩸', label: 'Blood Test' },
+  { key: 'herbs', emoji: '🍀', label: 'Herbs' },
+  { key: 'test_tube', emoji: '🧪', label: 'Test Tube' },
+  
+  // Office & Tech (4 emojis)
+  { key: 'label', emoji: '🏷️', label: 'Label' },
+  { key: 'ticket', emoji: '🎟️', label: 'Ticket' },
+  { key: 'phone', emoji: '📱', label: 'Phone' },
+  { key: 'plant', emoji: '🌱', label: 'Plant' },
+  
+  // Garden & Nature (1 emoji)
+  { key: 'leaves', emoji: '🌿', label: 'Leaves' }
 ];
 
 // Emoji Selector Component

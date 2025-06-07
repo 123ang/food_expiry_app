@@ -25,6 +25,7 @@ import { BottomNav } from '../components/BottomNav';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { FoodItem } from '../database/models';
+import { useResponsive } from '../hooks/useResponsive';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -32,6 +33,7 @@ export default function AddScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const router = useRouter();
+  const responsive = useResponsive();
   const { createFoodItem, refreshFoodItems, refreshAll, locations, categories, foodItems } = useDatabase();
   const { prefilledDate } = useLocalSearchParams();
   
@@ -99,6 +101,26 @@ export default function AddScreen() {
     { emoji: '☕', label: 'Coffee' }, { emoji: '🍵', label: 'Tea' }, { emoji: '🥤', label: 'Soft Drink' },
     { emoji: '🧃', label: 'Juice Box' }, { emoji: '🧋', label: 'Bubble Tea' }, { emoji: '🍷', label: 'Wine' },
     { emoji: '🍺', label: 'Beer' }, { emoji: '💧', label: 'Water' },
+    
+    // Beauty & Personal Care
+    { emoji: '💄', label: 'Lipstick' }, { emoji: '🧴', label: 'Lotion' }, { emoji: '🧼', label: 'Soap' },
+    { emoji: '🌸', label: 'Perfume' }, { emoji: '💊', label: 'Pills' }, { emoji: '🩹', label: 'Bandage' },
+    { emoji: '👁️', label: 'Eye Drops' }, { emoji: '🧽', label: 'Sponge' },
+    
+    // Household & Cleaning
+    { emoji: '🧺', label: 'Laundry Basket' }, { emoji: '🔋', label: 'Battery' }, { emoji: '🧯', label: 'Fire Extinguisher' },
+    { emoji: '🎨', label: 'Paint' }, { emoji: '🛢️', label: 'Oil Drum' }, { emoji: '⛽', label: 'Fuel' },
+    { emoji: '🌞', label: 'Sun Protection' },
+    
+    // Health & Medical
+    { emoji: '🩸', label: 'Blood Test' }, { emoji: '🍀', label: 'Herbs' }, { emoji: '🧪', label: 'Test Tube' },
+    
+    // Office & Tech
+    { emoji: '🏷️', label: 'Label' }, { emoji: '🎟️', label: 'Ticket' }, { emoji: '📱', label: 'Phone' },
+    { emoji: '🌱', label: 'Plant' },
+    
+    // Garden & Nature
+    { emoji: '🌿', label: 'Leaves' },
   ];
 
   useEffect(() => {
@@ -272,7 +294,7 @@ export default function AddScreen() {
     },
     content: {
       flex: 1,
-      padding: 16,
+      padding: responsive.layout.spacing.container,
     },
     inputContainer: {
       marginBottom: 24,
@@ -294,14 +316,14 @@ export default function AddScreen() {
     optionsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 12,
+      gap: responsive.layout.spacing.grid,
       marginBottom: 24,
     },
     optionCard: {
-      width: '48%',
+      width: responsive.getGridItemWidth(responsive.layout.gridColumns.categories, responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
       borderRadius: 8,
-      padding: 16,
+      padding: responsive.layout.spacing.card,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
@@ -426,9 +448,9 @@ export default function AddScreen() {
     modalContent: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 20,
-      width: '90%',
-      maxHeight: '80%',
+      padding: responsive.layout.spacing.container,
+      width: responsive.breakpoints.isTablet ? '80%' : '90%',
+      maxHeight: responsive.breakpoints.isSmall ? '90%' : '80%',
     },
     modalTitle: {
       fontSize: 18,

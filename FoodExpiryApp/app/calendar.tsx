@@ -170,6 +170,10 @@ export default function CalendarScreen() {
     },
     dayTextOtherMonth: {
       color: theme.textSecondary,
+      opacity: 0.4,
+    },
+    dayContentOtherMonth: {
+      opacity: 0.4,
     },
     itemsDot: {
       width: 4,
@@ -377,7 +381,8 @@ export default function CalendarScreen() {
         <View style={[
           styles.dayContent,
           isSelected && styles.dayContentSelected,
-          hasItems && !isSelected && styles.dayContentHasItems
+          hasItems && !isSelected && styles.dayContentHasItems,
+          !dayInfo.isCurrentMonth && styles.dayContentOtherMonth
         ]}>
           <Text style={[
             styles.dayText,

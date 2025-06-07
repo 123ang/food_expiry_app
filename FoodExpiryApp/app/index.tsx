@@ -26,6 +26,7 @@ import { getSafeIconName } from '../utils/iconUtils';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { useTypography } from '../hooks/useTypography';
+import { useResponsive } from '../hooks/useResponsive';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -45,8 +46,9 @@ export default function DashboardScreen() {
     isDataAvailable,
   } = useDatabase();
   
-  // Use language-aware typography
+  // Use language-aware typography and responsive design
   const typography = useTypography(undefined, language);
+  const responsive = useResponsive();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
@@ -236,7 +238,7 @@ export default function DashboardScreen() {
     },
     content: {
       flex: 1,
-      padding: 16,
+      padding: responsive.layout.spacing.container,
     },
     welcomeBanner: {
       backgroundColor: theme.primaryColor,
@@ -269,15 +271,16 @@ export default function DashboardScreen() {
       alignItems: 'center',
     },
     quickStats: {
-      flexDirection: 'row',
+      flexDirection: responsive.breakpoints.isSmall ? 'column' : 'row',
       marginBottom: 24,
-      gap: 12,
+      gap: responsive.layout.spacing.grid,
     },
     statCard: {
-      flex: 1,
+      flex: responsive.breakpoints.isSmall ? undefined : 1,
+      width: responsive.breakpoints.isSmall ? '100%' : undefined,
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
-      padding: 16,
+      padding: responsive.layout.spacing.card,
       alignItems: 'center',
       ...Platform.select({
         ios: {
@@ -311,14 +314,14 @@ export default function DashboardScreen() {
     locationGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 12,
+      gap: responsive.layout.spacing.grid,
       marginBottom: 24,
     },
     locationCard: {
-      width: '48%',
+      width: responsive.getGridItemWidth(responsive.layout.gridColumns.locations, responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
-      padding: 16,
+      padding: responsive.layout.spacing.card,
       alignItems: 'center',
       ...Platform.select({
         ios: {
@@ -350,10 +353,10 @@ export default function DashboardScreen() {
       fontSize: 14,
     },
     addLocationCard: {
-      width: '48%',
+      width: responsive.getGridItemWidth(responsive.layout.gridColumns.locations, responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
-      padding: 16,
+      padding: responsive.layout.spacing.card,
       alignItems: 'center',
       borderWidth: 1,
       borderStyle: 'dashed',
@@ -403,13 +406,15 @@ export default function DashboardScreen() {
       flex: 1,
       justifyContent: 'center',
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      padding: 24,
+      padding: responsive.layout.spacing.container,
     },
     modalContent: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 24,
-      maxHeight: '80%',
+      padding: responsive.layout.spacing.container,
+      maxHeight: responsive.breakpoints.isSmall ? '90%' : '80%',
+      width: responsive.breakpoints.isTablet ? '80%' : '100%',
+      alignSelf: 'center',
     },
     modalScrollContent: {
       flexGrow: 1,
@@ -515,13 +520,13 @@ export default function DashboardScreen() {
     categoriesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 12,
+      gap: responsive.layout.spacing.grid,
     },
     categoryCard: {
-      width: '48%',
+      width: responsive.getGridItemWidth(responsive.layout.gridColumns.categories, responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
-      padding: 16,
+      padding: responsive.layout.spacing.card,
       alignItems: 'center',
       ...Platform.select({
         ios: {
@@ -712,7 +717,7 @@ export default function DashboardScreen() {
             style={styles.headerLogo}
             resizeMode="contain"
           />
-          <Text style={styles.headerTitle}>Expiry Alert</Text>
+                      <Text style={styles.headerTitle}>{t('app.name')}</Text>
         </View>
       </View>
       
@@ -726,10 +731,6 @@ export default function DashboardScreen() {
           <View style={styles.welcomeBanner}>
             <View style={styles.welcomeText}>
               <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
-              <Text style={styles.welcomeSubtitle}>
-                <Text style={styles.numberText}>{dashboardCounts.expiring_soon}</Text>
-                <Text style={styles.greyText}> {dashboardCounts.expiring_soon === 1 ? t('home.item') : t('home.items')} {t('home.expiring')}</Text>
-              </Text>
             </View>
             <View style={styles.bannerIcon}>
               <FontAwesome name={'cutlery' as IconName} size={24} color="#FFFFFF" />

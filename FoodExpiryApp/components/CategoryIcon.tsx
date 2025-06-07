@@ -46,6 +46,32 @@ const CATEGORY_EMOJIS: { [key: string]: string } = {
   vegetable: '🥕',
   fruit: '🍇',
   beverage: '🥤',
+  
+  // New emoji mappings
+  lipstick: '💄',
+  lotion: '🧴',
+  soap: '🧼',
+  perfume: '🌸',
+  pills: '💊',
+  bandage: '🩹',
+  eye_drops: '👁️',
+  sponge: '🧽',
+  laundry_basket: '🧺',
+  battery: '🔋',
+  fire_extinguisher: '🧯',
+  paint: '🎨',
+  oil_drum: '🛢️',
+  fuel: '⛽',
+  sun_protection: '🌞',
+  blood_test: '🩸',
+  herbs: '🍀',
+  test_tube: '🧪',
+  label: '🏷️',
+  ticket: '🎟️',
+  phone: '📱',
+  plant: '🌱',
+  leaves: '🌿',
+  
   default: '🍎',
 };
 

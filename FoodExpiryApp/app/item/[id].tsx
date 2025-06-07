@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,14 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack, useFocusEffect } from 'expo-router';
 import { FoodItemWithDetails } from '../../database/models';
 import { BottomNav } from '../../components/BottomNav';
 import CategoryIcon from '../../components/CategoryIcon';
@@ -25,17 +27,29 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 export default function ItemDetailsScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { getFoodItem, deleteFoodItem } = useDatabase();
+  const { getFoodItem, deleteFoodItem, updateFoodItem } = useDatabase();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   
   const [item, setItem] = useState<FoodItemWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [showQuantityModal, setShowQuantityModal] = useState(false);
+  const [quantityInput, setQuantityInput] = useState('1');
+  const [currentAction, setCurrentAction] = useState<'use' | 'throw'>('use');
 
   useEffect(() => {
     loadItem();
   }, [id]);
+
+  // Refresh the item data when the screen comes back into focus (e.g., after editing)
+  useFocusEffect(
+    useCallback(() => {
+      if (id) {
+        loadItem();
+      }
+    }, [id])
+  );
 
   const loadItem = async () => {
     if (!id) return;
@@ -81,6 +95,76 @@ export default function ItemDetailsScreen() {
         },
       ]
     );
+  };
+
+  const handleUseItem = () => {
+    if (!item) return;
+    setCurrentAction('use');
+    setQuantityInput('1');
+    setShowQuantityModal(true);
+  };
+
+  const handleThrowAway = () => {
+    if (!item) return;
+    setCurrentAction('throw');
+    setQuantityInput('1');
+    setShowQuantityModal(true);
+  };
+
+  const handleQuantitySubmit = () => {
+    const amount = parseInt(quantityInput);
+    setShowQuantityModal(false);
+    reduceQuantity(amount, currentAction);
+  };
+
+  const reduceQuantity = async (amount: number, action: 'use' | 'throw') => {
+    if (!item || !amount || amount <= 0) {
+      Alert.alert(t('alert.error'), t('item.invalidQuantity'));
+      return;
+    }
+
+    if (amount > item.quantity) {
+      Alert.alert(
+        t('alert.error'), 
+        t('item.quantityTooHigh').replace('{available}', item.quantity.toString())
+      );
+      return;
+    }
+
+    try {
+      const newQuantity = item.quantity - amount;
+      
+      if (newQuantity <= 0) {
+        // Delete the item if quantity reaches 0
+        await deleteFoodItem(item.id!);
+        Alert.alert(t('common.success'), t('item.itemDeleted'));
+        router.back();
+      } else {
+        // Update the item with new quantity
+        const updatedItem = {
+          id: item.id!,
+          name: item.name,
+          quantity: newQuantity,
+          category_id: item.category_id,
+          location_id: item.location_id,
+          expiry_date: item.expiry_date,
+          reminder_days: item.reminder_days,
+          notes: item.notes,
+          image_uri: item.image_uri,
+          created_at: item.created_at,
+        };
+        
+        await updateFoodItem(updatedItem);
+        
+        // Reload the item to show updated quantity
+        await loadItem();
+        
+        const successMessage = action === 'use' ? t('item.quantityUsed') : t('item.quantityThrown');
+        Alert.alert(t('common.success'), successMessage);
+      }
+    } catch (error) {
+      Alert.alert(t('alert.error'), t('alert.saveFailed'));
+    }
   };
 
   const getStatusInfo = (daysUntilExpiry: number) => {
@@ -267,6 +351,101 @@ export default function ItemDetailsScreen() {
       color: theme?.textSecondary || '#666666',
       fontStyle: 'italic',
     },
+    actionButtonsSection: {
+      padding: 16,
+      paddingTop: 0,
+    },
+    actionButtonsContainer: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    useButton: {
+      flex: 1,
+      backgroundColor: theme?.successColor || '#4CAF50',
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    throwButton: {
+      flex: 1,
+      backgroundColor: theme?.dangerColor || '#FF3B30',
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    actionButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: theme?.cardBackground || '#FFFFFF',
+      borderRadius: 12,
+      padding: 24,
+      width: '80%',
+      maxWidth: 300,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme?.textColor || '#000000',
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    modalMessage: {
+      fontSize: 14,
+      color: theme?.textSecondary || '#666666',
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    modalInput: {
+      backgroundColor: theme?.backgroundColor || '#F5F5F5',
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: theme?.textColor || '#000000',
+      textAlign: 'center',
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: theme?.borderColor || '#E0E0E0',
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    modalButtonCancel: {
+      backgroundColor: theme?.backgroundColor || '#F5F5F5',
+      borderWidth: 1,
+      borderColor: theme?.borderColor || '#E0E0E0',
+    },
+    modalButtonConfirm: {
+      backgroundColor: theme?.primaryColor || '#007AFF',
+    },
+    modalButtonDestructive: {
+      backgroundColor: theme?.dangerColor || '#FF3B30',
+    },
+    modalButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    modalButtonTextCancel: {
+      color: theme?.textColor || '#000000',
+    },
+    modalButtonTextConfirm: {
+      color: '#FFFFFF',
+    },
   });
 
   if (isLoading) {
@@ -427,8 +606,69 @@ export default function ItemDetailsScreen() {
             </View>
           )}
         </View>
+
+        {/* Action Buttons Section */}
+        <View style={styles.actionButtonsSection}>
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity style={styles.useButton} onPress={handleUseItem}>
+              <Text style={styles.actionButtonText}>✅ {t('item.useItem')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.throwButton} onPress={handleThrowAway}>
+              <Text style={styles.actionButtonText}>🗑️ {t('item.throwAway')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
       <BottomNav />
+
+      {/* Quantity Modal */}
+      <Modal
+        visible={showQuantityModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQuantityModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {currentAction === 'use' ? t('item.useItem') : t('item.throwAway')}
+            </Text>
+            <Text style={styles.modalMessage}>
+              {currentAction === 'use' ? t('item.useQuantity') : t('item.throwQuantity')}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              value={quantityInput}
+              onChangeText={setQuantityInput}
+              keyboardType="numeric"
+              placeholder="1"
+              placeholderTextColor={theme?.textSecondary || '#666666'}
+              selectTextOnFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowQuantityModal(false)}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextCancel]}>
+                  {t('form.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  currentAction === 'throw' ? styles.modalButtonDestructive : styles.modalButtonConfirm
+                ]}
+                onPress={handleQuantitySubmit}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonTextConfirm]}>
+                  {currentAction === 'use' ? t('item.useItem') : t('item.throwAway')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 } 

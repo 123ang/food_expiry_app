@@ -45,6 +45,7 @@ export default function EditScreen() {
   }
   
   const [itemName, setItemName] = useState('');
+  const [quantity, setQuantity] = useState('1');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [expiryDate, setExpiryDate] = useState(new Date());
@@ -109,6 +110,26 @@ export default function EditScreen() {
     { emoji: '☕', label: 'Coffee' }, { emoji: '🍵', label: 'Tea' }, { emoji: '🥤', label: 'Soft Drink' },
     { emoji: '🧃', label: 'Juice Box' }, { emoji: '🧋', label: 'Bubble Tea' }, { emoji: '🍷', label: 'Wine' },
     { emoji: '🍺', label: 'Beer' }, { emoji: '💧', label: 'Water' },
+    
+    // Beauty & Personal Care
+    { emoji: '💄', label: 'Lipstick' }, { emoji: '🧴', label: 'Lotion' }, { emoji: '🧼', label: 'Soap' },
+    { emoji: '🌸', label: 'Perfume' }, { emoji: '💊', label: 'Pills' }, { emoji: '🩹', label: 'Bandage' },
+    { emoji: '👁️', label: 'Eye Drops' }, { emoji: '🧽', label: 'Sponge' },
+    
+    // Household & Cleaning
+    { emoji: '🧺', label: 'Laundry Basket' }, { emoji: '🔋', label: 'Battery' }, { emoji: '🧯', label: 'Fire Extinguisher' },
+    { emoji: '🎨', label: 'Paint' }, { emoji: '🛢️', label: 'Oil Drum' }, { emoji: '⛽', label: 'Fuel' },
+    { emoji: '🌞', label: 'Sun Protection' },
+    
+    // Health & Medical
+    { emoji: '🩸', label: 'Blood Test' }, { emoji: '🍀', label: 'Herbs' }, { emoji: '🧪', label: 'Test Tube' },
+    
+    // Office & Tech
+    { emoji: '🏷️', label: 'Label' }, { emoji: '🎟️', label: 'Ticket' }, { emoji: '📱', label: 'Phone' },
+    { emoji: '🌱', label: 'Plant' },
+    
+    // Garden & Nature
+    { emoji: '🌿', label: 'Leaves' },
   ];
 
   const loadSavedPhotos = async () => {
@@ -129,6 +150,7 @@ export default function EditScreen() {
         const item = foodItems.find(item => item.id === Number(id));
         if (item) {
           setItemName(item.name);
+          setQuantity(item.quantity.toString());
           setSelectedCategory(item.category_id);
           setSelectedLocation(item.location_id);
           setExpiryDate(new Date(item.expiry_date));
@@ -245,6 +267,12 @@ export default function EditScreen() {
       return;
     }
 
+    const quantityNum = parseInt(quantity);
+    if (!quantityNum || quantityNum < 1) {
+      Alert.alert(t('alert.error'), t('alert.quantityRequired'));
+      return;
+    }
+
     if (!selectedLocation) {
       Alert.alert(t('alert.error'), t('error.selectStorageLocation'));
       return;
@@ -278,7 +306,7 @@ export default function EditScreen() {
         await updateFoodItem({
           id: Number(id),
           name: itemName.trim(),
-          quantity: 1,
+          quantity: parseInt(quantity),
           category_id: selectedCategory,
           location_id: selectedLocation,
           expiry_date: expiryDate.toISOString().split('T')[0],
@@ -640,6 +668,18 @@ export default function EditScreen() {
               placeholderTextColor={theme.textSecondary}
               value={itemName}
               onChangeText={setItemName}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>{t('addItem.quantity')}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('addItem.quantityPlaceholder')}
+              placeholderTextColor={theme.textSecondary}
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
             />
           </View>
 

@@ -685,5 +685,98 @@ export const FoodItemRepository = {
       console.error('Error getting expiring items:', error);
       throw error;
     }
+  },
+
+  // Delete all expired items
+  deleteAllExpired: async (): Promise<number> => {
+    try {
+      // Check if we're using fallback storage first
+      if (isUsingFallbackStorage()) {
+        const fallbackDb = getFallbackStorage();
+        const items = await fallbackDb.getAllFoodItems();
+        const today = getCurrentDate();
+        const expiredItems = items.filter((item: any) => item.expiry_date < today);
+        
+        for (const item of expiredItems) {
+          await fallbackDb.deleteFoodItem(item.id);
+        }
+        return expiredItems.length;
+      }
+
+      // Try to get the SQLite database
+      const db = await getDatabaseSafely();
+      
+      if (!db) {
+        // If no database available, try fallback
+        const fallbackDb = getFallbackStorage();
+        const items = await fallbackDb.getAllFoodItems();
+        const today = getCurrentDate();
+        const expiredItems = items.filter((item: any) => item.expiry_date < today);
+        
+        for (const item of expiredItems) {
+          await fallbackDb.deleteFoodItem(item.id);
+        }
+        return expiredItems.length;
+      }
+      
+      const today = getCurrentDate();
+      const result = await db.runAsync('DELETE FROM food_items WHERE expiry_date < ?', [today]);
+      return result.changes || 0;
+    } catch (error) {
+      console.error('Error deleting expired items:', error);
+      throw error;
+    }
+  },
+
+  // Delete multiple items by IDs (for "used/removed" items)
+  deleteMultiple: async (ids: number[]): Promise<number> => {
+    if (!ids || ids.length === 0) {
+      return 0;
+    }
+
+    try {
+      // Check if we're using fallback storage first
+      if (isUsingFallbackStorage()) {
+        const fallbackDb = getFallbackStorage();
+        let deletedCount = 0;
+        
+        for (const id of ids) {
+          try {
+            await fallbackDb.deleteFoodItem(id);
+            deletedCount++;
+          } catch (error) {
+            console.error(`Error deleting item ${id}:`, error);
+          }
+        }
+        return deletedCount;
+      }
+
+      // Try to get the SQLite database
+      const db = await getDatabaseSafely();
+      
+      if (!db) {
+        // If no database available, try fallback
+        const fallbackDb = getFallbackStorage();
+        let deletedCount = 0;
+        
+        for (const id of ids) {
+          try {
+            await fallbackDb.deleteFoodItem(id);
+            deletedCount++;
+          } catch (error) {
+            console.error(`Error deleting item ${id}:`, error);
+          }
+        }
+        return deletedCount;
+      }
+      
+      // Create placeholders for the IN clause
+      const placeholders = ids.map(() => '?').join(',');
+      const result = await db.runAsync(`DELETE FROM food_items WHERE id IN (${placeholders})`, ids);
+      return result.changes || 0;
+    } catch (error) {
+      console.error('Error deleting multiple items:', error);
+      throw error;
+    }
   }
 }; 

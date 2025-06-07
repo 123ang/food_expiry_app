@@ -21,6 +21,7 @@ import { BottomNav } from '../components/BottomNav';
 import { Category, Location } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import { useResponsive } from '../hooks/useResponsive';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -142,7 +143,40 @@ const CATEGORY_EMOJIS = [
   // Payment & Cards (3 emojis)
   { key: 'credit_card', emoji: '💳', label: 'Credit Card' },
   { key: 'gift_card', emoji: '🎁', label: 'Gift Card' },
-  { key: 'receipt', emoji: '🧾', label: 'Receipt' }
+  { key: 'receipt', emoji: '🧾', label: 'Receipt' },
+  
+  // Beauty & Personal Care (8 emojis)
+  { key: 'lipstick', emoji: '💄', label: 'Lipstick' },
+  { key: 'lotion', emoji: '🧴', label: 'Lotion' },
+  { key: 'soap', emoji: '🧼', label: 'Soap' },
+  { key: 'perfume', emoji: '🌸', label: 'Perfume' },
+  { key: 'pills', emoji: '💊', label: 'Pills' },
+  { key: 'bandage', emoji: '🩹', label: 'Bandage' },
+  { key: 'eye_drops', emoji: '👁️', label: 'Eye Drops' },
+  { key: 'sponge', emoji: '🧽', label: 'Sponge' },
+  
+  // Household & Cleaning (7 emojis)
+  { key: 'laundry_basket', emoji: '🧺', label: 'Laundry Basket' },
+  { key: 'battery', emoji: '🔋', label: 'Battery' },
+  { key: 'fire_extinguisher', emoji: '🧯', label: 'Fire Extinguisher' },
+  { key: 'paint', emoji: '🎨', label: 'Paint' },
+  { key: 'oil_drum', emoji: '🛢️', label: 'Oil Drum' },
+  { key: 'fuel', emoji: '⛽', label: 'Fuel' },
+  { key: 'sun_protection', emoji: '🌞', label: 'Sun Protection' },
+  
+  // Health & Medical (3 emojis)
+  { key: 'blood_test', emoji: '🩸', label: 'Blood Test' },
+  { key: 'herbs', emoji: '🍀', label: 'Herbs' },
+  { key: 'test_tube', emoji: '🧪', label: 'Test Tube' },
+  
+  // Office & Tech (4 emojis)
+  { key: 'label', emoji: '🏷️', label: 'Label' },
+  { key: 'ticket', emoji: '🎟️', label: 'Ticket' },
+  { key: 'phone', emoji: '📱', label: 'Phone' },
+  { key: 'plant', emoji: '🌱', label: 'Plant' },
+  
+  // Garden & Nature (1 emoji)
+  { key: 'leaves', emoji: '🌿', label: 'Leaves' }
 ];
 
 // Location emojis for selection - All 9 location emojis
@@ -788,6 +822,7 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase } = useDatabase();
+  const responsive = useResponsive();
   const router = useRouter();
 
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -803,8 +838,10 @@ export default function SettingsScreen() {
         return t('settings.themeOriginal') || 'Original (White & Green)';
       case 'recycled':
         return t('settings.themeRecycled') || 'Recycled (Warm & Eco)';
-      case 'dark':
-        return t('settings.themeDark') || 'Dark Mode';
+      case 'darkBrown':
+        return t('settings.themeDarkBrown') || 'Dark Brown Theme';
+      case 'black':
+        return t('settings.themeBlack') || 'Black Theme';
       default:
         return themeType;
     }
@@ -859,6 +896,26 @@ export default function SettingsScreen() {
     //   type: 'navigation',
     //   onPress: () => router.push('/backup'),
     // },
+    {
+      id: 'clearExpired',
+      icon: 'trash',
+      title: t('settings.clearExpiredItems'),
+      description: t('settings.clearExpiredItemsDescription'),
+      type: 'navigation',
+      onPress: () => {
+        handleClearExpired();
+      },
+    },
+    {
+      id: 'clearUsed',
+      icon: 'check-circle',
+      title: t('settings.clearUsedItems'),
+      description: t('settings.clearUsedItemsDescription'),
+      type: 'navigation',
+      onPress: () => {
+        handleClearUsedItems();
+      },
+    },
     {
       id: 'reset',
       icon: 'refresh',
@@ -944,6 +1001,43 @@ export default function SettingsScreen() {
         }
       ]
     );
+  };
+
+  const handleClearExpired = async () => {
+    Alert.alert(
+      t('settings.clearExpiredConfirmTitle'),
+      t('settings.clearExpiredConfirmMessage'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('settings.clearExpiredButton'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const deletedCount = await deleteAllExpired();
+              const plural = deletedCount === 1 ? '' : 's';
+              Alert.alert(
+                t('common.success'), 
+                t('settings.clearExpiredSuccess').replace('{count}', deletedCount.toString()).replace('{plural}', plural)
+              );
+            } catch (error) {
+              Alert.alert(
+                t('common.error'), 
+                t('settings.clearExpiredError')
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleClearUsedItems = async () => {
+    // Navigate to a selection screen where users can select items to mark as used/removed
+    router.push('/clear-items');
   };
 
   const styles = createStyles(theme);
@@ -1103,9 +1197,9 @@ export default function SettingsScreen() {
           >
             <View style={styles.themeOption}>
               <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#FFFFFF', borderColor: '#E0E0E0', borderWidth: 1 }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#F8F9FA', borderColor: '#CED4DA', borderWidth: 1 }]} />
                 <View style={[styles.themeColorBox, { backgroundColor: '#2E7D32' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#000000' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#FFFFFF', borderColor: '#CED4DA', borderWidth: 1 }]} />
               </View>
               <View style={styles.themeInfo}>
                 <Text style={[
@@ -1115,7 +1209,7 @@ export default function SettingsScreen() {
                   {t('settings.themeOriginal') || 'Original'}
                 </Text>
                 <Text style={styles.themeDescription}>
-                  {t('settings.themeOriginalDesc') || 'Clean white background with dark green accents'}
+                  {t('settings.themeOriginalDesc') || 'Improved contrast white theme with better visibility'}
                 </Text>
               </View>
             </View>
@@ -1155,11 +1249,11 @@ export default function SettingsScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Dark Theme */}
+          {/* Dark Brown Theme */}
           <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            style={styles.languageOption}
             onPress={() => {
-              setTheme('dark');
+              setTheme('darkBrown');
               setShowThemeModal(false);
             }}
           >
@@ -1172,16 +1266,47 @@ export default function SettingsScreen() {
               <View style={styles.themeInfo}>
                 <Text style={[
                   styles.languageText,
-                  currentThemeType === 'dark' && styles.languageSelected
+                  currentThemeType === 'darkBrown' && styles.languageSelected
                 ]}>
-                  {t('settings.themeDark') || 'Dark'}
+                  {t('settings.themeDarkBrown') || 'Dark Brown'}
                 </Text>
                 <Text style={styles.themeDescription}>
-                  {t('settings.themeDarkDesc') || 'Dark warm brown with green accents'}
+                  {t('settings.themeDarkBrownDesc') || 'Dark warm brown with green accents'}
                 </Text>
               </View>
             </View>
-            {currentThemeType === 'dark' && (
+            {currentThemeType === 'darkBrown' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Black Theme */}
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setTheme('black');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#000000' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#4CAF50' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#1A1A1A' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'black' && styles.languageSelected
+                ]}>
+                  {t('settings.themeBlack') || 'Black'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeBlackDesc') || 'Pure black background with high contrast'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'black' && (
               <FontAwesome name="check" size={16} color={theme.primaryColor} />
             )}
           </TouchableOpacity>

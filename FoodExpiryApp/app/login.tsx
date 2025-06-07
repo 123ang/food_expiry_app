@@ -12,11 +12,13 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -110,7 +112,7 @@ export default function LoginScreen() {
             resizeMode="contain"
           />
         </View>
-        <Text style={styles.title}>Expiry Alert</Text>
+                    <Text style={styles.title}>{t('app.name')}</Text>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
