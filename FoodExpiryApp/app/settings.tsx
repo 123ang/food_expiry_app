@@ -719,7 +719,7 @@ const EditModal: React.FC<EditModalProps> = ({
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase } = useDatabase();
+  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired } = useDatabase();
   const responsive = useResponsive();
   const router = useRouter();
 

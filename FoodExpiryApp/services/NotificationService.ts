@@ -1,8 +1,9 @@
 import * as Notifications from 'expo-notifications';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { FoodItem } from '../database/models';
+import { FoodItem, FoodItemWithDetails } from '../database/models';
 
 export interface NotificationSettings {
   notificationsEnabled: boolean;
@@ -222,7 +223,7 @@ export class NotificationService {
   }
 
   // Schedule notifications for all food items
-  async scheduleNotificationsForFoodItems(foodItems: FoodItem[]): Promise<void> {
+  async scheduleNotificationsForFoodItems(foodItems: FoodItemWithDetails[]): Promise<void> {
     if (!this.settings.notificationsEnabled) {
       return;
     }
@@ -232,7 +233,15 @@ export class NotificationService {
 
     // Schedule new notifications for each food item
     for (const item of foodItems) {
-      await this.scheduleExpiryNotification(item.id.toString(), item.name, item.category, item.location, Math.ceil((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)));
+      if (item.id) {
+        await this.scheduleExpiryNotification(
+          item.id.toString(), 
+          item.name, 
+          item.category_name, 
+          item.location_name, 
+          Math.ceil((new Date(item.expiry_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24))
+        );
+      }
     }
   }
 
@@ -257,6 +266,7 @@ export class NotificationService {
         sound: false,
       },
       trigger: {
+        type: SchedulableTriggerInputTypes.CALENDAR,
         hour: hours,
         minute: minutes,
         repeats: true,
@@ -274,12 +284,15 @@ export class NotificationService {
         data: { type: 'test' },
         sound: true,
       },
-      trigger: { seconds: 2 },
+      trigger: { 
+        type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2 
+      },
     });
   }
 
   // Send immediate notification summary
-  async sendFoodSummaryNotification(foodItems: FoodItem[]): Promise<void> {
+  async sendFoodSummaryNotification(foodItems: FoodItemWithDetails[]): Promise<void> {
     if (!this.settings.notificationsEnabled) {
       return;
     }
@@ -327,7 +340,10 @@ export class NotificationService {
         data: { type: 'summary' },
         sound: true,
       },
-      trigger: { seconds: 1 },
+      trigger: { 
+        type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1 
+      },
     });
   }
 }
