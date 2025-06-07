@@ -246,7 +246,7 @@ export const brightPinkTheme: Theme = {
 };
 
 export const naturalGreenTheme: Theme = {
-  // Natural Green theme - fresh and natural
+  // Yellow theme - warm and bright
   backgroundColor: '#fbfcee',    // Very light cream background
   primaryColor: '#3971b8',       // Blue primary for active tabs
   secondaryColor: '#c8d69b',     // Light green secondary

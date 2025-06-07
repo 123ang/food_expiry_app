@@ -753,7 +753,7 @@ export default function SettingsScreen() {
       case 'brightPink':
         return t('settings.themeBrightPink') || 'Bright Pink Theme';
       case 'naturalGreen':
-        return t('settings.themeNaturalGreen') || 'Natural Green Theme';
+        return t('settings.themeYellow') || 'Yellow Theme';
       case 'mintRed':
         return t('settings.themeMintRed') || 'Mint-Red Theme';
       case 'darkGold':
@@ -1376,10 +1376,10 @@ export default function SettingsScreen() {
                   styles.languageText,
                   currentThemeType === 'naturalGreen' && styles.languageSelected
                 ]}>
-                  {t('settings.themeNaturalGreen') || 'Natural Green'}
+                  {t('settings.themeYellow') || 'Yellow'}
                 </Text>
                 <Text style={styles.themeDescription}>
-                  {t('settings.themeNaturalGreenDesc') || 'Fresh and natural green tones'}
+                  {t('settings.themeYellowDesc') || 'Warm and bright yellow tones'}
                 </Text>
               </View>
             </View>
