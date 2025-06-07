@@ -27,7 +27,7 @@ export interface Theme {
   borderRadius: number;
 }
 
-export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black' | 'blue';
+export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black' | 'blue' | 'green' | 'softPink' | 'brightPink';
 
 export const originalTheme: Theme = {
   // Original white theme - improved contrast for iPhone visibility
@@ -138,28 +138,109 @@ export const blackTheme: Theme = {
 };
 
 export const blueTheme: Theme = {
-  // Blue theme - matching the screenshot design
-  backgroundColor: '#B3D9F7',    // Light blue background (from screenshot)
-  primaryColor: '#1976D2',       // Material Design blue
-  secondaryColor: '#64B5F6',     // Medium blue for accents
-  textColor: '#1A1A1A',          // Dark text for good contrast
-  tertiaryColor: '#2196F3',      // Bright blue
+  // Blue theme - updated with new color scheme
+  backgroundColor: '#c1d9e3',    // Light blue background
+  primaryColor: '#5b88a8',       // Medium blue primary
+  secondaryColor: '#a1c0d8',     // Light blue secondary
+  textColor: '#2d4e68',          // Dark blue text
+  tertiaryColor: '#5b88a8',      // Medium blue tertiary
 
   // UI Colors
-  cardBackground: '#90CAF9',     // Slightly darker blue for cards (from screenshot)
-  borderColor: '#64B5F6',        // Blue borders
-  shadowColor: 'rgba(25, 118, 210, 0.2)', // Blue-tinted shadow
-  textSecondary: '#424242',      // Dark gray for secondary text
+  cardBackground: '#edf4f7',     // Very light blue/white cards
+  borderColor: '#a1c0d8',        // Light blue borders
+  shadowColor: 'rgba(45, 78, 104, 0.2)', // Blue-tinted shadow
+  textSecondary: '#5b88a8',      // Medium blue for secondary text
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
 
   // Header
-  headerBackground: '#42A5F5',   // Darker blue for header (Welcome Back banner)
+  headerBackground: '#a1c0d8',   // Light blue header
 
   // Gradients
-  gradientPrimary: ['#1976D2', '#1565C0'], // Blue gradient
-  gradientSecondary: ['#B3D9F7', '#90CAF9'], // Light blue gradient
+  gradientPrimary: ['#5b88a8', '#2d4e68'], // Blue gradient
+  gradientSecondary: ['#c1d9e3', '#edf4f7'], // Light blue gradient
+  
+  borderRadius: 16,
+};
+
+export const greenTheme: Theme = {
+  // Green theme - natural earth tones
+  backgroundColor: '#dbe1c0',    // Light green background
+  primaryColor: '#3d6a28',       // Dark green primary
+  secondaryColor: '#d8c58d',     // Golden beige secondary
+  textColor: '#3164a3',          // Blue text
+  tertiaryColor: '#3d6a28',      // Dark green tertiary
+
+  // UI Colors
+  cardBackground: '#fafaf0',     // Very light cream cards
+  borderColor: '#d8c58d',        // Golden beige borders
+  shadowColor: 'rgba(61, 106, 40, 0.2)', // Green-tinted shadow
+  textSecondary: '#3d6a28',      // Dark green for secondary text
+  successColor: '#3d6a28',       // Dark green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#d8c58d',   // Golden beige header
+
+  // Gradients
+  gradientPrimary: ['#3d6a28', '#2d4e20'], // Green gradient
+  gradientSecondary: ['#dbe1c0', '#fafaf0'], // Light green gradient
+  
+  borderRadius: 16,
+};
+
+export const softPinkTheme: Theme = {
+  // Soft Pink theme - warm and cozy
+  backgroundColor: '#fce7dd',    // Light pink background
+  primaryColor: '#a37d6c',       // Brown-pink primary
+  secondaryColor: '#e9c9b2',     // Light brown secondary
+  textColor: '#44281c',          // Dark brown text
+  tertiaryColor: '#a37d6c',      // Brown-pink tertiary
+
+  // UI Colors
+  cardBackground: '#f5d3d3',     // Light pink cards
+  borderColor: '#e9c9b2',        // Light brown borders
+  shadowColor: 'rgba(68, 40, 28, 0.2)', // Brown-tinted shadow
+  textSecondary: '#a37d6c',      // Brown-pink for secondary text
+  successColor: '#4CAF50',       // Green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#e9c9b2',   // Light brown header
+
+  // Gradients
+  gradientPrimary: ['#a37d6c', '#44281c'], // Brown gradient
+  gradientSecondary: ['#fce7dd', '#f5d3d3'], // Light pink gradient
+  
+  borderRadius: 16,
+};
+
+export const brightPinkTheme: Theme = {
+  // Bright Pink theme - vibrant and energetic
+  backgroundColor: '#fdd0d4',    // Light bright pink background
+  primaryColor: '#ad5b62',       // Dark pink primary
+  secondaryColor: '#f2bcbc',     // Medium pink secondary
+  textColor: '#3c1d20',          // Dark red-brown text
+  tertiaryColor: '#ad5b62',      // Dark pink tertiary
+
+  // UI Colors
+  cardBackground: '#ffe5e5',     // Very light pink cards
+  borderColor: '#f2bcbc',        // Medium pink borders
+  shadowColor: 'rgba(60, 29, 32, 0.2)', // Dark red-tinted shadow
+  textSecondary: '#ad5b62',      // Dark pink for secondary text
+  successColor: '#4CAF50',       // Green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#f2bcbc',   // Medium pink header
+
+  // Gradients
+  gradientPrimary: ['#ad5b62', '#3c1d20'], // Pink gradient
+  gradientSecondary: ['#fdd0d4', '#ffe5e5'], // Light pink gradient
   
   borderRadius: 16,
 };
@@ -170,6 +251,9 @@ export const themes = {
   darkBrown: darkBrownTheme,
   black: blackTheme,
   blue: blueTheme,
+  green: greenTheme,
+  softPink: softPinkTheme,
+  brightPink: brightPinkTheme,
 };
 
 // Keep lightTheme and darkTheme for backward compatibility
@@ -177,7 +261,7 @@ export const lightTheme = recycledTheme;
 export const darkTheme = darkBrownTheme;
 
 export const getNavigationTheme = (themeType: ThemeType) => {
-  const theme = themes[themeType];
+  const theme = (themes as any)[themeType];
   return {
     ...DefaultTheme,
     colors: {

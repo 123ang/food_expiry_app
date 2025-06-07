@@ -743,6 +743,12 @@ export default function SettingsScreen() {
         return t('settings.themeBlack') || 'Black Theme';
       case 'blue':
         return t('settings.themeBlue') || 'Blue Theme';
+      case 'green':
+        return t('settings.themeGreen') || 'Green Theme';
+      case 'softPink':
+        return t('settings.themeSoftPink') || 'Soft Pink Theme';
+      case 'brightPink':
+        return t('settings.themeBrightPink') || 'Bright Pink Theme';
       default:
         return themeType;
     }
@@ -1222,9 +1228,9 @@ export default function SettingsScreen() {
           >
             <View style={styles.themeOption}>
               <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#B3D9F7' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#1976D2' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#90CAF9' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#c1d9e3' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#5b88a8' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#edf4f7' }]} />
               </View>
               <View style={styles.themeInfo}>
                 <Text style={[
@@ -1239,6 +1245,99 @@ export default function SettingsScreen() {
               </View>
             </View>
             {currentThemeType === 'blue' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Green Theme */}
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
+            onPress={() => {
+              setTheme('green');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#dbe1c0' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#3d6a28' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#fafaf0' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'green' && styles.languageSelected
+                ]}>
+                  {t('settings.themeGreen') || 'Green'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeGreenDesc') || 'Natural earth tones with green accents'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'green' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Soft Pink Theme */}
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
+            onPress={() => {
+              setTheme('softPink');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#fce7dd' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#a37d6c' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#f5d3d3' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'softPink' && styles.languageSelected
+                ]}>
+                  {t('settings.themeSoftPink') || 'Soft Pink'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeSoftPinkDesc') || 'Warm and cozy pink tones'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'softPink' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Bright Pink Theme */}
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setTheme('brightPink');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#fdd0d4' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#ad5b62' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#ffe5e5' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'brightPink' && styles.languageSelected
+                ]}>
+                  {t('settings.themeBrightPink') || 'Bright Pink'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeBrightPinkDesc') || 'Vibrant and energetic pink theme'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'brightPink' && (
               <FontAwesome name="check" size={16} color={theme.primaryColor} />
             )}
           </TouchableOpacity>
