@@ -82,15 +82,15 @@ export default function CalendarScreen() {
       backgroundColor: theme.backgroundColor,
       ...(isWeb && {
         maxWidth: 800,
-        alignSelf: 'center',
-        height: '100vh',
+        alignSelf: 'center' as any,
+        height: '100vh' as any,
       }),
-    },
+    } as any,
     calendarSection: {
       height: responsive.getResponsiveValue({
         largeTablet: windowHeight * 0.5,
         tablet: windowHeight * 0.48,
-        default: isWeb ? 'auto' : windowHeight * 0.45,
+        default: isWeb ? 'auto' as any : windowHeight * 0.45,
       }),
       minHeight: responsive.getResponsiveValue({
         largeTablet: 420,
@@ -102,7 +102,7 @@ export default function CalendarScreen() {
         tablet: 500,
         default: undefined,
       }),
-    },
+    } as any,
     calendarContainer: {
       backgroundColor: theme.cardBackground,
       borderBottomWidth: 1,
@@ -202,9 +202,9 @@ export default function CalendarScreen() {
         default: 40,
       }),
       ...(isWeb && {
-        cursor: 'pointer',
+        cursor: 'pointer' as any,
       }),
-    },
+    } as any,
     dayContentSelected: {
       backgroundColor: theme.primaryColor,
     },
@@ -305,7 +305,7 @@ export default function CalendarScreen() {
         marginBottom: 8,
         borderWidth: 1,
       }),
-    },
+    } as any,
     foodImage: {
       width: 50,
       height: 50,

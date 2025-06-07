@@ -226,10 +226,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 48 : 24,
     ...(Platform.OS === 'web' && {
       maxWidth: 800,
-      alignSelf: 'center',
-      height: '100vh',
+      alignSelf: 'center' as any,
+      height: '100vh' as any,
     }),
-  },
+  } as any,
   header: {
     backgroundColor: theme.cardBackground,
     padding: 16,
@@ -595,7 +595,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.textSecondary,
     marginTop: 2,
   },
-});
+} as any);
 
 const EditModal: React.FC<EditModalProps> = ({
   visible,
