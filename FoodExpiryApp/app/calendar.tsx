@@ -81,25 +81,29 @@ export default function CalendarScreen() {
       flex: 1,
       backgroundColor: theme.backgroundColor,
       ...(isWeb && {
-        maxWidth: 800,
+        maxWidth: responsive.getResponsiveValue({
+          largeTablet: 1200,
+          tablet: 900,
+          default: 800,
+        }),
         alignSelf: 'center' as any,
         height: '100vh' as any,
       }),
     } as any,
     calendarSection: {
       height: responsive.getResponsiveValue({
-        largeTablet: windowHeight * 0.5,
-        tablet: windowHeight * 0.48,
+        largeTablet: windowHeight * 0.55,
+        tablet: windowHeight * 0.52,
         default: isWeb ? 'auto' as any : windowHeight * 0.45,
       }),
       minHeight: responsive.getResponsiveValue({
-        largeTablet: 420,
-        tablet: 400,
+        largeTablet: 480,
+        tablet: 440,
         default: 380,
       }),
       maxHeight: responsive.getResponsiveValue({
-        largeTablet: 600,
-        tablet: 500,
+        largeTablet: 700,
+        tablet: 600,
         default: undefined,
       }),
     } as any,
@@ -108,13 +112,13 @@ export default function CalendarScreen() {
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
       paddingBottom: responsive.getResponsiveValue({
-        tablet: 20,
-        largeTablet: 24,
+        tablet: 24,
+        largeTablet: 32,
         default: 16,
       }),
       marginBottom: responsive.getResponsiveValue({
-        tablet: 12,
-        largeTablet: 16,
+        tablet: 16,
+        largeTablet: 20,
         default: 8,
       }),
       borderRadius: responsive.getResponsiveValue({
@@ -127,6 +131,7 @@ export default function CalendarScreen() {
       shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 3,
+      flex: 1,
     },
     header: {
       padding: responsive.getResponsiveValue({
@@ -159,8 +164,16 @@ export default function CalendarScreen() {
     },
     weekDaysRow: {
       flexDirection: 'row',
-      paddingHorizontal: 8,
-      marginBottom: 8,
+      paddingHorizontal: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
     },
     weekDay: {
       flex: 1,
@@ -169,20 +182,33 @@ export default function CalendarScreen() {
     },
     weekDayText: {
       color: theme.textSecondary,
-      fontSize: 13,
+      fontSize: responsive.getResponsiveValue({
+        tablet: 15,
+        largeTablet: 17,
+        default: 13,
+      }),
       fontWeight: '500',
     },
     calendarGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      paddingHorizontal: 8,
+      paddingHorizontal: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
+      flex: 1,
     },
     dayCell: {
       width: `${100 / 7}%`,
-      aspectRatio: 1,
+      aspectRatio: responsive.getResponsiveValue({
+        tablet: 1.1,
+        largeTablet: 1.2,
+        default: 1,
+      }),
       padding: responsive.getResponsiveValue({
-        tablet: 3,
-        largeTablet: 4,
+        tablet: 4,
+        largeTablet: 6,
         default: 2,
       }),
     },
@@ -197,9 +223,14 @@ export default function CalendarScreen() {
       }),
       backgroundColor: theme.backgroundColor,
       minHeight: responsive.getResponsiveValue({
-        tablet: 45,
-        largeTablet: 50,
+        tablet: 50,
+        largeTablet: 60,
         default: 40,
+      }),
+      maxHeight: responsive.getResponsiveValue({
+        tablet: 70,
+        largeTablet: 80,
+        default: undefined,
       }),
       ...(isWeb && {
         cursor: 'pointer' as any,
