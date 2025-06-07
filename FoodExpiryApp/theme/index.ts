@@ -247,27 +247,27 @@ export const brightPinkTheme: Theme = {
 
 export const naturalGreenTheme: Theme = {
   // Natural Green theme - fresh and natural
-  backgroundColor: '#dae4b6',    // Light green background
-  primaryColor: '#1a4a7a',       // Darker blue primary for active tabs (darker than #3164a3)
-  secondaryColor: '#f2e3a2',     // Light yellow secondary
-  textColor: '#000000',          // Black text
-  tertiaryColor: '#3164a3',      // Blue tertiary
+  backgroundColor: '#fbfcee',    // Very light cream background
+  primaryColor: '#3971b8',       // Blue primary for active tabs
+  secondaryColor: '#c8d69b',     // Light green secondary
+  textColor: '#182020',          // Dark gray text
+  tertiaryColor: '#3971b8',      // Blue tertiary
 
   // UI Colors
-  cardBackground: '#f9f4da',     // Light cream cards
-  borderColor: '#f2e3a2',        // Light yellow borders
-  shadowColor: 'rgba(0, 0, 0, 0.1)', // Subtle shadow
+  cardBackground: '#f6e6a5',     // Light yellow cards
+  borderColor: '#c8d69b',        // Light green borders
+  shadowColor: 'rgba(24, 32, 32, 0.1)', // Subtle shadow with text color tint
   textSecondary: '#7A9C6E',      // Light green for inactive tabs
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
 
   // Header
-  headerBackground: '#f2e3a2',   // Light yellow header
+  headerBackground: '#c8d69b',   // Light green header
 
   // Gradients
-  gradientPrimary: ['#1a4a7a', '#0d2f4d'], // Dark blue gradient
-  gradientSecondary: ['#dae4b6', '#f9f4da'], // Light green gradient
+  gradientPrimary: ['#3971b8', '#2d5a94'], // Blue gradient
+  gradientSecondary: ['#fbfcee', '#f6e6a5'], // Light cream to yellow gradient
   
   borderRadius: 16,
 };

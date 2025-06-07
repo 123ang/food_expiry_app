@@ -1367,9 +1367,9 @@ export default function SettingsScreen() {
           >
             <View style={styles.themeOption}>
               <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#dae4b6' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#3164a3' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#f9f4da' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#fbfcee' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#3971b8' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#f6e6a5' }]} />
               </View>
               <View style={styles.themeInfo}>
                 <Text style={[
