@@ -1062,6 +1062,8 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.themeDarkBrownDesc': '暖かい茶色の背景に緑のアクセント',
     'settings.themeBlack': 'ブラック',
     'settings.themeBlackDesc': '純黒背景で高コントラスト',
+    'settings.themeBlue': 'ブルー',
+    'settings.themeBlueDesc': 'クリーンなブルー背景でモダンデザイン',
     'settings.themeDark': 'ダーク',
     'settings.themeDarkDesc': '暖かい茶色の背景に緑のアクセント',
     'settings.darkMode': 'ダークモード',
