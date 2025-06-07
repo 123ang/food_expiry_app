@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { LocationsService, Location } from '../services/firestoreService';
+import { LocationsService } from '../services/firestoreService';
+import { LOCATION_EMOJIS } from '../constants/emojis';
 
 const AddLocation: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,22 +21,8 @@ const AddLocation: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  const storageLocationIcons = [
-    // Refrigerated/Cold Storage
-    '❄️', '🧊', '🥛', '🧀', '🥩', '🐟', '🍤', '🦐', '🥚', '🧈', '🍇', '🍓', '🥕', '🥦',
-    // Freezer
-    '🧊', '❄️', '🍦', '🍧', '🍖', '🍗', '🦐', '🥟', '🍨', '📦',
-    // Pantry/Dry Storage  
-    '📦', '🥫', '🍱', '🥡', '🍞', '🥖', '🥐', '🍝', '🍚', '🥜', '🍯', '☕', '🧂', '🍪', '🛒',
-    // Counter/Room Temperature
-    '🍎', '🍏', '🍌', '🍊', '🍋', '🍅', '🧄', '🧅', '🥔', '🌰', '🥥', '🍍', '🥭', '🍑', '🍈', '🍉',
-    // Cabinet/Cupboard Storage
-    '🗄️', '📦', '🍽️', '🥫', '🍱', '🥡', '🥤', '🧃', '🍳', '🥄', '🔪', '🍴', '🛒',
-    // Wine/Beverage Storage
-    '🍷', '🍺', '🍻', '🥂', '🍸', '🍹', '🥃', '🍶', '🧃', '🥤',
-    // General Storage Icons
-    '📍', '🏠', '🗃️', '🗂️', '📋', '📌', '🎯', '🏷️', '🔖', '📦', '🗄️'
-  ];
+  // Use the centralized location emoji constants
+  const storageLocationIcons = LOCATION_EMOJIS.map(item => item.emoji);
 
   const extendedColors = [
     // Transparent option

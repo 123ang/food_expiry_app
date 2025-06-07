@@ -27,16 +27,20 @@ const FirebaseImageUpload: React.FC<FirebaseImageUploadProps> = ({
   const storageService = FirebaseStorageService.getInstance();
 
   const handleFileSelect = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPG, PNG, WebP, or GIF)');
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
       toast.error('Image size must be less than 10MB');
       return;
     }
 
+    // Check authentication
     if (!user) {
       toast.error('Please log in to upload images');
       return;
@@ -45,23 +49,47 @@ const FirebaseImageUpload: React.FC<FirebaseImageUploadProps> = ({
     setIsUploading(true);
     
     try {
-      // Create preview
+      // Create preview immediately
       const previewUrl = URL.createObjectURL(file);
       setPreviewUrl(previewUrl);
 
+      // Show upload progress
+      const uploadToast = toast.loading('📤 Uploading image to Firebase Storage...');
+      
       // Upload to Firebase Storage
-      toast.loading('Uploading image...');
       const result = await storageService.uploadImage(file, itemName);
       
+      // Update state with uploaded image info
       setCurrentImagePath(result.path);
       onImageUploaded(result.id, result.url);
-      toast.dismiss();
-      toast.success('✅ Image uploaded successfully!');
+      
+      // Success feedback
+      toast.dismiss(uploadToast);
+      toast.success('✅ Image uploaded successfully!', {
+        duration: 3000,
+        icon: '📷'
+      });
       
     } catch (error) {
       console.error('Firebase upload error:', error);
       toast.dismiss();
-      toast.error('Failed to upload image. Please try again.');
+      
+      // Show specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('auth')) {
+          toast.error('Authentication error. Please log in again.');
+        } else if (error.message.includes('permission')) {
+          toast.error('Permission denied. Please check your account permissions.');
+        } else if (error.message.includes('quota')) {
+          toast.error('Storage quota exceeded. Please contact support.');
+        } else {
+          toast.error(`Upload failed: ${error.message}`);
+        }
+      } else {
+        toast.error('Failed to upload image. Please try again.');
+      }
+      
+      // Reset preview on error
       setPreviewUrl(currentImageUrl || null);
     } finally {
       setIsUploading(false);

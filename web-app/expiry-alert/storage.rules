@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow users to upload and manage their own images
+    match /user-images/{userId}/{allPaths=**} {
+      // Only allow authenticated users to access their own images
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Additional validation for uploads
+      allow create: if request.auth != null 
+                   && request.auth.uid == userId
+                   && resource == null
+                   && request.resource.size < 10 * 1024 * 1024  // 10MB limit
+                   && request.resource.contentType.matches('image/.*');  // Only images
+      
+      // Allow updates and deletes for existing files
+      allow update, delete: if request.auth != null 
+                           && request.auth.uid == userId
+                           && resource != null;
+    }
+    
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+} 

@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { CategoriesService, Category } from '../services/firestoreService';
+import { CategoriesService } from '../services/firestoreService';
+import { CATEGORY_EMOJIS } from '../constants/emojis';
+import EmojiSelector from './EmojiSelector';
 
 const AddCategory: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,30 +22,7 @@ const AddCategory: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
-  const foodCategoryIcons = [
-    // Fruits
-    '🍎', '🍏', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🍍', '🥭', '🥥',
-    // Vegetables  
-    '🍅', '🍆', '🌽', '🌶️', '🥒', '🥕', '🥔', '🧄', '🧅', '🥦', '🌰',
-    // Grains & Bread
-    '🍞', '🥖', '🥐', '🥯', '🥞', '🥨', '🍚', '🍙', '🍛', '🍜', '🍝',
-    // Proteins & Seafood
-    '🍗', '🍖', '🥓', '🥩', '🐟', '🍤', '🦐', '🥚', '🍳', '🍣', '🍢', '🍘',
-    // Dairy & Alternatives
-    '🥛', '🧀', '🧈',
-    // Prepared Foods
-    '🥗', '🥪', '🌮', '🌯', '🍔', '🍟', '🌭', '🍕', '🥙', '🥘',
-    // Snacks
-    '🍿', '🥜',
-    // Desserts & Sweets
-    '🍪', '🍩', '🧁', '🎂', '🍰', '🍫', '🍬', '🍭', '🍦', '🍨', '🍧',
-    // Beverages
-    '☕', '🍵', '🍼', '🥤', '🧃', '🍶', '🍻', '🍺', '🍷', '🥂', '🍸', '🍹', '🥃',
-    // Condiments & Seasonings
-    '🧂', '🍯',
-    // Containers & Serving
-    '🥣', '🍽️', '🍱', '🥡', '🥫', '📦', '🛒'
-  ];
+  // Emoji constants are now handled by the EmojiSelector component
 
   const extendedColors = [
     // Transparent option
@@ -226,32 +205,11 @@ const AddCategory: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">
-              {t('categories.icon')}
-            </label>
-            <div className="icon-selector">
-              <div 
-                className="selected-icon" 
-                style={{ 
-                  backgroundColor: formData.color,
-                  border: formData.color === 'transparent' ? '2px dashed #ccc' : 'none'
-                }}
-              >
-                {formData.icon}
-              </div>
-              <div className="icon-grid">
-                {foodCategoryIcons.map((icon) => (
-                  <button
-                    key={icon}
-                    type="button"
-                    onClick={() => handleIconSelect(icon)}
-                    className={`icon-option ${formData.icon === icon ? 'active' : ''}`}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <EmojiSelector
+              selectedEmoji={formData.icon}
+              onEmojiSelect={handleIconSelect}
+              backgroundColor={formData.color}
+            />
           </div>
 
           <div className="form-group">

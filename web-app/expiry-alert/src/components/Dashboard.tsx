@@ -11,12 +11,14 @@ import {
   FoodItem,
   Category,
   Location,
-  cleanupUserData
+  cleanupUserData,
+  ItemActionService,
+  PurchaseService
 } from '../services/firestoreService';
 import { notificationService } from '../services/notificationService';
 
 interface DashboardProps {
-  filter?: 'fresh' | 'expiring-soon' | 'expired';
+  filter?: 'in-date' | 'expiring-soon' | 'expired';
 }
 
 type SortOption = 'name' | 'expiryDate' | 'category' | 'location' | 'addedDate';
@@ -28,7 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const [locations, setLocations] = useState<Location[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
-    fresh: 0,
+    inDate: 0,
     expiringSoon: 0,
     expired: 0
   });
@@ -71,7 +73,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
       let itemsData: FoodItem[] = [];
       let categoriesData: Category[] = [];
       let locationsData: Location[] = [];
-      let statsData: DashboardStats = { total: 0, fresh: 0, expiringSoon: 0, expired: 0 };
+      let statsData: DashboardStats = { total: 0, inDate: 0, expiringSoon: 0, expired: 0 };
 
       try {
         itemsData = filter ? 
@@ -278,6 +280,93 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     }
   };
 
+  const handleUseItem = async (e: React.MouseEvent, item: FoodItem) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    try {
+      // Record the action
+      await ItemActionService.recordAction({
+        itemId: item.id!,
+        itemName: item.name,
+        categoryId: item.categoryId,
+        locationId: item.locationId,
+        action: 'used',
+        actionDate: new Date().toISOString().split('T')[0],
+        quantity: item.quantity,
+        notes: 'Item used successfully',
+        userId: user.uid
+      }, user.uid);
+
+      // Record purchase if not already recorded
+      await PurchaseService.addPurchase({
+        itemId: item.id!,
+        itemName: item.name,
+        categoryId: item.categoryId,
+        locationId: item.locationId,
+        quantity: item.quantity,
+        purchaseDate: item.addedDate,
+        expiryDate: item.expiryDate,
+        notes: item.notes,
+        userId: user.uid
+      }, user.uid);
+
+      // Delete the item
+      await FoodItemsService.deleteItem(item.id!);
+      
+      toast.success(`✅ "${item.name}" marked as used!`);
+      await loadData(); // Refresh the data
+    } catch (error) {
+      console.error('Error marking item as used:', error);
+      toast.error('Failed to mark item as used');
+    }
+  };
+
+  const handleThrowAwayItem = async (e: React.MouseEvent, item: FoodItem) => {
+    e.stopPropagation();
+    if (!user) return;
+
+    const reason = window.prompt('Why are you throwing this away? (optional)');
+    
+    try {
+      // Record the action
+      await ItemActionService.recordAction({
+        itemId: item.id!,
+        itemName: item.name,
+        categoryId: item.categoryId,
+        locationId: item.locationId,
+        action: 'thrown-away',
+        actionDate: new Date().toISOString().split('T')[0],
+        quantity: item.quantity,
+        reason: reason || 'User disposed of item',
+        notes: reason || 'Item thrown away by user',
+        userId: user.uid
+      }, user.uid);
+
+      // Record purchase if not already recorded
+      await PurchaseService.addPurchase({
+        itemId: item.id!,
+        itemName: item.name,
+        categoryId: item.categoryId,
+        locationId: item.locationId,
+        quantity: item.quantity,
+        purchaseDate: item.addedDate,
+        expiryDate: item.expiryDate,
+        notes: item.notes,
+        userId: user.uid
+      }, user.uid);
+
+      // Delete the item
+      await FoodItemsService.deleteItem(item.id!);
+      
+      toast.success(`🗑️ "${item.name}" marked as thrown away`);
+      await loadData(); // Refresh the data
+    } catch (error) {
+      console.error('Error marking item as thrown away:', error);
+      toast.error('Failed to mark item as thrown away');
+    }
+  };
+
   const getCategoryIcon = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     if (category?.icon) return category.icon;
@@ -353,7 +442,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'fresh': return t('status.indate');
+      case 'in-date': return t('status.indate');
       case 'expiring-soon': return t('status.expiring');
       case 'expired': return t('status.expired');
       default: return status;
@@ -362,7 +451,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'fresh': return '#4CAF50';
+      case 'in-date': return '#4CAF50';
       case 'expiring-soon': return '#FF9800';
       case 'expired': return '#F44336';
       default: return '#757575';
@@ -395,7 +484,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   // Filter view
   if (filter) {
     const filteredItems = foodItems.filter(item => item.status === filter);
-    const pageTitle = filter === 'fresh' ? t('status.indate') : 
+    const pageTitle = filter === 'in-date' ? t('status.indate') : 
                      filter === 'expiring-soon' ? t('status.expiring') :
                      t('status.expired');
 
@@ -433,10 +522,55 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
               >
                 <div className="item-header">
                   <div className="item-title">
-                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
+                    {item.imageUrl ? (
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name}
+                        className="item-image"
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '8px',
+                          objectFit: 'cover',
+                          flexShrink: 0
+                        }}
+                      />
+                    ) : (
+                      <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
+                    )}
                     <h3>{item.name}</h3>
                   </div>
                   <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <button 
+                      className="btn btn-small btn-success"
+                      onClick={(e) => handleUseItem(e, item)}
+                      title="Mark as used"
+                      style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        fontSize: '0.75rem',
+                        minWidth: 'auto',
+                        backgroundColor: '#4CAF50',
+                        color: 'white',
+                        border: 'none'
+                      }}
+                    >
+                      ✅
+                    </button>
+                    <button 
+                      className="btn btn-small btn-warning"
+                      onClick={(e) => handleThrowAwayItem(e, item)}
+                      title="Throw away"
+                      style={{ 
+                        padding: '0.25rem 0.5rem', 
+                        fontSize: '0.75rem',
+                        minWidth: 'auto',
+                        backgroundColor: '#FF9800',
+                        color: 'white',
+                        border: 'none'
+                      }}
+                    >
+                      🗑️
+                    </button>
                     <Link 
                       to={`/edit-item/${item.id}`}
                       className="btn btn-small btn-secondary"
@@ -451,13 +585,6 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
                     >
                       ✏️
                     </Link>
-                    <button 
-                      className="delete-btn"
-                      onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
-                      title={t('action.delete')}
-                    >
-                      🗑️
-                    </button>
                   </div>
                 </div>
                 
@@ -523,12 +650,12 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
       {/* Statistics Cards */}
       <div className="stats-grid">
-        <Link to="/items/fresh" className="stat-card fresh">
+        <Link to="/items/in-date" className="stat-card in-date">
           <div className="stat-header">
             <h3>{t('status.indate')}</h3>
             <span className="stat-icon">✅</span>
           </div>
-          <div className="stat-number">{stats.fresh}</div>
+          <div className="stat-number">{stats.inDate}</div>
           <div className="stat-label">{t('status.items')}</div>
         </Link>
 

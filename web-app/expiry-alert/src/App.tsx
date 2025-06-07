@@ -23,6 +23,8 @@ const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
 const Settings = lazy(() => import('./components/Settings'));
 const GoogleDriveAuth = lazy(() => import('./components/GoogleDriveAuth'));
 const GoogleDriveOwnerAuth = lazy(() => import('./components/GoogleDriveOwnerAuth'));
+const PurchaseHistory = lazy(() => import('./components/PurchaseHistory'));
+const Analytics = lazy(() => import('./components/Analytics'));
 
 const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
@@ -64,6 +66,8 @@ const AppContent: React.FC = () => {
           <nav>
             <Link to="/dashboard" className="btn btn-secondary">🏠 {t('nav.dashboard')}</Link>
             <Link to="/add-item" className="btn btn-secondary">➕ {t('nav.addItem')}</Link>
+            <Link to="/purchase-history" className="btn btn-secondary">📊 Purchase History</Link>
+            <Link to="/analytics" className="btn btn-secondary">📈 Analytics</Link>
             <Link to="/locations" className="btn btn-secondary">📍 {t('nav.locations')}</Link>
             <Link to="/categories" className="btn btn-secondary">🏷️ {t('nav.categories')}</Link>
             <Link to="/settings" className="btn btn-secondary">⚙️ Settings</Link>
@@ -251,13 +255,35 @@ const AppContent: React.FC = () => {
               </div>
             } />
 
+            <Route path="/purchase-history" element={
+              <div>
+                {renderAppHeader()}
+                <main>
+                  <div className="container">
+                    {user ? <PurchaseHistory /> : <Navigate to="/login" />}
+                  </div>
+                </main>
+              </div>
+            } />
+
+            <Route path="/analytics" element={
+              <div>
+                {renderAppHeader()}
+                <main>
+                  <div className="container">
+                    {user ? <Analytics /> : <Navigate to="/login" />}
+                  </div>
+                </main>
+              </div>
+            } />
+
           {/* Status pages for viewing items by status */}
-          <Route path="/items/fresh" element={
+          <Route path="/items/in-date" element={
             <div>
               {renderAppHeader()}
               <main>
                 <div className="container">
-                  {user ? <Dashboard filter="fresh" /> : <Navigate to="/login" />}
+                  {user ? <Dashboard filter="in-date" /> : <Navigate to="/login" />}
                 </div>
               </main>
             </div>

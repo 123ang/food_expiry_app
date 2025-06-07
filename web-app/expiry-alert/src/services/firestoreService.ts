@@ -28,7 +28,7 @@ export interface FoodItem {
   notes: string;
   addedDate: string;
   userId: string;
-  status?: 'fresh' | 'expiring-soon' | 'expired';
+  status?: 'in-date' | 'expiring-soon' | 'expired';
   daysUntilExpiry?: number;
   reminderDays?: number;
   imageId?: string;        // Google Drive file ID
@@ -64,16 +64,75 @@ export interface Location {
 
 export interface DashboardStats {
   total: number;
-  fresh: number;
+  inDate: number;
   expiringSoon: number;
   expired: number;
+}
+
+export interface PurchaseRecord {
+  id?: string;
+  itemId: string;
+  itemName: string;
+  categoryId: string;
+  locationId: string;
+  quantity: string;
+  purchaseDate: string;
+  expiryDate: string;
+  price?: number;
+  store?: string;
+  notes?: string;
+  userId: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface ItemAction {
+  id?: string;
+  itemId: string;
+  itemName: string;
+  categoryId: string;
+  locationId: string;
+  action: 'used' | 'thrown-away' | 'expired';
+  actionDate: string;
+  quantity?: string;
+  reason?: string;
+  notes?: string;
+  userId: string;
+  createdAt?: any;
+}
+
+export interface AnalyticsData {
+  totalPurchases: number;
+  totalSpent: number;
+  totalWasted: number;
+  wastePercentage: number;
+  mostWastedCategory: string;
+  mostUsedCategory: string;
+  averageItemLifespan: number;
+  monthlyStats: {
+    month: string;
+    purchases: number;
+    used: number;
+    wasted: number;
+    spent: number;
+  }[];
+  categoryStats: {
+    categoryId: string;
+    categoryName: string;
+    purchases: number;
+    used: number;
+    wasted: number;
+    wasteRate: number;
+  }[];
 }
 
 // Collection names
 const COLLECTIONS = {
   FOOD_ITEMS: 'foodItems',
   CATEGORIES: 'categories',
-  LOCATIONS: 'locations'
+  LOCATIONS: 'locations',
+  PURCHASES: 'purchases',
+  ITEM_ACTIONS: 'itemActions'
 };
 
 // Food Items Service
@@ -162,7 +221,7 @@ export class FoodItemsService {
     }
   }
 
-  static async getItemsByStatus(userId: string, status: 'fresh' | 'expiring-soon' | 'expired'): Promise<FoodItem[]> {
+  static async getItemsByStatus(userId: string, status: 'in-date' | 'expiring-soon' | 'expired'): Promise<FoodItem[]> {
     try {
       const items = await this.getUserItems(userId);
       return items.filter(item => item.status === status);
@@ -177,7 +236,7 @@ export class FoodItemsService {
       const items = await this.getUserItems(userId);
       const stats: DashboardStats = {
         total: items.length,
-        fresh: items.filter(item => item.status === 'fresh').length,
+        inDate: items.filter(item => item.status === 'in-date').length,
         expiringSoon: items.filter(item => item.status === 'expiring-soon').length,
         expired: items.filter(item => item.status === 'expired').length
       };
@@ -616,8 +675,232 @@ export class LocationsService {
   }
 }
 
+// Purchase Records Service
+export class PurchaseService {
+  static async addPurchase(purchase: Omit<PurchaseRecord, 'id' | 'createdAt'>, userId: string): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.PURCHASES), {
+        ...purchase,
+        userId,
+        createdAt: serverTimestamp()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding purchase record:', error);
+      throw error;
+    }
+  }
+
+  static async getUserPurchases(userId: string): Promise<PurchaseRecord[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.PURCHASES),
+        where('userId', '==', userId),
+        orderBy('purchaseDate', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as PurchaseRecord[];
+    } catch (error) {
+      console.error('Error getting user purchases:', error);
+      throw error;
+    }
+  }
+
+  static async getPurchasesByDateRange(userId: string, startDate: string, endDate: string): Promise<PurchaseRecord[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.PURCHASES),
+        where('userId', '==', userId),
+        where('purchaseDate', '>=', startDate),
+        where('purchaseDate', '<=', endDate),
+        orderBy('purchaseDate', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as PurchaseRecord[];
+    } catch (error) {
+      console.error('Error getting purchases by date range:', error);
+      throw error;
+    }
+  }
+}
+
+// Item Actions Service
+export class ItemActionService {
+  static async recordAction(action: Omit<ItemAction, 'id' | 'createdAt'>, userId: string): Promise<string> {
+    try {
+      const docRef = await addDoc(collection(db, COLLECTIONS.ITEM_ACTIONS), {
+        ...action,
+        userId,
+        createdAt: serverTimestamp()
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error recording item action:', error);
+      throw error;
+    }
+  }
+
+  static async getUserActions(userId: string): Promise<ItemAction[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.ITEM_ACTIONS),
+        where('userId', '==', userId),
+        orderBy('actionDate', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ItemAction[];
+    } catch (error) {
+      console.error('Error getting user actions:', error);
+      throw error;
+    }
+  }
+
+  static async getActionsByDateRange(userId: string, startDate: string, endDate: string): Promise<ItemAction[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.ITEM_ACTIONS),
+        where('userId', '==', userId),
+        where('actionDate', '>=', startDate),
+        where('actionDate', '<=', endDate),
+        orderBy('actionDate', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as ItemAction[];
+    } catch (error) {
+      console.error('Error getting actions by date range:', error);
+      throw error;
+    }
+  }
+}
+
+// Analytics Service
+export class AnalyticsService {
+  static async getAnalyticsData(userId: string, months: number = 12): Promise<AnalyticsData> {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - months);
+
+      const [purchases, actions, categories] = await Promise.all([
+        PurchaseService.getPurchasesByDateRange(userId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]),
+        ItemActionService.getActionsByDateRange(userId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]),
+        CategoriesService.getUserCategories(userId)
+      ]);
+
+      // Calculate basic stats
+      const totalPurchases = purchases.length;
+      const totalSpent = purchases.reduce((sum, p) => sum + (p.price || 0), 0);
+      const wastedActions = actions.filter(a => a.action === 'thrown-away' || a.action === 'expired');
+      const usedActions = actions.filter(a => a.action === 'used');
+      const totalWasted = wastedActions.length;
+      const wastePercentage = totalPurchases > 0 ? (totalWasted / totalPurchases) * 100 : 0;
+
+      // Category stats
+      const categoryMap = new Map(categories.map(c => [c.id!, c.name]));
+      const categoryStats = categories.map(category => {
+        const categoryPurchases = purchases.filter(p => p.categoryId === category.id).length;
+        const categoryUsed = usedActions.filter(a => a.categoryId === category.id).length;
+        const categoryWasted = wastedActions.filter(a => a.categoryId === category.id).length;
+        const wasteRate = categoryPurchases > 0 ? (categoryWasted / categoryPurchases) * 100 : 0;
+
+        return {
+          categoryId: category.id!,
+          categoryName: category.name,
+          purchases: categoryPurchases,
+          used: categoryUsed,
+          wasted: categoryWasted,
+          wasteRate
+        };
+      });
+
+      // Find most wasted and used categories
+      const mostWastedCategory = categoryStats.reduce((max, cat) => 
+        cat.wasted > max.wasted ? cat : max, categoryStats[0] || { categoryName: 'None' }
+      ).categoryName;
+
+      const mostUsedCategory = categoryStats.reduce((max, cat) => 
+        cat.used > max.used ? cat : max, categoryStats[0] || { categoryName: 'None' }
+      ).categoryName;
+
+      // Monthly stats
+      const monthlyStats = [];
+      for (let i = 0; i < months; i++) {
+        const monthStart = new Date();
+        monthStart.setMonth(monthStart.getMonth() - i);
+        monthStart.setDate(1);
+        const monthEnd = new Date(monthStart);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+        monthEnd.setDate(0);
+
+        const monthPurchases = purchases.filter(p => {
+          const pDate = new Date(p.purchaseDate);
+          return pDate >= monthStart && pDate <= monthEnd;
+        });
+
+        const monthActions = actions.filter(a => {
+          const aDate = new Date(a.actionDate);
+          return aDate >= monthStart && aDate <= monthEnd;
+        });
+
+        monthlyStats.unshift({
+          month: monthStart.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+          purchases: monthPurchases.length,
+          used: monthActions.filter(a => a.action === 'used').length,
+          wasted: monthActions.filter(a => a.action === 'thrown-away' || a.action === 'expired').length,
+          spent: monthPurchases.reduce((sum, p) => sum + (p.price || 0), 0)
+        });
+      }
+
+      // Calculate average item lifespan
+      const completedItems = actions.filter(a => a.action === 'used' || a.action === 'thrown-away');
+      const averageItemLifespan = completedItems.length > 0 ? 
+        completedItems.reduce((sum, action) => {
+          const purchase = purchases.find(p => p.itemId === action.itemId);
+          if (purchase) {
+            const purchaseDate = new Date(purchase.purchaseDate);
+            const actionDate = new Date(action.actionDate);
+            const lifespan = Math.ceil((actionDate.getTime() - purchaseDate.getTime()) / (1000 * 60 * 60 * 24));
+            return sum + lifespan;
+          }
+          return sum;
+        }, 0) / completedItems.length : 0;
+
+      return {
+        totalPurchases,
+        totalSpent,
+        totalWasted,
+        wastePercentage,
+        mostWastedCategory,
+        mostUsedCategory,
+        averageItemLifespan,
+        monthlyStats,
+        categoryStats
+      };
+    } catch (error) {
+      console.error('Error getting analytics data:', error);
+      throw error;
+    }
+  }
+}
+
 // Helper function to calculate item status and days until expiry
-export const calculateItemStatus = (expiryDate: string): { status: 'fresh' | 'expiring-soon' | 'expired', daysUntilExpiry: number } => {
+export const calculateItemStatus = (expiryDate: string): { status: 'in-date' | 'expiring-soon' | 'expired', daysUntilExpiry: number } => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const expiry = new Date(expiryDate);
@@ -630,7 +913,7 @@ export const calculateItemStatus = (expiryDate: string): { status: 'fresh' | 'ex
   } else if (diffDays <= 3) {
     return { status: 'expiring-soon', daysUntilExpiry: diffDays };
   } else {
-    return { status: 'fresh', daysUntilExpiry: diffDays };
+    return { status: 'in-date', daysUntilExpiry: diffDays };
   }
 };
 

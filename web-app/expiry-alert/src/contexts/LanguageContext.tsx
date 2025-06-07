@@ -185,6 +185,14 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.createAccount': 'Create Account',
     'auth.alreadyHaveAccount': 'Already have an account?',
     'auth.dontHaveAccount': "Don't have an account?",
+    
+    // Emoji Categories
+    'emojiCategory.food': 'Food & Beverages',
+    'emojiCategory.personalCare': 'Personal Care & Beauty',
+    'emojiCategory.medical': 'Medical & Health',
+    'emojiCategory.household': 'Household Items',
+    'emojiCategory.chemical': 'Chemical & Automotive',
+    'emojiCategory.other': 'Other',
   },
   zh: {
     // Navigation  
@@ -359,6 +367,14 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.createAccount': '创建账户',
     'auth.alreadyHaveAccount': '已有账户？',
     'auth.dontHaveAccount': '没有账户？',
+    
+    // Emoji Categories
+    'emojiCategory.food': '食品饮料',
+    'emojiCategory.personalCare': '美容个护',
+    'emojiCategory.medical': '健康医疗',
+    'emojiCategory.household': '家居用品',
+    'emojiCategory.chemical': '汽车化工',
+    'emojiCategory.other': '其他',
   },
   ja: {
     // Navigation
@@ -533,6 +549,14 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.createAccount': 'アカウントを作成',
     'auth.alreadyHaveAccount': 'すでにアカウントをお持ちですか？',
     'auth.dontHaveAccount': 'アカウントをお持ちでないですか？',
+    
+    // Emoji Categories
+    'emojiCategory.food': '食品・飲料',
+    'emojiCategory.personalCare': '美容・パーソナルケア',
+    'emojiCategory.medical': '健康・医療',
+    'emojiCategory.household': '家庭用品',
+    'emojiCategory.chemical': '自動車・化学',
+    'emojiCategory.other': 'その他',
   }
 };
 

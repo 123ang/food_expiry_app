@@ -56,36 +56,52 @@ class FirebaseStorageService {
     });
   }
 
-  // Upload image to Firebase Storage
-  async uploadImage(file: File, itemName?: string): Promise<UploadResult> {
+  // Upload image to Firebase Storage with progress tracking
+  async uploadImage(file: File, itemName?: string, onProgress?: (progress: number) => void): Promise<UploadResult> {
     const user = auth.currentUser;
     if (!user) {
       throw new Error('User must be authenticated to upload images');
     }
 
     try {
+      // Validate file size before processing
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        throw new Error('File size exceeds 10MB limit');
+      }
+
       // Compress image if it's large
       let fileToUpload = file;
       if (file.size > 1024 * 1024) { // 1MB
+        onProgress?.(10); // 10% for compression start
         fileToUpload = await this.compressImage(file, 800, 0.8);
+        onProgress?.(30); // 30% after compression
+      } else {
+        onProgress?.(20); // Skip compression for small files
       }
 
-      // Generate unique filename
+      // Generate unique filename with better sanitization
       const fileId = crypto.randomUUID();
-      const fileExtension = fileToUpload.name.split('.').pop() || 'jpg';
-      const fileName = itemName 
-        ? `${Date.now()}_${itemName.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExtension}`
-        : `${Date.now()}_${fileId}.${fileExtension}`;
+      const fileExtension = fileToUpload.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const sanitizedItemName = itemName 
+        ? itemName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').substring(0, 50)
+        : 'food_item';
+      const fileName = `${Date.now()}_${sanitizedItemName}_${fileId.substring(0, 8)}.${fileExtension}`;
 
       // Create storage reference
       const imagePath = `user-images/${user.uid}/${fileName}`;
       const imageRef = ref(storage, imagePath);
 
+      onProgress?.(50); // 50% before upload
+
       // Upload file
       const snapshot = await uploadBytes(imageRef, fileToUpload);
       
+      onProgress?.(80); // 80% after upload
+
       // Get download URL
       const downloadURL = await getDownloadURL(snapshot.ref);
+
+      onProgress?.(100); // 100% complete
 
       return {
         id: fileId,
@@ -94,6 +110,20 @@ class FirebaseStorageService {
       };
     } catch (error) {
       console.error('Error uploading image to Firebase Storage:', error);
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('permission-denied')) {
+          throw new Error('Permission denied. Please check your account permissions.');
+        } else if (error.message.includes('unauthenticated')) {
+          throw new Error('Authentication required. Please log in again.');
+        } else if (error.message.includes('quota-exceeded')) {
+          throw new Error('Storage quota exceeded. Please contact support.');
+        } else if (error.message.includes('invalid-argument')) {
+          throw new Error('Invalid file format. Please use JPG, PNG, WebP, or GIF.');
+        }
+      }
+      
       throw error;
     }
   }
