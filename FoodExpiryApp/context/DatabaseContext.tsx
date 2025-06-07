@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import { initDatabase, getDatabase, resetDatabase, getCurrentDate } from '../database/database';
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
@@ -298,6 +299,37 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     setupDatabase();
+    
+    // Listen for language change events to refresh cache
+    const languageChangeListener = DeviceEventEmitter.addListener(
+      'languageChanged',
+      async (data) => {
+        // Force refresh cache when language changes to fix iOS caching issues
+        try {
+          // Force clear all caches to ensure fresh data load
+          clearCache();
+          
+          // Force invalidate all cache entries
+          invalidateCache();
+          
+          // Add a small delay to ensure database updates are complete
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Force reload all data from database
+          await refreshAll();
+          
+          // Increment data version to force UI updates
+          incrementDataVersion();
+        } catch (error) {
+          // Silent error handling for production
+        }
+      }
+    );
+
+    // Cleanup listener on unmount
+    return () => {
+      languageChangeListener.remove();
+    };
   }, []);
 
   // Refresh functions with cache management
@@ -624,6 +656,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+
+
   const value: DatabaseContextType = {
     isLoading,
     error,
@@ -667,7 +701,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       return hasCachedCategories && hasCachedLocations;
     },
-    dataVersion: dataVersion
+          dataVersion: dataVersion
   };
 
   return (

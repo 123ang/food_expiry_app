@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateDefaultDataForLanguage } from '../database/database';
+import { DeviceEventEmitter } from 'react-native';
 
 export type Language = 'en' | 'zh' | 'ja';
 
@@ -1081,6 +1082,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Update default categories and locations with new language
       try {
         await updateDefaultDataForLanguage(lang);
+        
+        // Force a small delay to ensure database writes complete on iOS
+        // This helps with iOS caching issues where UI doesn't update immediately
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        // Emit event to notify DatabaseContext to refresh cache
+        DeviceEventEmitter.emit('languageChanged', { language: lang });
+        
       } catch (error) {
         // Silent error handling in production
       }
