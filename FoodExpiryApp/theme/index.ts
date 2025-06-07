@@ -27,7 +27,7 @@ export interface Theme {
   borderRadius: number;
 }
 
-export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black' | 'blue' | 'green' | 'softPink' | 'brightPink';
+export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black' | 'blue' | 'green' | 'softPink' | 'brightPink' | 'naturalGreen' | 'mintRed' | 'darkGold';
 
 export const originalTheme: Theme = {
   // Original white theme - improved contrast for iPhone visibility
@@ -41,7 +41,7 @@ export const originalTheme: Theme = {
   cardBackground: '#FFFFFF',      // White cards with better border contrast
   borderColor: '#CED4DA',         // Darker gray borders for better visibility
   shadowColor: 'rgba(0, 0, 0, 0.15)', // Stronger shadow for better card definition
-  textSecondary: '#6C757D',       // Darker gray secondary text
+  textSecondary: '#9CA3AF',       // Lighter gray for inactive tabs (better contrast)
   successColor: '#2E7D32',        // Dark green for success
   warningColor: '#FF9800',        // Orange for warnings
   dangerColor: '#F44336',         // Red for danger
@@ -59,7 +59,7 @@ export const originalTheme: Theme = {
 export const recycledTheme: Theme = {
   // Current recycled/eco theme - warm peach/beige design
   backgroundColor: '#F3C88B',     // Overall page background (pale peach/beige)
-  primaryColor: '#4CAF50',        // Accent green (buttons, "0 items," bottom tab highlight)
+  primaryColor: '#2E7D32',        // Darker, more vibrant green for better contrast
   secondaryColor: '#FFF1D6',      // Header/"Expiry Alert" banner background (cream)
   textColor: '#2E2E2E',          // Card icon/text color (dark charcoal)
   tertiaryColor: '#B8860B',      // Keep existing tertiary color
@@ -68,8 +68,8 @@ export const recycledTheme: Theme = {
   cardBackground: '#FDF0C0',     // Card background (pale cream)
   borderColor: '#E8DCC6',        // Soft border color
   shadowColor: 'rgba(0, 0, 0, 0.1)',
-  textSecondary: '#4A4A4A',      // Secondary text (slightly lighter charcoal)
-  successColor: '#4CAF50',       // Match accent green
+  textSecondary: '#8A7A6B',      // Lighter brown for inactive tabs (better contrast from active)
+  successColor: '#2E7D32',       // Match new primary color
   warningColor: '#F4A460',       // Sandy brown for warnings
   dangerColor: '#CD5C5C',        // Indian red for dangers
 
@@ -77,7 +77,7 @@ export const recycledTheme: Theme = {
   headerBackground: '#FFF1D6',   // Header/"Expiry Alert" banner background (cream)
 
   // Gradients
-  gradientPrimary: ['#4CAF50', '#45A049'],  // Updated to use new accent green
+  gradientPrimary: ['#2E7D32', '#1B5E20'],  // Updated to use darker green
   gradientSecondary: ['#F3C88B', '#E8DCC6'], // Updated to use new background colors
   
   borderRadius: 16,
@@ -140,7 +140,7 @@ export const blackTheme: Theme = {
 export const blueTheme: Theme = {
   // Blue theme - updated with new color scheme
   backgroundColor: '#c1d9e3',    // Light blue background
-  primaryColor: '#5b88a8',       // Medium blue primary
+  primaryColor: '#2d4e68',       // Dark blue primary for active tabs
   secondaryColor: '#a1c0d8',     // Light blue secondary
   textColor: '#2d4e68',          // Dark blue text
   tertiaryColor: '#5b88a8',      // Medium blue tertiary
@@ -149,7 +149,7 @@ export const blueTheme: Theme = {
   cardBackground: '#edf4f7',     // Very light blue/white cards
   borderColor: '#a1c0d8',        // Light blue borders
   shadowColor: 'rgba(45, 78, 104, 0.2)', // Blue-tinted shadow
-  textSecondary: '#5b88a8',      // Medium blue for secondary text
+  textSecondary: '#9BB5CC',      // Lighter blue for inactive tabs
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -158,7 +158,7 @@ export const blueTheme: Theme = {
   headerBackground: '#a1c0d8',   // Light blue header
 
   // Gradients
-  gradientPrimary: ['#5b88a8', '#2d4e68'], // Blue gradient
+  gradientPrimary: ['#2d4e68', '#1a3240'], // Dark blue gradient
   gradientSecondary: ['#c1d9e3', '#edf4f7'], // Light blue gradient
   
   borderRadius: 16,
@@ -167,7 +167,7 @@ export const blueTheme: Theme = {
 export const greenTheme: Theme = {
   // Green theme - natural earth tones
   backgroundColor: '#dbe1c0',    // Light green background
-  primaryColor: '#3d6a28',       // Dark green primary
+  primaryColor: '#2d4e20',       // Darker green primary for active tabs
   secondaryColor: '#d8c58d',     // Golden beige secondary
   textColor: '#3164a3',          // Blue text
   tertiaryColor: '#3d6a28',      // Dark green tertiary
@@ -176,8 +176,8 @@ export const greenTheme: Theme = {
   cardBackground: '#fafaf0',     // Very light cream cards
   borderColor: '#d8c58d',        // Golden beige borders
   shadowColor: 'rgba(61, 106, 40, 0.2)', // Green-tinted shadow
-  textSecondary: '#3d6a28',      // Dark green for secondary text
-  successColor: '#3d6a28',       // Dark green for success
+  textSecondary: '#A8B88E',      // Lighter green for inactive tabs
+  successColor: '#2d4e20',       // Darker green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
 
@@ -185,7 +185,7 @@ export const greenTheme: Theme = {
   headerBackground: '#d8c58d',   // Golden beige header
 
   // Gradients
-  gradientPrimary: ['#3d6a28', '#2d4e20'], // Green gradient
+  gradientPrimary: ['#2d4e20', '#1a2e14'], // Darker green gradient
   gradientSecondary: ['#dbe1c0', '#fafaf0'], // Light green gradient
   
   borderRadius: 16,
@@ -194,7 +194,7 @@ export const greenTheme: Theme = {
 export const softPinkTheme: Theme = {
   // Soft Pink theme - warm and cozy
   backgroundColor: '#fce7dd',    // Light pink background
-  primaryColor: '#a37d6c',       // Brown-pink primary
+  primaryColor: '#8B5A47',       // Darker brown-pink primary for active tabs
   secondaryColor: '#e9c9b2',     // Light brown secondary
   textColor: '#44281c',          // Dark brown text
   tertiaryColor: '#a37d6c',      // Brown-pink tertiary
@@ -203,7 +203,7 @@ export const softPinkTheme: Theme = {
   cardBackground: '#f5d3d3',     // Light pink cards
   borderColor: '#e9c9b2',        // Light brown borders
   shadowColor: 'rgba(68, 40, 28, 0.2)', // Brown-tinted shadow
-  textSecondary: '#a37d6c',      // Brown-pink for secondary text
+  textSecondary: '#C4A193',      // Lighter brown-pink for inactive tabs
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -212,7 +212,7 @@ export const softPinkTheme: Theme = {
   headerBackground: '#e9c9b2',   // Light brown header
 
   // Gradients
-  gradientPrimary: ['#a37d6c', '#44281c'], // Brown gradient
+  gradientPrimary: ['#8B5A47', '#44281c'], // Darker brown gradient
   gradientSecondary: ['#fce7dd', '#f5d3d3'], // Light pink gradient
   
   borderRadius: 16,
@@ -221,7 +221,7 @@ export const softPinkTheme: Theme = {
 export const brightPinkTheme: Theme = {
   // Bright Pink theme - vibrant and energetic
   backgroundColor: '#fdd0d4',    // Light bright pink background
-  primaryColor: '#ad5b62',       // Dark pink primary
+  primaryColor: '#8B3A42',       // Darker pink primary for active tabs
   secondaryColor: '#f2bcbc',     // Medium pink secondary
   textColor: '#3c1d20',          // Dark red-brown text
   tertiaryColor: '#ad5b62',      // Dark pink tertiary
@@ -230,7 +230,7 @@ export const brightPinkTheme: Theme = {
   cardBackground: '#ffe5e5',     // Very light pink cards
   borderColor: '#f2bcbc',        // Medium pink borders
   shadowColor: 'rgba(60, 29, 32, 0.2)', // Dark red-tinted shadow
-  textSecondary: '#ad5b62',      // Dark pink for secondary text
+  textSecondary: '#D18B94',      // Lighter pink for inactive tabs
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -239,8 +239,89 @@ export const brightPinkTheme: Theme = {
   headerBackground: '#f2bcbc',   // Medium pink header
 
   // Gradients
-  gradientPrimary: ['#ad5b62', '#3c1d20'], // Pink gradient
+  gradientPrimary: ['#8B3A42', '#3c1d20'], // Darker pink gradient
   gradientSecondary: ['#fdd0d4', '#ffe5e5'], // Light pink gradient
+  
+  borderRadius: 16,
+};
+
+export const naturalGreenTheme: Theme = {
+  // Natural Green theme - fresh and natural
+  backgroundColor: '#dae4b6',    // Light green background
+  primaryColor: '#1a4a7a',       // Darker blue primary for active tabs (darker than #3164a3)
+  secondaryColor: '#f2e3a2',     // Light yellow secondary
+  textColor: '#000000',          // Black text
+  tertiaryColor: '#3164a3',      // Blue tertiary
+
+  // UI Colors
+  cardBackground: '#f9f4da',     // Light cream cards
+  borderColor: '#f2e3a2',        // Light yellow borders
+  shadowColor: 'rgba(0, 0, 0, 0.1)', // Subtle shadow
+  textSecondary: '#7A9C6E',      // Light green for inactive tabs
+  successColor: '#4CAF50',       // Green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#f2e3a2',   // Light yellow header
+
+  // Gradients
+  gradientPrimary: ['#1a4a7a', '#0d2f4d'], // Dark blue gradient
+  gradientSecondary: ['#dae4b6', '#f9f4da'], // Light green gradient
+  
+  borderRadius: 16,
+};
+
+export const mintRedTheme: Theme = {
+  // Mint-Red theme - fresh mint with red accents
+  backgroundColor: '#d8f2c9',    // Light mint background
+  primaryColor: '#d84444',       // Darker red primary for active tabs (darker than #ef5f5f)
+  secondaryColor: '#68b9a6',     // Teal secondary
+  textColor: '#000000',          // Black text
+  tertiaryColor: '#ef5f5f',      // Red tertiary
+
+  // UI Colors
+  cardBackground: '#8cd1b8',     // Mint cards
+  borderColor: '#68b9a6',        // Teal borders
+  shadowColor: 'rgba(0, 0, 0, 0.1)', // Subtle shadow
+  textSecondary: '#2E5B4F',      // Darker teal for inactive tabs (better contrast)
+  successColor: '#4CAF50',       // Green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#d84444',        // Match primary for danger
+
+  // Header
+  headerBackground: '#68b9a6',   // Teal header
+
+  // Gradients
+  gradientPrimary: ['#d84444', '#b33030'], // Red gradient
+  gradientSecondary: ['#d8f2c9', '#8cd1b8'], // Mint gradient
+  
+  borderRadius: 16,
+};
+
+export const darkGoldTheme: Theme = {
+  // Dark Gold theme - elegant dark with gold accents
+  backgroundColor: '#2c2c2c',    // Dark gray background
+  primaryColor: '#d4a332',       // Brighter gold primary for active tabs (brighter than #b6862e)
+  secondaryColor: '#3e3e42',     // Dark gray secondary
+  textColor: '#ffffff',          // White text
+  tertiaryColor: '#b6862e',      // Gold tertiary
+
+  // UI Colors
+  cardBackground: '#494949',     // Medium gray cards
+  borderColor: '#3e3e42',        // Dark gray borders
+  shadowColor: 'rgba(0, 0, 0, 0.3)', // Strong shadow
+  textSecondary: '#999999',      // Light gray for inactive tabs
+  successColor: '#4CAF50',       // Green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#3e3e42',   // Dark gray header
+
+  // Gradients
+  gradientPrimary: ['#d4a332', '#b6862e'], // Gold gradient
+  gradientSecondary: ['#2c2c2c', '#494949'], // Dark gradient
   
   borderRadius: 16,
 };
@@ -254,6 +335,9 @@ export const themes = {
   green: greenTheme,
   softPink: softPinkTheme,
   brightPink: brightPinkTheme,
+  naturalGreen: naturalGreenTheme,
+  mintRed: mintRedTheme,
+  darkGold: darkGoldTheme,
 };
 
 // Keep lightTheme and darkTheme for backward compatibility

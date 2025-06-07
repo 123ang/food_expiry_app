@@ -28,7 +28,7 @@ export const loadCustomFonts = async () => {
     // Comment out the line below if font files are not available locally
     // await Font.loadAsync(LOCAL_CUSTOM_FONTS);
     
-    console.log('✅ Fonts loaded successfully');
+
     return true;
   } catch (error) {
     console.warn('⚠️ Some fonts failed to load:', error);
