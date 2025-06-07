@@ -19,6 +19,7 @@ import { FoodItemWithDetails } from '../database/models';
 import { BottomNav } from '../components/BottomNav';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import { useResponsive } from '../hooks/useResponsive';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -27,6 +28,7 @@ export default function CalendarScreen() {
   const { t, language } = useLanguage();
   const { foodItems, refreshAll, dataVersion } = useDatabase();
   const router = useRouter();
+  const responsive = useResponsive();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
@@ -85,16 +87,41 @@ export default function CalendarScreen() {
       }),
     },
     calendarSection: {
-      height: isWeb ? 'auto' : windowHeight * 0.45,
-      minHeight: 380,
+      height: responsive.getResponsiveValue({
+        largeTablet: windowHeight * 0.5,
+        tablet: windowHeight * 0.48,
+        default: isWeb ? 'auto' : windowHeight * 0.45,
+      }),
+      minHeight: responsive.getResponsiveValue({
+        largeTablet: 420,
+        tablet: 400,
+        default: 380,
+      }),
+      maxHeight: responsive.getResponsiveValue({
+        largeTablet: 600,
+        tablet: 500,
+        default: undefined,
+      }),
     },
     calendarContainer: {
       backgroundColor: theme.cardBackground,
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
-      paddingBottom: 16,
-      marginBottom: 8,
-      borderRadius: 12,
+      paddingBottom: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 16,
+        largeTablet: 20,
+        default: 12,
+      }),
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
@@ -102,16 +129,28 @@ export default function CalendarScreen() {
       elevation: 3,
     },
     header: {
-      padding: 16,
+      padding: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
     },
     monthSelector: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 24,
+        default: 16,
+      }),
     },
     monthText: {
-      fontSize: 18,
+      fontSize: responsive.getResponsiveValue({
+        tablet: 22,
+        largeTablet: 26,
+        default: 18,
+      }),
       fontWeight: '600',
       color: theme.textColor,
     },
@@ -141,14 +180,27 @@ export default function CalendarScreen() {
     dayCell: {
       width: `${100 / 7}%`,
       aspectRatio: 1,
-      padding: 2,
+      padding: responsive.getResponsiveValue({
+        tablet: 3,
+        largeTablet: 4,
+        default: 2,
+      }),
     },
     dayContent: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      borderRadius: 8,
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 12,
+        largeTablet: 16,
+        default: 8,
+      }),
       backgroundColor: theme.backgroundColor,
+      minHeight: responsive.getResponsiveValue({
+        tablet: 45,
+        largeTablet: 50,
+        default: 40,
+      }),
       ...(isWeb && {
         cursor: 'pointer',
       }),
@@ -161,8 +213,13 @@ export default function CalendarScreen() {
       borderColor: theme.primaryColor,
     },
     dayText: {
-      fontSize: 14,
+      fontSize: responsive.getResponsiveValue({
+        tablet: 16,
+        largeTablet: 18,
+        default: 14,
+      }),
       color: theme.textColor,
+      fontWeight: '500',
     },
     dayTextSelected: {
       color: '#FFFFFF',
