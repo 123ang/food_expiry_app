@@ -610,17 +610,19 @@ const EditModal: React.FC<EditModalProps> = ({
   const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState(initialIcon || (isCategory ? '🍎' : '❄️'));
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
+  const iconWasManuallySet = React.useRef(false);
   const styles = createStyles(theme);
 
   // Reset state when modal opens/closes or when initial values change
   React.useEffect(() => {
     if (visible) {
       setName(initialName);
-      // Only set default icon if no initialIcon is provided AND it's a new item (no initialName)
+      // Only set icon when modal first opens, not on subsequent renders
       if (initialIcon) {
         setIcon(initialIcon);
-      } else if (!initialName) {
-        // Creating new item - use default
+        iconWasManuallySet.current = false; // Reset flag for editing existing items
+      } else if (!initialName && !iconWasManuallySet.current) {
+        // Creating new item - only set default if icon hasn't been manually set
         setIcon(isCategory ? '🍎' : '❄️');
       }
       // If editing existing item (has initialName) but no initialIcon, keep current icon
@@ -636,6 +638,7 @@ const EditModal: React.FC<EditModalProps> = ({
 
   const handleClose = () => {
     setName('');
+    iconWasManuallySet.current = false; // Reset flag for next use
     // Don't reset icon here - let the useEffect handle icon state properly
     onClose();
   };
@@ -672,11 +675,7 @@ const EditModal: React.FC<EditModalProps> = ({
               onPress={() => setShowEmojiSelector(true)}
             >
               <View style={styles.iconPreview}>
-                {isCategory ? (
-                  <CategoryIcon iconName={icon} size={24} />
-                ) : (
-                  <LocationIcon iconName={icon} size={24} />
-                )}
+                <Text style={{ fontSize: 24 }}>{icon}</Text>
               </View>
               <Text style={[styles.iconText, { color: theme.textColor }]}>
                 Select Icon (Current: {icon})
@@ -706,7 +705,9 @@ const EditModal: React.FC<EditModalProps> = ({
         visible={showEmojiSelector}
         onClose={() => setShowEmojiSelector(false)}
         onSelect={(selectedIcon) => {
+          console.log('Selected emoji:', selectedIcon); // Debug log
           setIcon(selectedIcon);
+          iconWasManuallySet.current = true; // Mark as manually set
           setShowEmojiSelector(false);
         }}
         isCategory={isCategory}
@@ -740,6 +741,8 @@ export default function SettingsScreen() {
         return t('settings.themeDarkBrown') || 'Dark Brown Theme';
       case 'black':
         return t('settings.themeBlack') || 'Black Theme';
+      case 'blue':
+        return t('settings.themeBlue') || 'Blue Theme';
       default:
         return themeType;
     }
@@ -1180,7 +1183,7 @@ export default function SettingsScreen() {
 
           {/* Black Theme */}
           <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            style={styles.languageOption}
             onPress={() => {
               setTheme('black');
               setShowThemeModal(false);
@@ -1205,6 +1208,37 @@ export default function SettingsScreen() {
               </View>
             </View>
             {currentThemeType === 'black' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+
+          {/* Blue Theme */}
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setTheme('blue');
+              setShowThemeModal(false);
+            }}
+          >
+            <View style={styles.themeOption}>
+              <View style={styles.themePreview}>
+                <View style={[styles.themeColorBox, { backgroundColor: '#B3D9F7' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#1976D2' }]} />
+                <View style={[styles.themeColorBox, { backgroundColor: '#90CAF9' }]} />
+              </View>
+              <View style={styles.themeInfo}>
+                <Text style={[
+                  styles.languageText,
+                  currentThemeType === 'blue' && styles.languageSelected
+                ]}>
+                  {t('settings.themeBlue') || 'Blue'}
+                </Text>
+                <Text style={styles.themeDescription}>
+                  {t('settings.themeBlueDesc') || 'Cool blue tones with light backgrounds'}
+                </Text>
+              </View>
+            </View>
+            {currentThemeType === 'blue' && (
               <FontAwesome name="check" size={16} color={theme.primaryColor} />
             )}
           </TouchableOpacity>

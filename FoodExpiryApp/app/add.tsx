@@ -26,6 +26,7 @@ import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { FoodItem } from '../database/models';
 import { useResponsive } from '../hooks/useResponsive';
+import { EMOJI_CATEGORIES, CATEGORY_EMOJIS } from '../constants/emojis';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -51,78 +52,7 @@ export default function AddScreen() {
   const [showImageOptionsModal, setShowImageOptionsModal] = useState(false);
   const [savedPhotos, setSavedPhotos] = useState<string[]>([]);
 
-  // Category emojis for selection
-  const CATEGORY_EMOJIS = [
-    // Fruits
-    { emoji: '🍎', label: 'Apple' }, { emoji: '🍌', label: 'Banana' }, { emoji: '🍊', label: 'Orange' },
-    { emoji: '🍇', label: 'Grapes' }, { emoji: '🍓', label: 'Strawberry' }, { emoji: '🫐', label: 'Blueberries' },
-    { emoji: '🍑', label: 'Cherries' }, { emoji: '🍒', label: 'Cherry' }, { emoji: '🥝', label: 'Kiwi' },
-    { emoji: '🍍', label: 'Pineapple' }, { emoji: '🥭', label: 'Mango' }, { emoji: '🍈', label: 'Melon' },
-    { emoji: '🍉', label: 'Watermelon' }, { emoji: '🍋', label: 'Lemon' }, { emoji: '🍐', label: 'Pear' },
-    { emoji: '🥥', label: 'Coconut' }, { emoji: '🍅', label: 'Tomato' },
-    
-    // Vegetables  
-    { emoji: '🥬', label: 'Leafy Greens' }, { emoji: '🥒', label: 'Cucumber' }, { emoji: '🥕', label: 'Carrot' },
-    { emoji: '🌽', label: 'Corn' }, { emoji: '🥔', label: 'Potato' }, { emoji: '🍠', label: 'Sweet Potato' },
-    { emoji: '🫑', label: 'Bell Pepper' }, { emoji: '🌶️', label: 'Hot Pepper' }, { emoji: '🧅', label: 'Onion' },
-    { emoji: '🧄', label: 'Garlic' }, { emoji: '🥦', label: 'Broccoli' }, { emoji: '🍆', label: 'Eggplant' },
-    { emoji: '🥑', label: 'Avocado' }, { emoji: '🫒', label: 'Olives' }, { emoji: '🥜', label: 'Peanuts' },
-    
-    // Meat & Protein
-    { emoji: '🥩', label: 'Red Meat' }, { emoji: '🍖', label: 'Meat on Bone' }, { emoji: '🍗', label: 'Poultry' },
-    { emoji: '🥓', label: 'Bacon' }, { emoji: '🌭', label: 'Hot Dog' }, { emoji: '🍤', label: 'Shrimp' },
-    { emoji: '🦞', label: 'Lobster' }, { emoji: '🦀', label: 'Crab' }, { emoji: '🐟', label: 'Fish' },
-    { emoji: '🍣', label: 'Sushi' }, { emoji: '🥚', label: 'Eggs' }, { emoji: '🫘', label: 'Beans' },
-    
-    // Dairy
-    { emoji: '🥛', label: 'Milk' }, { emoji: '🧀', label: 'Cheese' }, { emoji: '🧈', label: 'Butter' },
-    { emoji: '🍦', label: 'Ice Cream' }, { emoji: '🍨', label: 'Ice Cream Cup' }, { emoji: '🥄', label: 'Yogurt' },
-    
-    // Bread & Grains
-    { emoji: '🍞', label: 'Bread' }, { emoji: '🥖', label: 'Baguette' }, { emoji: '🥨', label: 'Pretzel' },
-    { emoji: '🥯', label: 'Bagel' }, { emoji: '🧇', label: 'Waffle' }, { emoji: '🥞', label: 'Pancakes' },
-    { emoji: '🍝', label: 'Pasta' }, { emoji: '🍚', label: 'Rice' }, { emoji: '🍜', label: 'Noodles' },
-    { emoji: '🥣', label: 'Cereal' }, { emoji: '🍲', label: 'Stew' },
-    
-    // Prepared Foods
-    { emoji: '🍕', label: 'Pizza' }, { emoji: '🍔', label: 'Burger' }, { emoji: '🌮', label: 'Taco' },
-    { emoji: '🌯', label: 'Burrito' }, { emoji: '🥙', label: 'Stuffed Flatbread' }, { emoji: '🥗', label: 'Salad' },
-    { emoji: '🍱', label: 'Bento Box' }, { emoji: '🍛', label: 'Curry' }, { emoji: '🍤', label: 'Fried Shrimp' },
-    
-    // Snacks
-    { emoji: '🍿', label: 'Popcorn' }, { emoji: '🥨', label: 'Pretzel' }, { emoji: '🍪', label: 'Cookie' },
-    { emoji: '🍩', label: 'Donut' }, { emoji: '🥜', label: 'Nuts' }, { emoji: '🍯', label: 'Honey' },
-    
-    // Desserts & Sweets
-    { emoji: '🍰', label: 'Cake' }, { emoji: '🎂', label: 'Birthday Cake' }, { emoji: '🧁', label: 'Cupcake' },
-    { emoji: '🍮', label: 'Pudding' }, { emoji: '🍭', label: 'Lollipop' }, { emoji: '🍬', label: 'Candy' },
-    { emoji: '🍫', label: 'Chocolate' }, { emoji: '🥧', label: 'Pie' },
-    
-    // Beverages
-    { emoji: '☕', label: 'Coffee' }, { emoji: '🍵', label: 'Tea' }, { emoji: '🥤', label: 'Soft Drink' },
-    { emoji: '🧃', label: 'Juice Box' }, { emoji: '🧋', label: 'Bubble Tea' }, { emoji: '🍷', label: 'Wine' },
-    { emoji: '🍺', label: 'Beer' }, { emoji: '💧', label: 'Water' },
-    
-    // Beauty & Personal Care
-    { emoji: '💄', label: 'Lipstick' }, { emoji: '🧴', label: 'Lotion' }, { emoji: '🧼', label: 'Soap' },
-    { emoji: '🌸', label: 'Perfume' }, { emoji: '💊', label: 'Pills' }, { emoji: '🩹', label: 'Bandage' },
-    { emoji: '👁️', label: 'Eye Drops' }, { emoji: '🧽', label: 'Sponge' },
-    
-    // Household & Cleaning
-    { emoji: '🧺', label: 'Laundry Basket' }, { emoji: '🔋', label: 'Battery' }, { emoji: '🧯', label: 'Fire Extinguisher' },
-    { emoji: '🎨', label: 'Paint' }, { emoji: '🛢️', label: 'Oil Drum' }, { emoji: '⛽', label: 'Fuel' },
-    { emoji: '🌞', label: 'Sun Protection' },
-    
-    // Health & Medical
-    { emoji: '🩸', label: 'Blood Test' }, { emoji: '🍀', label: 'Herbs' }, { emoji: '🧪', label: 'Test Tube' },
-    
-    // Office & Tech
-    { emoji: '🏷️', label: 'Label' }, { emoji: '🎟️', label: 'Ticket' }, { emoji: '📱', label: 'Phone' },
-    { emoji: '🌱', label: 'Plant' },
-    
-    // Garden & Nature
-    { emoji: '🌿', label: 'Leaves' },
-  ];
+
 
   useEffect(() => {
     if (prefilledDate && typeof prefilledDate === 'string') {

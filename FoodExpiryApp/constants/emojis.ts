@@ -134,12 +134,8 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       
       // Canned & Packaged Foods
       { key: '🥫', emoji: '🥫', label: 'Canned Goods' },
-      { key: '🍱', emoji: '🍱', label: 'Bento Box' },
-      { key: '🥡', emoji: '🥡', label: 'Takeout Box' },
       
       // Frozen Foods
-      { key: '🧊', emoji: '🧊', label: 'Frozen Foods' },
-      { key: '❄️', emoji: '❄️', label: 'Frozen Items' },
       { key: '🥶', emoji: '🥶', label: 'Frozen Products' },
       
       // Spices & Herbs
@@ -156,7 +152,7 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       { key: '💅', emoji: '💅', label: 'Nail Polish' },
       { key: '💋', emoji: '💋', label: 'Lipstick' },
       { key: '👄', emoji: '👄', label: 'Lip Care' },
-      { key: '👁️‍🗨️', emoji: '👁️‍🗨️', label: 'Eye Makeup' },
+      { key: '👁️', emoji: '👁️', label: 'Eye Makeup' },
       { key: '🌞', emoji: '🌞', label: 'Sunscreen' },
       { key: '🧴', emoji: '🧴', label: 'Moisturizers & Lotions' },
       { key: '🧼', emoji: '🧼', label: 'Shampoo & Conditioner' },
@@ -168,8 +164,8 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       { key: '🌸', emoji: '🌸', label: 'Perfume' },
       { key: '🌺', emoji: '🌺', label: 'Floral Fragrance' },
       { key: '🌹', emoji: '🌹', label: 'Rose Products' },
-      { key: '🧖‍♀️', emoji: '🧖‍♀️', label: 'Hair Treatment' },
-      { key: '💆‍♀️', emoji: '💆‍♀️', label: 'Face Mask' },
+      { key: '🧖', emoji: '🧖', label: 'Hair Treatment' },
+      { key: '💆', emoji: '💆', label: 'Face Mask' },
     ]
   },
   {
@@ -187,8 +183,8 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       { key: '🧬', emoji: '🧬', label: 'DNA' },
       { key: '🔬', emoji: '🔬', label: 'Microscope' },
       { key: '⚗️', emoji: '⚗️', label: 'Alembic' },
-      { key: '🧪', emoji: '🧪', label: 'Medical Devices' },
-      { key: '👁️', emoji: '👁️', label: 'Contact Lenses' },
+      { key: '⚕️', emoji: '⚕️', label: 'Medical Devices' },
+      { key: '👓', emoji: '👓', label: 'Contact Lenses' },
       { key: '🩸', emoji: '🩸', label: 'Blood Test Kits' },
       { key: '🏥', emoji: '🏥', label: 'Hospital' },
       { key: '🚑', emoji: '🚑', label: 'Ambulance' },
@@ -228,7 +224,6 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       { key: '🛞', emoji: '🛞', label: 'Tire' },
       { key: '☢️', emoji: '☢️', label: 'Radioactive' },
       { key: '⚠️', emoji: '⚠️', label: 'Warning Chemical' },
-      { key: '🧪', emoji: '🧪', label: 'Chemical Test' },
     ]
   },
   {
@@ -241,7 +236,6 @@ export const EMOJI_CATEGORIES: EmojiCategory[] = [
       { key: '🏷️', emoji: '🏷️', label: 'Label' },
       { key: '🎟️', emoji: '🎟️', label: 'Ticket' },
       { key: '📱', emoji: '📱', label: 'Phone' },
-      { key: '📦', emoji: '📦', label: 'Package' },
       { key: '📋', emoji: '📋', label: 'Clipboard' },
       { key: '📝', emoji: '📝', label: 'Note' },
       { key: '📄', emoji: '📄', label: 'Document' },
@@ -262,12 +256,12 @@ export const LOCATION_EMOJIS: EmojiItem[] = [
   { key: '🧊', emoji: '🧊', label: 'Freezer' },
   { key: '❄️', emoji: '❄️', label: 'Fridge' },
   { key: '📦', emoji: '📦', label: 'Cabinet' },
-  { key: '🍱', emoji: '🍱', label: 'Lunch Box' },
-  { key: '🥡', emoji: '🥡', label: 'Takeout Container' },
   { key: '🏠', emoji: '🏠', label: 'Pantry' },
   { key: '🍽️', emoji: '🍽️', label: 'Dining Area' },
   { key: '📚', emoji: '📚', label: 'Storage Box' },
-  { key: '🛒', emoji: '🛒', label: 'Shopping Cart' }
+  { key: '🛒', emoji: '🛒', label: 'Shopping Cart' },
+  { key: '🏪', emoji: '🏪', label: 'Store' },
+  { key: '🧳', emoji: '🧳', label: 'Travel Bag' }
 ];
 
 // Backward compatibility - flatten all category emojis into a single array
@@ -275,13 +269,47 @@ export const CATEGORY_EMOJIS: EmojiItem[] = EMOJI_CATEGORIES.flatMap(category =>
 
 // Helper functions
 export const getCategoryEmojiByKey = (key: string): string => {
-  const item = CATEGORY_EMOJIS.find(emoji => emoji.key === key);
-  return item ? item.emoji : '🍎'; // Default to apple
+  // If the key is already an emoji, return it directly
+  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}]|[\u{FE0F}]|[\u{200D}]/u;
+  if (emojiRegex.test(key)) {
+    return key;
+  }
+  
+  // Try to find by key first
+  const itemByKey = CATEGORY_EMOJIS.find(emoji => emoji.key === key);
+  if (itemByKey) {
+    return itemByKey.emoji;
+  }
+  
+  // Also try to find by emoji value (for backward compatibility)
+  const itemByEmoji = CATEGORY_EMOJIS.find(emoji => emoji.emoji === key);
+  if (itemByEmoji) {
+    return itemByEmoji.emoji;
+  }
+  
+  return '🍎'; // Default to apple
 };
 
 export const getLocationEmojiByKey = (key: string): string => {
-  const item = LOCATION_EMOJIS.find(emoji => emoji.key === key);
-  return item ? item.emoji : '❄️'; // Default to fridge
+  // If the key is already an emoji, return it directly
+  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA70}-\u{1FAFF}]|[\u{FE0F}]|[\u{200D}]/u;
+  if (emojiRegex.test(key)) {
+    return key;
+  }
+  
+  // Try to find by key first
+  const itemByKey = LOCATION_EMOJIS.find(emoji => emoji.key === key);
+  if (itemByKey) {
+    return itemByKey.emoji;
+  }
+  
+  // Also try to find by emoji value (for backward compatibility)
+  const itemByEmoji = LOCATION_EMOJIS.find(emoji => emoji.emoji === key);
+  if (itemByEmoji) {
+    return itemByEmoji.emoji;
+  }
+  
+  return '❄️'; // Default to fridge
 };
 
 export const getCategoryLabelByEmoji = (emoji: string): string => {

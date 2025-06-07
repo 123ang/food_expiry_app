@@ -27,7 +27,7 @@ export interface Theme {
   borderRadius: number;
 }
 
-export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black';
+export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black' | 'blue';
 
 export const originalTheme: Theme = {
   // Original white theme - improved contrast for iPhone visibility
@@ -137,11 +137,39 @@ export const blackTheme: Theme = {
   borderRadius: 16,
 };
 
+export const blueTheme: Theme = {
+  // Blue theme - matching the screenshot design
+  backgroundColor: '#B3D9F7',    // Light blue background (from screenshot)
+  primaryColor: '#1976D2',       // Material Design blue
+  secondaryColor: '#64B5F6',     // Medium blue for accents
+  textColor: '#1A1A1A',          // Dark text for good contrast
+  tertiaryColor: '#2196F3',      // Bright blue
+
+  // UI Colors
+  cardBackground: '#90CAF9',     // Slightly darker blue for cards (from screenshot)
+  borderColor: '#64B5F6',        // Blue borders
+  shadowColor: 'rgba(25, 118, 210, 0.2)', // Blue-tinted shadow
+  textSecondary: '#424242',      // Dark gray for secondary text
+  successColor: '#4CAF50',       // Green for success
+  warningColor: '#FF9800',       // Orange for warnings
+  dangerColor: '#F44336',        // Red for danger
+
+  // Header
+  headerBackground: '#42A5F5',   // Darker blue for header (Welcome Back banner)
+
+  // Gradients
+  gradientPrimary: ['#1976D2', '#1565C0'], // Blue gradient
+  gradientSecondary: ['#B3D9F7', '#90CAF9'], // Light blue gradient
+  
+  borderRadius: 16,
+};
+
 export const themes = {
   original: originalTheme,
   recycled: recycledTheme,
   darkBrown: darkBrownTheme,
   black: blackTheme,
+  blue: blueTheme,
 };
 
 // Keep lightTheme and darkTheme for backward compatibility

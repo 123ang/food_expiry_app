@@ -58,9 +58,9 @@ const getCategoryThemes = (t: (key: string) => string): CategoryTheme[] => [
       { name: t('category.medications'), icon: '💊' },
       { name: t('category.vitamins'), icon: '🍀' },
       { name: t('category.firstAid'), icon: '🩹' },
-      { name: t('category.contactLenses'), icon: '👁️' },
+      { name: t('category.contactLenses'), icon: '👓' },
       { name: t('category.bloodTestKits'), icon: '🩸' },
-      { name: t('category.medicalDevices'), icon: '🧪' },
+      { name: t('category.medicalDevices'), icon: '⚕️' },
     ]
   },
   {
