@@ -53,7 +53,7 @@ export function BottomNav() {
       borderTopColor: theme.borderColor,
       flexDirection: 'row',
       justifyContent: 'space-around',
-      paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+      paddingBottom: Platform.OS === 'ios' ? 30 : 12,
       paddingTop: 12,
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: -2 },

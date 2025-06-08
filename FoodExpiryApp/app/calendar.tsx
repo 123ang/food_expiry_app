@@ -80,7 +80,7 @@ export default function CalendarScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
-      paddingBottom: Platform.OS === 'ios' ? 100 : 80, // Space for bottom navigation
+      paddingBottom: Platform.OS === 'ios' ? 90 : 70, // Space for bottom navigation
       ...(isWeb && {
         maxWidth: responsive.getResponsiveValue({
           largeTablet: 1200,
