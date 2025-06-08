@@ -21,6 +21,7 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { FoodItemWithDetails } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import { useResponsive } from '../hooks/useResponsive';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -30,6 +31,7 @@ export default function ListScreen() {
   const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable, dataVersion } = useDatabase();
   const router = useRouter();
   const { filterStatus } = useLocalSearchParams();
+  const responsive = useResponsive();
   
   // Ensure we have a theme before rendering
   if (!theme) {
@@ -293,11 +295,13 @@ export default function ListScreen() {
       borderBottomRightRadius: 0, // Remove bottom radius for seamless connection
     },
     buttonAvoidanceItem: {
+      // Responsive padding to avoid floating plus button overlap
+      // Adjusts automatically based on screen size and device type
       paddingBottom: responsive.getResponsiveValue({
-        small: 70,        // Smaller phones (like compact Android)
-        default: 90,      // Default phones (like your Vivo)
-        tablet: 100,      // Tablets need more space
-        largeTablet: 110, // Large tablets need most space
+        small: 70,        // Compact phones (iPhone SE, small Android)
+        default: 90,      // Standard phones (Vivo, Samsung Galaxy, iPhone 12+)
+        tablet: 100,      // Small tablets (iPad mini, Android tablets)
+        largeTablet: 110, // Large tablets (iPad Pro, large Android tablets)
       }),
     },
     foodImage: {
