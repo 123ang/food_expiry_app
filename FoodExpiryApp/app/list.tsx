@@ -46,6 +46,7 @@ export default function ListScreen() {
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isFilteringLoading, setIsFilteringLoading] = useState(false);
   const [lastDataVersion, setLastDataVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,20 +81,31 @@ export default function ListScreen() {
   // Only refresh when filter status changes (not on every focus)
   useEffect(() => {
     if (!isLoading) {
-      loadItems();
+      const loadFilteredItems = async () => {
+        setIsFilteringLoading(true);
+        try {
+          await loadItems();
+        } finally {
+          setIsFilteringLoading(false);
+        }
+      };
+      loadFilteredItems();
     }
   }, [activeFilter]);
 
   const loadInitialData = async () => {
-    // Check if data is already available from cache
-    if (isDataAvailable()) {
-      setIsLoading(false);
-      await loadItems();
-      return;
-    }
-    
     setIsLoading(true);
+    
     try {
+      // Check if data is already available from cache
+      if (isDataAvailable()) {
+        // Load items from cache first
+        await loadItems();
+        setIsLoading(false);
+        return;
+      }
+      
+      // If no cache, refresh all data
       await refreshAll();
       await loadItems();
     } catch (error) {
@@ -109,8 +121,13 @@ export default function ListScreen() {
       let items: FoodItemWithDetails[];
       
       if (activeFilter === 'all') {
-        await refreshFoodItems();
-        items = foodItems;
+        // Check if we already have foodItems from cache/state
+        if (foodItems && foodItems.length > 0) {
+          items = foodItems;
+        } else {
+          await refreshFoodItems();
+          items = foodItems;
+        }
       } else {
         // Load filtered items based on status
         items = await getByStatus(activeFilter as 'expired' | 'expiring_soon' | 'fresh');
@@ -347,11 +364,13 @@ export default function ListScreen() {
   });
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading || isFilteringLoading) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primaryColor} />
-          <Text style={[styles.emptyStateText, { marginTop: 16 }]}>{t('list.loading')}</Text>
+          <Text style={[styles.emptyStateText, { marginTop: 16 }]}>
+            {t('list.loading')}
+          </Text>
         </View>
       );
     }
@@ -475,7 +494,7 @@ export default function ListScreen() {
                 pathname: '/list',
                 params: { filterStatus: 'all' }
               })}
-              disabled={isLoading || isRefreshing}
+              disabled={isLoading || isRefreshing || isFilteringLoading}
             >
               <Text style={{ fontSize: 16, color: activeFilter === 'all' ? '#FFFFFF' : colors.textColor }}>📝</Text>
               <Text style={[styles.filterButtonText, activeFilter === 'all' && styles.filterButtonTextActive]}>{t('list.all')}</Text>
@@ -486,7 +505,7 @@ export default function ListScreen() {
                 pathname: '/list',
                 params: { filterStatus: 'expired' }
               })}
-              disabled={isLoading || isRefreshing}
+              disabled={isLoading || isRefreshing || isFilteringLoading}
             >
               <Text style={{ fontSize: 16, color: activeFilter === 'expired' ? '#FFFFFF' : theme.dangerColor || '#FF3B30' }}>⚠️</Text>
               <Text style={[styles.filterButtonText, activeFilter === 'expired' && styles.filterButtonTextActive]}>{t('list.expired')}</Text>
@@ -497,7 +516,7 @@ export default function ListScreen() {
                 pathname: '/list',
                 params: { filterStatus: 'expiring_soon' }
               })}
-              disabled={isLoading || isRefreshing}
+              disabled={isLoading || isRefreshing || isFilteringLoading}
             >
               <Text style={{ fontSize: 16, color: activeFilter === 'expiring_soon' ? '#FFFFFF' : theme.warningColor || '#FF9500' }}>⏰</Text>
               <Text style={[styles.filterButtonText, activeFilter === 'expiring_soon' && styles.filterButtonTextActive]}>{t('list.expiring')}</Text>
@@ -508,7 +527,7 @@ export default function ListScreen() {
                 pathname: '/list',
                 params: { filterStatus: 'fresh' }
               })}
-              disabled={isLoading || isRefreshing}
+              disabled={isLoading || isRefreshing || isFilteringLoading}
             >
               <Text style={{ fontSize: 16, color: activeFilter === 'fresh' ? '#FFFFFF' : theme.successColor || '#34C759' }}>✅</Text>
               <Text style={[styles.filterButtonText, activeFilter === 'fresh' && styles.filterButtonTextActive]}>{t('list.indate')}</Text>
