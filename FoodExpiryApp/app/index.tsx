@@ -348,6 +348,12 @@ export default function DashboardScreen() {
         default: responsive.layout.spacing.card,
       }),
       alignItems: 'center',
+      minHeight: responsive.getResponsiveValue({
+        tablet: 140,
+        largeTablet: 160,
+        default: 120, // Fixed height to accommodate 2-line text
+      }),
+      justifyContent: 'center', // Center content vertically
       ...Platform.select({
         ios: {
           shadowColor: theme.shadowColor,
@@ -369,6 +375,16 @@ export default function DashboardScreen() {
       marginBottom: 4,
       fontSize: responsive.layout.fontSize.small,
       textAlign: 'center',
+      lineHeight: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 22,
+        default: 18, // Better line spacing for 2-line text
+      }),
+      minHeight: responsive.getResponsiveValue({
+        tablet: 40,
+        largeTablet: 44,
+        default: 36, // Reserve space for 2 lines of text
+      }),
     },
     statValue: {
       ...typography.h2,
