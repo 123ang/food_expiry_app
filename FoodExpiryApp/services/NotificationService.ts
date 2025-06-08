@@ -1,9 +1,76 @@
 import * as Notifications from 'expo-notifications';
 import { SchedulableTriggerInputTypes } from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, DeviceEventEmitter } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { FoodItem, FoodItemWithDetails } from '../database/models';
+
+// Import Language type
+export type Language = 'en' | 'zh' | 'ja';
+
+// Translation mappings for notifications
+const notificationTranslations: Record<Language, Record<string, string>> = {
+  en: {
+    'notification.testTitle': '🍎 Food Expiry Alert',
+    'notification.testBody': 'This is a test notification from Expiry Alert!',
+    'notification.expiringTodayTitle': '🚨 Food Expiring Today!',
+    'notification.expiringSoonTitle': '⚠️ Food Expiring Soon',
+    'notification.expiredTitle': '❌ Food Has Expired',
+    'notification.expiringTodayBody': '{quantity}{name} ({category}) expires today{location}. Use it now!',
+    'notification.expiringSoonBody': '{quantity}{name} ({category}) will expire in {days} {dayText}{location}',
+    'notification.expiredBody': '{quantity}{name} ({category}) expired {days} {dayText} ago{location}',
+    'notification.dailyCheckTitle': '🔔 Daily Food Check',
+    'notification.dailyCheckBody': 'Time to check your food expiry dates!',
+    'notification.summaryTitle': '📋 Food Status Summary',
+    'notification.summaryBodyExpiringToday': '{count} item{plural} expiring today! ',
+    'notification.summaryBodyExpiringSoon': '{count} item{plural} expiring soon. ',
+    'notification.summaryBodyExpired': '{count} item{plural} already expired.',
+    'notification.summaryBodyAllFresh': 'All your food items are fresh! 🎉',
+    'notification.day': 'day',
+    'notification.days': 'days',
+    'notification.in': ' in ',
+  },
+  zh: {
+    'notification.testTitle': '🍎 食品过期警报',
+    'notification.testBody': '这是一个测试通知，来自过期警报！',
+    'notification.expiringTodayTitle': '🚨 今天过期的食品！',
+    'notification.expiringSoonTitle': '⚠️ 即将过期的食品',
+    'notification.expiredTitle': '❌ 食品已过期',
+    'notification.expiringTodayBody': '{quantity}{name} ({category}) 今天过期{location}。现在使用它！',
+    'notification.expiringSoonBody': '{quantity}{name} ({category}) 将在 {days} {dayText}{location} 后过期',
+    'notification.expiredBody': '{quantity}{name} ({category}) 已过期 {days} {dayText} 前{location}',
+    'notification.dailyCheckTitle': '🔔 每日食品检查',
+    'notification.dailyCheckBody': '是时候检查您的食品过期日期了！',
+    'notification.summaryTitle': '📋 食品状态摘要',
+    'notification.summaryBodyExpiringToday': '{count} 个食品今天过期！',
+    'notification.summaryBodyExpiringSoon': '{count} 个食品即将过期。',
+    'notification.summaryBodyExpired': '{count} 个食品已经过期。',
+    'notification.summaryBodyAllFresh': '您的所有食品都很新鲜！🎉',
+    'notification.day': '天',
+    'notification.days': '天',
+    'notification.in': ' 在 ',
+  },
+  ja: {
+    'notification.testTitle': '🍎 食品期限警報',
+    'notification.testBody': 'これは過期警報からのテスト通知です！',
+    'notification.expiringTodayTitle': '🚨 今日期限切れの食品！',
+    'notification.expiringSoonTitle': '⚠️ 期限切れ間近の食品',
+    'notification.expiredTitle': '❌ 食品が期限切れ',
+    'notification.expiringTodayBody': '{quantity}{name} ({category}) 今日期限切れ{location}。今すぐ使用してください！',
+    'notification.expiringSoonBody': '{quantity}{name} ({category}) は {days} {dayText}{location} 後に期限切れになります',
+    'notification.expiredBody': '{quantity}{name} ({category}) は {days} {dayText} 前に期限切れになりました{location}',
+    'notification.dailyCheckTitle': '🔔 毎日の食品チェック',
+    'notification.dailyCheckBody': '食品の期限をチェックする時間です！',
+    'notification.summaryTitle': '📋 食品状況サマリー',
+    'notification.summaryBodyExpiringToday': '{count} 品目が今日期限切れ！',
+    'notification.summaryBodyExpiringSoon': '{count} 品目が期限切れ間近。',
+    'notification.summaryBodyExpired': '{count} 品目がすでに期限切れ。',
+    'notification.summaryBodyAllFresh': 'すべての食品は新鮮です！🎉',
+    'notification.day': '日',
+    'notification.days': '日',
+    'notification.in': ' に ',
+  }
+};
 
 export interface NotificationSettings {
   notificationsEnabled: boolean;
@@ -37,6 +104,7 @@ Notifications.setNotificationHandler({
 export class NotificationService {
   private static instance: NotificationService;
   private settings: NotificationSettings = DEFAULT_SETTINGS;
+  private currentLanguage: Language = 'en';
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -47,8 +115,36 @@ export class NotificationService {
 
   async initialize(): Promise<void> {
     await this.loadSettings();
+    await this.loadLanguage();
     await this.requestPermissions();
     this.setupNotificationListener();
+    this.setupLanguageListener();
+  }
+
+  private async loadLanguage(): Promise<void> {
+    try {
+      const savedLanguage = await AsyncStorage.getItem('app_language');
+      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh' || savedLanguage === 'ja')) {
+        this.currentLanguage = savedLanguage as Language;
+      }
+    } catch (error) {
+      this.currentLanguage = 'en'; // Fallback to English
+    }
+  }
+
+  private t(key: string, replacements: Record<string, string> = {}): string {
+    let translation = notificationTranslations[this.currentLanguage][key] || key;
+    
+    // Replace placeholders
+    Object.keys(replacements).forEach(placeholder => {
+      translation = translation.replace(new RegExp(`{${placeholder}}`, 'g'), replacements[placeholder]);
+    });
+    
+    return translation;
+  }
+
+  async updateLanguage(): Promise<void> {
+    await this.loadLanguage();
   }
 
   async loadSettings(): Promise<void> {
@@ -92,6 +188,13 @@ export class NotificationService {
     });
   }
 
+  private setupLanguageListener(): void {
+    // Listen for language changes
+    DeviceEventEmitter.addListener('languageChanged', async (event) => {
+      await this.updateLanguage();
+    });
+  }
+
   async scheduleExpiryNotification(
     itemId: string,
     itemName: string,
@@ -108,25 +211,25 @@ export class NotificationService {
 
     if (daysUntilExpiry === 0 && this.settings.todayAlerts) {
       shouldNotify = true;
-      title = '🚨 Food Expiring Today!';
+      title = this.t('notification.expiringTodayTitle');
       const quantityText = quantity > 1 ? `${quantity} ` : '';
-      const locationText = locationName ? ` in ${locationName}` : '';
-      body = `${quantityText}${itemName} (${categoryName}) expires today${locationText}. Use it now!`;
+      const locationText = locationName ? ` ${this.t('notification.in')} ${locationName}` : '';
+      body = this.t('notification.expiringTodayBody', { quantity: quantityText, name: itemName, category: categoryName, location: locationText });
     } else if (daysUntilExpiry > 0 && daysUntilExpiry <= 3 && this.settings.expiryAlerts) {
       shouldNotify = true;
-      title = '⚠️ Food Expiring Soon';
+      title = this.t('notification.expiringSoonTitle');
       const quantityText = quantity > 1 ? `${quantity} ` : '';
-      const locationText = locationName ? ` in ${locationName}` : '';
-      const daysText = daysUntilExpiry === 1 ? 'day' : 'days';
-      body = `${quantityText}${itemName} (${categoryName}) will expire in ${daysUntilExpiry} ${daysText}${locationText}`;
+      const locationText = locationName ? ` ${this.t('notification.in')} ${locationName}` : '';
+      const daysText = daysUntilExpiry === 1 ? this.t('notification.day') : this.t('notification.days');
+             body = this.t('notification.expiringSoonBody', { quantity: quantityText, name: itemName, category: categoryName, days: daysUntilExpiry.toString(), dayText: daysText, location: locationText });
     } else if (daysUntilExpiry < 0 && this.settings.expiredAlerts) {
       shouldNotify = true;
-      title = '❌ Food Has Expired';
+      title = this.t('notification.expiredTitle');
       const quantityText = quantity > 1 ? `${quantity} ` : '';
-      const locationText = locationName ? ` in ${locationName}` : '';
+      const locationText = locationName ? ` ${this.t('notification.in')} ${locationName}` : '';
       const expiredDays = Math.abs(daysUntilExpiry);
-      const daysText = expiredDays === 1 ? 'day' : 'days';
-      body = `${quantityText}${itemName} (${categoryName}) expired ${expiredDays} ${daysText} ago${locationText}`;
+      const daysText = expiredDays === 1 ? this.t('notification.day') : this.t('notification.days');
+             body = this.t('notification.expiredBody', { quantity: quantityText, name: itemName, category: categoryName, days: expiredDays.toString(), dayText: daysText, location: locationText });
     }
 
     if (!shouldNotify) return;
@@ -179,8 +282,8 @@ export class NotificationService {
     try {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🍎 Food Expiry Alert',
-          body: 'This is a test notification from Expiry Alert!',
+          title: this.t('notification.testTitle'),
+          body: this.t('notification.testBody'),
           data: { type: 'test' },
         },
         trigger: null,
@@ -260,8 +363,8 @@ export class NotificationService {
     // Schedule daily notification to check food status
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🔔 Daily Food Check',
-        body: 'Time to check your food expiry dates!',
+        title: this.t('notification.dailyCheckTitle'),
+        body: this.t('notification.dailyCheckBody'),
         data: { type: 'daily_check' },
         sound: false,
       },
@@ -279,8 +382,8 @@ export class NotificationService {
   async sendTestNotification(): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '🍎 Food Expiry Alert',
-        body: 'This is a test notification from Expiry Alert!',
+        title: this.t('notification.testTitle'),
+        body: this.t('notification.testBody'),
         data: { type: 'test' },
         sound: true,
       },
@@ -316,21 +419,21 @@ export class NotificationService {
       return daysLeft < 0;
     });
 
-    let title = '📋 Food Status Summary';
+    let title = this.t('notification.summaryTitle');
     let body = '';
 
-    if (expiringToday.length > 0) {
-      body += `${expiringToday.length} item${expiringToday.length > 1 ? 's' : ''} expiring today! `;
-    }
-    if (expiringSoon.length > 0) {
-      body += `${expiringSoon.length} item${expiringSoon.length > 1 ? 's' : ''} expiring soon. `;
-    }
-    if (expired.length > 0) {
-      body += `${expired.length} item${expired.length > 1 ? 's' : ''} already expired.`;
-    }
+          if (expiringToday.length > 0) {
+        body += this.t('notification.summaryBodyExpiringToday', { count: expiringToday.length.toString(), plural: expiringToday.length > 1 ? 's' : '' });
+      }
+      if (expiringSoon.length > 0) {
+        body += this.t('notification.summaryBodyExpiringSoon', { count: expiringSoon.length.toString(), plural: expiringSoon.length > 1 ? 's' : '' });
+      }
+      if (expired.length > 0) {
+        body += this.t('notification.summaryBodyExpired', { count: expired.length.toString(), plural: expired.length > 1 ? 's' : '' });
+      }
 
     if (!body) {
-      body = 'All your food items are fresh! 🎉';
+      body = this.t('notification.summaryBodyAllFresh');
     }
 
     await Notifications.scheduleNotificationAsync({

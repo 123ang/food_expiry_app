@@ -94,17 +94,17 @@ export default function CalendarScreen() {
       height: responsive.getResponsiveValue({
         largeTablet: windowHeight * 0.55,
         tablet: windowHeight * 0.52,
-        default: isWeb ? 'auto' as any : windowHeight * 0.45,
+        default: isWeb ? 'auto' as any : Math.min(windowHeight * 0.45, 350),
       }),
       minHeight: responsive.getResponsiveValue({
         largeTablet: 480,
         tablet: 440,
-        default: 380,
+        default: Math.min(350, windowHeight * 0.4),
       }),
       maxHeight: responsive.getResponsiveValue({
         largeTablet: 700,
         tablet: 600,
-        default: undefined,
+        default: Math.min(400, windowHeight * 0.5),
       }),
     } as any,
     calendarContainer: {
@@ -131,7 +131,8 @@ export default function CalendarScreen() {
       shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 3,
-      flex: 1,
+      flex: responsive.breakpoints.isTablet ? 1 : undefined,
+      height: responsive.breakpoints.isTablet ? undefined : '100%',
     },
     header: {
       padding: responsive.getResponsiveValue({
@@ -197,19 +198,23 @@ export default function CalendarScreen() {
         largeTablet: 16,
         default: 8,
       }),
-      flex: 1,
+      flex: responsive.breakpoints.isTablet ? 1 : undefined,
+      minHeight: responsive.getResponsiveValue({
+        tablet: undefined,
+        default: 240,
+      }),
     },
     dayCell: {
       width: `${100 / 7}%`,
       aspectRatio: responsive.getResponsiveValue({
         tablet: 1.1,
         largeTablet: 1.2,
-        default: 1,
+        default: responsive.breakpoints.isSmall ? 0.9 : 1,
       }),
       padding: responsive.getResponsiveValue({
         tablet: 4,
         largeTablet: 6,
-        default: 2,
+        default: responsive.breakpoints.isSmall ? 1 : 2,
       }),
     },
     dayContent: {
@@ -225,12 +230,14 @@ export default function CalendarScreen() {
       minHeight: responsive.getResponsiveValue({
         tablet: 50,
         largeTablet: 60,
-        default: 40,
+        small: 32,
+        default: 36,
       }),
       maxHeight: responsive.getResponsiveValue({
         tablet: 70,
         largeTablet: 80,
-        default: undefined,
+        small: 40,
+        default: 45,
       }),
       ...(isWeb && {
         cursor: 'pointer' as any,
@@ -247,6 +254,7 @@ export default function CalendarScreen() {
       fontSize: responsive.getResponsiveValue({
         tablet: 16,
         largeTablet: 18,
+        small: 12,
         default: 14,
       }),
       color: theme.textColor,

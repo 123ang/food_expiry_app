@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DeviceEventEmitter } from 'react-native';
 import { FoodItemWithDetails } from '../database/models';
 
 export interface NotificationSettings {
@@ -41,7 +42,15 @@ class SimpleNotificationService {
     
     await this.loadSettings();
     await this.requestPermissions();
+    this.setupLanguageListener();
     this.isInitialized = true;
+  }
+
+  private setupLanguageListener(): void {
+    // Listen for language changes
+    DeviceEventEmitter.addListener('languageChanged', async (event) => {
+      // Language change detected - no specific action needed here as getLanguage() is called fresh each time
+    });
   }
 
   private async getLanguage(): Promise<string> {
@@ -106,30 +115,43 @@ class SimpleNotificationService {
     
     const translations: Record<string, Record<string, string>> = {
       en: {
-        'notification.expiringTodayTitle': 'Food Expiring Today!',
-        'notification.expiringSoonTitle': 'Food Expiring Soon',
-        'notification.expiredTitle': 'Food Has Expired',
+        'notification.expiringTodayTitle': '🚨 Food Expiring Today!',
+        'notification.expiringSoonTitle': '⚠️ Food Expiring Soon',
+        'notification.expiredTitle': '❌ Food Has Expired',
         'notification.expiringTodayBody': '{quantity}{name} ({category}) expires today{location}. Use it now!',
-        'notification.expiringSoonBody': '{quantity}{name} ({category}) will expire in {days} day{plural}{location}',
-        'notification.expiredBody': '{quantity}{name} ({category}) expired {days} day{plural} ago{location}',
-        'notification.testTitle': 'Food Expiry Alert',
+        'notification.expiringSoonBody': '{quantity}{name} ({category}) will expire in {days} {plural}{location}',
+        'notification.expiredBody': '{quantity}{name} ({category}) expired {days} {plural} ago{location}',
+        'notification.testTitle': '🍎 Food Expiry Alert',
         'notification.testBody': 'This is a test notification from Expiry Alert!',
         'notification.in': ' in ',
         'notification.days': 'days',
         'notification.day': 'day',
       },
       zh: {
-        'notification.expiringTodayTitle': '食物今天过期！',
-        'notification.expiringSoonTitle': '食物即将过期',
-        'notification.expiredTitle': '食物已过期',
-        'notification.expiringTodayBody': '{quantity}{name} ({category}) 今天过期{location}。请立即使用！',
-        'notification.expiringSoonBody': '{quantity}{name} ({category}) 将在 {days} {plural}后过期{location}',
-        'notification.expiredBody': '{quantity}{name} ({category}) {days} {plural}前过期{location}',
-        'notification.testTitle': '食物过期提醒',
-        'notification.testBody': '这是来自过期提醒的测试通知！',
+        'notification.expiringTodayTitle': '🚨 今天过期的食品！',
+        'notification.expiringSoonTitle': '⚠️ 即将过期的食品',
+        'notification.expiredTitle': '❌ 食品已过期',
+        'notification.expiringTodayBody': '{quantity}{name} ({category}) 今天过期{location}。现在使用它！',
+        'notification.expiringSoonBody': '{quantity}{name} ({category}) 将在 {days} {plural}{location} 后过期',
+        'notification.expiredBody': '{quantity}{name} ({category}) 已过期 {days} {plural} 前{location}',
+        'notification.testTitle': '🍎 食品过期警报',
+        'notification.testBody': '这是一个测试通知，来自过期警报！',
         'notification.in': ' 在 ',
         'notification.days': '天',
         'notification.day': '天',
+      },
+      ja: {
+        'notification.expiringTodayTitle': '🚨 今日期限切れの食品！',
+        'notification.expiringSoonTitle': '⚠️ 期限切れ間近の食品',
+        'notification.expiredTitle': '❌ 食品が期限切れ',
+        'notification.expiringTodayBody': '{quantity}{name} ({category}) 今日期限切れ{location}。今すぐ使用してください！',
+        'notification.expiringSoonBody': '{quantity}{name} ({category}) は {days} {plural}{location} 後に期限切れになります',
+        'notification.expiredBody': '{quantity}{name} ({category}) は {days} {plural} 前に期限切れになりました{location}',
+        'notification.testTitle': '🍎 食品期限警報',
+        'notification.testBody': 'これは過期警報からのテスト通知です！',
+        'notification.in': ' に ',
+        'notification.days': '日',
+        'notification.day': '日',
       }
     };
 
