@@ -31,15 +31,14 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
       <input
         type="date"
         style={{
-          backgroundColor: theme.backgroundColor,
+          backgroundColor: 'transparent', // Use transparent to inherit from container
           padding: 12,
           borderRadius: 8,
-          marginBottom: 16,
-          color: isDarkTheme ? '#FFFFFF' : '#000000', // White text in dark theme, black in light
-          borderWidth: 1,
-          borderColor: theme.borderColor,
+          color: isDarkTheme ? '#FFFFFF' : '#000000',
+          border: 'none', // Remove border since container handles it
           width: '100%',
           height: 40,
+          fontSize: 16,
         }}
         value={value.toISOString().split('T')[0]}
         onChange={(e) => onChange(new Date(e.target.value))}
@@ -56,21 +55,25 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
     // Handle different platforms and event types
     if (Platform.OS === 'android') {
       // On Android, close picker after selection
+      setShow(false);
       if (event.type === 'set' && selectedDate) {
         onChange(selectedDate);
       }
-      setShow(false);
-    } else {
+    } else if (Platform.OS === 'ios') {
       // On iOS, handle different event types
       if (event.type === 'dismissed') {
         // User cancelled or tapped outside
         setShow(false);
       } else if (selectedDate) {
-        // User is scrolling/selecting - update value but keep picker open
+        // User is scrolling/selecting - update value immediately
         onChange(selectedDate);
-        // Don't close the picker, let user continue scrolling
+        // Keep picker open for iOS to allow continued scrolling
       }
     }
+  };
+
+  const handleDone = () => {
+    setShow(false);
   };
 
   // Platform-specific theme configuration
@@ -78,15 +81,11 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
     if (Platform.OS === 'ios') {
       return {
         // iOS supports these theme props - ensure proper color configuration
-        textColor: isDarkTheme ? '#FFFFFF' : '#000000', // Force white text in dark themes
+        textColor: isDarkTheme ? '#FFFFFF' : '#000000',
         themeVariant: (isDarkTheme ? 'dark' : 'light') as 'dark' | 'light',
         accentColor: theme.primaryColor || '#4CAF50',
         // Use compact display for better theme support
         display: 'compact' as const,
-        // Additional iOS-specific styling
-        style: {
-          backgroundColor: isDarkTheme ? '#1A1A1A' : '#FFFFFF', // Dark background for dark themes
-        }
       };
     } else {
       // Android - we can't control the theme, so just use default
@@ -103,15 +102,20 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
       <TouchableOpacity
         onPress={showDatePicker}
         style={{
-          backgroundColor: theme.backgroundColor,
+          // Remove all styling to avoid conflicts with container
+          backgroundColor: 'transparent',
           padding: 12,
           borderRadius: 8,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: theme.borderColor,
+          minHeight: 44, // Ensure consistent height
+          justifyContent: 'center',
+          // Remove border and margin since container handles it
         }}
       >
-        <Text style={{ color: theme.textColor }}>
+        <Text style={{ 
+          color: theme.textColor,
+          fontSize: 16,
+          // Ensure consistent text styling
+        }}>
           {value.toLocaleDateString()}
         </Text>
       </TouchableOpacity>
@@ -124,12 +128,12 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
               justifyContent: 'flex-end',
               paddingHorizontal: 16,
               paddingVertical: 8,
-              backgroundColor: isDarkTheme ? '#1A1A1A' : theme.cardBackground, // Dark background for dark themes
+              backgroundColor: isDarkTheme ? '#1A1A1A' : theme.cardBackground,
               borderTopWidth: 1,
               borderTopColor: theme.borderColor,
             }}>
               <TouchableOpacity
-                onPress={() => setShow(false)}
+                onPress={handleDone}
                 style={{
                   paddingHorizontal: 16,
                   paddingVertical: 8,
@@ -142,7 +146,7 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
             </View>
           )}
           <View style={{
-            backgroundColor: isDarkTheme ? '#1A1A1A' : '#FFFFFF', // Ensure dark background for dark themes
+            backgroundColor: isDarkTheme ? '#1A1A1A' : '#FFFFFF',
           }}>
             <DateTimePicker
               value={value}

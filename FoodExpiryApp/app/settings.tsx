@@ -245,7 +245,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 13, // Reduced padding for better scrolling
+    // Remove paddingBottom to avoid conflicts with contentContainerStyle
   },
   section: {
     backgroundColor: theme.cardBackground,
@@ -1565,12 +1565,7 @@ export default function SettingsScreen() {
         <ScrollView 
           style={styles.content}
           contentContainerStyle={{ 
-            paddingBottom: responsive.getResponsiveValue({
-              small: 50,      // Smaller screens get less padding
-              tablet: 70,     // Tablets get medium padding  
-              largeTablet: 80, // Large tablets get more padding
-              default: 60     // Default for most phones
-            }),
+            paddingBottom: Platform.OS === 'ios' ? 120 : 100, // Sufficient space for bottom navigation
             alignItems: 'center',
           }}
           showsVerticalScrollIndicator={false}

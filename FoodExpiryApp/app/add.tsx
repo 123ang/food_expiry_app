@@ -311,10 +311,11 @@ export default function AddScreen() {
     datePickerContainer: {
       backgroundColor: theme.cardBackground,
       borderRadius: 8,
-      padding: 16,
       borderWidth: 1,
       borderColor: theme.borderColor,
       marginBottom: 24,
+      // Remove padding to avoid double padding with DatePicker
+      overflow: 'hidden', // Ensure rounded corners work properly
     },
     notesInput: {
       height: 100,

@@ -73,9 +73,17 @@ const FoodItemCard: React.FC<{
 
   const statusInfo = getStatusInfo();
 
+  // Check if image_uri is an emoji
+  const isEmojiImage = item.image_uri && item.image_uri.startsWith('emoji:');
+  const emojiValue = isEmojiImage && item.image_uri ? item.image_uri.replace('emoji:', '') : null;
+
   return (
     <TouchableOpacity style={styles.foodItem} onPress={onPress}>
-      {item.image_uri && !imageError ? (
+      {isEmojiImage && emojiValue ? (
+        <View style={styles.placeholderImage}>
+          <Text style={{ fontSize: 40 }}>{emojiValue}</Text>
+        </View>
+      ) : item.image_uri && !imageError ? (
         <Image
           source={{ uri: item.image_uri }}
           style={styles.foodImage}

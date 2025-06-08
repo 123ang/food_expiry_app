@@ -39,8 +39,22 @@ const LOCATION_EMOJIS: { [key: string]: string } = {
 };
 
 const LocationIcon: React.FC<LocationIconProps> = ({ iconName, size = 24 }) => {
-  // First check if it's already an emoji (length 1-4 Unicode characters)
-  if (iconName && /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]$/u.test(iconName)) {
+  // Handle null/undefined iconName
+  if (!iconName) {
+    return (
+      <Text style={[styles.emoji, { fontSize: size }]}>
+        {LOCATION_EMOJIS.default}
+      </Text>
+    );
+  }
+
+  // First check if it's already an emoji (improved Unicode detection)
+  if (iconName && (
+    // Check for common emoji ranges
+    /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]/u.test(iconName) ||
+    // Check for specific emojis we use
+    ['❄️', '🧊', '🏠', '📦', '🍽️', '⬇️', '🏢', '🍳', '🗃️', '📚', '📍'].includes(iconName)
+  )) {
     return (
       <Text style={[styles.emoji, { fontSize: size }]}>
         {iconName}

@@ -65,11 +65,20 @@ const FoodItemCard: React.FC<{
     }
   };
 
+  // Check if image_uri is an emoji
+  const isEmojiImage = item.image_uri && item.image_uri.startsWith('emoji:');
+  const emojiValue = isEmojiImage && item.image_uri ? item.image_uri.replace('emoji:', '') : null;
+
   const statusInfo = getStatusInfo();
 
   return (
     <TouchableOpacity style={styles.foodItem} onPress={onPress}>
-      {item.image_uri && !imageError ? (
+      {/* Enhanced image/emoji handling */}
+      {isEmojiImage && emojiValue ? (
+        <View style={styles.emojiImageContainer}>
+          <Text style={styles.emojiImage}>{emojiValue}</Text>
+        </View>
+      ) : item.image_uri && !imageError ? (
         <Image
           source={{ uri: item.image_uri }}
           style={styles.foodImage}
@@ -298,6 +307,21 @@ export default function CategoryDetailScreen() {
       backgroundColor: `${theme.primaryColor}20`,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    emojiImageContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 12,
+      backgroundColor: `${theme.primaryColor}10`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    emojiImage: {
+      fontSize: 48,
+      textAlign: 'center',
     },
     emptyState: {
       flex: 1,

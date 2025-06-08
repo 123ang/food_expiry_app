@@ -97,21 +97,21 @@ export default function CalendarScreen() {
         flex: 0,
         flexShrink: 0,
       } : {
-        // Mobile/Tablet: Better responsive height calculation
+        // Mobile/Tablet: Compact calendar to leave room for item list
         height: responsive.getResponsiveValue({
-          largeTablet: Math.min(windowHeight * 0.6, 500), // Increased for large tablets
-          tablet: Math.min(windowHeight * 0.55, 450), // Increased for tablets
-          default: Math.min(windowHeight * 0.45, 350),
+          largeTablet: Math.min(windowHeight * 0.4, 380), // Reduced to 40% for iPad
+          tablet: Math.min(windowHeight * 0.42, 400), // Reduced to 42% for tablets
+          default: Math.min(windowHeight * 0.45, 350), // Keep same for phones
         }),
         minHeight: responsive.getResponsiveValue({
-          largeTablet: 420, // Increased minimum height
-          tablet: 380, // Increased minimum height
-          default: 320,
+          largeTablet: 320, // Reduced minimum height for iPad
+          tablet: 340, // Reduced minimum height for tablets
+          default: 320, // Keep same for phones
         }),
         maxHeight: responsive.getResponsiveValue({
-          largeTablet: 600, // Better max height for large tablets
-          tablet: 500, // Better max height for tablets
-          default: 400,
+          largeTablet: 420, // Much more compact for iPad
+          tablet: 450, // More compact for tablets
+          default: 400, // Keep same for phones
         }),
       }),
     } as any,
@@ -120,8 +120,8 @@ export default function CalendarScreen() {
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
       paddingBottom: responsive.getResponsiveValue({
-        tablet: 24,
-        largeTablet: 32,
+        tablet: 16, // Reduced padding for tablets
+        largeTablet: 20, // Reduced padding for iPad
         default: 16,
       }),
       borderTopLeftRadius: responsive.getResponsiveValue({
@@ -149,8 +149,8 @@ export default function CalendarScreen() {
     },
     header: {
       padding: responsive.getResponsiveValue({
-        tablet: 20,
-        largeTablet: 24,
+        tablet: 16, // Reduced padding for tablets
+        largeTablet: 18, // Reduced padding for iPad
         default: 16,
       }),
     },
@@ -159,15 +159,15 @@ export default function CalendarScreen() {
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: responsive.getResponsiveValue({
-        tablet: 20,
-        largeTablet: 24,
+        tablet: 14, // Reduced margin for tablets
+        largeTablet: 16, // Reduced margin for iPad
         default: 16,
       }),
     },
     monthText: {
       fontSize: responsive.getResponsiveValue({
-        tablet: 22,
-        largeTablet: 26,
+        tablet: 20, // Reduced for tablets
+        largeTablet: 22, // Reduced for iPad
         default: 18,
       }),
       fontWeight: '600',
@@ -218,8 +218,8 @@ export default function CalendarScreen() {
         // Mobile/Tablet: Allow proper expansion
         flex: 1,
         minHeight: responsive.getResponsiveValue({
-          largeTablet: 320, // Increased for large tablets
-          tablet: 280, // Increased for tablets
+          largeTablet: 240, // Reduced for iPad to fit all dates compactly
+          tablet: 260, // Reduced for tablets
           default: 240,
         }),
       }),
@@ -227,14 +227,14 @@ export default function CalendarScreen() {
     dayCell: {
       width: `${100 / 7}%`,
       aspectRatio: responsive.getResponsiveValue({
-        largeTablet: 1.0, // More square for large tablets
-        tablet: 1.0, // More square for tablets
+        largeTablet: 0.85, // More compact for iPad to fit all dates
+        tablet: 0.9, // Slightly more compact for tablets
         small: 0.8,
         default: 0.9,
       }),
       padding: responsive.getResponsiveValue({
-        largeTablet: 8, // Increased padding for large tablets
-        tablet: 6, // Increased padding for tablets
+        largeTablet: 4, // Reduced padding for iPad
+        tablet: 4, // Reduced padding for tablets
         small: 1,
         default: 2,
       }),
@@ -250,14 +250,14 @@ export default function CalendarScreen() {
       }),
       backgroundColor: theme.backgroundColor,
       minHeight: responsive.getResponsiveValue({
-        largeTablet: 65, // Increased for large tablets
-        tablet: 55, // Increased for tablets
+        largeTablet: 40, // Much more compact for iPad
+        tablet: 45, // More compact for tablets
         small: 28,
         default: 32,
       }),
       maxHeight: responsive.getResponsiveValue({
-        largeTablet: 85, // Increased for large tablets
-        tablet: 75, // Increased for tablets
+        largeTablet: 50, // Much more compact for iPad
+        tablet: 55, // More compact for tablets
         small: 36,
         default: 40,
       }),
@@ -275,8 +275,8 @@ export default function CalendarScreen() {
     },
     dayText: {
       fontSize: responsive.getResponsiveValue({
-        tablet: 16,
-        largeTablet: 18,
+        tablet: 14, // Reduced for tablets
+        largeTablet: 15, // Reduced for iPad
         small: 10,
         default: 12,
       }),
@@ -284,8 +284,8 @@ export default function CalendarScreen() {
       fontWeight: '500',
       textAlign: 'center',
       lineHeight: responsive.getResponsiveValue({
-        tablet: 20,
-        largeTablet: 22,
+        tablet: 18, // Reduced for tablets
+        largeTablet: 19, // Reduced for iPad
         small: 12,
         default: 14,
       }),

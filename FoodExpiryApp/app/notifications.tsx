@@ -163,7 +163,6 @@ export default function NotificationsScreen() {
     content: {
       flex: 1,
       padding: 16,
-      paddingBottom: 100, // Add space for bottom navigation
     },
     section: {
       backgroundColor: theme.cardBackground,
@@ -281,7 +280,12 @@ export default function NotificationsScreen() {
         <Text style={styles.headerTitle}>{t('header.notifications')}</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ 
+          paddingBottom: Platform.OS === 'ios' ? 120 : 100 
+        }}
+      >
      
         {/* Main Settings */}
         <View style={styles.section}>
