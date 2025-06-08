@@ -209,12 +209,14 @@ export default function CalendarScreen() {
       aspectRatio: responsive.getResponsiveValue({
         tablet: 1.1,
         largeTablet: 1.2,
-        default: responsive.breakpoints.isSmall ? 0.9 : 1,
+        small: 0.8,
+        default: 0.9,
       }),
       padding: responsive.getResponsiveValue({
         tablet: 4,
         largeTablet: 6,
-        default: responsive.breakpoints.isSmall ? 1 : 2,
+        small: 0.5,
+        default: 1,
       }),
     },
     dayContent: {
@@ -224,21 +226,22 @@ export default function CalendarScreen() {
       borderRadius: responsive.getResponsiveValue({
         tablet: 12,
         largeTablet: 16,
-        default: 8,
+        default: 6,
       }),
       backgroundColor: theme.backgroundColor,
       minHeight: responsive.getResponsiveValue({
         tablet: 50,
         largeTablet: 60,
-        small: 32,
-        default: 36,
+        small: 28,
+        default: 32,
       }),
       maxHeight: responsive.getResponsiveValue({
         tablet: 70,
         largeTablet: 80,
-        small: 40,
-        default: 45,
+        small: 36,
+        default: 40,
       }),
+      overflow: 'hidden',
       ...(isWeb && {
         cursor: 'pointer' as any,
       }),
@@ -254,11 +257,18 @@ export default function CalendarScreen() {
       fontSize: responsive.getResponsiveValue({
         tablet: 16,
         largeTablet: 18,
-        small: 12,
-        default: 14,
+        small: 10,
+        default: 12,
       }),
       color: theme.textColor,
       fontWeight: '500',
+      textAlign: 'center',
+      lineHeight: responsive.getResponsiveValue({
+        tablet: 20,
+        largeTablet: 22,
+        small: 12,
+        default: 14,
+      }),
     },
     dayTextSelected: {
       color: '#FFFFFF',
@@ -272,11 +282,31 @@ export default function CalendarScreen() {
       opacity: 0.4,
     },
     itemsDot: {
-      width: 4,
-      height: 4,
-      borderRadius: 2,
+      width: responsive.getResponsiveValue({
+        tablet: 4,
+        largeTablet: 5,
+        small: 2,
+        default: 3,
+      }),
+      height: responsive.getResponsiveValue({
+        tablet: 4,
+        largeTablet: 5,
+        small: 2,
+        default: 3,
+      }),
+      borderRadius: responsive.getResponsiveValue({
+        tablet: 2,
+        largeTablet: 2.5,
+        small: 1,
+        default: 1.5,
+      }),
       backgroundColor: theme.primaryColor,
-      marginTop: 2,
+      marginTop: responsive.getResponsiveValue({
+        tablet: 2,
+        largeTablet: 3,
+        small: 1,
+        default: 1,
+      }),
     },
     listSection: {
       flex: 1,
