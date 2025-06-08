@@ -182,6 +182,7 @@ export default function ListScreen() {
     container: {
       flex: 1,
       backgroundColor: colors.backgroundColor,
+      paddingBottom: Platform.OS === 'ios' ? 100 : 80, // Space for bottom navigation
     },
     customHeader: {
       backgroundColor: colors.cardBackground,
