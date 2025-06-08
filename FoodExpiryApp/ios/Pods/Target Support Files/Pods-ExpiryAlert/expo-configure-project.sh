@@ -48,4 +48,4 @@ with_node \
   --target "/Users/kevinsoon/Documents/GitHub/food_expiry_app/FoodExpiryApp/FoodExpiryApp/ios/Pods/Target Support Files/Pods-ExpiryAlert/ExpoModulesProvider.swift" \
   --entitlement "/Users/kevinsoon/Documents/GitHub/food_expiry_app/FoodExpiryApp/FoodExpiryApp/ios/ExpiryAlert/ExpiryAlert.entitlements" \
   --platform "apple" \
-  --packages "expo" "expo-application" "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-keep-awake" "expo-linking" "expo-notifications" "expo-router" "expo-splash-screen" "expo-sqlite"
+  --packages "expo" "expo-application" "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-image-picker" "expo-keep-awake" "expo-linking" "expo-notifications" "expo-router" "expo-splash-screen" "expo-sqlite"

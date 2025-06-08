@@ -1,6 +1,6 @@
 {
   "name": "ExpoSQLite",
-  "version": "15.2.10",
+  "version": "15.2.11",
   "summary": "Provides access to a database using SQLite (https://www.sqlite.org/). The database is persisted across restarts of your app.",
   "description": "Provides access to a database using SQLite (https://www.sqlite.org/). The database is persisted across restarts of your app.",
   "license": "MIT",

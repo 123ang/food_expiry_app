@@ -12,6 +12,7 @@ import ExpoAsset
 import EXConstants
 import ExpoFileSystem
 import ExpoFont
+import ExpoImagePicker
 import ExpoKeepAwake
 import ExpoLinking
 import EXNotifications
@@ -36,6 +37,7 @@ public class ExpoModulesProvider: ModulesProvider {
       FileSystemNextModule.self,
       FontLoaderModule.self,
       FontUtilsModule.self,
+      ImagePickerModule.self,
       KeepAwakeModule.self,
       ExpoLinkingModule.self,
       BackgroundModule.self,
@@ -69,6 +71,7 @@ public class ExpoModulesProvider: ModulesProvider {
       FileSystemNextModule.self,
       FontLoaderModule.self,
       FontUtilsModule.self,
+      ImagePickerModule.self,
       KeepAwakeModule.self,
       ExpoLinkingModule.self,
       BackgroundModule.self,
