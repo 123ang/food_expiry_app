@@ -87,25 +87,32 @@ export default function CalendarScreen() {
           default: 800,
         }),
         alignSelf: 'center' as any,
-        height: '100vh' as any,
-        paddingBottom: 0, // No padding needed on web
+        minHeight: '100vh' as any,
+        paddingBottom: 0,
       }),
     } as any,
     calendarSection: {
-      height: responsive.getResponsiveValue({
-        largeTablet: windowHeight * 0.55,
-        tablet: windowHeight * 0.52,
-        default: isWeb ? 'auto' as any : Math.min(windowHeight * 0.45, 350),
-      }),
-      minHeight: responsive.getResponsiveValue({
-        largeTablet: 480,
-        tablet: 440,
-        default: Math.min(350, windowHeight * 0.4),
-      }),
-      maxHeight: responsive.getResponsiveValue({
-        largeTablet: 700,
-        tablet: 600,
-        default: Math.min(400, windowHeight * 0.5),
+      ...(isWeb ? {
+        // Web: allow natural height without constraints
+        flex: 0,
+        flexShrink: 0,
+      } : {
+        // Mobile/Tablet: Better responsive height calculation
+        height: responsive.getResponsiveValue({
+          largeTablet: Math.min(windowHeight * 0.6, 500), // Increased for large tablets
+          tablet: Math.min(windowHeight * 0.55, 450), // Increased for tablets
+          default: Math.min(windowHeight * 0.45, 350),
+        }),
+        minHeight: responsive.getResponsiveValue({
+          largeTablet: 420, // Increased minimum height
+          tablet: 380, // Increased minimum height
+          default: 320,
+        }),
+        maxHeight: responsive.getResponsiveValue({
+          largeTablet: 600, // Better max height for large tablets
+          tablet: 500, // Better max height for tablets
+          default: 400,
+        }),
       }),
     } as any,
     calendarContainer: {
@@ -132,8 +139,13 @@ export default function CalendarScreen() {
       shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 3,
-      flex: responsive.breakpoints.isTablet ? 1 : undefined,
-      height: responsive.breakpoints.isTablet ? undefined : '100%',
+      ...(isWeb ? {
+        // Web: natural height, no flex constraints
+        flexShrink: 0,
+      } : {
+        // Mobile/Tablet: Allow full expansion
+        flex: 1,
+      }),
     },
     header: {
       padding: responsive.getResponsiveValue({
@@ -199,25 +211,32 @@ export default function CalendarScreen() {
         largeTablet: 16,
         default: 8,
       }),
-      flex: responsive.breakpoints.isTablet ? 1 : undefined,
-      minHeight: responsive.getResponsiveValue({
-        tablet: undefined,
-        default: 240,
+      ...(isWeb ? {
+        // Web: natural height without flex constraints
+        minHeight: 300,
+      } : {
+        // Mobile/Tablet: Allow proper expansion
+        flex: 1,
+        minHeight: responsive.getResponsiveValue({
+          largeTablet: 320, // Increased for large tablets
+          tablet: 280, // Increased for tablets
+          default: 240,
+        }),
       }),
     },
     dayCell: {
       width: `${100 / 7}%`,
       aspectRatio: responsive.getResponsiveValue({
-        tablet: 1.1,
-        largeTablet: 1.2,
+        largeTablet: 1.0, // More square for large tablets
+        tablet: 1.0, // More square for tablets
         small: 0.8,
         default: 0.9,
       }),
       padding: responsive.getResponsiveValue({
-        tablet: 4,
-        largeTablet: 6,
-        small: 0.5,
-        default: 1,
+        largeTablet: 8, // Increased padding for large tablets
+        tablet: 6, // Increased padding for tablets
+        small: 1,
+        default: 2,
       }),
     },
     dayContent: {
@@ -231,14 +250,14 @@ export default function CalendarScreen() {
       }),
       backgroundColor: theme.backgroundColor,
       minHeight: responsive.getResponsiveValue({
-        tablet: 50,
-        largeTablet: 60,
+        largeTablet: 65, // Increased for large tablets
+        tablet: 55, // Increased for tablets
         small: 28,
         default: 32,
       }),
       maxHeight: responsive.getResponsiveValue({
-        tablet: 70,
-        largeTablet: 80,
+        largeTablet: 85, // Increased for large tablets
+        tablet: 75, // Increased for tablets
         small: 36,
         default: 40,
       }),
@@ -310,8 +329,24 @@ export default function CalendarScreen() {
       }),
     },
     listSection: {
-      flex: 1,
-      backgroundColor: theme.backgroundColor,
+      ...(isWeb ? {
+        // Web: allow natural expansion with minimum height
+        minHeight: 400,
+        backgroundColor: theme.backgroundColor,
+      } : {
+        // Mobile/Tablet: better flex behavior
+        flex: responsive.getResponsiveValue({
+          largeTablet: 2, // More space for list on large tablets
+          tablet: 1.5, // More space for list on tablets
+          default: 1,
+        }),
+        backgroundColor: theme.backgroundColor,
+        minHeight: responsive.getResponsiveValue({
+          largeTablet: 300, // Minimum height for large tablets
+          tablet: 250, // Minimum height for tablets
+          default: 200,
+        }),
+      }),
     },
     listHeader: {
       flexDirection: 'row',
@@ -342,7 +377,13 @@ export default function CalendarScreen() {
       color: theme.textSecondary,
     },
     listContent: {
-      flex: 1,
+      ...(isWeb ? {
+        // Web: no flex constraints for better scrolling
+        minHeight: 300,
+      } : {
+        // Mobile/Tablet: proper flex behavior
+        flex: 1,
+      }),
     },
     scrollContent: {
       flexGrow: 1,
@@ -374,7 +415,7 @@ export default function CalendarScreen() {
     } as any,
     lastFoodItem: {
       borderBottomWidth: 0,
-      paddingBottom: Platform.OS === 'ios' ? 90 : 70,
+      paddingBottom: 0, // Normal padding - extra padding applied conditionally
       borderBottomLeftRadius: responsive.getResponsiveValue({
         tablet: 16,
         largeTablet: 20,
@@ -431,13 +472,25 @@ export default function CalendarScreen() {
     },
     customHeader: {
       backgroundColor: theme.cardBackground,
-      padding: 16,
-      paddingTop: 50,
+      padding: responsive.getResponsiveValue({
+        largeTablet: 24,
+        tablet: 20,
+        default: 16,
+      }),
+      paddingTop: responsive.getResponsiveValue({
+        largeTablet: 60,
+        tablet: 55,
+        default: 50,
+      }),
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
     },
     headerTitle: {
-      fontSize: 20,
+      fontSize: responsive.getResponsiveValue({
+        largeTablet: 28,
+        tablet: 24,
+        default: 20,
+      }),
       fontWeight: 'bold',
       color: theme.textColor,
       textAlign: 'center',
@@ -541,12 +594,15 @@ export default function CalendarScreen() {
 
   const renderFoodItem = (item: FoodItemWithDetails, index: number) => {
     const isLastItem = index === filteredItems.length - 1;
+    const needsAvoidance = isLastItem && filteredItems.length >= 3; // Apply padding when 3+ items
+    
     return (
       <TouchableOpacity 
         key={item.id} 
         style={[
           styles.foodItem,
-          isLastItem && styles.lastFoodItem
+          isLastItem && styles.lastFoodItem,
+          needsAvoidance && { paddingBottom: Platform.OS === 'ios' ? 120 : 100 }
         ]}
         onPress={() => router.push(`/item/${item.id}`)}
       >

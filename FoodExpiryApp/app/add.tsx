@@ -93,14 +93,19 @@ export default function AddScreen() {
     });
 
     if (!result.canceled) {
-      // Get safe image URI for database storage
-      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-      if (safeImageUri) {
-        setImageUri(safeImageUri);
-        // Refresh saved photos list
-        loadSavedPhotos();
-      } else {
-        Alert.alert('Error', 'Failed to save image. Please try again.');
+      try {
+        // Get safe image URI for database storage
+        const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        if (safeImageUri) {
+          setImageUri(safeImageUri);
+          // Refresh saved photos list
+          loadSavedPhotos();
+        } else {
+          Alert.alert(t('alert.error'), t('image.failedToSave'));
+        }
+      } catch (error) {
+        console.error('Error processing image:', error);
+        Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
     }
   };
@@ -124,14 +129,19 @@ export default function AddScreen() {
     });
 
     if (!result.canceled) {
-      // Get safe image URI for database storage
-      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-      if (safeImageUri) {
-        setImageUri(safeImageUri);
-        // Refresh saved photos list
-        loadSavedPhotos();
-      } else {
-        Alert.alert('Error', 'Failed to save image. Please try again.');
+      try {
+        // Get safe image URI for database storage
+        const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        if (safeImageUri) {
+          setImageUri(safeImageUri);
+          // Refresh saved photos list
+          loadSavedPhotos();
+        } else {
+          Alert.alert(t('alert.error'), t('image.failedToSave'));
+        }
+      } catch (error) {
+        console.error('Error processing image:', error);
+        Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
     }
   };
@@ -177,6 +187,11 @@ export default function AddScreen() {
 
     setIsSaving(true);
     try {
+      // Ensure image is safely stored before saving to database
+      const finalImageUri = imageUri && !imageUri.startsWith('emoji:') 
+        ? await getSafeImageUri(imageUri) 
+        : imageUri;
+
       const item: Omit<FoodItem, 'id'> = {
         name: itemName.trim(),
         quantity: parseInt(quantity) || 1,
@@ -185,7 +200,7 @@ export default function AddScreen() {
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 3,
         notes: notes.trim() || null,
-        image_uri: imageUri,
+        image_uri: finalImageUri,
         created_at: new Date().toISOString().split('T')[0]
       };
 
@@ -389,20 +404,45 @@ export default function AddScreen() {
     modalContent: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: responsive.layout.spacing.container,
-      width: responsive.breakpoints.isTablet ? '80%' : '90%',
-      maxHeight: responsive.breakpoints.isSmall ? '90%' : '80%',
+      padding: responsive.getResponsiveValue({
+        largeTablet: 32,
+        tablet: 24,
+        default: 20,
+      }),
+      width: responsive.getResponsiveValue({
+        largeTablet: '70%',
+        tablet: '80%',
+        default: '90%',
+      }),
+      maxHeight: responsive.getResponsiveValue({
+        largeTablet: '70%',
+        tablet: '75%',
+        default: '80%',
+      }),
+      alignSelf: 'center',
     },
     modalTitle: {
-      fontSize: 18,
+      fontSize: responsive.getResponsiveValue({
+        largeTablet: 22,
+        tablet: 20,
+        default: 18,
+      }),
       fontWeight: 'bold',
       color: theme.textColor,
       textAlign: 'center',
-      marginBottom: 16,
+      marginBottom: responsive.getResponsiveValue({
+        largeTablet: 24,
+        tablet: 20,
+        default: 16,
+      }),
     },
     emojiGrid: {
-      justifyContent: 'flex-start',
-      gap: 8,
+      justifyContent: 'center', // Center the emoji grid
+      gap: responsive.getResponsiveValue({
+        largeTablet: 12,
+        tablet: 10,
+        default: 8,
+      }),
     },
     emojiItem: {
       width: 60,

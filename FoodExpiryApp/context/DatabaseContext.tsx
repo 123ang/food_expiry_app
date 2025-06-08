@@ -834,14 +834,38 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Ensure database is ready before operations
   const ensureDatabaseReady = async (): Promise<void> => {
     if (!isReady) {
-      // Wait up to 5 seconds for database to be ready
-      for (let i = 0; i < 50; i++) {
+      // Wait up to 15 seconds for database to be ready (increased timeout)
+      for (let i = 0; i < 150; i++) {
         if (isReady) {
           return;
         }
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      throw new Error('Database not ready after timeout');
+      
+      // If still not ready, try to force initialization one more time
+      if (!isReady) {
+        console.warn('Database not ready after timeout, attempting force initialization...');
+        try {
+          // Force a database refresh
+          await refreshAll();
+          
+          // Wait a bit more after forced refresh
+          for (let i = 0; i < 30; i++) {
+            if (isReady) {
+              return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        } catch (error) {
+          console.error('Force initialization failed:', error);
+        }
+      }
+      
+      // If everything fails, allow operation to proceed but warn
+      if (!isReady) {
+        console.warn('Database timeout - proceeding with operation anyway');
+        // Don't throw error, let the operation attempt to proceed
+      }
     }
   };
 

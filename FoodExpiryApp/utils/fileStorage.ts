@@ -6,6 +6,9 @@ const IMAGE_BACKUP_KEY = 'image_backup_registry';
 const IMAGE_MIGRATION_KEY = 'image_migration_version';
 const CURRENT_MIGRATION_VERSION = 1;
 
+// Session guard to prevent repeated migrations
+let migrationRunInSession = false;
+
 // Image registry for tracking and backup
 interface ImageRegistryEntry {
   uri: string;
@@ -37,11 +40,20 @@ export const initializeImageStorage = async (): Promise<void> => {
  */
 const performImageMigrationIfNeeded = async (): Promise<void> => {
   try {
+    // Session guard to prevent repeated migrations
+    if (migrationRunInSession) {
+      console.log('Image migration already run in this session, skipping...');
+      return;
+    }
+    
     const currentVersion = await AsyncStorage.getItem(IMAGE_MIGRATION_KEY);
     const versionNumber = currentVersion ? parseInt(currentVersion, 10) : 0;
     
+    console.log(`Current image migration version: ${versionNumber}, required: ${CURRENT_MIGRATION_VERSION}`);
+    
     if (versionNumber < CURRENT_MIGRATION_VERSION) {
       console.log('Performing image migration...');
+      migrationRunInSession = true;
       
       // Backup existing image registry
       await backupImageRegistry();
@@ -50,9 +62,13 @@ const performImageMigrationIfNeeded = async (): Promise<void> => {
       await AsyncStorage.setItem(IMAGE_MIGRATION_KEY, CURRENT_MIGRATION_VERSION.toString());
       
       console.log('Image migration completed');
+    } else {
+      console.log('Image migration not needed');
+      migrationRunInSession = true;
     }
   } catch (error) {
     console.error('Error during image migration:', error);
+    migrationRunInSession = true; // Set guard even on error
   }
 };
 
@@ -61,8 +77,18 @@ const performImageMigrationIfNeeded = async (): Promise<void> => {
  */
 const backupImageRegistry = async (): Promise<void> => {
   try {
-    const images = await getSavedImages();
-    const registry: ImageRegistryEntry[] = images.map(uri => ({
+    // Direct file system access to avoid circular dependency
+    const dirInfo = await FileSystem.getInfoAsync(IMAGES_DIR);
+    if (!dirInfo.exists) {
+      return; // No images directory, nothing to backup
+    }
+    
+    const files = await FileSystem.readDirectoryAsync(IMAGES_DIR);
+    const imageFiles = files
+      .filter(file => file.endsWith('.jpg') || file.endsWith('.png') || file.endsWith('.jpeg'))
+      .map(file => `${IMAGES_DIR}${file}`);
+    
+    const registry: ImageRegistryEntry[] = imageFiles.map(uri => ({
       uri,
       originalName: uri.split('/').pop() || 'unknown',
       createdAt: new Date().toISOString(),
@@ -112,7 +138,11 @@ export const restoreImagesFromBackup = async (): Promise<boolean> => {
  */
 export const saveImageToStorage = async (sourceUri: string): Promise<string | null> => {
   try {
-    await initializeImageStorage();
+    // Ensure directory exists but don't run full initialization to avoid circular calls
+    const dirInfo = await FileSystem.getInfoAsync(IMAGES_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(IMAGES_DIR, { intermediates: true });
+    }
     
     // Generate unique filename with better structure
     const timestamp = Date.now();
@@ -314,16 +344,17 @@ const removeFromImageRegistry = async (uri: string): Promise<void> => {
  */
 export const getSavedImages = async (): Promise<string[]> => {
   try {
-    await initializeImageStorage();
+    // Ensure directory exists but don't run full initialization to avoid circular calls
+    const dirInfo = await FileSystem.getInfoAsync(IMAGES_DIR);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(IMAGES_DIR, { intermediates: true });
+    }
     
     const files = await FileSystem.readDirectoryAsync(IMAGES_DIR);
     const imageFiles = files
       .filter(file => file.endsWith('.jpg') || file.endsWith('.png') || file.endsWith('.jpeg'))
       .map(file => `${IMAGES_DIR}${file}`)
       .sort((a, b) => b.localeCompare(a)); // Sort by newest first
-    
-    // Ensure backup registry is up to date
-    await backupImageRegistry();
     
     return imageFiles;
   } catch (error) {

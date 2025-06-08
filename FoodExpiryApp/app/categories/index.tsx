@@ -138,7 +138,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({ visible, onClose, onSelec
     emojiGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'flex-start',
+      justifyContent: 'center', // Center the emoji grid
       paddingVertical: 8,
       gap: 8,
     },
@@ -209,17 +209,39 @@ interface ThemeSetupModalProps {
   visible: boolean;
   onClose: () => void;
   onApply: (selectedCategories: { name: string; icon: string }[]) => void;
+  existingCategories: Category[];
 }
 
-const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onApply }) => {
+const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onApply, existingCategories }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const categoryThemes = getCategoryThemes(t);
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set(['food'])); // Food expanded by default
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(
-    // Pre-select all food categories by default
-    categoryThemes.find(theme => theme.id === 'food')?.categories.map(cat => `food-${cat.name}`) || []
-  ));
+  
+  // Initialize selected categories based on existing categories
+  const getInitialSelectedCategories = () => {
+    const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+    const selected = new Set<string>();
+    
+    categoryThemes.forEach(themeData => {
+      themeData.categories.forEach(category => {
+        if (existingNames.includes(category.name.toLowerCase())) {
+          selected.add(`${themeData.id}-${category.name}`);
+        }
+      });
+    });
+    
+    return selected;
+  };
+  
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(getInitialSelectedCategories());
+  
+  // Reset selected categories when modal opens to reflect current state
+  useEffect(() => {
+    if (visible) {
+      setSelectedCategories(getInitialSelectedCategories());
+    }
+  }, [visible, existingCategories]);
 
   const toggleTheme = (themeId: string) => {
     const newExpanded = new Set(expandedThemes);
@@ -233,6 +255,12 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
 
   const toggleCategory = (themeId: string, categoryName: string) => {
     const categoryKey = `${themeId}-${categoryName}`;
+    const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+    const isExisting = existingNames.includes(categoryName.toLowerCase());
+    
+    // Don't allow unchecking existing categories
+    if (isExisting) return;
+    
     const newSelected = new Set(selectedCategories);
     if (newSelected.has(categoryKey)) {
       newSelected.delete(categoryKey);
@@ -246,16 +274,24 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
     const themeData = categoryThemes.find(theme => theme.id === themeId);
     if (!themeData) return;
 
+    const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
     const themeCategoryKeys = themeData.categories.map(cat => `${themeId}-${cat.name}`);
-    const allSelected = themeCategoryKeys.every(key => selectedCategories.has(key));
+    
+    // Only consider non-existing categories for toggle
+    const newCategoryKeys = themeCategoryKeys.filter(key => {
+      const categoryName = key.split('-').slice(1).join('-'); // Get category name after theme id
+      return !existingNames.includes(categoryName.toLowerCase());
+    });
+    
+    const allNewSelected = newCategoryKeys.every(key => selectedCategories.has(key));
     
     const newSelected = new Set(selectedCategories);
-    if (allSelected) {
-      // Deselect all categories in this theme
-      themeCategoryKeys.forEach(key => newSelected.delete(key));
+    if (allNewSelected) {
+      // Deselect all new categories in this theme (keep existing ones)
+      newCategoryKeys.forEach(key => newSelected.delete(key));
     } else {
-      // Select all categories in this theme
-      themeCategoryKeys.forEach(key => newSelected.add(key));
+      // Select all new categories in this theme
+      newCategoryKeys.forEach(key => newSelected.add(key));
     }
     setSelectedCategories(newSelected);
   };
@@ -435,6 +471,24 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
       color: theme.textColor,
       flex: 1,
     },
+    categoryItemExisting: {
+      opacity: 0.7,
+      backgroundColor: `${theme.primaryColor}05`,
+    },
+    checkboxExisting: {
+      backgroundColor: theme.primaryColor,
+      borderColor: theme.primaryColor,
+    },
+    categoryNameExisting: {
+      color: theme.textSecondary,
+      fontStyle: 'italic',
+    },
+    existingLabel: {
+      fontSize: 12,
+      color: theme.primaryColor,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
   });
 
   return (
@@ -502,19 +556,24 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
                       {categoryTheme.categories.map((category) => {
                         const categoryKey = `${categoryTheme.id}-${category.name}`;
                         const isSelected = selectedCategories.has(categoryKey);
+                        const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+                        const isExisting = existingNames.includes(category.name.toLowerCase());
                         
                         return (
                           <TouchableOpacity
                             key={categoryKey}
                             style={[
                               styles.categoryItem,
-                              isSelected && styles.categoryItemSelected
+                              isSelected && styles.categoryItemSelected,
+                              isExisting && styles.categoryItemExisting
                             ]}
                             onPress={() => toggleCategory(categoryTheme.id, category.name)}
+                            disabled={isExisting}
                           >
                             <View style={[
                               styles.categoryCheckbox,
-                              isSelected && styles.checkboxSelected
+                              isSelected && styles.checkboxSelected,
+                              isExisting && styles.checkboxExisting
                             ]}>
                               {isSelected && (
                                 <Text style={styles.checkmark}>✓</Text>
@@ -522,7 +581,13 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
                             </View>
                             
                             <Text style={styles.categoryIcon}>{category.icon}</Text>
-                            <Text style={styles.categoryName}>{category.name}</Text>
+                            <Text style={[
+                              styles.categoryName,
+                              isExisting && styles.categoryNameExisting
+                            ]}>{category.name}</Text>
+                            {isExisting && (
+                              <Text style={styles.existingLabel}>{t('themeSetup.added')}</Text>
+                            )}
                           </TouchableOpacity>
                         );
                       })}
@@ -585,13 +650,20 @@ export default function CategoriesScreen() {
 
       await refreshCategories();
       
-      Alert.alert(
-        'Success',
-        `Added ${addedCount} new categories from selected themes!`,
-        [{ text: 'OK' }]
-      );
+      const skippedCount = selectedCategories.length - addedCount;
+      let message = '';
+      
+      if (addedCount > 0 && skippedCount > 0) {
+        message = `Added ${addedCount} new categories. Skipped ${skippedCount} existing categories.`;
+      } else if (addedCount > 0) {
+        message = `Added ${addedCount} new categories from selected themes!`;
+      } else {
+        message = 'All selected categories already exist.';
+      }
+      
+      Alert.alert(t('common.success'), message, [{ text: 'OK' }]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to add theme categories and items');
+              Alert.alert(t('alert.error'), t('alert.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -901,11 +973,12 @@ export default function CategoriesScreen() {
         selectedEmoji={selectedIcon}
       />
 
-      <ThemeSetupModal
-        visible={showThemeSetup}
-        onClose={() => setShowThemeSetup(false)}
-        onApply={handleApplyThemes}
-      />
+              <ThemeSetupModal
+          visible={showThemeSetup}
+          onClose={() => setShowThemeSetup(false)}
+          onApply={handleApplyThemes}
+          existingCategories={categories}
+        />
 
       <BottomNav />
     </View>

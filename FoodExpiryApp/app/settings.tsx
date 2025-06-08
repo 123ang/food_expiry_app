@@ -131,7 +131,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
     emojiGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'flex-start',
+      justifyContent: 'center', // Center the emoji grid
       paddingVertical: 8,
       paddingHorizontal: 8,
       gap: 8,

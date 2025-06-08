@@ -162,7 +162,7 @@ export default function ListScreen() {
       // Refresh the list after deletion
       await loadItems();
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete item');
+      Alert.alert(t('alert.error'), t('alert.deleteFailed'));
     }
   };
 
@@ -198,33 +198,13 @@ export default function ListScreen() {
     }, [dataVersion, isLoading, foodItems?.length, language])
   );
 
-  // Smart detection: Based on actual screen dimensions and list position
+  // Simplified detection: Apply padding when there are enough items to potentially overlap
   const needsButtonAvoidance = (isLastItem: boolean, totalItems: number) => {
     if (!isLastItem || totalItems === 0) return false;
     
-    // Get actual screen dimensions
-    const { height: screenHeight } = Dimensions.get('window');
-    
-    // Calculate actual usable content area
-    const headerHeight = Platform.OS === 'ios' ? 140 : 120; // Header + search + filters
-    const bottomNavHeight = 90; // Bottom navigation height
-    const safeBottomBuffer = 60; // Extra buffer for floating button
-    
-    const usableContentHeight = screenHeight - headerHeight - bottomNavHeight - safeBottomBuffer;
-    
-    // Calculate estimated list content height
-    const itemHeight = 80; // Approximate height per item
-    const estimatedListHeight = totalItems * itemHeight;
-    
-    // Apply padding only when list extends into the danger zone
-    const needsPadding = estimatedListHeight > usableContentHeight;
-    
-    // Debug log for testing (remove in production)
-    if (isLastItem) {
-      console.log(`Screen: ${screenHeight}px, Usable: ${usableContentHeight}px, List: ${estimatedListHeight}px, Needs padding: ${needsPadding}`);
-    }
-    
-    return needsPadding;
+    // Simple threshold: Apply padding when we have 4+ items
+    // This covers most cases where the floating button would interfere
+    return totalItems >= 4;
   };
 
   const styles = StyleSheet.create({

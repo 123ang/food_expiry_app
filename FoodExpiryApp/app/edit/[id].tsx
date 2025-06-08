@@ -26,6 +26,7 @@ import { BottomNav } from '../../components/BottomNav';
 import CategoryIcon from '../../components/CategoryIcon';
 import LocationIcon from '../../components/LocationIcon';
 import { EMOJI_CATEGORIES, CATEGORY_EMOJIS } from '../../constants/emojis';
+import { useResponsive } from '../../hooks/useResponsive';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -35,6 +36,7 @@ export default function EditScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const { foodItems, updateFoodItem, refreshAll, categories, locations } = useDatabase();
+  const responsive = useResponsive();
   
   // Ensure we have a theme before rendering
   if (!theme) {
@@ -465,20 +467,45 @@ export default function EditScreen() {
     modalContent: {
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 20,
-      width: '90%',
-      maxHeight: '80%',
+      padding: responsive.getResponsiveValue({
+        largeTablet: 32,
+        tablet: 24,
+        default: 20,
+      }),
+      width: responsive.getResponsiveValue({
+        largeTablet: '70%',
+        tablet: '80%',
+        default: '90%',
+      }),
+      maxHeight: responsive.getResponsiveValue({
+        largeTablet: '70%',
+        tablet: '75%',
+        default: '80%',
+      }),
+      alignSelf: 'center',
     },
     modalTitle: {
-      fontSize: 18,
+      fontSize: responsive.getResponsiveValue({
+        largeTablet: 22,
+        tablet: 20,
+        default: 18,
+      }),
       fontWeight: 'bold',
       color: theme.textColor,
       textAlign: 'center',
-      marginBottom: 16,
+      marginBottom: responsive.getResponsiveValue({
+        largeTablet: 24,
+        tablet: 20,
+        default: 16,
+      }),
     },
     emojiGrid: {
-      justifyContent: 'flex-start',
-      gap: 8,
+      justifyContent: 'center', // Center the emoji grid
+      gap: responsive.getResponsiveValue({
+        largeTablet: 12,
+        tablet: 10,
+        default: 8,
+      }),
     },
     emojiItem: {
       width: 60,

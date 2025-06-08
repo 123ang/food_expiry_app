@@ -83,7 +83,7 @@ export default function NotificationsScreen() {
   // Send test notification
   const sendTestNotification = async () => {
     if (permissionStatus !== 'granted') {
-      Alert.alert('Error', t('notification.notEnabledError'));
+      Alert.alert(t('alert.error'), t('notification.notEnabledError'));
       return;
     }
 

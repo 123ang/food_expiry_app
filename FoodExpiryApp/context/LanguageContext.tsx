@@ -90,6 +90,7 @@ const translations: Record<Language, Record<string, string>> = {
     'form.photo': 'Photo (Optional)',
     'form.save': 'Save',
     'form.cancel': 'Cancel',
+    'form.fillAllFields': 'Please fill in all fields',
     'form.edit': 'Edit Food Item',
     'form.new': 'New Food Item',
     
@@ -115,6 +116,8 @@ const translations: Record<Language, Record<string, string>> = {
     'image.takePhoto': 'Take Photo',
     'image.chooseFromGallery': 'Choose from Gallery',
     'image.useFoodEmoji': 'Use Food Emoji',
+    'image.failedToSave': 'Failed to save image. Please try again.',
+    'image.failedToProcess': 'Failed to process image. Please try again.',
     
     // Actions
     'action.edit': 'Edit',
@@ -131,6 +134,9 @@ const translations: Record<Language, Record<string, string>> = {
     'alert.saveFailed': 'Failed to save food item',
     'alert.deleteFailed': 'Failed to delete item',
     'alert.loadFailed': 'Failed to load data',
+    'alert.unexpectedError': 'An unexpected error occurred',
+    'alert.noItemsSelected': 'No Items Selected',
+    'alert.selectItemsFirst': 'Please select items to clear from your inventory.',
     
     // Common
     'common.cancel': 'Cancel',
@@ -351,6 +357,7 @@ const translations: Record<Language, Record<string, string>> = {
     'themeSetup.categories': 'categories',
     'themeSetup.cancel': 'Cancel',
     'themeSetup.apply': 'Apply Themes',
+    'themeSetup.added': 'Added',
     
     // Theme Names
     'theme.food': 'Food & Beverages',
@@ -545,6 +552,7 @@ const translations: Record<Language, Record<string, string>> = {
     'form.photo': '照片（可选）',
     'form.save': '保存',
     'form.cancel': '取消',
+    'form.fillAllFields': '请填写所有字段',
     'form.edit': '编辑食品物品',
     'form.new': '新食品物品',
     
@@ -570,6 +578,8 @@ const translations: Record<Language, Record<string, string>> = {
     'image.takePhoto': '拍照',
     'image.chooseFromGallery': '从相册选择',
     'image.useFoodEmoji': '使用食物表情',
+    'image.failedToSave': '保存图片失败。请重试。',
+    'image.failedToProcess': '处理图片失败。请重试。',
     
     // Actions
     'action.edit': '编辑',
@@ -586,6 +596,9 @@ const translations: Record<Language, Record<string, string>> = {
     'alert.saveFailed': '保存食品物品失败',
     'alert.deleteFailed': '删除食品失败',
     'alert.loadFailed': '加载数据失败',
+    'alert.unexpectedError': '发生意外错误',
+    'alert.noItemsSelected': '未选择物品',
+    'alert.selectItemsFirst': '请选择要从库存中清除的物品。',
     
     // Common
     'common.cancel': '取消',
@@ -806,6 +819,7 @@ const translations: Record<Language, Record<string, string>> = {
     'themeSetup.categories': '分类',
     'themeSetup.cancel': '取消',
     'themeSetup.apply': '应用主题',
+    'themeSetup.added': '已添加',
     
     // Theme Names
     'theme.food': '食品饮料',
@@ -1003,6 +1017,7 @@ const translations: Record<Language, Record<string, string>> = {
     'form.photo': '写真（オプション）',
     'form.save': '保存',
     'form.cancel': 'キャンセル',
+    'form.fillAllFields': 'すべてのフィールドを入力してください',
     'form.edit': '食品アイテムを編集',
     'form.new': '新しい食品アイテム',
     
@@ -1028,6 +1043,8 @@ const translations: Record<Language, Record<string, string>> = {
     'image.takePhoto': '写真を撮る',
     'image.chooseFromGallery': 'ギャラリーから選択',
     'image.useFoodEmoji': '食べ物絵文字を使用',
+    'image.failedToSave': '画像の保存に失敗しました。再試行してください。',
+    'image.failedToProcess': '画像の処理に失敗しました。再試行してください。',
     
     // Actions
     'action.edit': '編集',
@@ -1044,6 +1061,9 @@ const translations: Record<Language, Record<string, string>> = {
     'alert.saveFailed': '食品アイテムの保存に失敗しました',
     'alert.deleteFailed': 'アイテムの削除に失敗しました',
     'alert.loadFailed': 'データの読み込みに失敗しました',
+    'alert.unexpectedError': '予期しないエラーが発生しました',
+    'alert.noItemsSelected': 'アイテムが選択されていません',
+    'alert.selectItemsFirst': '在庫からクリアするアイテムを選択してください。',
     
     // Common
     'common.cancel': 'キャンセル',
@@ -1264,6 +1284,7 @@ const translations: Record<Language, Record<string, string>> = {
     'themeSetup.categories': 'カテゴリ',
     'themeSetup.cancel': 'キャンセル',
     'themeSetup.apply': 'テーマを適用',
+    'themeSetup.added': '追加済み',
     
     // Theme Names
     'theme.food': '食品・飲料',

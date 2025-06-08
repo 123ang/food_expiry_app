@@ -38,7 +38,7 @@ export default function ClearItemsScreen() {
 
   const handleClearSelected = async () => {
     if (selectedItems.size === 0) {
-      Alert.alert('No Items Selected', 'Please select items to clear from your inventory.');
+      Alert.alert(t('alert.noItemsSelected'), t('alert.selectItemsFirst'));
       return;
     }
 

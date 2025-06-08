@@ -28,7 +28,7 @@ export default function LoginScreen() {
       // Navigate to main screen
       router.replace('/');
     } else {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('alert.error'), t('form.fillAllFields'));
     }
   };
 
