@@ -94,19 +94,25 @@ export default function AddScreen() {
 
     if (!result.canceled) {
       try {
+        console.log('Processing picked gallery image:', result.assets[0].uri);
         // Get safe image URI for database storage
         const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        console.log('Safe image URI from gallery:', safeImageUri);
         if (safeImageUri) {
           setImageUri(safeImageUri);
+          console.log('Gallery image URI set successfully');
           // Refresh saved photos list
           loadSavedPhotos();
         } else {
+          console.error('getSafeImageUri returned null for gallery image');
           Alert.alert(t('alert.error'), t('image.failedToSave'));
         }
       } catch (error) {
-        console.error('Error processing image:', error);
+        console.error('Error processing gallery image:', error);
         Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
+    } else {
+      console.log('Gallery picker was canceled');
     }
   };
 
@@ -130,19 +136,25 @@ export default function AddScreen() {
 
     if (!result.canceled) {
       try {
+        console.log('Processing camera image:', result.assets[0].uri);
         // Get safe image URI for database storage
         const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        console.log('Safe image URI from camera:', safeImageUri);
         if (safeImageUri) {
           setImageUri(safeImageUri);
+          console.log('Camera image URI set successfully');
           // Refresh saved photos list
           loadSavedPhotos();
         } else {
+          console.error('getSafeImageUri returned null for camera image');
           Alert.alert(t('alert.error'), t('image.failedToSave'));
         }
       } catch (error) {
-        console.error('Error processing image:', error);
+        console.error('Error processing camera image:', error);
         Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
+    } else {
+      console.log('Camera picker was canceled');
     }
   };
 
@@ -163,11 +175,14 @@ export default function AddScreen() {
   };
 
   const selectEmoji = (emoji: string) => {
+    console.log('Selecting emoji:', emoji);
+    console.log('Setting imageUri to:', `emoji:${emoji}`);
     setImageUri(`emoji:${emoji}`);
     setShowEmojiModal(false);
   };
 
   const selectSavedPhoto = (uri: string) => {
+    console.log('Selecting saved photo:', uri);
     setImageUri(uri);
     setShowPhotosModal(false);
   };
@@ -187,10 +202,8 @@ export default function AddScreen() {
 
     setIsSaving(true);
     try {
-      // Ensure image is safely stored before saving to database
-      const finalImageUri = imageUri && !imageUri.startsWith('emoji:') 
-        ? await getSafeImageUri(imageUri) 
-        : imageUri;
+      // Image is already processed by picker functions, just use it directly
+      const finalImageUri = imageUri;
 
       const item: Omit<FoodItem, 'id'> = {
         name: itemName.trim(),
@@ -437,22 +450,28 @@ export default function AddScreen() {
       }),
     },
     emojiGrid: {
-      justifyContent: 'center', // Center the emoji grid
-      gap: responsive.getResponsiveValue({
-        largeTablet: 12,
-        tablet: 10,
-        default: 8,
-      }),
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+    },
+    emojiContainer: {
+      flex: 1,
+      maxHeight: 400,
+      paddingHorizontal: 16,
+    },
+    emojiListContent: {
+      padding: 16,
     },
     emojiItem: {
-      width: 60,
-      height: 60,
+      flex: 1,
+      aspectRatio: 1,
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: theme.backgroundColor,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: theme.borderColor,
+      margin: 4,
+      maxWidth: 60,
     },
     emojiItemText: {
       fontSize: 24,
@@ -570,13 +589,17 @@ export default function AddScreen() {
             <View style={styles.imageContainer}>
               {imageUri ? (
                 <>
-                  {imageUri.startsWith('emoji:') ? (
-                    <View style={styles.emojiPreview}>
-                      <Text style={styles.emojiText}>{imageUri.replace('emoji:', '')}</Text>
-                    </View>
-                  ) : (
-                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                  )}
+                  {(() => {
+                    console.log('Current imageUri:', imageUri);
+                    console.log('Is emoji?', imageUri.startsWith('emoji:'));
+                    return imageUri.startsWith('emoji:') ? (
+                      <View style={styles.emojiPreview}>
+                        <Text style={styles.emojiText}>{imageUri.replace('emoji:', '')}</Text>
+                      </View>
+                    ) : (
+                      <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                    );
+                  })()}
                   <View style={styles.imageButtons}>
                     <TouchableOpacity 
                       style={styles.imageButton}
@@ -706,7 +729,7 @@ export default function AddScreen() {
             <Text style={styles.modalTitle}>{t('image.selectEmoji')}</Text>
             <FlatList
               data={CATEGORY_EMOJIS}
-              numColumns={6}
+              numColumns={5}
               keyExtractor={(item, index) => index.toString()}
               columnWrapperStyle={styles.emojiGrid}
               renderItem={({ item }) => (
@@ -717,6 +740,8 @@ export default function AddScreen() {
                   <Text style={styles.emojiItemText}>{item.emoji}</Text>
                 </TouchableOpacity>
               )}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.emojiListContent}
             />
             <TouchableOpacity
               style={styles.closeButton}

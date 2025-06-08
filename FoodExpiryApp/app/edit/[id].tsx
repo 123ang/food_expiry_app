@@ -123,11 +123,26 @@ export default function EditScreen() {
     });
 
     if (!result.canceled) {
-      // Use bulletproof image storage
-      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-      setImageUri(safeImageUri);
-      // Refresh saved photos list
-      loadSavedPhotos();
+      try {
+        console.log('Processing picked gallery image (edit):', result.assets[0].uri);
+        // Use bulletproof image storage
+        const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        console.log('Safe image URI from gallery (edit):', safeImageUri);
+        if (safeImageUri) {
+          setImageUri(safeImageUri);
+          console.log('Gallery image URI set successfully (edit)');
+          // Refresh saved photos list
+          loadSavedPhotos();
+        } else {
+          console.error('getSafeImageUri returned null for gallery image (edit)');
+          Alert.alert(t('alert.error'), t('image.failedToSave'));
+        }
+      } catch (error) {
+        console.error('Error processing gallery image (edit):', error);
+        Alert.alert(t('alert.error'), t('image.failedToProcess'));
+      }
+    } else {
+      console.log('Gallery picker was canceled (edit)');
     }
   };
 
@@ -149,11 +164,26 @@ export default function EditScreen() {
     });
 
     if (!result.canceled) {
-      // Use bulletproof image storage
-      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-      setImageUri(safeImageUri);
-      // Refresh saved photos list
-      loadSavedPhotos();
+      try {
+        console.log('Processing camera image (edit):', result.assets[0].uri);
+        // Use bulletproof image storage
+        const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        console.log('Safe image URI from camera (edit):', safeImageUri);
+        if (safeImageUri) {
+          setImageUri(safeImageUri);
+          console.log('Camera image URI set successfully (edit)');
+          // Refresh saved photos list
+          loadSavedPhotos();
+        } else {
+          console.error('getSafeImageUri returned null for camera image (edit)');
+          Alert.alert(t('alert.error'), t('image.failedToSave'));
+        }
+      } catch (error) {
+        console.error('Error processing camera image (edit):', error);
+        Alert.alert(t('alert.error'), t('image.failedToProcess'));
+      }
+    } else {
+      console.log('Camera picker was canceled (edit)');
     }
   };
 
@@ -174,11 +204,14 @@ export default function EditScreen() {
   };
 
   const selectEmoji = (emoji: string) => {
+    console.log('Selecting emoji:', emoji);
+    console.log('Setting imageUri to:', `emoji:${emoji}`);
     setImageUri(`emoji:${emoji}`);
     setShowEmojiModal(false);
   };
 
   const selectSavedPhoto = (uri: string) => {
+    console.log('Selecting saved photo:', uri);
     setImageUri(uri);
     setShowPhotosModal(false);
   };
@@ -201,56 +234,27 @@ export default function EditScreen() {
     }
 
     setIsSaving(true);
-    
-    // Retry function for database operations
-    const retryOperation = async (operation: () => Promise<void>, maxRetries = 3): Promise<void> => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          await operation();
-          return; // Success
-        } catch (error) {
-          console.log(`Attempt ${attempt} failed:`, error);
-          
-          if (attempt === maxRetries) {
-            throw error; // Last attempt failed
-          }
-          
-          // Wait before retry, with exponential backoff
-          const delay = attempt * 500;
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    };
 
     try {
-      // Ensure image is safely stored before saving to database
-      const finalImageUri = imageUri && !imageUri.startsWith('emoji:') 
-        ? await getSafeImageUri(imageUri) 
-        : imageUri;
+      // Image is already processed by picker functions, just use it directly
+      const finalImageUri = imageUri;
 
-      // Update the food item with retry logic
-      await retryOperation(async () => {
-        await updateFoodItem({
-          id: Number(id),
-          name: itemName.trim(),
-          quantity: parseInt(quantity),
-          category_id: selectedCategory,
-          location_id: selectedLocation,
-          expiry_date: expiryDate.toISOString().split('T')[0],
-          reminder_days: parseInt(reminderDays) || 0,
-          notes: notes.trim(),
-          image_uri: finalImageUri,
-          created_at: getCurrentDate(),
-        });
+      // Update the food item directly
+      await updateFoodItem({
+        id: Number(id),
+        name: itemName.trim(),
+        quantity: parseInt(quantity),
+        category_id: selectedCategory,
+        location_id: selectedLocation,
+        expiry_date: expiryDate.toISOString().split('T')[0],
+        reminder_days: parseInt(reminderDays) || 0,
+        notes: notes.trim(),
+        image_uri: finalImageUri,
+        created_at: getCurrentDate(),
       });
       
-      // Wait before refresh
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Refresh data with retry logic
-      await retryOperation(async () => {
-        await refreshAll();
-      });
+      // Refresh data
+      await refreshAll();
       
       // Navigate back
       router.back();
@@ -320,18 +324,17 @@ export default function EditScreen() {
     optionsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 12,
+      gap: responsive.layout.spacing.grid,
       marginBottom: 24,
     },
     optionCard: {
-      width: '23%', // 4 columns max (100% / 4 = 25%, minus gaps = ~23%)
+      width: responsive.getGridItemWidth(Math.min(responsive.layout.gridColumns.categories, 4), responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
       borderRadius: 8,
-      padding: 16,
+      padding: responsive.layout.spacing.card,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
-      minWidth: 70, // Ensure minimum readable width
     },
     optionCardSelected: {
       borderColor: theme.primaryColor,
@@ -500,22 +503,28 @@ export default function EditScreen() {
       }),
     },
     emojiGrid: {
-      justifyContent: 'center', // Center the emoji grid
-      gap: responsive.getResponsiveValue({
-        largeTablet: 12,
-        tablet: 10,
-        default: 8,
-      }),
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+    },
+    emojiContainer: {
+      flex: 1,
+      maxHeight: 400,
+      paddingHorizontal: 16,
+    },
+    emojiListContent: {
+      padding: 16,
     },
     emojiItem: {
-      width: 60,
-      height: 60,
+      flex: 1,
+      aspectRatio: 1,
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: theme.backgroundColor,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: theme.borderColor,
+      margin: 4,
+      maxWidth: 60,
     },
     emojiItemText: {
       fontSize: 24,
@@ -806,7 +815,7 @@ export default function EditScreen() {
             <Text style={styles.modalTitle}>{t('image.selectEmoji')}</Text>
             <FlatList
               data={CATEGORY_EMOJIS}
-              numColumns={6}
+              numColumns={5}
               keyExtractor={(item, index) => index.toString()}
               columnWrapperStyle={styles.emojiGrid}
               renderItem={({ item }) => (
@@ -817,6 +826,8 @@ export default function EditScreen() {
                   <Text style={styles.emojiItemText}>{item.emoji}</Text>
                 </TouchableOpacity>
               )}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.emojiListContent}
             />
             <TouchableOpacity
               style={styles.closeButton}
