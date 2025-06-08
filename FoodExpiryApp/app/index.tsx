@@ -331,11 +331,10 @@ export default function DashboardScreen() {
         largeTablet: 40,
         default: 24,
       }),
-      gap: responsive.layout.spacing.grid,
-      justifyContent: 'space-between',
+      justifyContent: 'space-around', // Even spacing for 3 items
     },
     statCard: {
-      width: '48%',
+      width: '30%', // 3 cards per row - slightly smaller to ensure fit
       backgroundColor: theme.cardBackground,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,

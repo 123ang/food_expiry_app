@@ -195,6 +195,11 @@ export default function ListScreen() {
     }, [dataVersion, isLoading, foodItems?.length, language])
   );
 
+  // Check if last item needs extra margin to avoid plus button overlap
+  const needsButtonAvoidance = (isLastItem: boolean) => {
+    return isLastItem && filteredItems && filteredItems.length > 0;
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -283,9 +288,17 @@ export default function ListScreen() {
     },
     lastFoodItem: {
       borderBottomWidth: 0,
-      paddingBottom: Platform.OS === 'ios' ? 90 : 70,
-      borderBottomLeftRadius: 12,
-      borderBottomRightRadius: 12,
+      paddingBottom: 0, // No bottom padding - connects directly to navigation
+      borderBottomLeftRadius: 0, // Remove bottom radius for seamless connection
+      borderBottomRightRadius: 0, // Remove bottom radius for seamless connection
+    },
+    buttonAvoidanceItem: {
+      paddingBottom: responsive.getResponsiveValue({
+        small: 70,        // Smaller phones (like compact Android)
+        default: 90,      // Default phones (like your Vivo)
+        tablet: 100,      // Tablets need more space
+        largeTablet: 110, // Large tablets need most space
+      }),
     },
     foodImage: {
       width: 60,
@@ -392,12 +405,15 @@ export default function ListScreen() {
 
     return filteredItems.map((item, index) => {
       const isLastItem = index === filteredItems.length - 1;
+      const needsAvoidance = needsButtonAvoidance(isLastItem);
+      
       return (
         <TouchableOpacity
           key={item.id}
           style={[
             styles.foodItem,
-            isLastItem && styles.lastFoodItem
+            isLastItem && styles.lastFoodItem,
+            needsAvoidance && styles.buttonAvoidanceItem
           ]}
           onPress={() => router.push(`/item/${item.id}`)}
         >
@@ -538,6 +554,9 @@ export default function ListScreen() {
 
       <ScrollView 
         style={styles.content}
+        contentContainerStyle={{
+          paddingBottom: 0, // Remove gap - list connects directly to navigation
+        }}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
