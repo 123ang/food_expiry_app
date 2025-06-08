@@ -264,10 +264,33 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const loadStartTime = Date.now();
         
         // Load essential data first (categories and locations) in parallel
-        const [categoriesData, locationsData] = await Promise.all([
-          CategoryRepository.getAll(),
-          LocationRepository.getAll()
-        ]);
+        // Add fallback data if database fails
+        let categoriesData: Category[] = [];
+        let locationsData: Location[] = [];
+        
+        try {
+          categoriesData = await CategoryRepository.getAll();
+        } catch (error) {
+          console.warn('Categories failed, using defaults:', error);
+          categoriesData = [
+            { id: 1, name: 'Fruits', icon: 'apple' },
+            { id: 2, name: 'Vegetables', icon: 'leaf' },
+            { id: 3, name: 'Dairy', icon: 'cheese' },
+            { id: 4, name: 'Meat', icon: 'drumstick-bite' }
+          ];
+        }
+        
+        try {
+          locationsData = await LocationRepository.getAll();
+        } catch (error) {
+          console.warn('Locations failed, using defaults:', error);
+          locationsData = [
+            { id: 1, name: 'Refrigerator', icon: 'snowflake' },
+            { id: 2, name: 'Freezer', icon: 'ice-cube' },
+            { id: 3, name: 'Pantry', icon: 'box' },
+            { id: 4, name: 'Counter', icon: 'home' }
+          ];
+        }
         
         // Set categories and locations immediately for faster UI rendering
         setCategories(categoriesData);
@@ -277,8 +300,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setCacheEntry(categoriesCache, categoriesData);
         setCacheEntry(locationsCache, locationsData);
         
-        // Then load food items
-        const foodItemsData = await FoodItemRepository.getAllWithDetails();
+        // Then load food items with fallback
+        let foodItemsData: FoodItemWithDetails[] = [];
+        try {
+          foodItemsData = await FoodItemRepository.getAllWithDetails();
+        } catch (error) {
+          console.warn('Food items failed, using empty array:', error);
+          foodItemsData = [];
+        }
         setFoodItems(foodItemsData);
         setCacheEntry(foodItemsCache, foodItemsData);
         

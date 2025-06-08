@@ -5,7 +5,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Database connection helper with retry logic and fallback support
 const getDatabaseSafely = async (): Promise<any> => {
   try {
-    return await getDatabase();
+    const db = await getDatabase();
+    // Verify the database connection is still valid
+    if (db && typeof db.getAllAsync === 'function') {
+      return db;
+    } else {
+      console.warn('Database connection invalid, attempting reconnection...');
+      // Try to reconnect
+      const newDb = await getDatabase();
+      return newDb;
+    }
   } catch (error) {
     console.error('Failed to get database, falling back to storage:', error);
     return null;
