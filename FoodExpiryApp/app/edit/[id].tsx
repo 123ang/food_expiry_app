@@ -589,7 +589,12 @@ export default function EditScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} scrollEnabled={!isSaving}>
+        <ScrollView 
+          style={styles.content} 
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!isSaving}
+        >
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('addItem.itemName')}</Text>
             <TextInput

@@ -330,7 +330,11 @@ export default function LocationDetailScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.statsCard}>
           <View style={[styles.statsIcon, { backgroundColor: `${locationColor}20` }]}>
             <LocationIcon iconName={location.icon} size={24} />

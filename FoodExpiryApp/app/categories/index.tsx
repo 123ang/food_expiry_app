@@ -816,7 +816,11 @@ export default function CategoriesScreen() {
         <View style={styles.headerSpacer} />
       </View>
       
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Theme Setup Button */}
         <TouchableOpacity 
           style={styles.themeSetupButton} 

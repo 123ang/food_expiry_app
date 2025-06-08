@@ -182,7 +182,6 @@ export default function ListScreen() {
     container: {
       flex: 1,
       backgroundColor: colors.backgroundColor,
-      paddingBottom: Platform.OS === 'ios' ? 90 : 70, // Space for bottom navigation
     },
     customHeader: {
       backgroundColor: colors.cardBackground,
@@ -190,6 +189,8 @@ export default function ListScreen() {
       paddingTop: 50,
       borderBottomWidth: 1,
       borderBottomColor: colors.borderColor,
+      borderTopLeftRadius: 12,
+      borderTopRightRadius: 12,
     },
     headerTitle: {
       fontSize: 20,
@@ -262,6 +263,12 @@ export default function ListScreen() {
       borderBottomWidth: 1,
       borderBottomColor: colors.borderColor,
       alignItems: 'center',
+    },
+    lastFoodItem: {
+      borderBottomWidth: 0,
+      paddingBottom: Platform.OS === 'ios' ? 90 : 70,
+      borderBottomLeftRadius: 12,
+      borderBottomRightRadius: 12,
     },
     foodImage: {
       width: 60,
@@ -364,12 +371,17 @@ export default function ListScreen() {
       );
     }
 
-    return filteredItems.map((item) => (
-      <TouchableOpacity
-        key={item.id}
-        style={styles.foodItem}
-        onPress={() => router.push(`/item/${item.id}`)}
-      >
+    return filteredItems.map((item, index) => {
+      const isLastItem = index === filteredItems.length - 1;
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={[
+            styles.foodItem,
+            isLastItem && styles.lastFoodItem
+          ]}
+          onPress={() => router.push(`/item/${item.id}`)}
+        >
         {item.image_uri ? (
           item.image_uri.startsWith('emoji:') ? (
             <View style={[styles.foodImage, { backgroundColor: `${colors.primaryColor}10`, justifyContent: 'center', alignItems: 'center' }]}>
@@ -433,7 +445,8 @@ export default function ListScreen() {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
-    ));
+      );
+    });
   };
 
   return (

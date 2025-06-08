@@ -338,7 +338,11 @@ export default function CategoryDetailScreen() {
         </View>
       </View>
       
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.statsCard}>
           <View style={[styles.statsIcon, { backgroundColor: `${category?.color || theme.primaryColor}20` }]}>
             <CategoryIcon iconName={category?.icon} size={24} />

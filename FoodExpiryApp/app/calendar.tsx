@@ -80,7 +80,6 @@ export default function CalendarScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
-      paddingBottom: Platform.OS === 'ios' ? 90 : 70, // Space for bottom navigation
       ...(isWeb && {
         maxWidth: responsive.getResponsiveValue({
           largeTablet: 1200,
@@ -118,12 +117,12 @@ export default function CalendarScreen() {
         largeTablet: 32,
         default: 16,
       }),
-      marginBottom: responsive.getResponsiveValue({
+      borderTopLeftRadius: responsive.getResponsiveValue({
         tablet: 16,
         largeTablet: 20,
-        default: 8,
+        default: 12,
       }),
-      borderRadius: responsive.getResponsiveValue({
+      borderTopRightRadius: responsive.getResponsiveValue({
         tablet: 16,
         largeTablet: 20,
         default: 12,
@@ -313,7 +312,6 @@ export default function CalendarScreen() {
     listSection: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
-      marginTop: 8,
     },
     listHeader: {
       flexDirection: 'row',
@@ -321,11 +319,8 @@ export default function CalendarScreen() {
       alignItems: 'center',
       padding: 16,
       backgroundColor: theme.cardBackground,
-      borderTopWidth: 1,
       borderBottomWidth: 1,
       borderColor: theme.borderColor,
-      borderRadius: 12,
-      marginBottom: 8,
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
@@ -377,6 +372,20 @@ export default function CalendarScreen() {
         borderWidth: 1,
       }),
     } as any,
+    lastFoodItem: {
+      borderBottomWidth: 0,
+      paddingBottom: Platform.OS === 'ios' ? 90 : 70,
+      borderBottomLeftRadius: responsive.getResponsiveValue({
+        tablet: 16,
+        largeTablet: 20,
+        default: 12,
+      }),
+      borderBottomRightRadius: responsive.getResponsiveValue({
+        tablet: 16,
+        largeTablet: 20,
+        default: 12,
+      }),
+    },
     foodImage: {
       width: 50,
       height: 50,
@@ -530,12 +539,17 @@ export default function CalendarScreen() {
     );
   };
 
-  const renderFoodItem = (item: FoodItemWithDetails) => (
-    <TouchableOpacity 
-      key={item.id} 
-      style={styles.foodItem}
-      onPress={() => router.push(`/item/${item.id}`)}
-    >
+  const renderFoodItem = (item: FoodItemWithDetails, index: number) => {
+    const isLastItem = index === filteredItems.length - 1;
+    return (
+      <TouchableOpacity 
+        key={item.id} 
+        style={[
+          styles.foodItem,
+          isLastItem && styles.lastFoodItem
+        ]}
+        onPress={() => router.push(`/item/${item.id}`)}
+      >
       {item.image_uri ? (
         <Image 
           source={{ uri: item.image_uri }} 
@@ -584,7 +598,8 @@ export default function CalendarScreen() {
         </View>
       </View>
     </TouchableOpacity>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -674,7 +689,7 @@ export default function CalendarScreen() {
               </Text>
             </View>
           ) : (
-            filteredItems.map(renderFoodItem)
+            filteredItems.map((item, index) => renderFoodItem(item, index))
           )}
         </ScrollView>
       </View>

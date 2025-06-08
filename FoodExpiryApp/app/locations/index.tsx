@@ -335,7 +335,11 @@ export default function LocationsScreen() {
         </View>
       </View>
       
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}

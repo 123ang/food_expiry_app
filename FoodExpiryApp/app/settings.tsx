@@ -245,7 +245,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 100, // Space for bottom navigation
+    paddingBottom: 13, // Reduced padding for better scrolling
   },
   section: {
     backgroundColor: theme.cardBackground,
@@ -254,6 +254,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: theme.borderColor,
+    alignSelf: 'center',
   },
   settingItem: {
     flexDirection: 'row',
@@ -1561,8 +1562,30 @@ export default function SettingsScreen() {
           <Text style={styles.headerTitle}>{t('header.settings')}</Text>
         </View>
         
-        <ScrollView style={styles.content}>
-          <View style={styles.section}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={{ 
+            paddingBottom: responsive.getResponsiveValue({
+              small: 50,      // Smaller screens get less padding
+              tablet: 70,     // Tablets get medium padding  
+              largeTablet: 80, // Large tablets get more padding
+              default: 60     // Default for most phones
+            }),
+            alignItems: 'center',
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[
+            styles.section,
+            {
+              width: responsive.getResponsiveValue({
+                small: '95%',        // Almost full width on small screens
+                tablet: '80%',       // 80% width on tablets
+                largeTablet: '70%',  // 70% width on large tablets
+                default: '90%'       // 90% width on default phones
+              })
+            }
+          ]}>
             {settings.map((item, index) => renderSettingItem(item, index, settings.length))}
           </View>
         </ScrollView>

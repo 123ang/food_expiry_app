@@ -14,6 +14,11 @@ export function BottomNav() {
   const { t } = useLanguage();
 
   const handleNavigation = (path: string) => {
+    // Prevent navigation to the same route we're already on
+    if (pathname === path) {
+      return;
+    }
+
     if (path === '/') {
       // Special handling for home navigation
       if (pathname === '/') {

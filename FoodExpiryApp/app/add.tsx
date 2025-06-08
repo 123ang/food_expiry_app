@@ -193,8 +193,11 @@ export default function AddScreen() {
 
       const id = await createFoodItem(item);
 
-      // Navigate back to home
-      router.push('/');
+      // Refresh all data to ensure lists are updated
+      await refreshAll();
+
+      // Navigate back to previous page instead of always going to home
+      router.back();
     } catch (error) {
       console.error('Error creating food item:', error);
       Alert.alert(
@@ -496,7 +499,11 @@ export default function AddScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('addItem.itemName')}</Text>
             <TextInput

@@ -43,6 +43,8 @@ export default function DashboardScreen() {
     updateFoodItem,
     deleteFoodItem,
     refreshAll,
+    refreshCategories,
+    refreshLocations,
     isDataAvailable,
   } = useDatabase();
   
@@ -68,12 +70,28 @@ export default function DashboardScreen() {
   useFocusEffect(
     React.useCallback(() => {
       const loadData = async () => {
-        // Check if data is already available from cache
-        if (isDataAvailable()) {
+        // Check if essential data is already available from cache or state
+        const hasCategories = categories && categories.length > 0;
+        const hasLocations = locations && locations.length > 0;
+        const hasDashboardCounts = dashboardCounts && dashboardCounts.total >= 0;
+        
+        // If we have cached data, show it immediately without loading state
+        if (hasCategories && hasLocations && hasDashboardCounts) {
           setIsLoading(false);
+          
+          // Optionally refresh in background if data is stale (don't show loading)
+          setTimeout(async () => {
+            try {
+              await refreshAll();
+            } catch (error) {
+              // Silent error handling for production
+            }
+          }, 50);
+          
           return;
         }
         
+        // Only show loading if we don't have essential data
         setIsLoading(true);
         try {
           await refreshAll();
@@ -84,7 +102,7 @@ export default function DashboardScreen() {
         }
       };
       loadData();
-    }, [isDataAvailable, refreshAll, language])
+    }, [categories, locations, dashboardCounts, refreshAll, language])
   );
 
   // Handle language changes
@@ -95,9 +113,12 @@ export default function DashboardScreen() {
         
         const refreshData = async () => {
           try {
-            // Force clear cache and refresh all data when language changes
-            // This ensures categories and locations are updated with new language
-            await refreshAll();
+            // Only refresh categories and locations for language changes
+            // Dashboard counts and food items don't need refresh
+            await Promise.all([
+              refreshCategories(),
+              refreshLocations()
+            ]);
           } catch (error) {
             // Silent error handling for production
           }
@@ -108,7 +129,7 @@ export default function DashboardScreen() {
           refreshData();
         }, 200);
       }
-    }, [language, refreshAll])
+    }, [language, refreshCategories, refreshLocations])
   );
 
   // Calculate location item counts
@@ -241,7 +262,6 @@ export default function DashboardScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
-      paddingBottom: Platform.OS === 'ios' ? 90 : 70, // Space for bottom navigation
     },
     content: {
       flex: 1,
@@ -304,19 +324,18 @@ export default function DashboardScreen() {
       alignItems: 'center',
     },
     quickStats: {
-      flexDirection: responsive.breakpoints.isSmall ? 'column' : 'row',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
       marginBottom: responsive.getResponsiveValue({
         tablet: 32,
         largeTablet: 40,
         default: 24,
       }),
       gap: responsive.layout.spacing.grid,
-      // For tablets, ensure stats take full width efficiently
-      justifyContent: responsive.breakpoints.isTablet ? 'space-between' : 'flex-start',
+      justifyContent: 'space-between',
     },
     statCard: {
-      flex: responsive.breakpoints.isSmall ? undefined : 1,
-      width: responsive.breakpoints.isSmall ? '100%' : undefined,
+      width: '48%',
       backgroundColor: theme.cardBackground,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
@@ -378,11 +397,10 @@ export default function DashboardScreen() {
         largeTablet: 40,
         default: 24,
       }),
-      // For tablets, better justify content
-      justifyContent: responsive.breakpoints.isTablet ? 'flex-start' : 'space-between',
+      justifyContent: 'space-between',
     },
     locationCard: {
-      width: responsive.getGridItemWidth(responsive.layout.gridColumns.locations, responsive.layout.spacing.grid),
+      width: '48%',
       backgroundColor: theme.cardBackground,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
@@ -639,10 +657,10 @@ export default function DashboardScreen() {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: responsive.layout.spacing.grid,
-      justifyContent: responsive.breakpoints.isTablet ? 'flex-start' : 'space-between',
+      justifyContent: 'space-between',
     },
     categoryCard: {
-      width: responsive.getGridItemWidth(responsive.layout.gridColumns.categories, responsive.layout.spacing.grid),
+      width: '48%',
       backgroundColor: theme.cardBackground,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
@@ -869,8 +887,26 @@ export default function DashboardScreen() {
           <Text style={styles.loadingText}>{t('home.loading')}</Text>
         </View>
       ) : (
-        <ScrollView style={styles.content}>
-          <View style={styles.welcomeBanner}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={{
+            alignItems: 'center',
+            paddingBottom: responsive.getResponsiveValue({
+              small: 75,
+              default: 85,
+              tablet: 95,
+              largeTablet: 105,
+            }),
+          }}
+        >
+          <View style={[styles.welcomeBanner, {
+            width: responsive.getResponsiveValue({
+              small: '95%',
+              default: '90%',
+              tablet: '80%',
+              largeTablet: '70%',
+            }),
+          }]}>
             <View style={styles.welcomeText}>
               <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
             </View>
@@ -883,7 +919,14 @@ export default function DashboardScreen() {
             </View>
           </View>
 
-          <View style={styles.quickStats}>
+          <View style={[styles.quickStats, {
+            width: responsive.getResponsiveValue({
+              small: '95%',
+              default: '90%',
+              tablet: '80%',
+              largeTablet: '70%',
+            }),
+          }]}>
             <TouchableOpacity 
               style={styles.statCard}
               onPress={() => router.push('/items/fresh')}
@@ -910,8 +953,22 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sectionTitle}>{t('home.storageLocations')}</Text>
-          <View style={styles.locationGrid}>
+          <Text style={[styles.sectionTitle, {
+            width: responsive.getResponsiveValue({
+              small: '95%',
+              default: '90%',
+              tablet: '80%',
+              largeTablet: '70%',
+            }),
+          }]}>{t('home.storageLocations')}</Text>
+          <View style={[styles.locationGrid, {
+            width: responsive.getResponsiveValue({
+              small: '95%',
+              default: '90%',
+              tablet: '80%',
+              largeTablet: '70%',
+            }),
+          }]}>
             {locations.map((location) => (
               <TouchableOpacity
                 key={location.id}
@@ -934,7 +991,14 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          <View style={styles.categoryList}>
+          <View style={[styles.categoryList, {
+            width: responsive.getResponsiveValue({
+              small: '95%',
+              default: '90%',
+              tablet: '80%',
+              largeTablet: '70%',
+            }),
+          }]}>
             <View style={styles.categoryHeader}>
               <Text style={styles.sectionTitle}>{t('home.categories')}</Text>
             </View>
