@@ -40,20 +40,39 @@ const setDatabaseVersion = async (version: number): Promise<void> => {
 // Safe database backup before migrations
 const backupUserData = async (database: SQLite.SQLiteDatabase): Promise<any> => {
   try {
-    const [categories, locations, foodItems] = await Promise.all([
-      database.getAllAsync('SELECT * FROM categories WHERE id > 8'), // User-created categories
-      database.getAllAsync('SELECT * FROM locations WHERE id > 4'), // User-created locations  
-      database.getAllAsync('SELECT * FROM food_items') // All food items
-    ]);
+    // Get ALL categories (both default and user-created) with proper structure
+    const categories = await database.getAllAsync('SELECT * FROM categories ORDER BY id');
+    // Get ALL locations (both default and user-created) with proper structure  
+    const locations = await database.getAllAsync('SELECT * FROM locations ORDER BY id');
+    // Get all food items
+    const foodItems = await database.getAllAsync('SELECT * FROM food_items');
     
     const backup = {
-      categories,
-      locations,
+      categories: categories.map((cat: any) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        created_at: cat.created_at,
+        isUserCreated: cat.id > 8 // Categories with ID > 8 are user-created
+      })),
+      locations: locations.map((loc: any) => ({
+        id: loc.id,
+        name: loc.name,
+        icon: loc.icon,
+        created_at: loc.created_at,
+        isUserCreated: loc.id > 4 // Locations with ID > 4 are user-created
+      })),
       foodItems,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      language: await getStoredLanguage()
     };
     
+    // Store backup in AsyncStorage for persistence across app updates
     await AsyncStorage.setItem('database_backup', JSON.stringify(backup));
+    await AsyncStorage.setItem('categories_backup', JSON.stringify(backup.categories));
+    await AsyncStorage.setItem('locations_backup', JSON.stringify(backup.locations));
+    
+    console.log(`Backed up ${backup.categories.length} categories, ${backup.locations.length} locations, ${backup.foodItems.length} food items`);
     return backup;
   } catch (error) {
     console.error('Failed to backup user data:', error);
@@ -61,7 +80,7 @@ const backupUserData = async (database: SQLite.SQLiteDatabase): Promise<any> => 
   }
 };
 
-// Restore user data from backup
+// Restore user data from backup with smart category/location preservation
 const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promise<boolean> => {
   try {
     const backupData = await AsyncStorage.getItem('database_backup');
@@ -69,23 +88,48 @@ const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promi
     
     const backup = JSON.parse(backupData);
     
-    // Restore user-created categories
+    // 1. First, ensure default categories exist but DON'T overwrite existing ones
+    await preserveExistingCategoriesAndLocations(database, backup.language);
+    
+    // 2. Restore user-created categories (ID > 8)
     for (const category of backup.categories) {
-      await database.runAsync(
-        'INSERT OR REPLACE INTO categories (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
-        [category.id, category.name, category.icon, category.created_at]
-      );
+      if (category.isUserCreated || category.id > 8) {
+        await database.runAsync(
+          'INSERT OR REPLACE INTO categories (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+          [category.id, category.name, category.icon, category.created_at]
+        );
+      } else {
+        // For default categories, preserve if they exist, otherwise insert default
+        const existing = await database.getFirstAsync('SELECT * FROM categories WHERE id = ?', [category.id]);
+        if (!existing) {
+          await database.runAsync(
+            'INSERT INTO categories (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+            [category.id, category.name, category.icon, category.created_at]
+          );
+        }
+      }
     }
     
-    // Restore user-created locations
+    // 3. Restore user-created locations (ID > 4)
     for (const location of backup.locations) {
-      await database.runAsync(
-        'INSERT OR REPLACE INTO locations (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
-        [location.id, location.name, location.icon, location.created_at]
-      );
+      if (location.isUserCreated || location.id > 4) {
+        await database.runAsync(
+          'INSERT OR REPLACE INTO locations (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+          [location.id, location.name, location.icon, location.created_at]
+        );
+      } else {
+        // For default locations, preserve if they exist, otherwise insert default
+        const existing = await database.getFirstAsync('SELECT * FROM locations WHERE id = ?', [location.id]);
+        if (!existing) {
+          await database.runAsync(
+            'INSERT INTO locations (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+            [location.id, location.name, location.icon, location.created_at]
+          );
+        }
+      }
     }
     
-    // Restore food items
+    // 4. Restore food items
     for (const item of backup.foodItems) {
       await database.runAsync(
         'INSERT OR REPLACE INTO food_items (id, name, quantity, category_id, location_id, expiry_date, reminder_days, notes, image_uri, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -93,10 +137,57 @@ const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promi
       );
     }
     
+    console.log('Successfully restored user data from backup while preserving categories');
     return true;
   } catch (error) {
     console.error('Failed to restore user data from backup:', error);
     return false;
+  }
+};
+
+// New function to preserve existing categories and locations during updates
+const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
+  try {
+    const defaultCategories = getDefaultCategories(language);
+    const defaultLocations = getDefaultLocations(language);
+    
+    // Only insert default categories if they don't exist (preserve existing ones)
+    for (let i = 0; i < defaultCategories.length; i++) {
+      const category = defaultCategories[i];
+      const categoryId = i + 1; // IDs 1-8 for default categories
+      
+      const existing = await database.getFirstAsync('SELECT * FROM categories WHERE id = ?', [categoryId]) as any;
+      if (!existing) {
+        // Only insert if it doesn't exist
+        await database.runAsync(
+          'INSERT INTO categories (id, name, icon) VALUES (?, ?, ?)',
+          [categoryId, category.name, category.icon]
+        );
+        console.log(`Inserted missing default category: ${category.name}`);
+      } else {
+        console.log(`Preserved existing category: ${existing.name}`);
+      }
+    }
+    
+    // Only insert default locations if they don't exist (preserve existing ones)
+    for (let i = 0; i < defaultLocations.length; i++) {
+      const location = defaultLocations[i];
+      const locationId = i + 1; // IDs 1-4 for default locations
+      
+      const existing = await database.getFirstAsync('SELECT * FROM locations WHERE id = ?', [locationId]) as any;
+      if (!existing) {
+        // Only insert if it doesn't exist
+        await database.runAsync(
+          'INSERT INTO locations (id, name, icon) VALUES (?, ?, ?)',
+          [locationId, location.name, location.icon]
+        );
+        console.log(`Inserted missing default location: ${location.name}`);
+      } else {
+        console.log(`Preserved existing location: ${existing.name}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error preserving existing categories and locations:', error);
   }
 };
 
@@ -529,28 +620,30 @@ export const initDatabase = async (): Promise<void> => {
 
 const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
   try {
-    // Check if we have more than 8 categories (need to remove extra ones)
-    const categoryCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM categories');
-    const count = (categoryCount as any)?.count || 0;
+    // This function now focuses on preserving existing categories instead of replacing them
+    console.log('Checking category migration...');
     
-    if (count > 8) {
-      // Remove extra categories (keep only the first 8)
-      await database.runAsync('DELETE FROM categories WHERE id > 8');
-    } else if (count < 8) {
-      // Add missing categories if we have less than 8
-      const defaultCategories = getDefaultCategories(language);
-      
-      for (let i = count; i < defaultCategories.length; i++) {
-        const category = defaultCategories[i];
-        await database.runAsync(
-          'INSERT INTO categories (name, icon) VALUES (?, ?)',
-          [category.name, category.icon]
-        );
-      }
+    // First, backup existing categories and locations to AsyncStorage
+    const existingCategories = await database.getAllAsync('SELECT * FROM categories ORDER BY id');
+    const existingLocations = await database.getAllAsync('SELECT * FROM locations ORDER BY id');
+    
+    if (existingCategories.length > 0) {
+      await AsyncStorage.setItem('preserved_categories', JSON.stringify(existingCategories));
+      console.log(`Preserved ${existingCategories.length} existing categories`);
     }
+    
+    if (existingLocations.length > 0) {
+      await AsyncStorage.setItem('preserved_locations', JSON.stringify(existingLocations));
+      console.log(`Preserved ${existingLocations.length} existing locations`);
+    }
+    
+    // Use the new preservation function instead of destructive migration
+    await preserveExistingCategoriesAndLocations(database, language);
+    
+    console.log('Category migration completed with preservation');
   } catch (error) {
-    // Silent error handling for migration
-    console.log('Migration completed or skipped:', error);
+    console.warn('Category migration warning (non-critical):', error);
+    // Continue execution as this is not a critical error
   }
 };
 

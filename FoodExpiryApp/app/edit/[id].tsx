@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useDatabase } from '../../context/DatabaseContext';
-import { saveImageToStorage, getSavedImages } from '../../utils/fileStorage';
+import { saveImageToStorage, getSavedImages, getSafeImageUri } from '../../utils/fileStorage';
 import { DatePicker } from '../../components/DatePicker';
 import { getCurrentDate } from '../../database/database';
 import { BottomNav } from '../../components/BottomNav';
@@ -121,16 +121,11 @@ export default function EditScreen() {
     });
 
     if (!result.canceled) {
-      // Save image to storage and use the saved path
-      const savedImageUri = await saveImageToStorage(result.assets[0].uri);
-      if (savedImageUri) {
-        setImageUri(savedImageUri);
-        // Refresh saved photos list
-        loadSavedPhotos();
-      } else {
-        // Fallback to original URI if save fails
-        setImageUri(result.assets[0].uri);
-      }
+      // Use bulletproof image storage
+      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+      setImageUri(safeImageUri);
+      // Refresh saved photos list
+      loadSavedPhotos();
     }
   };
 
@@ -152,16 +147,11 @@ export default function EditScreen() {
     });
 
     if (!result.canceled) {
-      // Save image to storage and use the saved path
-      const savedImageUri = await saveImageToStorage(result.assets[0].uri);
-      if (savedImageUri) {
-        setImageUri(savedImageUri);
-        // Refresh saved photos list
-        loadSavedPhotos();
-      } else {
-        // Fallback to original URI if save fails
-        setImageUri(result.assets[0].uri);
-      }
+      // Use bulletproof image storage
+      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+      setImageUri(safeImageUri);
+      // Refresh saved photos list
+      loadSavedPhotos();
     }
   };
 
@@ -231,6 +221,11 @@ export default function EditScreen() {
     };
 
     try {
+      // Ensure image is safely stored before saving to database
+      const finalImageUri = imageUri && !imageUri.startsWith('emoji:') 
+        ? await getSafeImageUri(imageUri) 
+        : imageUri;
+
       // Update the food item with retry logic
       await retryOperation(async () => {
         await updateFoodItem({
@@ -242,7 +237,7 @@ export default function EditScreen() {
           expiry_date: expiryDate.toISOString().split('T')[0],
           reminder_days: parseInt(reminderDays) || 0,
           notes: notes.trim(),
-          image_uri: imageUri,
+          image_uri: finalImageUri,
           created_at: getCurrentDate(),
         });
       });
@@ -327,13 +322,14 @@ export default function EditScreen() {
       marginBottom: 24,
     },
     optionCard: {
-      width: '48%',
+      width: '23%', // 4 columns max (100% / 4 = 25%, minus gaps = ~23%)
       backgroundColor: theme.cardBackground,
       borderRadius: 8,
       padding: 16,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
+      minWidth: 70, // Ensure minimum readable width
     },
     optionCardSelected: {
       borderColor: theme.primaryColor,
@@ -529,6 +525,26 @@ export default function EditScreen() {
       fontSize: 16,
       marginVertical: 32,
     },
+    modalSubtitle: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    imageOptionsContainer: {
+      width: '100%',
+      marginBottom: 24,
+    },
+    imageOptionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      backgroundColor: theme.cardBackground,
+      borderRadius: 8,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
     imageOptionsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -547,10 +563,9 @@ export default function EditScreen() {
     },
     imageOptionText: {
       color: theme.textColor,
-      fontSize: 14,
+      fontSize: 16,
+      marginLeft: 16,
       fontWeight: '500',
-      marginTop: 8,
-      textAlign: 'center',
     },
   });
 
@@ -672,7 +687,7 @@ export default function EditScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('addItem.category')}</Text>
             <View style={styles.optionsGrid}>
-              {categories.map((category) => (
+              {categories && categories.length > 0 ? categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
@@ -686,14 +701,16 @@ export default function EditScreen() {
                   </View>
                   <Text style={styles.optionName}>{category.name}</Text>
                 </TouchableOpacity>
-              ))}
+              )) : (
+                <Text style={styles.loadingText}>{t('loading.categories')}</Text>
+              )}
             </View>
           </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('addItem.storageLocation')}</Text>
             <View style={styles.optionsGrid}>
-              {locations.map((location) => (
+              {locations && locations.length > 0 ? locations.map((location) => (
                 <TouchableOpacity
                   key={location.id}
                   style={[
@@ -707,7 +724,9 @@ export default function EditScreen() {
                   </View>
                   <Text style={styles.optionName}>{location.name}</Text>
                 </TouchableOpacity>
-              ))}
+              )) : (
+                <Text style={styles.loadingText}>{t('loading.locations')}</Text>
+              )}
             </View>
           </View>
 
@@ -827,48 +846,50 @@ export default function EditScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('image.addPhoto')}</Text>
-            <View style={styles.imageOptionsGrid}>
-              <TouchableOpacity
-                style={styles.imageOptionItem}
+            <Text style={styles.modalSubtitle}>{t('image.choosePhotoMethod')}</Text>
+            
+            <View style={styles.imageOptionsContainer}>
+              <TouchableOpacity 
+                style={styles.imageOptionButton}
                 onPress={() => {
                   setShowImageOptionsModal(false);
                   takePicture();
                 }}
               >
-                <FontAwesome name="camera" size={32} color={theme.primaryColor} />
+                <FontAwesome name="camera" size={24} color={theme.primaryColor} />
                 <Text style={styles.imageOptionText}>{t('image.takePhoto')}</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity
-                style={styles.imageOptionItem}
+              <TouchableOpacity 
+                style={styles.imageOptionButton}
                 onPress={() => {
                   setShowImageOptionsModal(false);
                   pickImage();
                 }}
               >
-                <FontAwesome name="image" size={32} color={theme.primaryColor} />
+                <FontAwesome name="image" size={24} color={theme.primaryColor} />
                 <Text style={styles.imageOptionText}>{t('image.chooseFromGallery')}</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity
-                style={styles.imageOptionItem}
+              <TouchableOpacity 
+                style={styles.imageOptionButton}
                 onPress={() => {
                   setShowImageOptionsModal(false);
                   showEmojiPicker();
                 }}
               >
-                <FontAwesome name="smile-o" size={32} color={theme.primaryColor} />
+                <FontAwesome name="smile-o" size={24} color={theme.primaryColor} />
                 <Text style={styles.imageOptionText}>{t('image.useFoodEmoji')}</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity
-                style={styles.imageOptionItem}
+              <TouchableOpacity 
+                style={styles.imageOptionButton}
                 onPress={() => {
                   setShowImageOptionsModal(false);
                   showSavedPhotos();
                 }}
               >
-                <FontAwesome name="folder-open" size={32} color={theme.primaryColor} />
+                <FontAwesome name="folder" size={24} color={theme.primaryColor} />
                 <Text style={styles.imageOptionText}>{t('image.mySavedPhotos')}</Text>
               </TouchableOpacity>
             </View>

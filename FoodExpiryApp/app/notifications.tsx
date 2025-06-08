@@ -163,6 +163,7 @@ export default function NotificationsScreen() {
     content: {
       flex: 1,
       padding: 16,
+      paddingBottom: 100, // Add space for bottom navigation
     },
     section: {
       backgroundColor: theme.cardBackground,

@@ -18,7 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
-import { saveImageToStorage, getSavedImages } from '../utils/fileStorage';
+import { saveImageToStorage, getSavedImages, getSafeImageUri } from '../utils/fileStorage';
 import { DatePicker } from '../components/DatePicker';
 import { getCurrentDate } from '../database/database';
 import { BottomNav } from '../components/BottomNav';
@@ -93,15 +93,14 @@ export default function AddScreen() {
     });
 
     if (!result.canceled) {
-      // Save image to storage and use the saved path
-      const savedImageUri = await saveImageToStorage(result.assets[0].uri);
-      if (savedImageUri) {
-        setImageUri(savedImageUri);
+      // Get safe image URI for database storage
+      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+      if (safeImageUri) {
+        setImageUri(safeImageUri);
         // Refresh saved photos list
         loadSavedPhotos();
       } else {
-        // Fallback to original URI if save fails
-        setImageUri(result.assets[0].uri);
+        Alert.alert('Error', 'Failed to save image. Please try again.');
       }
     }
   };
@@ -125,15 +124,14 @@ export default function AddScreen() {
     });
 
     if (!result.canceled) {
-      // Save image to storage and use the saved path
-      const savedImageUri = await saveImageToStorage(result.assets[0].uri);
-      if (savedImageUri) {
-        setImageUri(savedImageUri);
+      // Get safe image URI for database storage
+      const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+      if (safeImageUri) {
+        setImageUri(safeImageUri);
         // Refresh saved photos list
         loadSavedPhotos();
       } else {
-        // Fallback to original URI if save fails
-        setImageUri(result.assets[0].uri);
+        Alert.alert('Error', 'Failed to save image. Please try again.');
       }
     }
   };
@@ -259,7 +257,7 @@ export default function AddScreen() {
       marginBottom: 24,
     },
     optionCard: {
-      width: responsive.getGridItemWidth(responsive.layout.gridColumns.categories, responsive.layout.spacing.grid),
+      width: responsive.getGridItemWidth(Math.min(responsive.layout.gridColumns.categories, 4), responsive.layout.spacing.grid),
       backgroundColor: theme.cardBackground,
       borderRadius: 8,
       padding: responsive.layout.spacing.card,
@@ -734,8 +732,8 @@ export default function AddScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Photo</Text>
-            <Text style={styles.modalSubtitle}>Choose how you want to add a photo</Text>
+            <Text style={styles.modalTitle}>{t('image.addPhoto')}</Text>
+            <Text style={styles.modalSubtitle}>{t('image.choosePhotoMethod')}</Text>
             
             <View style={styles.imageOptionsContainer}>
               <TouchableOpacity 
@@ -746,7 +744,7 @@ export default function AddScreen() {
                 }}
               >
                 <FontAwesome name="camera" size={24} color={theme.primaryColor} />
-                <Text style={styles.imageOptionText}>Take Photo</Text>
+                <Text style={styles.imageOptionText}>{t('image.takePhoto')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -757,7 +755,7 @@ export default function AddScreen() {
                 }}
               >
                 <FontAwesome name="image" size={24} color={theme.primaryColor} />
-                <Text style={styles.imageOptionText}>Choose from Gallery</Text>
+                <Text style={styles.imageOptionText}>{t('image.chooseFromGallery')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -768,7 +766,7 @@ export default function AddScreen() {
                 }}
               >
                 <FontAwesome name="smile-o" size={24} color={theme.primaryColor} />
-                <Text style={styles.imageOptionText}>Use Food Emoji</Text>
+                <Text style={styles.imageOptionText}>{t('image.useFoodEmoji')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -779,7 +777,7 @@ export default function AddScreen() {
                 }}
               >
                 <FontAwesome name="folder" size={24} color={theme.primaryColor} />
-                <Text style={styles.imageOptionText}>My Saved Photos</Text>
+                <Text style={styles.imageOptionText}>{t('image.mySavedPhotos')}</Text>
               </TouchableOpacity>
             </View>
             
@@ -787,7 +785,7 @@ export default function AddScreen() {
               style={styles.closeButton}
               onPress={() => setShowImageOptionsModal(false)}
             >
-              <Text style={styles.closeButtonText}>Cancel</Text>
+              <Text style={styles.closeButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

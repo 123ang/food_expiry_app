@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -197,9 +198,33 @@ export default function ListScreen() {
     }, [dataVersion, isLoading, foodItems?.length, language])
   );
 
-  // Check if last item needs extra margin to avoid plus button overlap
-  const needsButtonAvoidance = (isLastItem: boolean) => {
-    return isLastItem && filteredItems && filteredItems.length > 0;
+  // Smart detection: Based on actual screen dimensions and list position
+  const needsButtonAvoidance = (isLastItem: boolean, totalItems: number) => {
+    if (!isLastItem || totalItems === 0) return false;
+    
+    // Get actual screen dimensions
+    const { height: screenHeight } = Dimensions.get('window');
+    
+    // Calculate actual usable content area
+    const headerHeight = Platform.OS === 'ios' ? 140 : 120; // Header + search + filters
+    const bottomNavHeight = 90; // Bottom navigation height
+    const safeBottomBuffer = 60; // Extra buffer for floating button
+    
+    const usableContentHeight = screenHeight - headerHeight - bottomNavHeight - safeBottomBuffer;
+    
+    // Calculate estimated list content height
+    const itemHeight = 80; // Approximate height per item
+    const estimatedListHeight = totalItems * itemHeight;
+    
+    // Apply padding only when list extends into the danger zone
+    const needsPadding = estimatedListHeight > usableContentHeight;
+    
+    // Debug log for testing (remove in production)
+    if (isLastItem) {
+      console.log(`Screen: ${screenHeight}px, Usable: ${usableContentHeight}px, List: ${estimatedListHeight}px, Needs padding: ${needsPadding}`);
+    }
+    
+    return needsPadding;
   };
 
   const styles = StyleSheet.create({
@@ -290,18 +315,17 @@ export default function ListScreen() {
     },
     lastFoodItem: {
       borderBottomWidth: 0,
-      paddingBottom: 0, // No bottom padding - connects directly to navigation
+      paddingBottom: 0, // Normal last item - no extra padding
       borderBottomLeftRadius: 0, // Remove bottom radius for seamless connection
       borderBottomRightRadius: 0, // Remove bottom radius for seamless connection
     },
     buttonAvoidanceItem: {
-      // Responsive padding to avoid floating plus button overlap
-      // Adjusts automatically based on screen size and device type
+      // Smart padding: Only applied when last item would touch bottom navigation
       paddingBottom: responsive.getResponsiveValue({
-        small: 80,        // Compact phones (iPhone SE, small Android)
-        default: 100,      // Standard phones (Vivo, Samsung Galaxy, iPhone 12+)
-        tablet: 100,      // Small tablets (iPad mini, Android tablets)
-        largeTablet: 110, // Large tablets (iPad Pro, large Android tablets)
+        small: 90,        // Compact phones (iPhone SE, small Android)
+        default: 110,     // Standard phones (Vivo, Samsung Galaxy, iPhone 12+)
+        tablet: 120,      // Small tablets (iPad mini, Android tablets)
+        largeTablet: 130, // Large tablets (iPad Pro, large Android tablets)
       }),
     },
     foodImage: {
@@ -409,7 +433,7 @@ export default function ListScreen() {
 
     return filteredItems.map((item, index) => {
       const isLastItem = index === filteredItems.length - 1;
-      const needsAvoidance = needsButtonAvoidance(isLastItem);
+      const needsAvoidance = needsButtonAvoidance(isLastItem, filteredItems.length);
       
       return (
         <TouchableOpacity

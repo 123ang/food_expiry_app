@@ -72,12 +72,12 @@ export function useResponsive() {
 
   // Enhanced grid columns calculation for better iPad layout
   const getOptimalColumns = () => {
-    // For categories - optimize for visual hierarchy
+    // For categories - optimize for visual hierarchy (max 4 per row to prevent text cutting)
     let categories: number;
     if (breakpoints.isLargeTablet) {
-      categories = breakpoints.isLandscape ? 6 : 4; // 6 cols landscape, 4 portrait on large tablets
+      categories = 4; // Max 4 cols for large tablets (prevents text cutting)
     } else if (breakpoints.isTablet) {
-      categories = breakpoints.isLandscape ? 5 : 3; // 5 cols landscape, 3 portrait on regular tablets
+      categories = breakpoints.isLandscape ? 4 : 3; // Max 4 cols landscape, 3 portrait on regular tablets
     } else if (breakpoints.isXLarge) {
       categories = 3; // Large phones
     } else if (breakpoints.isLarge) {
