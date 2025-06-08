@@ -299,7 +299,7 @@ export default function ListScreen() {
       // Adjusts automatically based on screen size and device type
       paddingBottom: responsive.getResponsiveValue({
         small: 80,        // Compact phones (iPhone SE, small Android)
-        default: 90,      // Standard phones (Vivo, Samsung Galaxy, iPhone 12+)
+        default: 100,      // Standard phones (Vivo, Samsung Galaxy, iPhone 12+)
         tablet: 100,      // Small tablets (iPad mini, Android tablets)
         largeTablet: 110, // Large tablets (iPad Pro, large Android tablets)
       }),
