@@ -44,12 +44,16 @@ export function BottomNav() {
 
   const styles = StyleSheet.create({
     container: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
       backgroundColor: theme.cardBackground,
       borderTopWidth: 1,
       borderTopColor: theme.borderColor,
       flexDirection: 'row',
       justifyContent: 'space-around',
-      paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+      paddingBottom: Platform.OS === 'ios' ? 34 : 16,
       paddingTop: 12,
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: -2 },

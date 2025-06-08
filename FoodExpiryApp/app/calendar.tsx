@@ -80,6 +80,7 @@ export default function CalendarScreen() {
     container: {
       flex: 1,
       backgroundColor: theme.backgroundColor,
+      paddingBottom: Platform.OS === 'ios' ? 100 : 80, // Space for bottom navigation
       ...(isWeb && {
         maxWidth: responsive.getResponsiveValue({
           largeTablet: 1200,
@@ -88,6 +89,7 @@ export default function CalendarScreen() {
         }),
         alignSelf: 'center' as any,
         height: '100vh' as any,
+        paddingBottom: 0, // No padding needed on web
       }),
     } as any,
     calendarSection: {
@@ -471,13 +473,18 @@ export default function CalendarScreen() {
       });
     }
     
-    // Add days from next month
-    const remainingDays = 42 - days.length; // 6 rows * 7 days = 42
-    for (let i = 1; i <= remainingDays; i++) {
-      days.push({
-        date: new Date(year, month + 1, i),
-        isCurrentMonth: false
-      });
+    // Calculate how many days we need to complete the last row
+    const totalDaysUsed = days.length;
+    const remainingDaysInLastRow = 7 - (totalDaysUsed % 7);
+    
+    // Only add next month days if we need to complete a row (not a full row)
+    if (remainingDaysInLastRow < 7) {
+      for (let i = 1; i <= remainingDaysInLastRow; i++) {
+        days.push({
+          date: new Date(year, month + 1, i),
+          isCurrentMonth: false
+        });
+      }
     }
     
     return days;
