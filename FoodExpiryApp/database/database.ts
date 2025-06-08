@@ -7,6 +7,7 @@ import { Category, Location } from './models';
 // Database configuration
 const DATABASE_VERSION = 5;
 const DATABASE_NAME = 'expiry_alert.db';
+const VERSION_KEY = 'database_version';
 
 // Fallback storage for when SQLite is not available
 interface FallbackStorage {
@@ -17,6 +18,87 @@ interface FallbackStorage {
 
 let db: SQLite.SQLiteDatabase | null = null;
 let useFallbackStorage = false;
+
+// Database version management
+const getCurrentDatabaseVersion = async (): Promise<number> => {
+  try {
+    const version = await AsyncStorage.getItem(VERSION_KEY);
+    return version ? parseInt(version, 10) : 0;
+  } catch (error) {
+    return 0;
+  }
+};
+
+const setDatabaseVersion = async (version: number): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(VERSION_KEY, version.toString());
+  } catch (error) {
+    // Silent error handling
+  }
+};
+
+// Safe database backup before migrations
+const backupUserData = async (database: SQLite.SQLiteDatabase): Promise<any> => {
+  try {
+    const [categories, locations, foodItems] = await Promise.all([
+      database.getAllAsync('SELECT * FROM categories WHERE id > 8'), // User-created categories
+      database.getAllAsync('SELECT * FROM locations WHERE id > 4'), // User-created locations  
+      database.getAllAsync('SELECT * FROM food_items') // All food items
+    ]);
+    
+    const backup = {
+      categories,
+      locations,
+      foodItems,
+      timestamp: new Date().toISOString()
+    };
+    
+    await AsyncStorage.setItem('database_backup', JSON.stringify(backup));
+    return backup;
+  } catch (error) {
+    console.error('Failed to backup user data:', error);
+    return null;
+  }
+};
+
+// Restore user data from backup
+const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promise<boolean> => {
+  try {
+    const backupData = await AsyncStorage.getItem('database_backup');
+    if (!backupData) return false;
+    
+    const backup = JSON.parse(backupData);
+    
+    // Restore user-created categories
+    for (const category of backup.categories) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO categories (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+        [category.id, category.name, category.icon, category.created_at]
+      );
+    }
+    
+    // Restore user-created locations
+    for (const location of backup.locations) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO locations (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+        [location.id, location.name, location.icon, location.created_at]
+      );
+    }
+    
+    // Restore food items
+    for (const item of backup.foodItems) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO food_items (id, name, quantity, category_id, location_id, expiry_date, reminder_days, notes, image_uri, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [item.id, item.name, item.quantity, item.category_id, item.location_id, item.expiry_date, item.reminder_days, item.notes, item.image_uri, item.created_at]
+      );
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to restore user data from backup:', error);
+    return false;
+  }
+};
 
 const initializeFallback = async (): Promise<void> => {
   if (useFallbackStorage) {
@@ -63,19 +145,15 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
 
   if (!db) {
     try {
-      // Enhanced database opening strategy
-      const isDevelopment = __DEV__;
+      // Try to open existing database first
+      db = await SQLite.openDatabaseAsync(DATABASE_NAME);
       
-      if (isDevelopment) {
-        db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-      } else {
-        db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-      }
-
-      // Verify the database connection
+      // Test the connection
       await db.getAllAsync('SELECT 1');
       
     } catch (openError) {
+      console.log('Database open error, attempting recovery:', openError);
+      
       try {
         // Close any partial connection
         if (db) {
@@ -87,18 +165,44 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
           db = null;
         }
         
-        // Attempt to recreate the database
-        await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+        // Try to open database again (it might be corrupted, not missing)
         db = await SQLite.openDatabaseAsync(DATABASE_NAME);
         
-      } catch (recreateError) {
-        // If SQLite completely fails, switch to fallback mode
-        await ensureFallbackStorage();
-        return null;
+        // Test the connection again
+        await db.getAllAsync('SELECT 1');
+        
+      } catch (secondAttemptError) {
+        console.log('Second attempt failed, checking for corruption:', secondAttemptError);
+        
+        // Only as a LAST RESORT, and only if we can backup data first
+        try {
+          // Try to backup any existing data before recreating
+          if (db) {
+            await backupUserData(db);
+          }
+        } catch (backupError) {
+          console.log('Could not backup data before recreation');
+        }
+        
+        try {
+          // Close and recreate only as last resort
+          if (db) {
+            await db.closeAsync();
+            db = null;
+          }
+          
+          await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+          db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+          
+        } catch (recreateError) {
+          // If SQLite completely fails, switch to fallback mode
+          await ensureFallbackStorage();
+          return null;
+        }
       }
     }
     
-    // Additional verification
+    // Final verification
     try {
       await db.getAllAsync('SELECT 1');
     } catch (verifyError) {
@@ -384,14 +488,41 @@ export const initDatabase = async (): Promise<void> => {
       return;
     }
 
+    // Check database version for migrations
+    const currentVersion = await getCurrentDatabaseVersion();
+    const needsMigration = currentVersion < DATABASE_VERSION;
+    
+    // Backup user data before any major changes
+    if (needsMigration && currentVersion > 0) {
+      console.log(`Migrating database from version ${currentVersion} to ${DATABASE_VERSION}`);
+      await backupUserData(database);
+    }
+
     await createTables(database);
     
     const currentLanguage = await getStoredLanguage();
-    await insertDefaultData(database, currentLanguage);
     
-    // Run migration to add new categories for existing databases
+    // If this is a new installation or migration, handle accordingly
+    if (currentVersion === 0) {
+      // Fresh installation
+      await insertDefaultData(database, currentLanguage);
+    } else if (needsMigration) {
+      // Migration needed - preserve user data
+      await insertDefaultData(database, currentLanguage);
+      await restoreUserDataFromBackup(database);
+    } else {
+      // Existing installation, just ensure default data exists
+      await insertDefaultData(database, currentLanguage);
+    }
+    
+    // Run category migration for existing databases
     await migrateToNewCategories(database, currentLanguage);
+    
+    // Update database version
+    await setDatabaseVersion(DATABASE_VERSION);
+    
   } catch (error) {
+    console.error('Database initialization failed:', error);
     throw error;
   }
 };
@@ -476,6 +607,71 @@ export const calculateDaysUntilExpiry = (expiryDate: string): number => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
+// Regular data backup for iOS stability
+export const performRegularBackup = async (): Promise<void> => {
+  try {
+    const database = await getDatabase();
+    if (database) {
+      await backupUserData(database);
+      
+      // Also backup to a separate iOS-safe location
+      const allData = {
+        categories: await database.getAllAsync('SELECT * FROM categories'),
+        locations: await database.getAllAsync('SELECT * FROM locations'),
+        foodItems: await database.getAllAsync('SELECT * FROM food_items'),
+        version: DATABASE_VERSION,
+        timestamp: new Date().toISOString()
+      };
+      
+      await AsyncStorage.setItem('full_data_backup', JSON.stringify(allData));
+    }
+  } catch (error) {
+    console.error('Regular backup failed:', error);
+  }
+};
+
+// Restore from full backup if database is completely lost
+export const restoreFromFullBackup = async (): Promise<boolean> => {
+  try {
+    const database = await getDatabase();
+    if (!database) return false;
+    
+    const fullBackup = await AsyncStorage.getItem('full_data_backup');
+    if (!fullBackup) return false;
+    
+    const backup = JSON.parse(fullBackup);
+    
+    // Restore all categories
+    for (const category of backup.categories) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO categories (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+        [category.id, category.name, category.icon, category.created_at]
+      );
+    }
+    
+    // Restore all locations
+    for (const location of backup.locations) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO locations (id, name, icon, created_at) VALUES (?, ?, ?, ?)',
+        [location.id, location.name, location.icon, location.created_at]
+      );
+    }
+    
+    // Restore all food items
+    for (const item of backup.foodItems) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO food_items (id, name, quantity, category_id, location_id, expiry_date, reminder_days, notes, image_uri, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [item.id, item.name, item.quantity, item.category_id, item.location_id, item.expiry_date, item.reminder_days, item.notes, item.image_uri, item.created_at]
+      );
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Full backup restore failed:', error);
+    return false;
+  }
+};
+
 // Helper function to update default data when language changes
 export const updateDefaultDataForLanguage = async (language: Language): Promise<void> => {
   try {
@@ -550,6 +746,9 @@ export const updateDefaultDataForLanguage = async (language: Language): Promise<
         [location.name, i + 1]
       );
     }
+    
+    // Perform regular backup after language update
+    await performRegularBackup();
   } catch (error) {
     // Silent error handling
   }

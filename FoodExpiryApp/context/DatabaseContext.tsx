@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { DeviceEventEmitter } from 'react-native';
-import { initDatabase, getDatabase, resetDatabase, getCurrentDate } from '../database/database';
+import { initDatabase, getDatabase, resetDatabase, getCurrentDate, performRegularBackup, restoreFromFullBackup } from '../database/database';
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
 import { simpleNotificationService } from '../services/SimpleNotificationService';
@@ -289,11 +289,42 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           await refreshDashboardCounts();
         }, 50);
         
+        // Perform initial backup for iOS stability (after 2 seconds)
+        setTimeout(async () => {
+          await performRegularBackup();
+        }, 2000);
+        
         const totalTime = Date.now() - startTime;
         
         setIsLoading(false);
         setIsReady(true);
       } catch (error) {
+        console.error('Database setup failed, attempting recovery:', error);
+        
+        // Try to restore from backup if available
+        try {
+          const restored = await restoreFromFullBackup();
+          if (restored) {
+            console.log('Successfully restored data from backup');
+            // Retry loading data after restoration
+            const [categoriesData, locationsData, foodItemsData] = await Promise.all([
+              CategoryRepository.getAll(),
+              LocationRepository.getAll(),
+              FoodItemRepository.getAllWithDetails()
+            ]);
+            
+            setCategories(categoriesData);
+            setLocations(locationsData);
+            setFoodItems(foodItemsData);
+            
+            setIsLoading(false);
+            setIsReady(true);
+            return;
+          }
+        } catch (restoreError) {
+          console.error('Failed to restore from backup:', restoreError);
+        }
+        
         setError(error instanceof Error ? error : new Error('Failed to setup database'));
         setIsLoading(false);
         setIsReady(false);
@@ -585,6 +616,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Refresh data to show the new item
       await refreshAll();
       
+      // Trigger backup after data modification
+      setTimeout(() => performRegularBackup(), 1000);
+      
       return id;
     } catch (error) {
       throw error;
@@ -597,6 +631,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Refresh data to show updated item
       await refreshAll();
+      
+      // Trigger backup after data modification
+      setTimeout(() => performRegularBackup(), 1000);
     } catch (error) {
       throw error;
     }
@@ -613,6 +650,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     // Increment data version to notify screens of changes
     incrementDataVersion();
+    
+    // Trigger backup after data modification
+    setTimeout(() => performRegularBackup(), 1000);
   };
 
   const deleteAllExpired = async (): Promise<number> => {
