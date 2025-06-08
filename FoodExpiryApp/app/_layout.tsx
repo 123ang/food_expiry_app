@@ -68,7 +68,7 @@ function RootLayoutContent() {
     return (
       <View style={{ 
         flex: 1, 
-        backgroundColor: '#0f7714', // Your logo green color
+        backgroundColor: '#006b29', // Your updated green color
         justifyContent: 'center', 
         alignItems: 'center' 
       }}>
