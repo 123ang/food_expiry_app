@@ -33,6 +33,11 @@
         "foregroundImage": "./assets/food_expiry_logo_adaptive.png",
         "backgroundColor": "#0f7714"
       },
+      "splash": {
+        "image": "./assets/food_expiry_logo_adaptive.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#0f7714"
+      },
       "package": "com.expiryalert.app",
       "versionCode": 2,
       "permissions": [
@@ -51,6 +56,15 @@
     },
     "plugins": [
       "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0f7714",
+          "image": "./assets/food_expiry_logo_adaptive.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ],
       [
         "expo-build-properties",
         {

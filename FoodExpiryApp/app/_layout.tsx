@@ -3,18 +3,23 @@ import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { DatabaseProvider } from '../context/DatabaseContext';
 import { LanguageProvider, useLanguage } from '../context/LanguageContext';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Image, Text } from 'react-native';
 import { useNotificationChecker } from '../hooks/useNotificationChecker';
 import { useFonts } from 'expo-font';
 import { FONTS_TO_LOAD } from '../styles/typography';
 import { useTypography } from '../hooks/useTypography';
 import { loadCustomFonts } from '../styles/fontLoader';
 import { useEffect, useState } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 function RootLayoutContent() {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const [customFontsLoaded, setCustomFontsLoaded] = useState(false);
+  const [appIsReady, setAppIsReady] = useState(false);
   
   // Get typography based on current language
   const typography = useTypography(undefined, language);
@@ -33,20 +38,58 @@ function RootLayoutContent() {
       loadFonts();
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Simulate loading time to show splash
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } finally {
+        setAppIsReady(true);
+      }
+    }
+
+    if (fontsLoaded && customFontsLoaded) {
+      prepare();
+    }
+  }, [fontsLoaded, customFontsLoaded]);
+
+  useEffect(() => {
+    if (appIsReady) {
+      SplashScreen.hideAsync();
+    }
+  }, [appIsReady]);
   
   // Initialize notification checker for automatic expiry notifications
   useNotificationChecker();
 
-  // Show loading spinner while fonts are loading
-  if (!fontsLoaded || !customFontsLoaded) {
+  // Show custom green splash screen while loading
+  if (!appIsReady) {
     return (
       <View style={{ 
         flex: 1, 
-        backgroundColor: theme.backgroundColor, 
+        backgroundColor: '#0f7714', // Your logo green color
         justifyContent: 'center', 
         alignItems: 'center' 
       }}>
-        <ActivityIndicator size="large" color={theme.primaryColor} />
+        <Image 
+          source={require('../assets/food_expiry_logo_adaptive.png')}
+          style={{
+            width: 200,
+            height: 200,
+            marginBottom: 20,
+            resizeMode: 'contain'
+          }}
+        />
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={{
+          color: '#ffffff',
+          marginTop: 20,
+          fontSize: 16,
+          fontWeight: '600'
+        }}>
+          Loading Expiry Alert...
+        </Text>
       </View>
     );
   }
