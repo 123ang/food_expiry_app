@@ -181,7 +181,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       }
       
-      console.log(`Validation complete: ${currentCategories.length} categories, ${currentLocations.length} locations`);
+
     } catch (error) {
       console.error('Error validating categories and locations:', error);
       // Non-critical error, continue execution
@@ -637,8 +637,11 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Invalidate related caches
     invalidateCache([CACHE_KEYS.CATEGORIES, CACHE_KEYS.FOOD_ITEMS]);
     
-    // Refresh data
-    await Promise.all([refreshCategories(), refreshFoodItems()]);
+    // Refresh data sequentially to avoid database conflicts
+    await refreshCategories();
+    // Small delay before refreshing food items
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await refreshFoodItems();
     return id;
   };
 
@@ -648,8 +651,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Invalidate related caches
     invalidateCache([CACHE_KEYS.CATEGORIES, CACHE_KEYS.FOOD_ITEMS]);
     
-    // Refresh data
-    await Promise.all([refreshCategories(), refreshFoodItems()]);
+    // Refresh data sequentially to avoid database conflicts
+    await refreshCategories();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await refreshFoodItems();
   };
 
   const deleteCategory = async (id: number) => {
@@ -658,8 +663,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Invalidate related caches
     invalidateCache([CACHE_KEYS.CATEGORIES, CACHE_KEYS.FOOD_ITEMS]);
     
-    // Refresh data
-    await Promise.all([refreshCategories(), refreshFoodItems()]);
+    // Refresh data sequentially to avoid database conflicts
+    await refreshCategories();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await refreshFoodItems();
   };
 
   // Location operations with cache management
@@ -673,8 +680,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Invalidate related caches
     invalidateCache([CACHE_KEYS.LOCATIONS, CACHE_KEYS.FOOD_ITEMS]);
     
-    // Refresh data
-    await Promise.all([refreshLocations(), refreshFoodItems()]);
+    // Refresh data sequentially to avoid database conflicts
+    await refreshLocations();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await refreshFoodItems();
     return id;
   };
 
@@ -684,8 +693,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Invalidate related caches
     invalidateCache([CACHE_KEYS.LOCATIONS, CACHE_KEYS.FOOD_ITEMS]);
     
-    // Refresh data
-    await Promise.all([refreshLocations(), refreshFoodItems()]);
+    // Refresh data sequentially to avoid database conflicts
+    await refreshLocations();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await refreshFoodItems();
   };
 
   const deleteLocation = async (id: number) => {
@@ -694,8 +705,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Invalidate related caches
     invalidateCache([CACHE_KEYS.LOCATIONS, CACHE_KEYS.FOOD_ITEMS]);
     
-    // Refresh data
-    await Promise.all([refreshLocations(), refreshFoodItems()]);
+    // Refresh data sequentially to avoid database conflicts
+    await refreshLocations();
+    await new Promise(resolve => setTimeout(resolve, 10));
+    await refreshFoodItems();
   };
 
   // Food item operations with cache management

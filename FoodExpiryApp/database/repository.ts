@@ -41,16 +41,54 @@ export const CategoryRepository = {
         return await fallbackDb.getAllCategories();
       }
       
-      // Regular SQLite operation
-      const result = await db.getAllAsync('SELECT * FROM categories ORDER BY name') as any[];
-      return result.map(row => ({
-        id: row.id as number,
-        name: row.name as string,
-        icon: row.icon as string
-      }));
+      // Validate database connection before use
+      try {
+        await db.getAllAsync('SELECT 1'); // Test query to ensure connection is valid
+      } catch (connectionError) {
+        console.warn('Database connection invalid, falling back to storage');
+        const fallbackDb = getFallbackStorage();
+        return await fallbackDb.getAllCategories();
+      }
+      
+      // Regular SQLite operation with retry logic
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount < maxRetries) {
+        try {
+          const result = await db.getAllAsync('SELECT * FROM categories ORDER BY name') as any[];
+          return result.map(row => ({
+            id: row.id as number,
+            name: row.name as string,
+            icon: row.icon as string
+          }));
+        } catch (statementError) {
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            // If SQLite fails completely, fall back to storage
+            console.warn('SQLite operations failed, using fallback storage');
+            const fallbackDb = getFallbackStorage();
+            return await fallbackDb.getAllCategories();
+          }
+          // Small delay before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Should never reach here, but just in case
+      const fallbackDb = getFallbackStorage();
+      return await fallbackDb.getAllCategories();
+      
     } catch (error) {
       console.error('Error getting categories:', error);
-      throw error;
+      // As last resort, try fallback storage
+      try {
+        const fallbackDb = getFallbackStorage();
+        return await fallbackDb.getAllCategories();
+      } catch (fallbackError) {
+        console.error('Fallback storage also failed:', fallbackError);
+        return []; // Return empty array rather than throwing
+      }
     }
   },
 
@@ -191,16 +229,54 @@ export const LocationRepository = {
         return await fallbackDb.getAllLocations();
       }
       
-      // Regular SQLite operation
-      const result = await db.getAllAsync('SELECT * FROM locations ORDER BY name') as any[];
-      return result.map(row => ({
-        id: row.id as number,
-        name: row.name as string,
-        icon: row.icon as string
-      }));
+      // Validate database connection before use
+      try {
+        await db.getAllAsync('SELECT 1'); // Test query to ensure connection is valid
+      } catch (connectionError) {
+        console.warn('Database connection invalid, falling back to storage');
+        const fallbackDb = getFallbackStorage();
+        return await fallbackDb.getAllLocations();
+      }
+      
+      // Regular SQLite operation with retry logic
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount < maxRetries) {
+        try {
+          const result = await db.getAllAsync('SELECT * FROM locations ORDER BY name') as any[];
+          return result.map(row => ({
+            id: row.id as number,
+            name: row.name as string,
+            icon: row.icon as string
+          }));
+        } catch (statementError) {
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            // If SQLite fails completely, fall back to storage
+            console.warn('SQLite operations failed, using fallback storage');
+            const fallbackDb = getFallbackStorage();
+            return await fallbackDb.getAllLocations();
+          }
+          // Small delay before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      // Should never reach here, but just in case
+      const fallbackDb = getFallbackStorage();
+      return await fallbackDb.getAllLocations();
+      
     } catch (error) {
       console.error('Error getting locations:', error);
-      throw error;
+      // As last resort, try fallback storage
+      try {
+        const fallbackDb = getFallbackStorage();
+        return await fallbackDb.getAllLocations();
+      } catch (fallbackError) {
+        console.error('Fallback storage also failed:', fallbackError);
+        return []; // Return empty array rather than throwing
+      }
     }
   },
 

@@ -52,6 +52,8 @@ export default function ListScreen() {
   const [isFilteringLoading, setIsFilteringLoading] = useState(false);
   const [lastDataVersion, setLastDataVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
 
   // Get filter from URL params or use current state
   const activeFilter = (Array.isArray(filterStatus) ? filterStatus[0] : filterStatus) || currentFilterStatus;
@@ -198,13 +200,24 @@ export default function ListScreen() {
     }, [dataVersion, isLoading, foodItems?.length, language])
   );
 
-  // Simplified detection: Apply padding when there are enough items to potentially overlap
-  const needsButtonAvoidance = (isLastItem: boolean, totalItems: number) => {
-    if (!isLastItem || totalItems === 0) return false;
+  // Height-based detection: Apply padding when content would overlap with bottom navigation
+  const needsButtonAvoidance = (isLastItem: boolean) => {
+    if (!isLastItem) return false;
     
-    // Simple threshold: Apply padding when we have 4+ items
-    // This covers most cases where the floating button would interfere
-    return totalItems >= 4;
+    // Get the height of the bottom navigation (approximately 80-100px)
+    const bottomNavHeight = responsive.getResponsiveValue({
+      small: 80,        // Compact phones
+      default: 90,      // Standard phones
+      tablet: 100,      // Tablets
+      largeTablet: 110, // Large tablets
+    });
+    
+    // Add some buffer space (20px) to ensure comfortable spacing
+    const bufferSpace = 20;
+    const thresholdHeight = scrollViewHeight - bottomNavHeight - bufferSpace;
+    
+    // If content height is close to or exceeds the threshold, add padding
+    return contentHeight > thresholdHeight;
   };
 
   const styles = StyleSheet.create({
@@ -294,8 +307,12 @@ export default function ListScreen() {
       alignItems: 'center',
     },
     lastFoodItem: {
+      flexDirection: 'row',
+      padding: 16,
+      backgroundColor: colors.cardBackground,
+      borderBottomColor: colors.borderColor,
+      alignItems: 'center',
       borderBottomWidth: 0,
-      paddingBottom: 0, // Normal last item - no extra padding
       borderBottomLeftRadius: 0, // Remove bottom radius for seamless connection
       borderBottomRightRadius: 0, // Remove bottom radius for seamless connection
     },
@@ -413,7 +430,7 @@ export default function ListScreen() {
 
     return filteredItems.map((item, index) => {
       const isLastItem = index === filteredItems.length - 1;
-      const needsAvoidance = needsButtonAvoidance(isLastItem, filteredItems.length);
+      const needsAvoidance = needsButtonAvoidance(isLastItem);
       
       return (
         <TouchableOpacity
@@ -563,7 +580,7 @@ export default function ListScreen() {
       <ScrollView 
         style={styles.content}
         contentContainerStyle={{
-          paddingBottom: 0, // Remove gap - list connects directly to navigation
+          paddingBottom: 16, // Match first item padding for consistency
         }}
         refreshControl={
           <RefreshControl
@@ -573,6 +590,13 @@ export default function ListScreen() {
             tintColor={colors.primaryColor}
           />
         }
+        onLayout={(event) => {
+          const { height } = event.nativeEvent.layout;
+          setScrollViewHeight(height);
+        }}
+        onContentSizeChange={(width, height) => {
+          setContentHeight(height);
+        }}
       >
         {renderContent()}
       </ScrollView>

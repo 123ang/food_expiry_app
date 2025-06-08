@@ -635,33 +635,44 @@ export default function CategoriesScreen() {
       // Check for existing categories to avoid duplicates
       const existingCategoryNames = categories.map(cat => cat.name.toLowerCase());
       
-      // Add only new categories
-      let addedCount = 0;
+      // Collect new categories to add
+      const newCategories = selectedCategories.filter(categoryData => 
+        !existingCategoryNames.includes(categoryData.name.toLowerCase())
+      );
       
-      for (const categoryData of selectedCategories) {
-        if (!existingCategoryNames.includes(categoryData.name.toLowerCase())) {
+      // Add categories sequentially to avoid database conflicts
+      let addedCount = 0;
+      for (const categoryData of newCategories) {
+        try {
           await createCategory({
             name: categoryData.name,
             icon: categoryData.icon,
           });
           addedCount++;
+          // Small delay to prevent database conflicts
+          await new Promise(resolve => setTimeout(resolve, 50));
+        } catch (error) {
+          console.warn(`Failed to create category ${categoryData.name}:`, error);
         }
       }
 
-      await refreshCategories();
+      // Refresh once at the end instead of after each creation
+      if (addedCount > 0) {
+        await refreshCategories();
+      }
       
       const skippedCount = selectedCategories.length - addedCount;
       let message = '';
       
       if (addedCount > 0 && skippedCount > 0) {
-        message = `Added ${addedCount} new categories. Skipped ${skippedCount} existing categories.`;
+        message = `${t('categories.added')} ${addedCount} ${t('categories.newCategories')}. ${t('categories.skipped')} ${skippedCount} ${t('categories.existingCategories')}.`;
       } else if (addedCount > 0) {
-        message = `Added ${addedCount} new categories from selected themes!`;
+        message = `${t('categories.added')} ${addedCount} ${t('categories.newCategoriesFromThemes')}!`;
       } else {
-        message = 'All selected categories already exist.';
+        message = t('categories.allExist');
       }
       
-      Alert.alert(t('common.success'), message, [{ text: 'OK' }]);
+      Alert.alert(t('common.success'), message, [{ text: t('common.ok') }]);
     } catch (error) {
               Alert.alert(t('alert.error'), t('alert.unexpectedError'));
     } finally {

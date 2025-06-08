@@ -72,7 +72,6 @@ const backupUserData = async (database: SQLite.SQLiteDatabase): Promise<any> => 
     await AsyncStorage.setItem('categories_backup', JSON.stringify(backup.categories));
     await AsyncStorage.setItem('locations_backup', JSON.stringify(backup.locations));
     
-    console.log(`Backed up ${backup.categories.length} categories, ${backup.locations.length} locations, ${backup.foodItems.length} food items`);
     return backup;
   } catch (error) {
     console.error('Failed to backup user data:', error);
@@ -163,9 +162,6 @@ const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDat
           'INSERT INTO categories (id, name, icon) VALUES (?, ?, ?)',
           [categoryId, category.name, category.icon]
         );
-        console.log(`Inserted missing default category: ${category.name}`);
-      } else {
-        console.log(`Preserved existing category: ${existing.name}`);
       }
     }
     
@@ -181,9 +177,6 @@ const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDat
           'INSERT INTO locations (id, name, icon) VALUES (?, ?, ?)',
           [locationId, location.name, location.icon]
         );
-        console.log(`Inserted missing default location: ${location.name}`);
-      } else {
-        console.log(`Preserved existing location: ${existing.name}`);
       }
     }
   } catch (error) {
@@ -621,7 +614,6 @@ export const initDatabase = async (): Promise<void> => {
 const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
   try {
     // This function now focuses on preserving existing categories instead of replacing them
-    console.log('Checking category migration...');
     
     // First, backup existing categories and locations to AsyncStorage
     const existingCategories = await database.getAllAsync('SELECT * FROM categories ORDER BY id');
@@ -629,18 +621,15 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
     
     if (existingCategories.length > 0) {
       await AsyncStorage.setItem('preserved_categories', JSON.stringify(existingCategories));
-      console.log(`Preserved ${existingCategories.length} existing categories`);
     }
     
     if (existingLocations.length > 0) {
       await AsyncStorage.setItem('preserved_locations', JSON.stringify(existingLocations));
-      console.log(`Preserved ${existingLocations.length} existing locations`);
     }
     
     // Use the new preservation function instead of destructive migration
     await preserveExistingCategoriesAndLocations(database, language);
     
-    console.log('Category migration completed with preservation');
   } catch (error) {
     console.warn('Category migration warning (non-critical):', error);
     // Continue execution as this is not a critical error

@@ -589,17 +589,13 @@ export default function AddScreen() {
             <View style={styles.imageContainer}>
               {imageUri ? (
                 <>
-                  {(() => {
-                    console.log('Current imageUri:', imageUri);
-                    console.log('Is emoji?', imageUri.startsWith('emoji:'));
-                    return imageUri.startsWith('emoji:') ? (
-                      <View style={styles.emojiPreview}>
-                        <Text style={styles.emojiText}>{imageUri.replace('emoji:', '')}</Text>
-                      </View>
-                    ) : (
-                      <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                    );
-                  })()}
+                  {imageUri.startsWith('emoji:') ? (
+                    <View style={styles.emojiPreview}>
+                      <Text style={styles.emojiText}>{imageUri.replace('emoji:', '')}</Text>
+                    </View>
+                  ) : (
+                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                  )}
                   <View style={styles.imageButtons}>
                     <TouchableOpacity 
                       style={styles.imageButton}

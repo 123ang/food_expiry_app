@@ -142,6 +142,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.cancel': 'Cancel',
     'common.success': 'Success',
     'common.error': 'Error',
+    'common.ok': 'OK',
     
     // Months
     'month.january': 'January',
@@ -349,6 +350,12 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.deleteCategory': 'Delete Category',
     'categories.deleteConfirm': 'Are you sure you want to delete this category?',
     'categories.errorDelete': 'Failed to delete category',
+    'categories.added': 'Added',
+    'categories.skipped': 'Skipped',
+    'categories.newCategories': 'new categories',
+    'categories.existingCategories': 'existing categories',
+    'categories.newCategoriesFromThemes': 'new categories from selected themes',
+    'categories.allExist': 'All selected categories already exist.',
     
     // Theme Setup Modal
     'themeSetup.title': 'Setup Category Themes',
@@ -604,6 +611,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.cancel': '取消',
     'common.success': '成功',
     'common.error': '错误',
+    'common.ok': '确定',
     
     // Months
     'month.january': '一月',
@@ -811,6 +819,12 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.deleteCategory': '删除分类',
     'categories.deleteConfirm': '您确定要删除这个分类吗？',
     'categories.errorDelete': '删除分类失败',
+    'categories.added': '已添加',
+    'categories.skipped': '已跳过',
+    'categories.newCategories': '个新分类',
+    'categories.existingCategories': '个现有分类',
+    'categories.newCategoriesFromThemes': '个来自所选主题的新分类',
+    'categories.allExist': '所有选择的分类都已存在。',
     
     // Theme Setup Modal
     'themeSetup.title': '设置分类主题',
@@ -1069,6 +1083,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.cancel': 'キャンセル',
     'common.success': '成功',
     'common.error': 'エラー',
+    'common.ok': 'OK',
     
     // Months
     'month.january': '1月',
@@ -1276,6 +1291,12 @@ const translations: Record<Language, Record<string, string>> = {
     'categories.deleteCategory': 'カテゴリを削除',
     'categories.deleteConfirm': 'このカテゴリを削除してもよろしいですか？',
     'categories.errorDelete': 'カテゴリの削除に失敗しました',
+    'categories.added': '追加されました',
+    'categories.skipped': 'スキップされました',
+    'categories.newCategories': '個の新しいカテゴリ',
+    'categories.existingCategories': '個の既存のカテゴリ',
+    'categories.newCategoriesFromThemes': '個の選択されたテーマからの新しいカテゴリ',
+    'categories.allExist': '選択されたカテゴリはすべて既に存在します。',
     
     // Theme Setup Modal
     'themeSetup.title': 'カテゴリテーマ設定',

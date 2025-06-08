@@ -3,11 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const IMAGES_DIR = `${FileSystem.documentDirectory}images/`;
 const IMAGE_BACKUP_KEY = 'image_backup_registry';
-const IMAGE_MIGRATION_KEY = 'image_migration_version';
-const CURRENT_MIGRATION_VERSION = 1;
-
-// Session guard to prevent repeated migrations
-let migrationRunInSession = false;
 
 // Image registry for tracking and backup
 interface ImageRegistryEntry {
@@ -19,7 +14,7 @@ interface ImageRegistryEntry {
 }
 
 /**
- * Initialize the images directory and perform any necessary migrations
+ * Initialize the images directory
  */
 export const initializeImageStorage = async (): Promise<void> => {
   try {
@@ -28,47 +23,10 @@ export const initializeImageStorage = async (): Promise<void> => {
       await FileSystem.makeDirectoryAsync(IMAGES_DIR, { intermediates: true });
     }
     
-    // Check if migration is needed
-    await performImageMigrationIfNeeded();
+    // Just perform a simple backup of existing images
+    await backupImageRegistry();
   } catch (error) {
     console.error('Error initializing image storage:', error);
-  }
-};
-
-/**
- * Perform image migration for app updates
- */
-const performImageMigrationIfNeeded = async (): Promise<void> => {
-  try {
-    // Session guard to prevent repeated migrations
-    if (migrationRunInSession) {
-      console.log('Image migration already run in this session, skipping...');
-      return;
-    }
-    
-    const currentVersion = await AsyncStorage.getItem(IMAGE_MIGRATION_KEY);
-    const versionNumber = currentVersion ? parseInt(currentVersion, 10) : 0;
-    
-    console.log(`Current image migration version: ${versionNumber}, required: ${CURRENT_MIGRATION_VERSION}`);
-    
-    if (versionNumber < CURRENT_MIGRATION_VERSION) {
-      console.log('Performing image migration...');
-      migrationRunInSession = true;
-      
-      // Backup existing image registry
-      await backupImageRegistry();
-      
-      // Update migration version
-      await AsyncStorage.setItem(IMAGE_MIGRATION_KEY, CURRENT_MIGRATION_VERSION.toString());
-      
-      console.log('Image migration completed');
-    } else {
-      console.log('Image migration not needed');
-      migrationRunInSession = true;
-    }
-  } catch (error) {
-    console.error('Error during image migration:', error);
-    migrationRunInSession = true; // Set guard even on error
   }
 };
 
@@ -124,7 +82,6 @@ export const restoreImagesFromBackup = async (): Promise<boolean> => {
       }
     }
     
-    console.log(`Restored ${restoredCount} out of ${registry.length} images`);
     return restoredCount > 0;
   } catch (error) {
     console.error('Error restoring images from backup:', error);
@@ -241,7 +198,6 @@ export const cleanupOrphanedImages = async (databaseImageUris: string[]): Promis
       await deleteImageFromStorage(orphanedImage);
     }
     
-    console.log(`Cleaned up ${orphanedImages.length} orphaned images`);
     return orphanedImages.length;
   } catch (error) {
     console.error('Error cleaning up orphaned images:', error);
