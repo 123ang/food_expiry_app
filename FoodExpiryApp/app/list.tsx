@@ -317,12 +317,12 @@ export default function ListScreen() {
       borderBottomRightRadius: 0, // Remove bottom radius for seamless connection
     },
     buttonAvoidanceItem: {
-      // Smart padding: Only applied when last item would touch bottom navigation
+      // Smart padding: Position content 5px above the floating add button
       paddingBottom: responsive.getResponsiveValue({
-        small: 90,        // Compact phones (iPhone SE, small Android)
-        default: 110,     // Standard phones (Vivo, Samsung Galaxy, iPhone 12+)
-        tablet: 120,      // Small tablets (iPad mini, Android tablets)
-        largeTablet: 130, // Large tablets (iPad Pro, large Android tablets)
+        small: 56 + 28 + 5,     // 89px: Button height + margin top + buffer (iPhone SE, small Android)
+        default: 56 + 28 + 5,   // 89px: Button height + margin top + buffer (Standard phones)
+        tablet: 56 + 28 + 5,    // 89px: Button height + margin top + buffer (Small tablets)
+        largeTablet: 56 + 28 + 5, // 89px: Button height + margin top + buffer (Large tablets)
       }),
     },
     foodImage: {

@@ -175,14 +175,11 @@ export default function AddScreen() {
   };
 
   const selectEmoji = (emoji: string) => {
-    console.log('Selecting emoji:', emoji);
-    console.log('Setting imageUri to:', `emoji:${emoji}`);
     setImageUri(`emoji:${emoji}`);
     setShowEmojiModal(false);
   };
 
   const selectSavedPhoto = (uri: string) => {
-    console.log('Selecting saved photo:', uri);
     setImageUri(uri);
     setShowPhotosModal(false);
   };
