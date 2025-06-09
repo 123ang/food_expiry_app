@@ -89,28 +89,45 @@ export default function CalendarScreen() {
         alignSelf: 'center' as any,
         minHeight: '100vh' as any,
         paddingBottom: 0,
+        display: 'flex' as any,
+        flexDirection: 'column' as any,
       }),
     } as any,
+    mainContent: {
+      flex: 1,
+      flexDirection: responsive.breakpoints.isLandscape && (responsive.breakpoints.isTablet || responsive.breakpoints.isLargeTablet) 
+        ? 'row' // Horizontal layout for landscape tablets
+        : 'column', // Vertical layout for portrait or phones
+    },
     calendarSection: {
       ...(isWeb ? {
-        // Web: allow natural height without constraints
+        // Web: fixed height for proper layout
         flex: 0,
         flexShrink: 0,
+        height: 450, // Fixed height for web
+        minHeight: 450,
+        maxHeight: 450,
+      } : responsive.breakpoints.isLandscape && (responsive.breakpoints.isTablet || responsive.breakpoints.isLargeTablet) ? {
+        // Landscape tablets: horizontal layout (left side)
+        flex: 1,
+        width: '50%',
+        maxWidth: '50%',
+        height: '100%',
       } : {
-        // Mobile/Tablet: Compact calendar to leave room for item list
+        // Portrait or phones: vertical layout (top section)
         height: responsive.getResponsiveValue({
-          largeTablet: Math.min(windowHeight * 0.4, 380), // Reduced to 40% for iPad
-          tablet: Math.min(windowHeight * 0.42, 400), // Reduced to 42% for tablets
+          largeTablet: Math.min(windowHeight * 0.4, 380), // Portrait iPad: 40% height
+          tablet: Math.min(windowHeight * 0.42, 400), // Portrait tablet: 42% height
           default: Math.min(windowHeight * 0.45, 350), // Keep same for phones
         }),
         minHeight: responsive.getResponsiveValue({
-          largeTablet: 320, // Reduced minimum height for iPad
-          tablet: 340, // Reduced minimum height for tablets
+          largeTablet: 320, // Portrait iPad
+          tablet: 340, // Portrait tablet
           default: 320, // Keep same for phones
         }),
         maxHeight: responsive.getResponsiveValue({
-          largeTablet: 420, // Much more compact for iPad
-          tablet: 450, // More compact for tablets
+          largeTablet: 420, // Portrait iPad
+          tablet: 450, // Portrait tablet
           default: 400, // Keep same for phones
         }),
       }),
@@ -140,8 +157,10 @@ export default function CalendarScreen() {
       shadowRadius: 4,
       elevation: 3,
       ...(isWeb ? {
-        // Web: natural height, no flex constraints
-        flexShrink: 0,
+        // Web: full height with proper flex
+        flex: 1,
+        display: 'flex' as any,
+        flexDirection: 'column' as any,
       } : {
         // Mobile/Tablet: Allow full expansion
         flex: 1,
@@ -212,29 +231,45 @@ export default function CalendarScreen() {
         default: 8,
       }),
       ...(isWeb ? {
-        // Web: natural height without flex constraints
-        minHeight: 300,
+        // Web: fixed height for proper grid layout
+        flex: 1,
+        minHeight: 280,
+        maxHeight: 320,
+        alignContent: 'flex-start' as any,
       } : {
-        // Mobile/Tablet: Allow proper expansion
+        // Mobile/Tablet: Optimized for iPad orientations
         flex: 1,
         minHeight: responsive.getResponsiveValue({
-          largeTablet: 240, // Reduced for iPad to fit all dates compactly
-          tablet: 260, // Reduced for tablets
+          largeTablet: responsive.breakpoints.isLandscape ? 260 : 240, // More space in landscape
+          tablet: responsive.breakpoints.isLandscape ? 280 : 260, // More space in landscape
           default: 240,
+        }),
+        maxHeight: responsive.getResponsiveValue({
+          largeTablet: responsive.breakpoints.isLandscape ? 340 : 300, // More space in landscape
+          tablet: responsive.breakpoints.isLandscape ? 360 : 320, // More space in landscape
+          default: 280,
         }),
       }),
     },
     dayCell: {
       width: `${100 / 7}%`,
-      aspectRatio: responsive.getResponsiveValue({
-        largeTablet: 0.85, // More compact for iPad to fit all dates
-        tablet: 0.9, // Slightly more compact for tablets
-        small: 0.8,
-        default: 0.9,
+      ...(isWeb ? {
+        // Web: fixed height instead of aspect ratio
+        height: 40,
+        minHeight: 40,
+        maxHeight: 40,
+      } : {
+        // Mobile/Tablet: use aspect ratio optimized for orientations
+        aspectRatio: responsive.getResponsiveValue({
+          largeTablet: responsive.breakpoints.isLandscape ? 0.9 : 0.85, // Taller cells in landscape
+          tablet: responsive.breakpoints.isLandscape ? 0.95 : 0.9, // Taller cells in landscape
+          small: 0.8,
+          default: 0.9,
+        }),
       }),
       padding: responsive.getResponsiveValue({
-        largeTablet: 4, // Reduced padding for iPad
-        tablet: 4, // Reduced padding for tablets
+        largeTablet: responsive.breakpoints.isLandscape ? 5 : 4, // More padding in landscape
+        tablet: responsive.breakpoints.isLandscape ? 5 : 4, // More padding in landscape
         small: 1,
         default: 2,
       }),
@@ -249,17 +284,26 @@ export default function CalendarScreen() {
         default: 6,
       }),
       backgroundColor: theme.backgroundColor,
-      minHeight: responsive.getResponsiveValue({
-        largeTablet: 40, // Much more compact for iPad
-        tablet: 45, // More compact for tablets
-        small: 28,
-        default: 32,
-      }),
-      maxHeight: responsive.getResponsiveValue({
-        largeTablet: 50, // Much more compact for iPad
-        tablet: 55, // More compact for tablets
-        small: 36,
-        default: 40,
+      ...(isWeb ? {
+        // Web: fixed dimensions for consistent layout
+        height: 32,
+        minHeight: 32,
+        maxHeight: 32,
+        width: '100%',
+      } : {
+        // Mobile/Tablet: responsive heights optimized for orientations
+        minHeight: responsive.getResponsiveValue({
+          largeTablet: responsive.breakpoints.isLandscape ? 45 : 40, // Taller in landscape
+          tablet: responsive.breakpoints.isLandscape ? 50 : 45, // Taller in landscape
+          small: 28,
+          default: 32,
+        }),
+        maxHeight: responsive.getResponsiveValue({
+          largeTablet: responsive.breakpoints.isLandscape ? 55 : 50, // Taller in landscape
+          tablet: responsive.breakpoints.isLandscape ? 60 : 55, // Taller in landscape
+          small: 36,
+          default: 40,
+        }),
       }),
       overflow: 'hidden',
       ...(isWeb && {
@@ -333,17 +377,26 @@ export default function CalendarScreen() {
         // Web: allow natural expansion with minimum height
         minHeight: 400,
         backgroundColor: theme.backgroundColor,
+      } : responsive.breakpoints.isLandscape && (responsive.breakpoints.isTablet || responsive.breakpoints.isLargeTablet) ? {
+        // Landscape tablets: horizontal layout (right side)
+        flex: 1,
+        width: '50%',
+        maxWidth: '50%',
+        height: '100%',
+        backgroundColor: theme.backgroundColor,
+        borderLeftWidth: 1,
+        borderLeftColor: theme.borderColor,
       } : {
-        // Mobile/Tablet: better flex behavior
+        // Portrait or phones: vertical layout (bottom section)
         flex: responsive.getResponsiveValue({
-          largeTablet: 2, // More space for list on large tablets
-          tablet: 1.5, // More space for list on tablets
+          largeTablet: 2.2, // More space in portrait
+          tablet: 1.7, // More space in portrait
           default: 1,
         }),
         backgroundColor: theme.backgroundColor,
         minHeight: responsive.getResponsiveValue({
-          largeTablet: 300, // Minimum height for large tablets
-          tablet: 250, // Minimum height for tablets
+          largeTablet: 320, // Portrait iPad
+          tablet: 280, // Portrait tablet
           default: 200,
         }),
       }),
@@ -484,6 +537,10 @@ export default function CalendarScreen() {
       }),
       borderBottomWidth: 1,
       borderBottomColor: theme.borderColor,
+      ...(isWeb && {
+        paddingTop: 20, // Reduced top padding for web
+        flexShrink: 0,
+      }),
     },
     headerTitle: {
       fontSize: responsive.getResponsiveValue({
@@ -664,90 +721,93 @@ export default function CalendarScreen() {
         <Text style={styles.headerTitle}>{t('nav.calendar')}</Text>
       </View>
       
-      <View style={styles.calendarSection}>
-        <View style={styles.calendarContainer}>
-          <View style={styles.header}>
-            <View style={styles.monthSelector}>
-              <TouchableOpacity
-                style={styles.monthButton}
-                onPress={() => {
-                  const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
-                  setCurrentMonth(newDate);
-                }}
-              >
-                <Text style={{ fontSize: 20, color: theme.textColor }}>◀</Text>
-              </TouchableOpacity>
-              <Text style={styles.monthText}>
-                {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </Text>
-              <TouchableOpacity
-                style={styles.monthButton}
-                onPress={() => {
-                  const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
-                  setCurrentMonth(newDate);
-                }}
-              >
-                <Text style={{ fontSize: 20, color: theme.textColor }}>▶</Text>
-              </TouchableOpacity>
+      {/* Main Content Container - Horizontal in landscape, vertical in portrait */}
+      <View style={styles.mainContent}>
+        <View style={styles.calendarSection}>
+          <View style={styles.calendarContainer}>
+            <View style={styles.header}>
+              <View style={styles.monthSelector}>
+                <TouchableOpacity
+                  style={styles.monthButton}
+                  onPress={() => {
+                    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1);
+                    setCurrentMonth(newDate);
+                  }}
+                >
+                  <Text style={{ fontSize: 20, color: theme.textColor }}>◀</Text>
+                </TouchableOpacity>
+                <Text style={styles.monthText}>
+                  {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </Text>
+                <TouchableOpacity
+                  style={styles.monthButton}
+                  onPress={() => {
+                    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
+                    setCurrentMonth(newDate);
+                  }}
+                >
+                  <Text style={{ fontSize: 20, color: theme.textColor }}>▶</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.weekDaysRow}>
+                {weekDays.map(day => (
+                  <View key={day} style={styles.weekDay}>
+                    <Text style={styles.weekDayText}>{day}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-            <View style={styles.weekDaysRow}>
-              {weekDays.map(day => (
-                <View key={day} style={styles.weekDay}>
-                  <Text style={styles.weekDayText}>{day}</Text>
-                </View>
-              ))}
+            <View style={styles.calendarGrid}>
+              {getDaysInMonth(currentMonth).map(renderDay)}
             </View>
-          </View>
-          <View style={styles.calendarGrid}>
-            {getDaysInMonth(currentMonth).map(renderDay)}
           </View>
         </View>
-      </View>
 
-      <View style={styles.listSection}>
-        <View style={styles.listHeader}>
-          <View style={styles.listHeaderLeft}>
-            <Text style={styles.listTitle}>
-              {selectedDate.toLocaleDateString('en-US', { 
-                month: 'long', 
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </Text>
-            <Text style={styles.listCount}>
-              {filteredItems.length} {t('calendar.items')}
-            </Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={() => router.push({
-              pathname: '/add',
-              params: { 
-                prefilledDate: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
-              }
-            })}
-          >
-            <Text style={{ fontSize: 20, color: "#FFFFFF", fontWeight: 'bold' }}>+</Text>
-          </TouchableOpacity>
-        </View>
-        <ScrollView 
-          style={styles.listContent}
-          contentContainerStyle={[
-            styles.scrollContent,
-            filteredItems.length === 0 && styles.emptyList
-          ]}
-        >
-          {filteredItems.length === 0 ? (
-            <View>
-              <Text style={{ fontSize: 48, color: theme.textSecondary }}>📅</Text>
-              <Text style={styles.emptyListText}>
-                {t('calendar.noItems')}
+        <View style={styles.listSection}>
+          <View style={styles.listHeader}>
+            <View style={styles.listHeaderLeft}>
+              <Text style={styles.listTitle}>
+                {selectedDate.toLocaleDateString('en-US', { 
+                  month: 'long', 
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </Text>
+              <Text style={styles.listCount}>
+                {filteredItems.length} {t('calendar.items')}
               </Text>
             </View>
-          ) : (
-            filteredItems.map((item, index) => renderFoodItem(item, index))
-          )}
-        </ScrollView>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => router.push({
+                pathname: '/add',
+                params: { 
+                  prefilledDate: `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
+                }
+              })}
+            >
+              <Text style={{ fontSize: 20, color: "#FFFFFF", fontWeight: 'bold' }}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView 
+            style={styles.listContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              filteredItems.length === 0 && styles.emptyList
+            ]}
+          >
+            {filteredItems.length === 0 ? (
+              <View>
+                <Text style={{ fontSize: 48, color: theme.textSecondary }}>📅</Text>
+                <Text style={styles.emptyListText}>
+                  {t('calendar.noItems')}
+                </Text>
+              </View>
+            ) : (
+              filteredItems.map((item, index) => renderFoodItem(item, index))
+            )}
+          </ScrollView>
+        </View>
       </View>
 
       <BottomNav />
