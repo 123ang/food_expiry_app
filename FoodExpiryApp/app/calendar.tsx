@@ -33,6 +33,8 @@ export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
   const [lastDataVersion, setLastDataVersion] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
   const windowHeight = Dimensions.get('window').height;
   const isWeb = Platform.OS === 'web';
 
@@ -475,7 +477,7 @@ export default function CalendarScreen() {
     } as any,
     lastFoodItem: {
       borderBottomWidth: 0,
-      paddingBottom: 0, // Normal padding - extra padding applied conditionally
+      paddingBottom: 16, // Normal padding - extra padding applied conditionally
       borderBottomLeftRadius: responsive.getResponsiveValue({
         tablet: 16,
         largeTablet: 20,
@@ -569,6 +571,15 @@ export default function CalendarScreen() {
       justifyContent: 'center',
       alignItems: 'center',
     },
+    buttonAvoidanceItem: {
+      // Smart padding: Position content 5px above the floating add button
+      paddingBottom: responsive.getResponsiveValue({
+        small: 56 + 28 + 5,     // 89px: Button height + margin top + buffer (iPhone SE, small Android)
+        default: 56 + 28 + 5,   // 89px: Button height + margin top + buffer (Standard phones)
+        tablet: 56 + 28 + 5,    // 89px: Button height + margin top + buffer (Small tablets)
+        largeTablet: 56 + 28 + 5, // 89px: Button height + margin top + buffer (Large tablets)
+      }),
+    },
   });
 
   const getDaysInMonth = (date: Date) => {
@@ -656,9 +667,46 @@ export default function CalendarScreen() {
     );
   };
 
+  // Height-based detection: Apply padding when content would overlap with bottom navigation
+  const needsButtonAvoidance = (isLastItem: boolean) => {
+    if (!isLastItem) return false;
+    if (scrollViewHeight === 0 || contentHeight === 0) return false; // Wait for measurements
+    if (filteredItems.length < 3) return false; // Don't apply to very short lists
+    
+    // Get the height of the bottom navigation (approximately 80-100px)
+    const bottomNavHeight = responsive.getResponsiveValue({
+      small: 80,        // Compact phones
+      default: 90,      // Standard phones
+      tablet: 100,      // Tablets
+      largeTablet: 110, // Large tablets
+    });
+    
+    // Add some buffer space (20px) to ensure comfortable spacing
+    const bufferSpace = 20;
+    const thresholdHeight = scrollViewHeight - bottomNavHeight - bufferSpace;
+    
+    // Only apply padding if content actually exceeds the threshold
+    // This prevents applying padding to short lists that don't need it
+    const needsPadding = contentHeight > thresholdHeight;
+    
+    // Debug logging (remove in production)
+    if (isLastItem) {
+      console.log('Calendar Button Avoidance:', {
+        contentHeight,
+        scrollViewHeight,
+        thresholdHeight,
+        bottomNavHeight,
+        needsPadding,
+        itemsCount: filteredItems.length
+      });
+    }
+    
+    return needsPadding;
+  };
+
   const renderFoodItem = (item: FoodItemWithDetails, index: number) => {
     const isLastItem = index === filteredItems.length - 1;
-    const needsAvoidance = isLastItem && filteredItems.length >= 3; // Apply padding when 3+ items
+    const needsAvoidance = needsButtonAvoidance(isLastItem);
     
     return (
       <TouchableOpacity 
@@ -666,7 +714,7 @@ export default function CalendarScreen() {
         style={[
           styles.foodItem,
           isLastItem && styles.lastFoodItem,
-          needsAvoidance && { paddingBottom: Platform.OS === 'ios' ? 120 : 100 }
+          needsAvoidance && styles.buttonAvoidanceItem
         ]}
         onPress={() => router.push(`/item/${item.id}`)}
       >
@@ -802,6 +850,13 @@ export default function CalendarScreen() {
               styles.scrollContent,
               filteredItems.length === 0 && styles.emptyList
             ]}
+            onLayout={(event) => {
+              const { height } = event.nativeEvent.layout;
+              setScrollViewHeight(height);
+            }}
+            onContentSizeChange={(width, height) => {
+              setContentHeight(height);
+            }}
           >
             {filteredItems.length === 0 ? (
               <View>
