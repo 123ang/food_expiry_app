@@ -50,11 +50,11 @@ export default function CalendarScreen() {
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      // Check if data has changed or no data available
-      const dataHasChanged = dataVersion !== lastDataVersion;
+      // Only refresh if we have no data or if this is the first load
       const hasNoData = !foodItems || foodItems.length === 0;
+      const isFirstLoad = lastDataVersion === 0;
       
-      if (dataHasChanged || hasNoData) {
+      if (hasNoData || isFirstLoad) {
         setLastDataVersion(dataVersion);
         
         const refreshData = async () => {
@@ -66,15 +66,22 @@ export default function CalendarScreen() {
         };
         
         refreshData();
+      } else {
+        // Update lastDataVersion to current version to prevent future unnecessary refreshes
+        if (dataVersion !== lastDataVersion) {
+          setLastDataVersion(dataVersion);
+        }
       }
-    }, [dataVersion, foodItems?.length, language])
+    }, [foodItems?.length, lastDataVersion]) // Removed dataVersion and language from dependencies
   );
 
   // Update filtered items when selected date or food items change
   useEffect(() => {
-    const items = getItemsForDate(selectedDate);
-    setFilteredItems(items);
-  }, [selectedDate, foodItems]);
+    if (foodItems) {
+      const items = getItemsForDate(selectedDate);
+      setFilteredItems(items);
+    }
+  }, [selectedDate, foodItems]); // Keep foodItems but add null check
 
   const styles = StyleSheet.create({
     container: {
