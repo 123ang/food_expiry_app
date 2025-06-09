@@ -533,6 +533,182 @@ const getDefaultLocations = (language: Language): Location[] => {
   return locationsMap[language] || locationsMap.en;
 };
 
+// Centralized theme data with translation keys for quick setup categories
+interface CategoryThemeData {
+  id: string;
+  nameKey: string;
+  descKey: string;
+  icon: string;
+  categories: Array<{
+    translationKey: string;
+    icon: string;
+  }>;
+}
+
+export const ALL_THEMES: CategoryThemeData[] = [
+  {
+    id: 'food',
+    nameKey: 'theme.food',
+    descKey: 'theme.foodDesc',
+    icon: '🍎',
+    categories: [
+      { translationKey: 'category.vegetables', icon: '🥬' },
+      { translationKey: 'category.fruits', icon: '🍎' },
+      { translationKey: 'category.dairy', icon: '🥛' },
+      { translationKey: 'category.meat', icon: '🥩' },
+      { translationKey: 'category.snacks', icon: '🍿' },
+      { translationKey: 'category.desserts', icon: '🍰' },
+      { translationKey: 'category.seafood', icon: '🐟' },
+      { translationKey: 'category.bread', icon: '🍞' },
+    ]
+  },
+  {
+    id: 'health',
+    nameKey: 'theme.health',
+    descKey: 'theme.healthDesc',
+    icon: '💊',
+    categories: [
+      { translationKey: 'category.medications', icon: '💊' },
+      { translationKey: 'category.vitamins', icon: '🍀' },
+      { translationKey: 'category.firstAid', icon: '🩹' },
+      { translationKey: 'category.contactLenses', icon: '👓' },
+      { translationKey: 'category.bloodTestKits', icon: '🩸' },
+      { translationKey: 'category.medicalDevices', icon: '⚕️' },
+    ]
+  },
+  {
+    id: 'beauty',
+    nameKey: 'theme.beauty',
+    descKey: 'theme.beautyDesc',
+    icon: '💄',
+    categories: [
+      { translationKey: 'category.makeup', icon: '💄' },
+      { translationKey: 'category.skincare', icon: '🧴' },
+      { translationKey: 'category.hairCare', icon: '🧼' },
+      { translationKey: 'category.perfume', icon: '🌸' },
+      { translationKey: 'category.sunscreen', icon: '🌞' },
+      { translationKey: 'category.beautyTools', icon: '🧽' },
+    ]
+  },
+  {
+    id: 'household',
+    nameKey: 'theme.household',
+    descKey: 'theme.householdDesc',
+    icon: '🧹',
+    categories: [
+      { translationKey: 'category.cleaningSupplies', icon: '🧹' },
+      { translationKey: 'category.laundryProducts', icon: '🧺' },
+      { translationKey: 'category.batteries', icon: '🔋' },
+      { translationKey: 'category.safetyEquipment', icon: '🧯' },
+    ]
+  },
+  {
+    id: 'automotive',
+    nameKey: 'theme.automotive',
+    descKey: 'theme.automotiveDesc',
+    icon: '🛢️',
+    categories: [
+      { translationKey: 'category.paintCoatings', icon: '🎨' },
+      { translationKey: 'category.motorOil', icon: '🛢️' },
+      { translationKey: 'category.fuelAdditives', icon: '⛽' },
+    ]
+  }
+];
+
+// Function to get theme data with translations applied
+export const getTranslatedThemes = (t: (key: string) => string) => {
+  return ALL_THEMES.map(theme => ({
+    id: theme.id,
+    name: t(theme.nameKey),
+    description: t(theme.descKey),
+    icon: theme.icon,
+    categories: theme.categories.map(cat => ({
+      name: t(cat.translationKey),
+      icon: cat.icon,
+      translationKey: cat.translationKey // Keep for future reference
+    }))
+  }));
+};
+
+// Create a mapping of category names to their translation keys
+const createCategoryTranslationMap = (): Record<string, string> => {
+  const map: Record<string, string> = {};
+  
+  // Add default categories (using English names as keys)
+  const defaultCategories = getDefaultCategories('en');
+  const defaultTranslationKeys = [
+    'category.vegetables', 'category.fruits', 'category.dairy', 'category.meat',
+    'category.snacks', 'category.desserts', 'category.seafood', 'category.bread'
+  ];
+  
+  defaultCategories.forEach((cat, index) => {
+    map[cat.name.toLowerCase()] = defaultTranslationKeys[index];
+  });
+  
+  // Add all themed categories from ALL_THEMES
+  ALL_THEMES.forEach(theme => {
+    theme.categories.forEach(cat => {
+      // We need to get the English name for this translation key
+      // We'll create a reverse lookup using the translation system
+      const englishName = getEnglishNameFromTranslationKey(cat.translationKey);
+      if (englishName) {
+        map[englishName.toLowerCase()] = cat.translationKey;
+      }
+    });
+  });
+  
+  return map;
+};
+
+// Helper function to get English name from translation key
+const getEnglishNameFromTranslationKey = (translationKey: string): string | null => {
+  // This maps translation keys to their English equivalents
+  const keyToEnglishMap: Record<string, string> = {
+    'category.vegetables': 'Vegetables',
+    'category.fruits': 'Fruits',
+    'category.dairy': 'Dairy',
+    'category.meat': 'Meat',
+    'category.snacks': 'Snacks',
+    'category.desserts': 'Desserts',
+    'category.seafood': 'Seafood',
+    'category.bread': 'Bread',
+    'category.medications': 'Medications',
+    'category.vitamins': 'Vitamins & Supplements',
+    'category.firstAid': 'First Aid',
+    'category.contactLenses': 'Contact Lenses',
+    'category.bloodTestKits': 'Blood Test Kits',
+    'category.medicalDevices': 'Medical Devices',
+    'category.makeup': 'Makeup',
+    'category.skincare': 'Skincare',
+    'category.hairCare': 'Hair Care',
+    'category.perfume': 'Perfume & Fragrance',
+    'category.sunscreen': 'Sunscreen',
+    'category.beautyTools': 'Beauty Tools',
+    'category.cleaningSupplies': 'Cleaning Supplies',
+    'category.laundryProducts': 'Laundry Products',
+    'category.batteries': 'Batteries',
+    'category.safetyEquipment': 'Safety Equipment',
+    'category.paintCoatings': 'Paint & Coatings',
+    'category.motorOil': 'Motor Oil',
+    'category.fuelAdditives': 'Fuel Additives',
+  };
+  
+  return keyToEnglishMap[translationKey] || null;
+};
+
+// Function to get translated name for a category based on its current name
+const getTranslatedCategoryName = (currentName: string, t: (key: string) => string): string => {
+  const translationMap = createCategoryTranslationMap();
+  const translationKey = translationMap[currentName.toLowerCase()];
+  
+  if (translationKey) {
+    return t(translationKey);
+  }
+  
+  // If no translation key found, return the original name (user-created category)
+  return currentName;
+};
+
 const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
   // Check if we already have data
   const categoryCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM categories');
@@ -762,7 +938,7 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
 };
 
 // Helper function to update default data when language changes
-export const updateDefaultDataForLanguage = async (language: Language): Promise<void> => {
+export const updateDefaultDataForLanguage = async (language: Language, t?: (key: string) => string): Promise<void> => {
   try {
     const database = await getDatabase();
     
@@ -774,20 +950,28 @@ export const updateDefaultDataForLanguage = async (language: Language): Promise<
       // Always update default categories and locations with new language
       const defaultCategories = getDefaultCategories(language);
       
-      // Preserve existing user-created categories (those with id > default count)
-      const existingUserCategories = data.categories.filter(cat => 
-        cat.id && cat.id > defaultCategories.length
-      );
-      
-      // Combine default categories with user-created ones
-      data.categories = [
-        ...defaultCategories.map((cat, index) => ({
-          ...cat,
-          id: index + 1,
-          created_at: getCurrentDate()
-        })),
-        ...existingUserCategories
-      ];
+      // Update translatable categories if translation function is provided
+      if (t) {
+        data.categories = data.categories.map(cat => {
+          const translatedName = getTranslatedCategoryName(cat.name, t);
+          return { ...cat, name: translatedName };
+        });
+      } else {
+        // Preserve existing user-created categories (those with id > default count)
+        const existingUserCategories = data.categories.filter(cat => 
+          cat.id && cat.id > defaultCategories.length
+        );
+        
+        // Combine default categories with user-created ones
+        data.categories = [
+          ...defaultCategories.map((cat, index) => ({
+            ...cat,
+            id: index + 1,
+            created_at: getCurrentDate()
+          })),
+          ...existingUserCategories
+        ];
+      }
       
       data.locations = getDefaultLocations(language).map((loc, index) => ({
         ...loc,
@@ -799,30 +983,48 @@ export const updateDefaultDataForLanguage = async (language: Language): Promise<
       return;
     }
 
-    // Update existing default categories and add new ones if they don't exist
-    const defaultCategories = getDefaultCategories(language);
-    for (let i = 0; i < defaultCategories.length; i++) {
-      const category = defaultCategories[i];
-      const categoryId = i + 1;
-      
-      // Check if category exists
-      const existingCategory = await database.getFirstAsync(
-        'SELECT id FROM categories WHERE id = ?',
-        [categoryId]
-      );
-      
-      if (existingCategory) {
-        // Update existing category
-        await database.runAsync(
-          'UPDATE categories SET name = ? WHERE id = ?',
-          [category.name, categoryId]
+    // Get all categories from database
+    const allCategories = await database.getAllAsync('SELECT * FROM categories ORDER BY id') as Category[];
+    
+    if (t) {
+      // Update ALL translatable categories (both default and themed)
+      for (const category of allCategories) {
+        const translatedName = getTranslatedCategoryName(category.name, t);
+        
+        // Only update if the translated name is different (means it's translatable)
+        if (translatedName !== category.name && category.id) {
+          await database.runAsync(
+            'UPDATE categories SET name = ? WHERE id = ?',
+            [translatedName, category.id]
+          );
+        }
+      }
+    } else {
+      // Fallback: Update only default categories (IDs 1-8) 
+      const defaultCategories = getDefaultCategories(language);
+      for (let i = 0; i < defaultCategories.length; i++) {
+        const category = defaultCategories[i];
+        const categoryId = i + 1;
+        
+        // Check if category exists
+        const existingCategory = await database.getFirstAsync(
+          'SELECT id FROM categories WHERE id = ?',
+          [categoryId]
         );
-      } else {
-        // Insert new category
-        await database.runAsync(
-          'INSERT INTO categories (name, icon) VALUES (?, ?)',
-          [category.name, category.icon]
-        );
+        
+        if (existingCategory) {
+          // Update existing category
+          await database.runAsync(
+            'UPDATE categories SET name = ? WHERE id = ?',
+            [category.name, categoryId]
+          );
+        } else {
+          // Insert new category
+          await database.runAsync(
+            'INSERT INTO categories (name, icon) VALUES (?, ?)',
+            [category.name, category.icon]
+          );
+        }
       }
     }
 

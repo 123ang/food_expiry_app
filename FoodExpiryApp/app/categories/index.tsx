@@ -20,6 +20,7 @@ import { Category } from '../../database/models';
 import { useLanguage } from '../../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { CATEGORY_EMOJIS, EmojiItem } from '../../constants/emojis';
+import { getTranslatedThemes } from '../../database/database';
 
 // Predefined category themes
 interface CategoryTheme {
@@ -31,76 +32,10 @@ interface CategoryTheme {
 }
 
 
-// Function to get localized category themes
-const getCategoryThemes = (t: (key: string) => string): CategoryTheme[] => [
-  {
-    id: 'food',
-    name: t('theme.food'),
-    description: t('theme.foodDesc'),
-    icon: '🍎',
-    categories: [
-      { name: t('category.vegetables'), icon: '🥬' },
-      { name: t('category.fruits'), icon: '🍎' },
-      { name: t('category.dairy'), icon: '🥛' },
-      { name: t('category.meat'), icon: '🥩' },
-      { name: t('category.snacks'), icon: '🍿' },
-      { name: t('category.desserts'), icon: '🍰' },
-      { name: t('category.seafood'), icon: '🐟' },
-      { name: t('category.bread'), icon: '🍞' },
-    ]
-  },
-  {
-    id: 'health',
-    name: t('theme.health'),
-    description: t('theme.healthDesc'),
-    icon: '💊',
-    categories: [
-      { name: t('category.medications'), icon: '💊' },
-      { name: t('category.vitamins'), icon: '🍀' },
-      { name: t('category.firstAid'), icon: '🩹' },
-      { name: t('category.contactLenses'), icon: '👓' },
-      { name: t('category.bloodTestKits'), icon: '🩸' },
-      { name: t('category.medicalDevices'), icon: '⚕️' },
-    ]
-  },
-  {
-    id: 'beauty',
-    name: t('theme.beauty'),
-    description: t('theme.beautyDesc'),
-    icon: '💄',
-    categories: [
-      { name: t('category.makeup'), icon: '💄' },
-      { name: t('category.skincare'), icon: '🧴' },
-      { name: t('category.hairCare'), icon: '🧼' },
-      { name: t('category.perfume'), icon: '🌸' },
-      { name: t('category.sunscreen'), icon: '🌞' },
-      { name: t('category.beautyTools'), icon: '🧽' },
-    ]
-  },
-  {
-    id: 'household',
-    name: t('theme.household'),
-    description: t('theme.householdDesc'),
-    icon: '🧹',
-    categories: [
-      { name: t('category.cleaningSupplies'), icon: '🧹' },
-      { name: t('category.laundryProducts'), icon: '🧺' },
-      { name: t('category.batteries'), icon: '🔋' },
-      { name: t('category.safetyEquipment'), icon: '🧯' },
-    ]
-  },
-  {
-    id: 'automotive',
-    name: t('theme.automotive'),
-    description: t('theme.automotiveDesc'),
-    icon: '🛢️',
-    categories: [
-      { name: t('category.paintCoatings'), icon: '🎨' },
-      { name: t('category.motorOil'), icon: '🛢️' },
-      { name: t('category.fuelAdditives'), icon: '⛽' },
-    ]
-  }
-];
+// Function to get localized category themes (now using centralized data)
+const getCategoryThemes = (t: (key: string) => string): CategoryTheme[] => {
+  return getTranslatedThemes(t);
+};
 
 // Emoji Selector Component
 interface EmojiSelectorProps {

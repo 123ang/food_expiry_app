@@ -1459,7 +1459,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Update default categories and locations with new language
       try {
-        await updateDefaultDataForLanguage(lang);
+        // Pass the translation function to enable themed category translation
+        await updateDefaultDataForLanguage(lang, translations[lang] ? (key: string) => translations[lang][key] || key : undefined);
         
         // Force a small delay to ensure database writes complete on iOS
         // This helps with iOS caching issues where UI doesn't update immediately
