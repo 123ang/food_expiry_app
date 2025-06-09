@@ -102,61 +102,42 @@ export function DatePicker({ value, onChange, theme, minimumDate }: DatePickerPr
       <TouchableOpacity
         onPress={showDatePicker}
         style={{
-          // Remove all styling to avoid conflicts with container
-          backgroundColor: 'transparent',
-          padding: 12,
+          // The container will handle the background and border
+          padding: Platform.OS === 'ios' ? 0 : 12, // No padding on iOS
           borderRadius: 8,
-          minHeight: 44, // Ensure consistent height
+          minHeight: 44,
           justifyContent: 'center',
-          // Remove border and margin since container handles it
+          // If using compact picker, it fills the container, so no extra styling needed
         }}
       >
-        <Text style={{ 
-          color: theme.textColor,
-          fontSize: 16,
-          // Ensure consistent text styling
-        }}>
-          {value.toLocaleDateString()}
-        </Text>
-      </TouchableOpacity>
-
-      {show && (
-        <>
-          {Platform.OS === 'ios' && (
-            <View style={{
-              flexDirection: 'row',
-              justifyContent: 'flex-end',
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              backgroundColor: isDarkTheme ? '#1A1A1A' : theme.cardBackground,
-              borderTopWidth: 1,
-              borderTopColor: theme.borderColor,
-            }}>
-              <TouchableOpacity
-                onPress={handleDone}
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  backgroundColor: theme.primaryColor,
-                  borderRadius: 8,
-                }}
-              >
-                <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          <View style={{
-            backgroundColor: isDarkTheme ? '#1A1A1A' : '#FFFFFF',
-          }}>
-            <DateTimePicker
+        {/* On iOS with compact display, the picker itself is the button */}
+        {Platform.OS === 'ios' && show ? (
+           <DateTimePicker
               value={value}
               mode="date"
               onChange={onDateChange}
               minimumDate={minimumDate}
               {...themeProps}
             />
-          </View>
-        </>
+        ) : (
+          <Text style={{ 
+            color: theme.textColor,
+            fontSize: 16,
+          }}>
+            {value.toLocaleDateString()}
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      {/* For Android, the picker appears in a modal */}
+      {Platform.OS === 'android' && show && (
+        <DateTimePicker
+          value={value}
+          mode="date"
+          onChange={onDateChange}
+          minimumDate={minimumDate}
+          {...themeProps}
+        />
       )}
     </>
   );
