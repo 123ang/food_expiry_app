@@ -18,26 +18,9 @@ import CategoryIcon from '../../../components/CategoryIcon';
 import LocationIcon from '../../../components/LocationIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { Alert } from 'react-native';
+import { getCategoryEmojiByKey, getLocationEmojiByKey } from '../../../constants/emojis';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
-
-const statusInfo = {
-  fresh: {
-    name: 'Fresh Items',
-    icon: '✅',
-    color: '#4CAF50',
-  },
-  expiring: {
-    name: 'Expiring',
-    icon: '⏰',
-    color: '#FF9800',
-  },
-  expired: {
-    name: 'Expired',
-    icon: '⚠️',
-    color: '#F44336',
-  },
-};
 
 // Separate component for food item to avoid hooks violation
 const FoodItemCard: React.FC<{ 
@@ -49,7 +32,7 @@ const FoodItemCard: React.FC<{
 }> = ({ item, onPress, theme, styles, t }) => {
   const [imageError, setImageError] = useState(false);
 
-  // Determine status icon and color based on days until expiry
+  // Determine status based on days until expiry
   const getStatusInfo = () => {
     if (item.days_until_expiry <= 0) {
       return { icon: '⚠️', color: '#F44336', text: t('foodStatus.expired') };
@@ -60,11 +43,20 @@ const FoodItemCard: React.FC<{
     }
   };
 
+  // Check if image_uri is an emoji
+  const isEmojiImage = item.image_uri && item.image_uri.startsWith('emoji:');
+  const emojiValue = isEmojiImage && item.image_uri ? item.image_uri.replace('emoji:', '') : null;
+
   const statusInfo = getStatusInfo();
 
   return (
     <TouchableOpacity style={styles.foodItem} onPress={onPress}>
-      {item.image_uri && !imageError ? (
+      {/* Enhanced image/emoji handling */}
+      {isEmojiImage && emojiValue ? (
+        <View style={styles.emojiImageContainer}>
+          <Text style={styles.emojiImage}>{emojiValue}</Text>
+        </View>
+      ) : item.image_uri && !imageError ? (
         <Image
           source={{ uri: item.image_uri }}
           style={styles.foodImage}
@@ -123,16 +115,16 @@ export default function ItemStatusScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Ensure status is a string and map to our expected values
-  const currentStatus = Array.isArray(status) ? status[0] : status || 'fresh';
+  const currentStatus = Array.isArray(status) ? status[0] : status || 'indate';
   
   // Map status to display information
   const statusConfig = {
-    fresh: { title: t('status.indateItems'), color: '#4CAF50', icon: '✅' },
+    indate: { title: t('status.indateItems'), color: '#4CAF50', icon: '✅' },
     expiring: { title: t('status.expiringSoon'), color: '#FF9800', icon: '⏰' },
     expired: { title: t('status.expiredItems'), color: '#F44336', icon: '⚠️' }
   };
   
-  const statusData = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.fresh;
+  const statusData = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.indate;
 
   // Handle clear expired items
   const handleClearExpired = async () => {
@@ -199,6 +191,7 @@ export default function ItemStatusScreen() {
           } else if (currentStatus === 'expiring') {
             dbStatus = 'expiring_soon';
           } else {
+            // Handle both 'indate' and 'fresh' for consistency
             dbStatus = 'fresh';
           }
           
@@ -352,10 +345,6 @@ export default function ItemStatusScreen() {
       padding: 8,
       marginLeft: 8,
     },
-    listButtonText: {
-      fontSize: 24,
-      color: theme.textColor,
-    },
     clearButton: {
       backgroundColor: theme.dangerColor || '#FF3B30',
       paddingHorizontal: 20,
@@ -368,6 +357,21 @@ export default function ItemStatusScreen() {
       color: '#FFFFFF',
       fontSize: 16,
       fontWeight: '600',
+    },
+    emojiImageContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 8,
+      marginRight: 12,
+      backgroundColor: `${theme.primaryColor}10`,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    emojiImage: {
+      fontSize: 48,
+      textAlign: 'center',
     },
   });
 
@@ -395,7 +399,7 @@ export default function ItemStatusScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={{ fontSize: 24, color: theme.textColor }}>◀</Text>
+          <Text style={{ fontSize: 24, color: theme.textColor }}>←</Text>
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={[styles.title, { color: statusData.color }]}>{statusData.icon}</Text>
@@ -405,10 +409,10 @@ export default function ItemStatusScreen() {
           style={styles.listButton}
           onPress={() => router.push({
             pathname: '/list',
-            params: { filterStatus: currentStatus === 'expiring' ? 'expiring_soon' : currentStatus }
+            params: { filterStatus: currentStatus === 'expiring' ? 'expiring_soon' : currentStatus === 'expired' ? 'expired' : 'fresh' }
           })}
         >
-          <Text style={styles.listButtonText}>📋</Text>
+          <FontAwesome name="list" size={20} color={theme.textColor} />
         </TouchableOpacity>
       </View>
       
@@ -429,7 +433,7 @@ export default function ItemStatusScreen() {
         
         {error ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 48, color: theme.dangerColor || '#FF3B30' }}>⚠️</Text>
+            <Text style={{ fontSize: 48, color: theme.dangerColor || '#FF3B30' }}>{statusData.icon}</Text>
             <Text style={{ color: theme.textColor, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
               {error}
             </Text>
@@ -479,7 +483,6 @@ export default function ItemStatusScreen() {
           </View>
         ) : currentItems.length === 0 ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 48, color: theme.textSecondary }}>📦</Text>
             <Text style={{ color: theme.textSecondary, fontSize: 16, marginTop: 12, textAlign: 'center' }}>
               {t('status.noItems').replace('{status}', statusData?.title?.toLowerCase() || 'items')}
             </Text>
