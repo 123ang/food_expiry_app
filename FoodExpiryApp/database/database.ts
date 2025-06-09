@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language } from '../context/LanguageContext';
 import { Category, Location } from './models';
+import * as FileSystem from 'expo-file-system';
 
 // Database configuration
 const DATABASE_VERSION = 5;
@@ -638,28 +639,34 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
 
 export const resetDatabase = async (): Promise<void> => {
   try {
-    const database = await getDatabase();
+    // Ensure the database connection is closed before deletion
+    await closeDatabase();
+
+    // Delete the database file to ensure a clean reset
+    const dbPath = `${FileSystem.documentDirectory}SQLite/${DATABASE_NAME}`;
+    const dbInfo = await FileSystem.getInfoAsync(dbPath);
     
-    if (!database) {
-      // Reset fallback storage
-      const fallbackData: FallbackStorage = {
-        categories: [],
-        locations: [],
-        foodItems: []
-      };
-      await AsyncStorage.setItem('fallback_data', JSON.stringify(fallbackData));
-      await initDatabase();
-      return;
+    if (dbInfo.exists) {
+      console.log('Deleting existing database file for a clean reset...');
+      await FileSystem.deleteAsync(dbPath);
     }
 
-    // Drop all tables
-    await database.execAsync('DROP TABLE IF EXISTS food_items');
-    await database.execAsync('DROP TABLE IF EXISTS categories');
-    await database.execAsync('DROP TABLE IF EXISTS locations');
-    
-    // Recreate tables and insert default data
+    // Also clear any fallback storage
+    await AsyncStorage.removeItem('fallback_data');
+    console.log('Cleared fallback storage.');
+
+    // Clear versioning and other metadata from AsyncStorage
+    await AsyncStorage.removeItem(VERSION_KEY);
+    await AsyncStorage.removeItem('last_image_validation');
+    console.log('Cleared database metadata from AsyncStorage.');
+
+    // Re-initialize the database completely
+    console.log('Re-initializing database...');
     await initDatabase();
+    console.log('Database reset and re-initialization complete.');
+
   } catch (error) {
+    console.error('Failed to reset database:', error);
     throw error;
   }
 };

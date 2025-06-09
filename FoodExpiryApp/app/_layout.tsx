@@ -63,63 +63,6 @@ function RootLayoutContent() {
     }
   }, [appIsReady]);
   
-  // Image validation and repair logic
-  useEffect(() => {
-    const runImageValidationAndRepair = async () => {
-      if (!isDataAvailable()) {
-        console.log("Data not available yet, skipping image validation.");
-        return;
-      }
-
-      console.log('Running image validation and repair...');
-      const imageUris = foodItems
-        .map(item => item.image_uri)
-        .filter((uri): uri is string => !!uri && !uri.startsWith('emoji:'));
-
-      if (imageUris.length === 0) {
-        console.log('No local image URIs to validate.');
-        return;
-      }
-
-      const { broken, repaired } = await validateDatabaseImageLinks(imageUris);
-
-      if (repaired.length > 0) {
-        console.log(`Found ${repaired.length} broken image links to repair.`);
-        for (const repairedImage of repaired) {
-          const itemToUpdate = foodItems.find(item => item.image_uri === repairedImage.oldUri);
-          if (itemToUpdate) {
-            console.log(`Repairing image for item: ${itemToUpdate.name}`);
-            const updatedItem: FoodItem = {
-              id: itemToUpdate.id,
-              name: itemToUpdate.name,
-              quantity: itemToUpdate.quantity,
-              category_id: itemToUpdate.category_id,
-              location_id: itemToUpdate.location_id,
-              expiry_date: itemToUpdate.expiry_date,
-              reminder_days: itemToUpdate.reminder_days,
-              notes: itemToUpdate.notes,
-              image_uri: repairedImage.newUri, // The new, correct URI
-              created_at: itemToUpdate.created_at,
-            };
-            await updateFoodItem(updatedItem);
-          }
-        }
-        console.log('Finished repairing images. Refreshing food items list.');
-        await refreshFoodItems();
-      } else {
-        console.log('No repairable image links found.');
-      }
-
-      if (broken.length > 0) {
-        console.warn(`Could not repair ${broken.length} image links:`, broken);
-      }
-    };
-
-    if (appIsReady) {
-        runImageValidationAndRepair();
-    }
-  }, [appIsReady, isDataAvailable]);
-
   // Initialize notification checker for automatic expiry notifications
   useNotificationChecker();
 
