@@ -689,18 +689,6 @@ export default function CalendarScreen() {
     // This prevents applying padding to short lists that don't need it
     const needsPadding = contentHeight > thresholdHeight;
     
-    // Debug logging (remove in production)
-    if (isLastItem) {
-      console.log('Calendar Button Avoidance:', {
-        contentHeight,
-        scrollViewHeight,
-        thresholdHeight,
-        bottomNavHeight,
-        needsPadding,
-        itemsCount: filteredItems.length
-      });
-    }
-    
     return needsPadding;
   };
 

@@ -21,12 +21,21 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.expiryalert.app",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to scan barcodes for adding food items quickly.",
         "NSPhotoLibraryUsageDescription": "This app accesses photo library to save food item images for better organization.",
-        "ITSAppUsesNonExemptEncryption": false
-      }
+        "NSPhotoLibraryAddUsageDescription": "This app saves photos of your food items to help you organize your pantry.",
+        "NSDocumentsFolderUsageDescription": "This app stores food item images in your device's secure document folder.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIFileSharingEnabled": false,
+        "LSSupportsOpeningDocumentsInPlace": false
+      },
+      "entitlements": {
+        "com.apple.developer.shared-with-you.collaboration": false
+      },
+      "requireFullScreen": false,
+      "userInterfaceStyle": "automatic"
     },
     "android": {
       "adaptiveIcon": {

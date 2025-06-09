@@ -4,9 +4,10 @@ import { initDatabase, getDatabase, resetDatabase, getCurrentDate, performRegula
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
 import { simpleNotificationService } from '../services/SimpleNotificationService';
-import { restoreImagesFromBackup, initializeImageStorage, validateDatabaseImageLinks, cleanupOrphanedImages } from '../utils/fileStorage';
+import { restoreImagesFromBackup, initializeImageStorage, validateDatabaseImageLinks, cleanupOrphanedImages, initializeImageSystemForIOS } from '../utils/fileStorage';
 import { autoFixCorruptedData } from '../utils/categoryRecovery';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Cache configuration
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -309,6 +310,17 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Initialize image storage and restore if needed
         await initializeImageStorage();
         await restoreImagesFromBackup();
+        
+        // iOS App Store: Initialize enhanced image system
+        if (Platform.OS === 'ios') {
+          console.log('Initializing iOS App Store image compatibility...');
+          const iosImageResult = await initializeImageSystemForIOS();
+          if (!iosImageResult.success) {
+            console.warn('iOS image system issues detected:', iosImageResult.compatibilityIssues);
+          } else if (iosImageResult.recoveredImages > 0) {
+            console.log(`iOS: Recovered ${iosImageResult.recoveredImages} broken image links`);
+          }
+        }
         
         // Check and restore categories/locations if they were lost
         await validateAndRestoreCategoriesAndLocations();
