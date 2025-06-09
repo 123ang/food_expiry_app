@@ -506,24 +506,26 @@ export const cleanupOrphanedImages = async (databaseImageUris: string[]): Promis
 /**
  * Validate and repair database image links
  */
-export const validateDatabaseImageLinks = async (databaseImageUris: string[]): Promise<{
+export const validateDatabaseImageLinks = async (
+  databaseImageUris: string[]
+): Promise<{
   valid: string[];
   broken: string[];
-  repaired: string[];
+  repaired: { oldUri: string; newUri: string }[];
 }> => {
   const result = {
     valid: [] as string[],
     broken: [] as string[],
-    repaired: [] as string[]
+    repaired: [] as { oldUri: string; newUri: string }[],
   };
-  
+
   try {
     for (const imageUri of databaseImageUris) {
       if (!imageUri || imageUri.startsWith('emoji:')) {
         result.valid.push(imageUri);
         continue;
       }
-      
+
       const exists = await verifyImageExists(imageUri);
       if (exists) {
         result.valid.push(imageUri);
@@ -534,7 +536,7 @@ export const validateDatabaseImageLinks = async (databaseImageUris: string[]): P
           const possiblePath = `${IMAGES_DIR}${fileName}`;
           const foundExists = await verifyImageExists(possiblePath);
           if (foundExists) {
-            result.repaired.push(possiblePath);
+            result.repaired.push({ oldUri: imageUri, newUri: possiblePath });
             console.log(`Repaired image link: ${imageUri} -> ${possiblePath}`);
           } else {
             result.broken.push(imageUri);
@@ -545,7 +547,7 @@ export const validateDatabaseImageLinks = async (databaseImageUris: string[]): P
         }
       }
     }
-    
+
     return result;
   } catch (error) {
     console.error('Error validating database image links:', error);

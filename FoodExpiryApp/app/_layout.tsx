@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
-import { DatabaseProvider } from '../context/DatabaseContext';
+import { DatabaseProvider, useDatabase } from '../context/DatabaseContext';
 import { LanguageProvider, useLanguage } from '../context/LanguageContext';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, Image, Text } from 'react-native';
@@ -11,6 +11,8 @@ import { useTypography } from '../hooks/useTypography';
 import { loadCustomFonts } from '../styles/fontLoader';
 import { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import { validateDatabaseImageLinks } from '../utils/fileStorage';
+import { FoodItem } from '../database/models';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -18,6 +20,7 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutContent() {
   const { theme } = useTheme();
   const { language } = useLanguage();
+  const { foodItems, updateFoodItem, refreshFoodItems, isDataAvailable } = useDatabase();
   const [customFontsLoaded, setCustomFontsLoaded] = useState(false);
   const [appIsReady, setAppIsReady] = useState(false);
   
@@ -60,6 +63,63 @@ function RootLayoutContent() {
     }
   }, [appIsReady]);
   
+  // Image validation and repair logic
+  useEffect(() => {
+    const runImageValidationAndRepair = async () => {
+      if (!isDataAvailable()) {
+        console.log("Data not available yet, skipping image validation.");
+        return;
+      }
+
+      console.log('Running image validation and repair...');
+      const imageUris = foodItems
+        .map(item => item.image_uri)
+        .filter((uri): uri is string => !!uri && !uri.startsWith('emoji:'));
+
+      if (imageUris.length === 0) {
+        console.log('No local image URIs to validate.');
+        return;
+      }
+
+      const { broken, repaired } = await validateDatabaseImageLinks(imageUris);
+
+      if (repaired.length > 0) {
+        console.log(`Found ${repaired.length} broken image links to repair.`);
+        for (const repairedImage of repaired) {
+          const itemToUpdate = foodItems.find(item => item.image_uri === repairedImage.oldUri);
+          if (itemToUpdate) {
+            console.log(`Repairing image for item: ${itemToUpdate.name}`);
+            const updatedItem: FoodItem = {
+              id: itemToUpdate.id,
+              name: itemToUpdate.name,
+              quantity: itemToUpdate.quantity,
+              category_id: itemToUpdate.category_id,
+              location_id: itemToUpdate.location_id,
+              expiry_date: itemToUpdate.expiry_date,
+              reminder_days: itemToUpdate.reminder_days,
+              notes: itemToUpdate.notes,
+              image_uri: repairedImage.newUri, // The new, correct URI
+              created_at: itemToUpdate.created_at,
+            };
+            await updateFoodItem(updatedItem);
+          }
+        }
+        console.log('Finished repairing images. Refreshing food items list.');
+        await refreshFoodItems();
+      } else {
+        console.log('No repairable image links found.');
+      }
+
+      if (broken.length > 0) {
+        console.warn(`Could not repair ${broken.length} image links:`, broken);
+      }
+    };
+
+    if (appIsReady) {
+        runImageValidationAndRepair();
+    }
+  }, [appIsReady, isDataAvailable]);
+
   // Initialize notification checker for automatic expiry notifications
   useNotificationChecker();
 
