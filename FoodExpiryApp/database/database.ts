@@ -137,7 +137,6 @@ const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promi
       );
     }
     
-    console.log('Successfully restored user data from backup while preserving categories');
     return true;
   } catch (error) {
     console.error('Failed to restore user data from backup:', error);
@@ -249,7 +248,7 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
       await db.getAllAsync('SELECT 1');
       
     } catch (openError) {
-      console.log('Database open error, attempting recovery:', openError);
+      // Database open error, attempting recovery
       
       try {
         // Close any partial connection
@@ -269,7 +268,7 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
         await db.getAllAsync('SELECT 1');
         
       } catch (secondAttemptError) {
-        console.log('Second attempt failed, checking for corruption:', secondAttemptError);
+        // Second attempt failed, checking for corruption
         
         // Only as a LAST RESORT, and only if we can backup data first
         try {
@@ -277,8 +276,8 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
           if (db) {
             await backupUserData(db);
           }
-        } catch (backupError) {
-          console.log('Could not backup data before recreation');
+                  } catch (backupError) {
+            // Could not backup data before recreation
         }
         
         try {
@@ -325,10 +324,33 @@ export const closeDatabase = async (): Promise<void> => {
 };
 
 // Function to reset database connection completely
-export const resetDatabaseConnection = async (): Promise<void> => {
-  await closeDatabase();
-  useFallbackStorage = false;
-  // Force a fresh connection on next access
+export const resetDatabase = async (): Promise<void> => {
+  try {
+    // Ensure the database connection is closed before deletion
+    await closeDatabase();
+
+    // Delete the database file to ensure a clean reset
+    const dbPath = `${FileSystem.documentDirectory}SQLite/${DATABASE_NAME}`;
+    const dbInfo = await FileSystem.getInfoAsync(dbPath);
+    
+    if (dbInfo.exists) {
+      await FileSystem.deleteAsync(dbPath);
+    }
+
+    // Also clear any fallback storage
+    await AsyncStorage.removeItem('fallback_data');
+
+    // Clear versioning and other metadata from AsyncStorage
+    await AsyncStorage.removeItem(VERSION_KEY);
+    await AsyncStorage.removeItem('last_image_validation');
+
+    // Re-initialize the database completely
+    await initDatabase();
+
+  } catch (error) {
+    console.error('Failed to reset database:', error);
+    throw error;
+  }
 };
 
 // Safe database getter with fallback handling
@@ -621,7 +643,6 @@ export const getTranslatedThemes = (t: (key: string) => string) => {
 
 // Create a mapping of category names to their translation keys
 const createCategoryTranslationMap = (): Record<string, string> => {
-  console.log('Creating category translation map');
   const map: Record<string, string> = {};
   
   // Add default categories (using English names as keys)
@@ -633,7 +654,6 @@ const createCategoryTranslationMap = (): Record<string, string> => {
   
   defaultCategories.forEach((cat, index) => {
     map[cat.name.toLowerCase()] = defaultTranslationKeys[index];
-    console.log(`Mapping default category "${cat.name}" to key "${defaultTranslationKeys[index]}"`);
   });
   
   // Add all themed categories from ALL_THEMES
@@ -644,12 +664,10 @@ const createCategoryTranslationMap = (): Record<string, string> => {
       const englishName = getEnglishNameFromTranslationKey(cat.translationKey);
       if (englishName) {
         map[englishName.toLowerCase()] = cat.translationKey;
-        console.log(`Mapping themed category "${englishName}" to key "${cat.translationKey}"`);
       }
     });
   });
   
-  console.log(`Created translation map with ${Object.keys(map).length} entries`);
   return map;
 };
 
@@ -688,11 +706,9 @@ const getEnglishNameFromTranslationKey = (translationKey: string): string | null
 
   const englishName = keyToEnglishMap[translationKey];
   if (englishName) {
-    console.log(`Found English name "${englishName}" for translation key "${translationKey}"`);
     return englishName;
   }
   
-  console.log(`No English name found for translation key "${translationKey}"`);
   return null;
 };
 
@@ -703,12 +719,10 @@ const getTranslatedCategoryName = (currentName: string, t: (key: string) => stri
   
   if (translationKey) {
     const translated = t(translationKey);
-    console.log(`Translating "${currentName}" with key "${translationKey}" to "${translated}"`);
     return translated;
   }
   
   // If no translation key found, return the original name (user-created category)
-  console.log(`No translation key found for "${currentName}", keeping original name`);
   return currentName;
 };
 
@@ -773,7 +787,6 @@ const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQ
       }
     }
     
-    console.log('Updated existing default items with translation keys');
   } catch (error) {
     console.error('Error updating existing items with translation keys:', error);
   }
@@ -796,7 +809,7 @@ export const initDatabase = async (): Promise<void> => {
     
     // Backup user data before any major changes
     if (needsMigration && currentVersion > 0) {
-      console.log(`Migrating database from version ${currentVersion} to ${DATABASE_VERSION}`);
+      // Migrating database from current version to target version
       await backupUserData(database);
     }
 
@@ -867,23 +880,18 @@ export const resetDatabase = async (): Promise<void> => {
     const dbInfo = await FileSystem.getInfoAsync(dbPath);
     
     if (dbInfo.exists) {
-      console.log('Deleting existing database file for a clean reset...');
       await FileSystem.deleteAsync(dbPath);
     }
 
     // Also clear any fallback storage
     await AsyncStorage.removeItem('fallback_data');
-    console.log('Cleared fallback storage.');
 
     // Clear versioning and other metadata from AsyncStorage
     await AsyncStorage.removeItem(VERSION_KEY);
     await AsyncStorage.removeItem('last_image_validation');
-    console.log('Cleared database metadata from AsyncStorage.');
 
     // Re-initialize the database completely
-    console.log('Re-initializing database...');
     await initDatabase();
-    console.log('Database reset and re-initialization complete.');
 
   } catch (error) {
     console.error('Failed to reset database:', error);
@@ -985,6 +993,5 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
 export const updateDefaultDataForLanguage = async (language: Language, t?: (key: string) => string): Promise<void> => {
   // No longer needed - categories and locations use translation keys now
   // This function can be simplified or removed entirely
-  console.log(`[DATABASE] Language changed to ${language} - using translation keys, no database updates needed`);
   return Promise.resolve();
 }; 

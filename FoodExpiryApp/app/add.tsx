@@ -74,87 +74,57 @@ export default function AddScreen() {
   };
 
   const pickImage = async () => {
-    // Request permission first
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        t('image.permissionLibraryTitle'),
-        t('image.permissionLibraryMessage')
-      );
-      return;
-    }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      try {
-        console.log('Processing picked gallery image:', result.assets[0].uri);
-        // Get safe image URI for database storage
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        // Get a safe URI that works across platforms
         const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-        console.log('Safe image URI from gallery:', safeImageUri);
+        
         if (safeImageUri) {
           setImageUri(safeImageUri);
-          console.log('Gallery image URI set successfully');
-          // Refresh saved photos list
-          loadSavedPhotos();
         } else {
           console.error('getSafeImageUri returned null for gallery image');
-          Alert.alert(t('alert.error'), t('image.failedToSave'));
         }
-      } catch (error) {
-        console.error('Error processing gallery image:', error);
-        Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
-    } else {
-      console.log('Gallery picker was canceled');
+    } catch (error) {
+      console.error('Error processing gallery image:', error);
     }
   };
 
-  const takePicture = async () => {
-    // Request permission first
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        t('image.permissionCameraTitle'),
-        t('image.permissionCameraMessage')
-      );
-      return;
-    }
+  const takePhoto = async () => {
+    try {
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (cameraPermission.granted === false) {
+        Alert.alert(t('alert.error'), t('alert.cameraPermissionDenied'));
+        return;
+      }
+      
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      try {
-        console.log('Processing camera image:', result.assets[0].uri);
-        // Get safe image URI for database storage
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        // Get a safe URI that works across platforms
         const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-        console.log('Safe image URI from camera:', safeImageUri);
+        
         if (safeImageUri) {
           setImageUri(safeImageUri);
-          console.log('Camera image URI set successfully');
-          // Refresh saved photos list
-          loadSavedPhotos();
         } else {
           console.error('getSafeImageUri returned null for camera image');
-          Alert.alert(t('alert.error'), t('image.failedToSave'));
         }
-      } catch (error) {
-        console.error('Error processing camera image:', error);
-        Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
-    } else {
-      console.log('Camera picker was canceled');
+    } catch (error) {
+      console.error('Error processing camera image:', error);
     }
   };
 
@@ -799,7 +769,7 @@ export default function AddScreen() {
                 style={styles.imageOptionButton}
                 onPress={() => {
                   setShowImageOptionsModal(false);
-                  takePicture();
+                  takePhoto();
                 }}
               >
                 <FontAwesome name="camera" size={24} color={theme.primaryColor} />

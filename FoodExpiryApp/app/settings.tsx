@@ -709,7 +709,6 @@ const EditModal: React.FC<EditModalProps> = ({
         visible={showEmojiSelector}
         onClose={() => setShowEmojiSelector(false)}
         onSelect={(selectedIcon) => {
-          console.log('Selected emoji:', selectedIcon); // Debug log
           setIcon(selectedIcon);
           iconWasManuallySet.current = true; // Mark as manually set
           setShowEmojiSelector(false);

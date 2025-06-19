@@ -57,9 +57,6 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLanguageState(lang);
       
       // Emit language change event for other components to react
-      console.log(`Language changed to ${lang}`);
-      
-      // Small delay to ensure the language state is set
       await new Promise(resolve => setTimeout(resolve, 50));
       
       // Emit the language change event

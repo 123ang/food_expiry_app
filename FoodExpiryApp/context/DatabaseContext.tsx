@@ -161,7 +161,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const preservedCategories = await AsyncStorage.getItem('preserved_categories');
         if (preservedCategories) {
           const categories = JSON.parse(preservedCategories);
-          console.log(`Found ${categories.length} preserved categories, restoring...`);
+          // Categories found for restoration
           
           // Note: Actual restoration would require database access here
           // For now, we'll refresh the data to trigger proper category loading
@@ -176,7 +176,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const preservedLocations = await AsyncStorage.getItem('preserved_locations');
         if (preservedLocations) {
           const locations = JSON.parse(preservedLocations);
-          console.log(`Found ${locations.length} preserved locations, restoring...`);
+          // Locations found for restoration
           
           await refreshLocations();
         }

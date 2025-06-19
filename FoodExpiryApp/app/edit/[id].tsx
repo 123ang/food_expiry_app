@@ -105,85 +105,57 @@ export default function EditScreen() {
   }, [id]);
 
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        t('image.permissionLibraryTitle'),
-        t('image.permissionLibraryMessage')
-      );
-      return;
-    }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      try {
-        console.log('Processing picked gallery image (edit):', result.assets[0].uri);
-        // Use bulletproof image storage
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        // Get a safe URI that works across platforms
         const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-        console.log('Safe image URI from gallery (edit):', safeImageUri);
+        
         if (safeImageUri) {
           setImageUri(safeImageUri);
-          console.log('Gallery image URI set successfully (edit)');
-          // Refresh saved photos list
-          loadSavedPhotos();
         } else {
           console.error('getSafeImageUri returned null for gallery image (edit)');
-          Alert.alert(t('alert.error'), t('image.failedToSave'));
         }
-      } catch (error) {
-        console.error('Error processing gallery image (edit):', error);
-        Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
-    } else {
-      console.log('Gallery picker was canceled (edit)');
+    } catch (error) {
+      console.error('Error processing gallery image (edit):', error);
     }
   };
 
-  const takePicture = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
-      Alert.alert(
-        t('image.permissionCameraTitle'),
-        t('image.permissionCameraMessage')
-      );
-      return;
-    }
+  const takePhoto = async () => {
+    try {
+      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (cameraPermission.granted === false) {
+        Alert.alert(t('alert.error'), t('alert.cameraPermissionDenied'));
+        return;
+      }
+      
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      try {
-        console.log('Processing camera image (edit):', result.assets[0].uri);
-        // Use bulletproof image storage
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        // Get a safe URI that works across platforms
         const safeImageUri = await getSafeImageUri(result.assets[0].uri);
-        console.log('Safe image URI from camera (edit):', safeImageUri);
+        
         if (safeImageUri) {
           setImageUri(safeImageUri);
-          console.log('Camera image URI set successfully (edit)');
-          // Refresh saved photos list
-          loadSavedPhotos();
         } else {
           console.error('getSafeImageUri returned null for camera image (edit)');
-          Alert.alert(t('alert.error'), t('image.failedToSave'));
         }
-      } catch (error) {
-        console.error('Error processing camera image (edit):', error);
-        Alert.alert(t('alert.error'), t('image.failedToProcess'));
       }
-    } else {
-      console.log('Camera picker was canceled (edit)');
+    } catch (error) {
+      console.error('Error processing camera image (edit):', error);
     }
   };
 
@@ -889,7 +861,7 @@ export default function EditScreen() {
                 style={styles.imageOptionButton}
                 onPress={() => {
                   setShowImageOptionsModal(false);
-                  takePicture();
+                  takePhoto();
                 }}
               >
                 <FontAwesome name="camera" size={24} color={theme.primaryColor} />
