@@ -60,7 +60,8 @@ export const CategoryRepository = {
           return result.map(row => ({
             id: row.id as number,
             name: row.name as string,
-            icon: row.icon as string
+            icon: row.icon as string,
+            translationKey: row.translation_key as string | undefined
           }));
         } catch (statementError) {
           retryCount++;
@@ -119,7 +120,8 @@ export const CategoryRepository = {
         return {
           id: result.id as number,
           name: result.name as string,
-          icon: result.icon as string
+          icon: result.icon as string,
+          translationKey: result.translation_key as string | undefined
         };
       }
       return null;
@@ -159,8 +161,8 @@ export const CategoryRepository = {
       
       // Regular SQLite operation
       const result = await db.runAsync(
-        'INSERT INTO categories (name, icon) VALUES (?, ?)',
-        [category.name, category.icon]
+        'INSERT INTO categories (name, icon, translation_key) VALUES (?, ?, ?)',
+        [category.name, category.icon, category.translationKey || null]
       );
       return result.lastInsertRowId;
     } catch (error) {
@@ -248,7 +250,8 @@ export const LocationRepository = {
           return result.map(row => ({
             id: row.id as number,
             name: row.name as string,
-            icon: row.icon as string
+            icon: row.icon as string,
+            translationKey: row.translation_key as string | undefined
           }));
         } catch (statementError) {
           retryCount++;
@@ -307,7 +310,8 @@ export const LocationRepository = {
         return {
           id: result.id as number,
           name: result.name as string,
-          icon: result.icon as string
+          icon: result.icon as string,
+          translationKey: result.translation_key as string | undefined
         };
       }
       return null;

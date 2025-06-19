@@ -136,7 +136,7 @@ const EmojiSelector: React.FC<{
 
 export default function LocationsScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, getLocationName } = useLanguage();
   const { locations, createLocation, updateLocation, deleteLocation, refreshLocations } = useDatabase();
   const router = useRouter();
   const [showIconSelector, setShowIconSelector] = useState(false);
@@ -303,7 +303,7 @@ export default function LocationsScreen() {
 
     Alert.alert(
       t('locations.deleteLocation'),
-      `${t('locations.deleteConfirm')} "${location.name}"?`,
+      `${t('locations.deleteConfirm')} "${getLocationName(location)}"?`,
       [
         { text: t('cancel'), style: 'cancel' },
         {
@@ -372,7 +372,7 @@ export default function LocationsScreen() {
               <View style={styles.locationIcon}>
                 <LocationIcon iconName={location.icon} size={20} />
               </View>
-              <Text style={styles.locationName}>{location.name}</Text>
+              <Text style={styles.locationName}>{getLocationName(location)}</Text>
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => handleEdit(location)}

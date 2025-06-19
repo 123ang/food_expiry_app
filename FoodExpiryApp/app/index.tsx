@@ -32,7 +32,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t, language, getCategoryName, getLocationName } = useLanguage();
   const router = useRouter();
   const {
     foodItems,
@@ -997,7 +997,7 @@ export default function DashboardScreen() {
                     default: 32,
                   })} />
                 </View>
-                <Text style={styles.locationName}>{location.name}</Text>
+                <Text style={styles.locationName}>{getLocationName(location)}</Text>
                 <Text style={styles.locationCount}>
                   <Text style={styles.numberText}>{location.id ? getLocationItemCounts()[location.id] || 0 : 0}</Text>
                   <Text style={styles.greyText}> {t('home.items')}</Text>
@@ -1031,7 +1031,7 @@ export default function DashboardScreen() {
                       default: 32,
                     })} />
                   </View>
-                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.categoryName}>{getCategoryName(category)}</Text>
                   <Text style={styles.locationCount}>
                     <Text style={styles.numberText}>{category.id ? getCategoryItemCounts()[category.id] || 0 : 0}</Text>
                     <Text style={styles.greyText}> {t('home.items')}</Text>
@@ -1097,7 +1097,7 @@ export default function DashboardScreen() {
                             categoryId === category.id && styles.pickerOptionTextSelected,
                           ]}
                         >
-                          {category.name}
+                          {getCategoryName(category)}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -1125,7 +1125,7 @@ export default function DashboardScreen() {
                             locationId === location.id && styles.pickerOptionTextSelected,
                           ]}
                         >
-                          {location.name}
+                          {getLocationName(location)}
                         </Text>
                       </View>
                     </TouchableOpacity>

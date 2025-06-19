@@ -160,8 +160,14 @@ const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDat
       if (!existing) {
         // Only insert if it doesn't exist
         await database.runAsync(
-          'INSERT INTO categories (id, name, icon) VALUES (?, ?, ?)',
-          [categoryId, category.name, category.icon]
+          'INSERT INTO categories (id, name, icon, translation_key) VALUES (?, ?, ?, ?)',
+          [categoryId, category.name, category.icon, category.translationKey || null]
+        );
+      } else if (category.translationKey && !existing.translation_key) {
+        // Update existing categories to add translation key if missing
+        await database.runAsync(
+          'UPDATE categories SET translation_key = ? WHERE id = ?',
+          [category.translationKey, categoryId]
         );
       }
     }
@@ -175,8 +181,14 @@ const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDat
       if (!existing) {
         // Only insert if it doesn't exist
         await database.runAsync(
-          'INSERT INTO locations (id, name, icon) VALUES (?, ?, ?)',
-          [locationId, location.name, location.icon]
+          'INSERT INTO locations (id, name, icon, translation_key) VALUES (?, ?, ?, ?)',
+          [locationId, location.name, location.icon, location.translationKey || null]
+        );
+      } else if (location.translationKey && !existing.translation_key) {
+        // Update existing locations to add translation key if missing
+        await database.runAsync(
+          'UPDATE locations SET translation_key = ? WHERE id = ?',
+          [location.translationKey, locationId]
         );
       }
     }
@@ -432,6 +444,7 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       icon TEXT NOT NULL,
+      translation_key TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );`,
     
@@ -439,6 +452,7 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       icon TEXT NOT NULL,
+      translation_key TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );`,
     
@@ -465,72 +479,47 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
   for (const query of createTableQueries) {
     await database.execAsync(query);
   }
-};
-
-const getDefaultCategories = (language: Language): Category[] => {
-  const categoriesMap: Record<Language, Category[]> = {
-    en: [
-      { name: 'Vegetables', icon: '🥬' },
-      { name: 'Fruits', icon: '🍎' },
-      { name: 'Dairy', icon: '🥛' },
-      { name: 'Meat', icon: '🥩' },
-      { name: 'Snacks', icon: '🍿' },
-      { name: 'Desserts', icon: '🍰' },
-      { name: 'Seafood', icon: '🐟' },
-      { name: 'Bread', icon: '🍞' }
-    ],
-    zh: [
-      { name: '蔬菜', icon: '🥬' },
-      { name: '水果', icon: '🍎' },
-      { name: '乳制品', icon: '🥛' },
-      { name: '肉类', icon: '🥩' },
-      { name: '零食', icon: '🍿' },
-      { name: '甜点', icon: '🍰' },
-      { name: '海鲜', icon: '🐟' },
-      { name: '面包', icon: '🍞' }
-    ],
-    ja: [
-      { name: '野菜', icon: '🥬' },
-      { name: '果物', icon: '🍎' },
-      { name: '乳製品', icon: '🥛' },
-      { name: '肉', icon: '🥩' },
-      { name: 'スナック', icon: '🍿' },
-      { name: 'デザート', icon: '🍰' },
-      { name: '海産物', icon: '🐟' },
-      { name: 'パン', icon: '🍞' }
-    ]
-  };
+  
+  // Add translation_key columns if they don't exist (for existing databases)
+  try {
+    await database.execAsync('ALTER TABLE categories ADD COLUMN translation_key TEXT');
+  } catch (error) {
+    // Column already exists or other error, continue
+  }
   
   try {
-    return categoriesMap[language] || categoriesMap.en;
+    await database.execAsync('ALTER TABLE locations ADD COLUMN translation_key TEXT');
   } catch (error) {
-    return categoriesMap.en;
+    // Column already exists or other error, continue
   }
 };
 
-const getDefaultLocations = (language: Language): Location[] => {
-  const locationsMap: Record<Language, Location[]> = {
-    en: [
-      { name: 'Fridge', icon: '❄️' },
-      { name: 'Freezer', icon: '🧊' },
-      { name: 'Pantry', icon: '🏠' },
-      { name: 'Cabinet', icon: '📦' }
-    ],
-    zh: [
-      { name: '冰箱', icon: '❄️' },
-      { name: '冷冻室', icon: '🧊' },
-      { name: '储藏室', icon: '🏠' },
-      { name: '橱柜', icon: '📦' }
-    ],
-    ja: [
-      { name: '冷蔵庫', icon: '❄️' },
-      { name: '冷凍庫', icon: '🧊' },
-      { name: 'パントリー', icon: '🏠' },
-      { name: 'キャビネット', icon: '📦' }
-    ]
-  };
+const getDefaultCategories = (language: Language): Category[] => {
+  // Always use translation keys for default categories instead of language-specific names
+  const defaultCategoriesWithKeys = [
+    { name: 'category.vegetables', translationKey: 'category.vegetables', icon: '🥬' },
+    { name: 'category.fruits', translationKey: 'category.fruits', icon: '🍎' },
+    { name: 'category.dairy', translationKey: 'category.dairy', icon: '🥛' },
+    { name: 'category.meat', translationKey: 'category.meat', icon: '🥩' },
+    { name: 'category.snacks', translationKey: 'category.snacks', icon: '🍿' },
+    { name: 'category.desserts', translationKey: 'category.desserts', icon: '🍰' },
+    { name: 'category.seafood', translationKey: 'category.seafood', icon: '🐟' },
+    { name: 'category.bread', translationKey: 'category.bread', icon: '🍞' }
+  ];
   
-  return locationsMap[language] || locationsMap.en;
+  return defaultCategoriesWithKeys;
+};
+
+const getDefaultLocations = (language: Language): Location[] => {
+  // Always use translation keys for default locations instead of language-specific names
+  const defaultLocationsWithKeys = [
+    { name: 'defaultLocation.fridge', translationKey: 'defaultLocation.fridge', icon: '❄️' },
+    { name: 'defaultLocation.freezer', translationKey: 'defaultLocation.freezer', icon: '🧊' },
+    { name: 'defaultLocation.pantry', translationKey: 'defaultLocation.pantry', icon: '🏠' },
+    { name: 'defaultLocation.counter', translationKey: 'defaultLocation.counter', icon: '📦' }
+  ];
+  
+  return defaultLocationsWithKeys;
 };
 
 // Centralized theme data with translation keys for quick setup categories
@@ -632,6 +621,7 @@ export const getTranslatedThemes = (t: (key: string) => string) => {
 
 // Create a mapping of category names to their translation keys
 const createCategoryTranslationMap = (): Record<string, string> => {
+  console.log('Creating category translation map');
   const map: Record<string, string> = {};
   
   // Add default categories (using English names as keys)
@@ -643,6 +633,7 @@ const createCategoryTranslationMap = (): Record<string, string> => {
   
   defaultCategories.forEach((cat, index) => {
     map[cat.name.toLowerCase()] = defaultTranslationKeys[index];
+    console.log(`Mapping default category "${cat.name}" to key "${defaultTranslationKeys[index]}"`);
   });
   
   // Add all themed categories from ALL_THEMES
@@ -653,10 +644,12 @@ const createCategoryTranslationMap = (): Record<string, string> => {
       const englishName = getEnglishNameFromTranslationKey(cat.translationKey);
       if (englishName) {
         map[englishName.toLowerCase()] = cat.translationKey;
+        console.log(`Mapping themed category "${englishName}" to key "${cat.translationKey}"`);
       }
     });
   });
   
+  console.log(`Created translation map with ${Object.keys(map).length} entries`);
   return map;
 };
 
@@ -692,8 +685,15 @@ const getEnglishNameFromTranslationKey = (translationKey: string): string | null
     'category.motorOil': 'Motor Oil',
     'category.fuelAdditives': 'Fuel Additives',
   };
+
+  const englishName = keyToEnglishMap[translationKey];
+  if (englishName) {
+    console.log(`Found English name "${englishName}" for translation key "${translationKey}"`);
+    return englishName;
+  }
   
-  return keyToEnglishMap[translationKey] || null;
+  console.log(`No English name found for translation key "${translationKey}"`);
+  return null;
 };
 
 // Function to get translated name for a category based on its current name
@@ -702,10 +702,13 @@ const getTranslatedCategoryName = (currentName: string, t: (key: string) => stri
   const translationKey = translationMap[currentName.toLowerCase()];
   
   if (translationKey) {
-    return t(translationKey);
+    const translated = t(translationKey);
+    console.log(`Translating "${currentName}" with key "${translationKey}" to "${translated}"`);
+    return translated;
   }
   
   // If no translation key found, return the original name (user-created category)
+  console.log(`No translation key found for "${currentName}", keeping original name`);
   return currentName;
 };
 
@@ -724,17 +727,55 @@ const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Lang
   // Insert categories
   for (const category of defaultCategories) {
     await database.runAsync(
-      'INSERT OR IGNORE INTO categories (name, icon) VALUES (?, ?)',
-      [category.name, category.icon]
+      'INSERT OR IGNORE INTO categories (name, icon, translation_key) VALUES (?, ?, ?)',
+      [category.name, category.icon, category.translationKey || null]
     );
   }
 
   // Insert locations
   for (const location of defaultLocations) {
     await database.runAsync(
-      'INSERT OR IGNORE INTO locations (name, icon) VALUES (?, ?)',
-      [location.name, location.icon]
+      'INSERT OR IGNORE INTO locations (name, icon, translation_key) VALUES (?, ?, ?)',
+      [location.name, location.icon, location.translationKey || null]
     );
+  }
+};
+
+// Function to update existing default categories and locations with translation keys
+const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  try {
+    const defaultCategories = getDefaultCategories('en'); // Use English as reference
+    const defaultLocations = getDefaultLocations('en');
+    
+    // Update default categories (IDs 1-8) with translation keys
+    for (let i = 0; i < defaultCategories.length; i++) {
+      const categoryId = i + 1;
+      const category = defaultCategories[i];
+      
+      if (category.translationKey) {
+        await database.runAsync(
+          'UPDATE categories SET translation_key = ? WHERE id = ? AND translation_key IS NULL',
+          [category.translationKey, categoryId]
+        );
+      }
+    }
+    
+    // Update default locations (IDs 1-4) with translation keys
+    for (let i = 0; i < defaultLocations.length; i++) {
+      const locationId = i + 1;
+      const location = defaultLocations[i];
+      
+      if (location.translationKey) {
+        await database.runAsync(
+          'UPDATE locations SET translation_key = ? WHERE id = ? AND translation_key IS NULL',
+          [location.translationKey, locationId]
+        );
+      }
+    }
+    
+    console.log('Updated existing default items with translation keys');
+  } catch (error) {
+    console.error('Error updating existing items with translation keys:', error);
   }
 };
 
@@ -775,6 +816,9 @@ export const initDatabase = async (): Promise<void> => {
       // Existing installation, just ensure default data exists
       await insertDefaultData(database, currentLanguage);
     }
+    
+    // Update existing default items with translation keys if they don't have them
+    await updateExistingDefaultItemsWithTranslationKeys(database);
     
     // Run category migration for existing databases
     await migrateToNewCategories(database, currentLanguage);
@@ -939,108 +983,8 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
 
 // Helper function to update default data when language changes
 export const updateDefaultDataForLanguage = async (language: Language, t?: (key: string) => string): Promise<void> => {
-  try {
-    const database = await getDatabase();
-    
-    if (!database) {
-      // Handle fallback storage
-      const fallbackData = await AsyncStorage.getItem('fallback_data');
-      const data: FallbackStorage = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
-      
-      // Always update default categories and locations with new language
-      const defaultCategories = getDefaultCategories(language);
-      
-      // Update translatable categories if translation function is provided
-      if (t) {
-        data.categories = data.categories.map(cat => {
-          const translatedName = getTranslatedCategoryName(cat.name, t);
-          return { ...cat, name: translatedName };
-        });
-      } else {
-        // Preserve existing user-created categories (those with id > default count)
-        const existingUserCategories = data.categories.filter(cat => 
-          cat.id && cat.id > defaultCategories.length
-        );
-        
-        // Combine default categories with user-created ones
-        data.categories = [
-          ...defaultCategories.map((cat, index) => ({
-            ...cat,
-            id: index + 1,
-            created_at: getCurrentDate()
-          })),
-          ...existingUserCategories
-        ];
-      }
-      
-      data.locations = getDefaultLocations(language).map((loc, index) => ({
-        ...loc,
-        id: index + 1,
-        created_at: getCurrentDate()
-      }));
-      
-      await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
-      return;
-    }
-
-    // Get all categories from database
-    const allCategories = await database.getAllAsync('SELECT * FROM categories ORDER BY id') as Category[];
-    
-    if (t) {
-      // Update ALL translatable categories (both default and themed)
-      for (const category of allCategories) {
-        const translatedName = getTranslatedCategoryName(category.name, t);
-        
-        // Only update if the translated name is different (means it's translatable)
-        if (translatedName !== category.name && category.id) {
-          await database.runAsync(
-            'UPDATE categories SET name = ? WHERE id = ?',
-            [translatedName, category.id]
-          );
-        }
-      }
-    } else {
-      // Fallback: Update only default categories (IDs 1-8) 
-      const defaultCategories = getDefaultCategories(language);
-      for (let i = 0; i < defaultCategories.length; i++) {
-        const category = defaultCategories[i];
-        const categoryId = i + 1;
-        
-        // Check if category exists
-        const existingCategory = await database.getFirstAsync(
-          'SELECT id FROM categories WHERE id = ?',
-          [categoryId]
-        );
-        
-        if (existingCategory) {
-          // Update existing category
-          await database.runAsync(
-            'UPDATE categories SET name = ? WHERE id = ?',
-            [category.name, categoryId]
-          );
-        } else {
-          // Insert new category
-          await database.runAsync(
-            'INSERT INTO categories (name, icon) VALUES (?, ?)',
-            [category.name, category.icon]
-          );
-        }
-      }
-    }
-
-    // Update existing default locations (IDs 1-4) with new language  
-    const defaultLocations = getDefaultLocations(language);
-    for (let i = 0; i < defaultLocations.length; i++) {
-      const location = defaultLocations[i];
-      await database.runAsync(
-        'UPDATE locations SET name = ? WHERE id = ?',
-        [location.name, i + 1]
-      );
-    }
-    
-    // Perform regular backup after language update
-    await performRegularBackup();
-  } catch (error) {
-    // Silent error handling
-  }
+  // No longer needed - categories and locations use translation keys now
+  // This function can be simplified or removed entirely
+  console.log(`[DATABASE] Language changed to ${language} - using translation keys, no database updates needed`);
+  return Promise.resolve();
 }; 

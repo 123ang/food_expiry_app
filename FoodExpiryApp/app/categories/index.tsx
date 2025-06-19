@@ -28,7 +28,7 @@ interface CategoryTheme {
   name: string;
   description: string;
   icon: string;
-  categories: { name: string; icon: string }[];
+  categories: { name: string; icon: string; translationKey: string }[];
 }
 
 
@@ -143,7 +143,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({ visible, onClose, onSelec
 interface ThemeSetupModalProps {
   visible: boolean;
   onClose: () => void;
-  onApply: (selectedCategories: { name: string; icon: string }[]) => void;
+  onApply: (selectedCategories: { name: string; icon: string; translationKey: string }[]) => void;
   existingCategories: Category[];
 }
 
@@ -155,12 +155,18 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
   
   // Initialize selected categories based on existing categories
   const getInitialSelectedCategories = () => {
+    // Get existing category names and translation keys
     const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+    const existingTranslationKeys = existingCategories.map(cat => cat.translationKey).filter(Boolean);
     const selected = new Set<string>();
     
     categoryThemes.forEach(themeData => {
       themeData.categories.forEach(category => {
-        if (existingNames.includes(category.name.toLowerCase())) {
+        // Check if category already exists by translation key (for default categories) or by name (for custom categories)
+        const existsByTranslationKey = category.translationKey && existingTranslationKeys.includes(category.translationKey);
+        const existsByName = existingNames.includes(category.name.toLowerCase());
+        
+        if (existsByTranslationKey || existsByName) {
           selected.add(`${themeData.id}-${category.name}`);
         }
       });
@@ -190,8 +196,18 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
 
   const toggleCategory = (themeId: string, categoryName: string) => {
     const categoryKey = `${themeId}-${categoryName}`;
+    
+    // Find the theme category to get its translation key
+    const themeData = categoryThemes.find(theme => theme.id === themeId);
+    const themeCategory = themeData?.categories.find(cat => cat.name === categoryName);
+    
+    // Check if category already exists by translation key or name
     const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
-    const isExisting = existingNames.includes(categoryName.toLowerCase());
+    const existingTranslationKeys = existingCategories.map(cat => cat.translationKey).filter(Boolean);
+    
+    const existsByTranslationKey = themeCategory?.translationKey && existingTranslationKeys.includes(themeCategory.translationKey);
+    const existsByName = existingNames.includes(categoryName.toLowerCase());
+    const isExisting = existsByTranslationKey || existsByName;
     
     // Don't allow unchecking existing categories
     if (isExisting) return;
@@ -210,12 +226,18 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
     if (!themeData) return;
 
     const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+    const existingTranslationKeys = existingCategories.map(cat => cat.translationKey).filter(Boolean);
     const themeCategoryKeys = themeData.categories.map(cat => `${themeId}-${cat.name}`);
     
     // Only consider non-existing categories for toggle
     const newCategoryKeys = themeCategoryKeys.filter(key => {
       const categoryName = key.split('-').slice(1).join('-'); // Get category name after theme id
-      return !existingNames.includes(categoryName.toLowerCase());
+      const category = themeData.categories.find(cat => cat.name === categoryName);
+      
+      const existsByTranslationKey = category?.translationKey && existingTranslationKeys.includes(category.translationKey);
+      const existsByName = existingNames.includes(categoryName.toLowerCase());
+      
+      return !(existsByTranslationKey || existsByName);
     });
     
     const allNewSelected = newCategoryKeys.every(key => selectedCategories.has(key));
@@ -232,13 +254,24 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
   };
 
   const getSelectedCategoriesForApply = () => {
-    const result: { name: string; icon: string }[] = [];
+    const result: { name: string; icon: string; translationKey: string }[] = [];
+    
+    // Get existing category info for filtering
+    const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+    const existingTranslationKeys = existingCategories.map(cat => cat.translationKey).filter(Boolean);
     
     categoryThemes.forEach(themeData => {
       themeData.categories.forEach(category => {
         const categoryKey = `${themeData.id}-${category.name}`;
         if (selectedCategories.has(categoryKey)) {
-          result.push(category);
+          // Only include categories that don't already exist
+          const existsByTranslationKey = category.translationKey && existingTranslationKeys.includes(category.translationKey);
+          const existsByName = existingNames.includes(category.name.toLowerCase());
+          const alreadyExists = existsByTranslationKey || existsByName;
+          
+          if (!alreadyExists) {
+            result.push(category);
+          }
         }
       });
     });
@@ -549,7 +582,7 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
 
 export default function CategoriesScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, getCategoryName } = useLanguage();
   const { categories, createCategory, updateCategory, deleteCategory, refreshCategories } = useDatabase();
   const router = useRouter();
   const [showIconSelector, setShowIconSelector] = useState(false);
@@ -563,25 +596,24 @@ export default function CategoriesScreen() {
     refreshCategories();
   }, []);
 
-  const handleApplyThemes = async (selectedCategories: { name: string; icon: string }[]) => {
+  const handleApplyThemes = async (selectedCategories: { name: string; icon: string; translationKey: string }[]) => {
     try {
       setIsLoading(true);
 
-      // Check for existing categories to avoid duplicates
-      const existingCategoryNames = categories.map(cat => cat.name.toLowerCase());
-      
-      // Collect new categories to add
-      const newCategories = selectedCategories.filter(categoryData => 
-        !existingCategoryNames.includes(categoryData.name.toLowerCase())
-      );
+      // selectedCategories now only contains categories that don't exist yet
+      if (selectedCategories.length === 0) {
+        Alert.alert(t('common.info'), t('categories.allExist'), [{ text: t('common.ok') }]);
+        return;
+      }
       
       // Add categories sequentially to avoid database conflicts
       let addedCount = 0;
-      for (const categoryData of newCategories) {
+      for (const categoryData of selectedCategories) {
         try {
           await createCategory({
             name: categoryData.name,
             icon: categoryData.icon,
+            translationKey: categoryData.translationKey,
           });
           addedCount++;
           // Small delay to prevent database conflicts
@@ -596,20 +628,20 @@ export default function CategoriesScreen() {
         await refreshCategories();
       }
       
-      const skippedCount = selectedCategories.length - addedCount;
+      const failedCount = selectedCategories.length - addedCount;
       let message = '';
       
-      if (addedCount > 0 && skippedCount > 0) {
-        message = `${t('categories.added')} ${addedCount} ${t('categories.newCategories')}. ${t('categories.skipped')} ${skippedCount} ${t('categories.existingCategories')}.`;
+      if (addedCount > 0 && failedCount > 0) {
+        message = `${t('categories.added')} ${addedCount} ${t('categories.newCategories')}. ${failedCount} ${t('categories.failedToAdd')}.`;
       } else if (addedCount > 0) {
         message = `${t('categories.added')} ${addedCount} ${t('categories.newCategoriesFromThemes')}!`;
       } else {
-        message = t('categories.allExist');
+        message = t('categories.failedToAddAll');
       }
       
       Alert.alert(t('common.success'), message, [{ text: t('common.ok') }]);
     } catch (error) {
-              Alert.alert(t('alert.error'), t('alert.unexpectedError'));
+      Alert.alert(t('alert.error'), t('alert.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -802,7 +834,7 @@ export default function CategoriesScreen() {
 
     Alert.alert(
       t('categories.deleteCategory'),
-      `${t('categories.deleteConfirm')} "${category.name}"?`,
+      `${t('categories.deleteConfirm')} "${getCategoryName(category)}"?`,
       [
         { text: t('cancel'), style: 'cancel' },
         {
@@ -889,7 +921,7 @@ export default function CategoriesScreen() {
               <View style={styles.categoryIcon}>
                 <CategoryIcon iconName={category.icon} size={20} />
               </View>
-              <Text style={styles.categoryName}>{category.name}</Text>
+              <Text style={styles.categoryName}>{getCategoryName(category)}</Text>
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => handleEdit(category)}

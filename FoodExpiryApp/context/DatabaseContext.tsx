@@ -226,40 +226,54 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const invalidateCache = (keys?: string[]): void => {
-    if (keys) {
-      keys.forEach(key => {
-        switch (key) {
-          case CACHE_KEYS.CATEGORIES:
-            if (categoriesCache.current) categoriesCache.current.isValid = false;
-            break;
-          case CACHE_KEYS.LOCATIONS:
-            if (locationsCache.current) locationsCache.current.isValid = false;
-            break;
-          case CACHE_KEYS.FOOD_ITEMS:
-            if (foodItemsCache.current) foodItemsCache.current.isValid = false;
-            break;
-          case CACHE_KEYS.DASHBOARD_COUNTS:
-            if (dashboardCountsCache.current) dashboardCountsCache.current.isValid = false;
-            break;
-        }
-      });
-    } else {
-      if (categoriesCache.current) categoriesCache.current.isValid = false;
-      if (locationsCache.current) locationsCache.current.isValid = false;
-      if (foodItemsCache.current) foodItemsCache.current.isValid = false;
-      if (dashboardCountsCache.current) dashboardCountsCache.current.isValid = false;
+    console.log(`Invalidating caches: ${keys ? keys.join(', ') : 'all'}`);
+    
+    if (!keys || keys.includes(CACHE_KEYS.CATEGORIES)) {
+      if (categoriesCache.current) {
+        categoriesCache.current.isValid = false;
+        console.log('Invalidated categories cache');
+      }
     }
+    
+    if (!keys || keys.includes(CACHE_KEYS.LOCATIONS)) {
+      if (locationsCache.current) {
+        locationsCache.current.isValid = false;
+        console.log('Invalidated locations cache');
+      }
+    }
+    
+    if (!keys || keys.includes(CACHE_KEYS.FOOD_ITEMS)) {
+      if (foodItemsCache.current) {
+        foodItemsCache.current.isValid = false;
+        console.log('Invalidated food items cache');
+      }
+    }
+    
+    if (!keys || keys.includes(CACHE_KEYS.DASHBOARD_COUNTS)) {
+      if (dashboardCountsCache.current) {
+        dashboardCountsCache.current.isValid = false;
+        console.log('Invalidated dashboard counts cache');
+      }
+    }
+    
+    // Force data version update to trigger UI refreshes
+    incrementDataVersion();
   };
 
   const loadCategories = async (): Promise<Category[]> => {
-    const cached = getCacheEntry(categoriesCache);
-    if (cached) {
-      return cached;
-    }
+    try {
+      const cached = getCacheEntry(categoriesCache);
+      if (cached) {
+        return cached;
+      }
 
-    const data = await CategoryRepository.getAll();
-    setCacheEntry(categoriesCache, data);
-    return data;
+      const categories = await CategoryRepository.getAll();
+      setCacheEntry(categoriesCache, categories);
+      return categories;
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      throw error;
+    }
   };
 
   const loadLocations = async (): Promise<Location[]> => {
@@ -458,24 +472,22 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const languageChangeListener = DeviceEventEmitter.addListener(
       'languageChanged',
       async (data) => {
-        // Force refresh cache when language changes to fix iOS caching issues
         try {
-          // Force clear all caches to ensure fresh data load
+          console.log('Language changed to:', data.language);
+          
+          // Only clear cache once and refresh categories/locations since they may use translation keys
           clearCache();
           
-          // Force invalidate all cache entries
-          invalidateCache();
-          
-          // Add a small delay to ensure database updates are complete
+          // Small delay to ensure everything is settled
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          // Force reload all data from database
-          await refreshAll();
+          // Refresh categories and locations since they may have translation keys
+          await refreshCategories();
+          await refreshLocations();
           
-          // Increment data version to force UI updates
-          incrementDataVersion();
+          setDataVersion(prev => prev + 1);
         } catch (error) {
-          // Silent error handling for production
+          console.error('Error handling language change:', error);
         }
       }
     );
@@ -894,8 +906,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-
-
   const value: DatabaseContextType = {
     isLoading,
     error,
@@ -941,7 +951,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       return hasCachedCategories && hasCachedLocations;
     },
-          dataVersion: dataVersion
+    dataVersion: dataVersion
   };
 
   return (

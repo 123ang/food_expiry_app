@@ -32,7 +32,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function AddScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, getCategoryName, getLocationName } = useLanguage();
   const router = useRouter();
   const responsive = useResponsive();
   const { createFoodItem, refreshFoodItems, refreshAll, locations, categories, foodItems } = useDatabase();
@@ -647,7 +647,7 @@ export default function AddScreen() {
                   <View style={styles.optionIcon}>
                     <CategoryIcon iconName={category.icon} size={20} />
                   </View>
-                  <Text style={styles.optionName}>{category.name}</Text>
+                  <Text style={styles.optionName}>{getCategoryName(category)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -668,7 +668,7 @@ export default function AddScreen() {
                   <View style={styles.optionIcon}>
                     <LocationIcon iconName={location.icon} size={20} />
                   </View>
-                  <Text style={styles.optionName}>{location.name}</Text>
+                  <Text style={styles.optionName}>{getLocationName(location)}</Text>
                 </TouchableOpacity>
               ))}
             </View>

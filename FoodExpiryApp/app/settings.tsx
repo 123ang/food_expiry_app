@@ -1054,7 +1054,7 @@ export default function SettingsScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            style={styles.languageOption}
             onPress={() => {
               setLanguage('ja');
               setShowLanguageModal(false);
@@ -1067,6 +1067,40 @@ export default function SettingsScreen() {
               {t('language.japanese')}
             </Text>
             {language === 'ja' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.languageOption}
+            onPress={() => {
+              setLanguage('th');
+              setShowLanguageModal(false);
+            }}
+          >
+            <Text style={[
+              styles.languageText,
+              language === 'th' && styles.languageSelected
+            ]}>
+              {t('language.thai')}
+            </Text>
+            {language === 'th' && (
+              <FontAwesome name="check" size={16} color={theme.primaryColor} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.languageOption, { borderBottomWidth: 0 }]}
+            onPress={() => {
+              setLanguage('ms');
+              setShowLanguageModal(false);
+            }}
+          >
+            <Text style={[
+              styles.languageText,
+              language === 'ms' && styles.languageSelected
+            ]}>
+              {t('language.malay')}
+            </Text>
+            {language === 'ms' && (
               <FontAwesome name="check" size={16} color={theme.primaryColor} />
             )}
           </TouchableOpacity>

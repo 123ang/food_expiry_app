@@ -26,8 +26,22 @@ const FoodItemCard: React.FC<{
   onPress: () => void; 
   theme: any;
   styles: any;
-}> = ({ item, onPress, theme, styles }) => {
+  getLocationName: (location: any) => string;
+  locations: any[];
+  t: (key: string) => string;
+}> = ({ item, onPress, theme, styles, getLocationName, locations, t }) => {
   const [imageError, setImageError] = useState(false);
+
+  // Find location object for translation
+  const itemLocation = item.location_id ? locations.find(loc => loc.id === item.location_id) : null;
+  
+  // Get translated location name
+  const getLocationDisplayName = () => {
+    if (itemLocation) {
+      return getLocationName(itemLocation);
+    }
+    return item.location_name || t('foodStatus.noLocation');
+  };
 
   // Determine status icon and color based on days until expiry
   const getStatusInfo = () => {
@@ -103,7 +117,7 @@ const FoodItemCard: React.FC<{
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <LocationIcon iconName={item.location_icon} size={16} />
-            <Text style={styles.metaText}>{item.location_name || 'No location'}</Text>
+            <Text style={styles.metaText}>{getLocationDisplayName()}</Text>
           </View>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 16 }}>📅</Text>
@@ -117,10 +131,10 @@ const FoodItemCard: React.FC<{
 
 export default function CategoryDetailScreen() {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t, language, getLocationName } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { foodItems, categories, getCategory } = useDatabase();
+  const { foodItems, categories, getCategory, locations } = useDatabase();
   const [loading, setLoading] = useState(true);
   const [categoryItems, setCategoryItems] = useState<FoodItemWithDetails[]>([]);
   const [category, setCategory] = useState<{ name: string; icon: string; color: string } | null>(null);
@@ -383,6 +397,9 @@ export default function CategoryDetailScreen() {
               onPress={() => router.push(`/item/${item.id}`)}
               theme={theme}
               styles={styles}
+              getLocationName={getLocationName}
+              locations={locations}
+              t={t}
             />
           ))
         ) : (

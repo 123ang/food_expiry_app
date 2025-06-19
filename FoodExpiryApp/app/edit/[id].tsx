@@ -33,7 +33,7 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 export default function EditScreen() {
   const { id } = useLocalSearchParams();
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, getLocationName, getCategoryName } = useLanguage();
   const router = useRouter();
   const { foodItems, updateFoodItem, refreshAll, categories, locations } = useDatabase();
   const responsive = useResponsive();
@@ -733,7 +733,7 @@ export default function EditScreen() {
                   <View style={styles.optionIcon}>
                     <CategoryIcon iconName={category.icon} size={20} />
                   </View>
-                  <Text style={styles.optionName}>{category.name}</Text>
+                  <Text style={styles.optionName}>{getCategoryName(category)}</Text>
                 </TouchableOpacity>
               )) : (
                 <Text style={styles.loadingText}>{t('loading.categories')}</Text>
@@ -756,7 +756,7 @@ export default function EditScreen() {
                   <View style={styles.optionIcon}>
                     <LocationIcon iconName={location.icon} size={20} />
                   </View>
-                  <Text style={styles.optionName}>{location.name}</Text>
+                                      <Text style={styles.optionName}>{getLocationName(location)}</Text>
                 </TouchableOpacity>
               )) : (
                 <Text style={styles.loadingText}>{t('loading.locations')}</Text>

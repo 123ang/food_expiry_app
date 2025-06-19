@@ -29,8 +29,31 @@ const FoodItemCard: React.FC<{
   theme: any;
   styles: any;
   t: (key: string) => string;
-}> = ({ item, onPress, theme, styles, t }) => {
+  getCategoryName: (category: any) => string;
+  getLocationName: (location: any) => string;
+  categories: any[];
+  locations: any[];
+}> = ({ item, onPress, theme, styles, t, getCategoryName, getLocationName, categories, locations }) => {
   const [imageError, setImageError] = useState(false);
+
+  // Find category and location objects for translation
+  const itemCategory = item.category_id ? categories.find(cat => cat.id === item.category_id) : null;
+  const itemLocation = item.location_id ? locations.find(loc => loc.id === item.location_id) : null;
+
+  // Get translated names
+  const getCategoryDisplayName = () => {
+    if (itemCategory) {
+      return getCategoryName(itemCategory);
+    }
+    return item.category_name || t('foodStatus.noCategory');
+  };
+
+  const getLocationDisplayName = () => {
+    if (itemLocation) {
+      return getLocationName(itemLocation);
+    }
+    return item.location_name || t('foodStatus.noLocation');
+  };
 
   // Determine status based on days until expiry
   const getStatusInfo = () => {
@@ -81,11 +104,11 @@ const FoodItemCard: React.FC<{
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <CategoryIcon iconName={item.category_icon} size={16} />
-            <Text style={styles.metaText}>{item.category_name || t('foodStatus.noCategory')}</Text>
+            <Text style={styles.metaText}>{getCategoryDisplayName()}</Text>
           </View>
           <View style={styles.metaItem}>
             <LocationIcon iconName={item.location_icon} size={16} />
-            <Text style={styles.metaText}>{item.location_name || t('foodStatus.noLocation')}</Text>
+            <Text style={styles.metaText}>{getLocationDisplayName()}</Text>
           </View>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 16, color: theme.textSecondary }}>📅</Text>
@@ -105,10 +128,10 @@ const FoodItemCard: React.FC<{
 
 export default function ItemStatusScreen() {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t, language, getCategoryName, getLocationName } = useLanguage();
   const router = useRouter();
   const { status } = useLocalSearchParams();
-  const { getByStatus, refreshAll, foodItems, deleteAllExpired } = useDatabase();
+  const { getByStatus, refreshAll, foodItems, deleteAllExpired, categories, locations } = useDatabase();
   
   const [currentItems, setCurrentItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -391,6 +414,10 @@ export default function ItemStatusScreen() {
         theme={theme}
         styles={styles}
         t={t}
+        getCategoryName={getCategoryName}
+        getLocationName={getLocationName}
+        categories={categories}
+        locations={locations}
       />
     );
   };

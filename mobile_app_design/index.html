@@ -3,137 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fresh Food Reminder</title>
+    <title>Food Expiry App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Fresh Food Reminder</h1>
+        <h1>Food Expiry App</h1>
         
         <button class="theme-toggle">
             <i class="fas fa-moon"></i>
             <span>Dark Mode</span>
         </button>
         
+        <!-- Language Selector -->
+        <div class="language-selector">
+            <button class="language-btn active" data-lang="en">English</button>
+            <button class="language-btn" data-lang="zh">中文</button>
+            <button class="language-btn" data-lang="ja">日本語</button>
+            <button class="language-btn" data-lang="th">ไทย</button>
+            <button class="language-btn" data-lang="ms">Bahasa Melayu</button>
+        </div>
+        
         <!-- Dashboard -->
         <div class="prototype-screen">
             <h2>Dashboard</h2>
             <div class="phone-frame">
                 <div class="status-bar">
-                    <span>9:41</span>
+                    <span id="current-time">9:41</span>
                     <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
                 </div>
                 <div class="screen-content dashboard">
                     <div class="header">
-                        <h3>Fresh Food</h3>
+                        <h3 data-translate="app.title">Food Expiry</h3>
                         <div class="header-actions">
-                            <button class="icon-btn"><i class="fas fa-bell"></i></button>
-                            <button class="icon-btn"><i class="fas fa-user-circle"></i></button>
+                            <button class="icon-btn" id="notification-btn"><i class="fas fa-bell"></i></button>
+                            <button class="icon-btn" id="settings-btn"><i class="fas fa-cog"></i></button>
                         </div>
                     </div>
                     <div class="welcome-banner">
                         <div class="welcome-text">
-                            <h4>Welcome Back!</h4>
-                            <p><strong>2</strong> items expiring soon</p>
+                            <h4 data-translate="dashboard.welcome">Welcome Back!</h4>
+                            <p><strong id="expiring-count">0</strong> <span data-translate="dashboard.expiringItems">items expiring soon</span></p>
                         </div>
                         <i class="fas fa-utensils banner-icon"></i>
                     </div>
                     <div class="quick-stats">
                         <div class="stat-card">
                             <i class="fas fa-exclamation-circle warning"></i>
-                            <span>Expiring Soon</span>
-                            <strong>5</strong>
+                            <span data-translate="dashboard.expiringSoon">Expiring Soon</span>
+                            <strong id="expiring-soon-count">0</strong>
                         </div>
                         <div class="stat-card">
                             <i class="fas fa-check-circle success"></i>
-                            <span>Fresh</span>
-                            <strong>12</strong>
+                            <span data-translate="dashboard.fresh">Fresh</span>
+                            <strong id="fresh-count">0</strong>
                         </div>
                     </div>
 
                     <!-- Storage Locations -->
                     <div class="location-list">
                         <div class="category-actions">
-                            <h4>Storage Locations</h4>
+                            <h4 data-translate="dashboard.storageLocations">Storage Locations</h4>
+                            <button class="action-btn" id="add-location-btn"><i class="fas fa-plus"></i></button>
                         </div>
-                        <div class="locations">
-                            <div class="location-item">
-                                <div class="actions">
-                                    <button class="action-btn" onclick="editLocation(1)"><i class="fas fa-edit"></i></button>
-                                    <button class="action-btn delete" onclick="deleteLocation(1)"><i class="fas fa-trash"></i></button>
-                                </div>
-                                <i class="fas fa-door-closed"></i>
-                                <span>Fridge</span>
-                                <small>8 items</small>
-                            </div>
-                            <div class="location-item">
-                                <i class="fas fa-snowflake"></i>
-                                <span>Freezer</span>
-                                <small>4 items</small>
-                            </div>
-                            <div class="location-item">
-                                <i class="fas fa-box"></i>
-                                <span>Pantry</span>
-                                <small>3 items</small>
-                            </div>
-                            <div class="location-item">
-                                <i class="fas fa-cabinet-filing"></i>
-                                <span>Cabinet</span>
-                                <small>2 items</small>
-                            </div>
-                            <div class="add-location" onclick="showAddLocationModal()">
-                                <i class="fas fa-plus"></i>
-                                <span>Add Location</span>
-                            </div>
+                        <div class="locations" id="locations-container">
+                            <!-- Locations will be dynamically added here -->
                         </div>
                     </div>
 
                     <div class="category-list">
                         <div class="category-actions">
-                            <h4>Categories</h4>
-                           </div>
-                        <div class="categories">
-                            <div class="category-item">
-                                <div class="actions">
-                                    <button class="action-btn" onclick="editCategory(1)"><i class="fas fa-edit"></i></button>
-                                    <button class="action-btn delete" onclick="deleteCategory(1)"><i class="fas fa-trash"></i></button>
-                                </div>
-                                <i class="fas fa-carrot"></i>
-                                <span>Vegetables</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-apple-alt"></i>
-                                <span>Fruits</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-egg"></i>
-                                <span>Dairy</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-drumstick-bite"></i>
-                                <span>Meat</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-cookie"></i>
-                                <span>Snacks</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-ice-cream"></i>
-                                <span>Desserts</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-fish"></i>
-                                <span>Seafood</span>
-                            </div>
-                            <div class="category-item">
-                                <i class="fas fa-bread-slice"></i>
-                                <span>Bread</span>
-                            </div>
-                            <div class="add-category" onclick="showAddCategoryModal()">
-                                <i class="fas fa-plus"></i>
-                                <span>Add Category</span>
-                            </div>
+                            <h4 data-translate="dashboard.categories">Categories</h4>
+                            <button class="action-btn" id="add-category-btn"><i class="fas fa-plus"></i></button>
+                        </div>
+                        <div class="categories" id="categories-container">
+                            <!-- Categories will be dynamically added here -->
                         </div>
                     </div>
 
@@ -143,405 +88,196 @@
                             <div class="section-header">
                                 <h4>
                                     <i class="fas fa-exclamation-circle warning"></i>
-                                    Expiring Soon
-                                    <span class="count warning">5</span>
+                                    <span data-translate="dashboard.expiringSoon">Expiring Soon</span>
+                                    <span class="count warning" id="expiring-section-count">0</span>
                                 </h4>
-                                <button class="action-btn" onclick="sortExpiringItems()">
+                                <button class="action-btn" id="sort-expiring-btn">
                                     <i class="fas fa-sort"></i>
                                 </button>
                             </div>
-                            <div class="section-content">
-                                <div class="food-item">
-                                    <div class="food-info">
-                                        <img src="https://images.unsplash.com/photo-1563636619-e9143da7973b?w=120" alt="Fresh Milk">
-                                        <div class="food-details">
-                                            <h5>Milk</h5>
-                                            <div class="food-meta">
-                                                <span><i class="fas fa-clock"></i> 2 days left</span>
-                                                <span><i class="fas fa-door-closed"></i> Fridge</span>
-                                            </div>
-                                        </div>
-                                        <div class="food-actions">
-                                            <button class="action-btn" onclick="editFood(1)"><i class="fas fa-edit"></i></button>
-                                            <button class="action-btn delete" onclick="deleteFood(1)"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- COMMENT: follow the structure above -->
-                                <!-- <div class="food-item">
-                                    <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=120" alt="Tomatoes">
-                                    <div class="food-info">
-                                        <h5>Tomatoes</h5>
-                                        <p>4 days left</p>
-                                        <span class="location-tag"><i class="fas fa-door-closed"></i> Fridge</span>
-                                    </div>
-                                    <span class="expiry-tag warning">Warning</span>
-                                </div> -->
+                            <div class="section-content" id="expiring-items-container">
+                                <!-- Expiring items will be dynamically added here -->
                             </div>
                         </div>
 
-                        <!-- Fresh Run Section -->
+                        <!-- Fresh Items Section -->
                         <div class="food-section">
                             <div class="section-header">
                                 <h4>
                                     <i class="fas fa-check-circle success"></i>
-                                    Fresh
-                                    <span class="count">12</span>
+                                    <span data-translate="dashboard.fresh">Fresh</span>
+                                    <span class="count" id="fresh-section-count">0</span>
                                 </h4>
-                                <button class="action-btn" onclick="sortFreshItems()">
+                                <button class="action-btn" id="sort-fresh-btn">
                                     <i class="fas fa-sort"></i>
                                 </button>
                             </div>
-                            <div class="section-content">
-                                <div class="food-item">
-                                    <div class="food-info">
-                                        <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?w=120" alt="Bread">
-                                        <div class="food-details">
-                                            <h5>Bread</h5>
-                                            <div class="food-meta">
-                                                <span><i class="fas fa-clock"></i> 7 days left</span>
-                                                <span><i class="fas fa-box"></i> Pantry</span>
-                                            </div>
-                                        </div>
-                                        <div class="food-actions">
-                                            <button class="action-btn" onclick="editFood(2)"><i class="fas fa-edit"></i></button>
-                                            <button class="action-btn delete" onclick="deleteFood(2)"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="section-content" id="fresh-items-container">
+                                <!-- Fresh items will be dynamically added here -->
                             </div>
                         </div>
                     </div>
 
-                    <nav class="bottom-nav">
-                        <button class="nav-item active">
+                    <!-- Bottom Navigation -->
+                    <div class="bottom-nav">
+                        <div class="nav-item active" data-screen="dashboard">
                             <i class="fas fa-home"></i>
-                            <span>Home</span>
-                        </button>
-                        <button class="nav-item">
+                            <span data-translate="nav.home">Home</span>
+                        </div>
+                        <div class="nav-item" data-screen="list">
                             <i class="fas fa-list"></i>
-                            <span>List</span>
-                        </button>
-                        <button class="nav-item add-btn">
+                            <span data-translate="nav.list">List</span>
+                        </div>
+                        <div class="nav-item add-btn" data-screen="add">
                             <i class="fas fa-plus"></i>
-                        </button>
-                        <button class="nav-item">
+                        </div>
+                        <div class="nav-item" data-screen="calendar">
                             <i class="fas fa-calendar"></i>
-                            <span>Calendar</span>
-                        </button>
-                        <button class="nav-item">
+                            <span data-translate="nav.calendar">Calendar</span>
+                        </div>
+                        <div class="nav-item" data-screen="settings">
                             <i class="fas fa-cog"></i>
-                            <span>Settings</span>
-                        </button>
-                    </nav>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add/Edit Food -->
-        <div class="prototype-screen">
-            <h2>Add/Edit Food</h2>
-            <div class="phone-frame">
-                <div class="status-bar">
-                    <span>9:41</span>
-                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
-                </div>
-                <div class="screen-content add-food">
-                    <div class="header">
-                        <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
-                        <h3>Add Food</h3>
-                        <button class="save-btn">Save</button>
-                    </div>
-                    <div class="form-content">
-                        <div class="photo-upload">
-                            <i class="fas fa-camera"></i>
-                            <span>Add Food Photo</span>
-                        </div>
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" placeholder="Enter food name">
-                        </div>
-                        <div class="form-group">
-                            <label>Category</label>
-                            <select>
-                                <option>Vegetables</option>
-                                <option>Fruits</option>
-                                <option>Dairy</option>
-                                <option>Meat</option>
-                                <option>Snacks</option>
-                                <option>Desserts</option>
-                                <option>Seafood</option>
-                                <option>Bread</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Storage Location</label>
-                            <select>
-                                <option>Fridge</option>
-                                <option>Freezer</option>
-                                <option>Pantry</option>
-                                <option>Cabinet</option>
-                                <option>Counter</option>
-                                <option>Other...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Expiry Date</label>
-                            <input type="date">
-                        </div>
-                        <div class="form-group">
-                            <label>Reminder</label>
-                            <select>
-                                <option>On expiry day</option>
-                                <option>1 day before</option>
-                                <option>3 days before</option>
-                                <option>1 week before</option>
-                                <option>Custom...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea placeholder="Add notes..."></textarea>
+                            <span data-translate="nav.settings">Settings</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Settings -->
-        <div class="prototype-screen">
-            <h2>Settings</h2>
-            <div class="phone-frame">
-                <div class="status-bar">
-                    <span>9:41</span>
-                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+        
+        <!-- Add Item Modal -->
+        <div class="modal-overlay" id="add-item-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 data-translate="addItem.title">Add Food Item</h3>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
                 </div>
-                <div class="screen-content settings">
-                    <div class="header">
-                        <h3>Settings</h3>
+                <div class="modal-content">
+                    <div class="form-group">
+                        <label for="item-name" data-translate="form.name">Name</label>
+                        <input type="text" id="item-name" placeholder="Enter food name">
                     </div>
-                    <div class="settings-list">
-                        <div class="settings-group">
-                            <h4>Notifications</h4>
-                            <div class="setting-item">
-                                <div class="setting-label">
-                                    <i class="fas fa-bell"></i>
-                                    <span>Push Notifications</span>
-                                </div>
-                                <div class="toggle-switch"></div>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-label">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Reminder Time</span>
-                                </div>
-                                <span class="setting-value">9:00 AM</span>
-                            </div>
-                        </div>
-                        <div class="settings-group">
-                            <h4>Personalization</h4>
-                            <div class="setting-item">
-                                <div class="setting-label">
-                                    <i class="fas fa-palette"></i>
-                                    <span>Theme</span>
-                                </div>
-                                <span class="setting-value">Light</span>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-label">
-                                    <i class="fas fa-language"></i>
-                                    <span>Language</span>
-                                </div>
-                                <span class="setting-value">English</span>
-                            </div>
-                        </div>
-                        <div class="settings-group">
-                            <h4>Cloud Features</h4>
-                            <div class="premium-banner">
-                                <div class="premium-info">
-                                    <h5>Unlock Cloud Sync</h5>
-                                    <p>Backup and sync across devices</p>
-                                    <span class="price">$4.99</span>
-                                </div>
-                                <button class="premium-btn">Unlock</button>
-                            </div>
-                        </div>
-                        <div class="settings-group">
-                            <h4>About</h4>
-                            <div class="setting-item">
-                                <div class="setting-label">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span>Version</span>
-                                </div>
-                                <span class="setting-value">1.0.0</span>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-label">
-                                    <i class="fas fa-star"></i>
-                                    <span>Rate App</span>
-                                </div>
-                                <i class="fas fa-chevron-right"></i>
-                            </div>
+                    <div class="form-group">
+                        <label for="item-category" data-translate="form.category">Category</label>
+                        <select id="item-category">
+                            <!-- Categories will be dynamically added here -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-location" data-translate="form.location">Location</label>
+                        <select id="item-location">
+                            <!-- Locations will be dynamically added here -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="item-expiry" data-translate="form.expiryDate">Expiry Date</label>
+                        <input type="date" id="item-expiry">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-reminder" data-translate="form.reminderDays">Reminder Days</label>
+                        <input type="number" id="item-reminder" value="3" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-quantity" data-translate="form.quantity">Quantity</label>
+                        <input type="number" id="item-quantity" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="item-notes" data-translate="form.notes">Notes</label>
+                        <textarea id="item-notes" placeholder="Add notes (optional)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" data-translate="button.cancel">Cancel</button>
+                    <button class="modal-btn confirm" data-translate="button.save">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Category Modal -->
+        <div class="modal-overlay" id="add-category-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 data-translate="addCategory.title">Add Category</h3>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-content">
+                    <div class="form-group">
+                        <label for="category-name" data-translate="form.name">Name</label>
+                        <input type="text" id="category-name" placeholder="Enter category name">
+                    </div>
+                    <div class="form-group">
+                        <label for="category-icon" data-translate="form.icon">Icon</label>
+                        <div class="icon-selector" id="category-icon-selector">
+                            <button class="icon-option" data-icon="fa-carrot"><i class="fas fa-carrot"></i></button>
+                            <button class="icon-option" data-icon="fa-apple-alt"><i class="fas fa-apple-alt"></i></button>
+                            <button class="icon-option" data-icon="fa-egg"><i class="fas fa-egg"></i></button>
+                            <button class="icon-option" data-icon="fa-drumstick-bite"><i class="fas fa-drumstick-bite"></i></button>
+                            <button class="icon-option" data-icon="fa-fish"><i class="fas fa-fish"></i></button>
+                            <button class="icon-option" data-icon="fa-bread-slice"><i class="fas fa-bread-slice"></i></button>
+                            <button class="icon-option" data-icon="fa-cheese"><i class="fas fa-cheese"></i></button>
+                            <button class="icon-option" data-icon="fa-cookie"><i class="fas fa-cookie"></i></button>
                         </div>
                     </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" data-translate="button.cancel">Cancel</button>
+                    <button class="modal-btn confirm" data-translate="button.save">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add Location Modal -->
+        <div class="modal-overlay" id="add-location-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 data-translate="addLocation.title">Add Location</h3>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-content">
+                    <div class="form-group">
+                        <label for="location-name" data-translate="form.name">Name</label>
+                        <input type="text" id="location-name" placeholder="Enter location name">
+                    </div>
+                    <div class="form-group">
+                        <label for="location-icon" data-translate="form.icon">Icon</label>
+                        <div class="icon-selector" id="location-icon-selector">
+                            <button class="icon-option" data-icon="fa-door-closed"><i class="fas fa-door-closed"></i></button>
+                            <button class="icon-option" data-icon="fa-snowflake"><i class="fas fa-snowflake"></i></button>
+                            <button class="icon-option" data-icon="fa-box"><i class="fas fa-box"></i></button>
+                            <button class="icon-option" data-icon="fa-archive"><i class="fas fa-archive"></i></button>
+                            <button class="icon-option" data-icon="fa-warehouse"><i class="fas fa-warehouse"></i></button>
+                            <button class="icon-option" data-icon="fa-shopping-basket"><i class="fas fa-shopping-basket"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" data-translate="button.cancel">Cancel</button>
+                    <button class="modal-btn confirm" data-translate="button.save">Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Delete Confirmation Modal -->
+        <div class="modal-overlay" id="delete-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 data-translate="deleteConfirmation.title">Delete Item</h3>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-content">
+                    <div class="delete-confirmation">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p data-translate="deleteConfirmation.message">Are you sure you want to delete this item?</p>
+                        <p class="item-name" id="delete-item-name"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel" data-translate="button.cancel">Cancel</button>
+                    <button class="modal-btn confirm delete" data-translate="button.delete">Delete</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Category Modal -->
-    <div class="modal-overlay" id="categoryModal" style="display: none;">
-        <div class="modal">
-            <div class="modal-header">
-                <h4>Add Category</h4>
-                <button class="action-btn" onclick="closeModal('categoryModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-content">
-                <div class="form-group">
-                    <label>Category Name</label>
-                    <input type="text" placeholder="Enter category name">
-                </div>
-                <div class="form-group">
-                    <label>Icon</label>
-                    <select>
-                        <option value="carrot">Vegetable</option>
-                        <option value="apple-alt">Fruit</option>
-                        <option value="egg">Dairy</option>
-                        <option value="drumstick-bite">Meat</option>
-                        <!-- ... other icons ... -->
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn cancel" onclick="closeModal('categoryModal')">Cancel</button>
-                <button class="modal-btn confirm">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Location Modal -->
-    <div class="modal-overlay" id="locationModal" style="display: none;">
-        <div class="modal">
-            <div class="modal-header">
-                <h4>Add Location</h4>
-                <button class="action-btn" onclick="closeModal('locationModal')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-content">
-                <div class="form-group">
-                    <label>Location Name</label>
-                    <input type="text" placeholder="Enter location name">
-                </div>
-                <div class="form-group">
-                    <label>Icon</label>
-                    <select>
-                        <option value="door-closed">Fridge</option>
-                        <option value="snowflake">Freezer</option>
-                        <option value="box">Pantry</option>
-                        <option value="cabinet-filing">Cabinet</option>
-                        <!-- ... other icons ... -->
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="modal-btn cancel" onclick="closeModal('locationModal')">Cancel</button>
-                <button class="modal-btn confirm">Save</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Theme toggle functionality
-        const themeToggle = document.querySelector('.theme-toggle');
-        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-        
-        const currentTheme = localStorage.getItem('theme');
-        if (currentTheme === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-            themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
-        }
-        
-        prefersDarkScheme.addListener((e) => {
-            if (!localStorage.getItem('theme')) {
-                if (e.matches) {
-                    document.body.setAttribute('data-theme', 'dark');
-                    themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
-                } else {
-                    document.body.removeAttribute('data-theme');
-                    themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
-                }
-            }
-        });
-        
-        themeToggle.addEventListener('click', () => {
-            if (document.body.getAttribute('data-theme') === 'dark') {
-                document.body.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-                themeToggle.innerHTML = '<i class="fas fa-moon"></i><span>Dark Mode</span>';
-            } else {
-                document.body.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-                themeToggle.innerHTML = '<i class="fas fa-sun"></i><span>Light Mode</span>';
-            }
-        });
-
-        // Add these functions to your existing script
-        function showAddCategoryModal() {
-            document.getElementById('categoryModal').style.display = 'flex';
-        }
-
-        function showAddLocationModal() {
-            document.getElementById('locationModal').style.display = 'flex';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        function editCategory(id) {
-            // Implement category editing
-            showAddCategoryModal();
-            // Pre-fill the form with category data
-        }
-
-        function deleteCategory(id) {
-            if (confirm('Are you sure you want to delete this category?')) {
-                // Implement category deletion
-            }
-        }
-
-        function editLocation(id) {
-            // Implement location editing
-            showAddLocationModal();
-            // Pre-fill the form with location data
-        }
-
-        function deleteLocation(id) {
-            if (confirm('Are you sure you want to delete this location?')) {
-                // Implement location deletion
-            }
-        }
-
-        function editFood(id) {
-            // Implement food item editing
-        }
-
-        function deleteFood(id) {
-            if (confirm('Are you sure you want to delete this food item?')) {
-                // Implement food item deletion
-            }
-        }
-
-        function sortExpiringItems() {
-            // Implement sorting for expiring items
-        }
-
-        function sortFreshItems() {
-            // Implement sorting for fresh items
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html> 

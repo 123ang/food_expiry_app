@@ -2,6 +2,7 @@ export interface BaseItem {
   id?: number;
   name: string;
   icon: string;
+  translationKey?: string;  // Optional field for items that should be translated using translation keys
 }
 
 export interface Category extends BaseItem {}

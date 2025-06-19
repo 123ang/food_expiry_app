@@ -26,12 +26,14 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function ItemDetailsScreen() {
   const { theme } = useTheme();
-  const { t } = useLanguage();
-  const { getFoodItem, deleteFoodItem, updateFoodItem } = useDatabase();
+  const { t, getCategoryName, getLocationName } = useLanguage();
+  const { getFoodItem, deleteFoodItem, updateFoodItem, getCategory, getLocation } = useDatabase();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   
   const [item, setItem] = useState<FoodItemWithDetails | null>(null);
+  const [itemCategory, setItemCategory] = useState<any>(null);
+  const [itemLocation, setItemLocation] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
@@ -58,6 +60,18 @@ export default function ItemDetailsScreen() {
     try {
       const itemData = await getFoodItem(Number(id));
       setItem(itemData);
+      
+      // Fetch category and location objects for translation
+      if (itemData) {
+        if (itemData.category_id) {
+          const category = await getCategory(itemData.category_id);
+          setItemCategory(category);
+        }
+        if (itemData.location_id) {
+          const location = await getLocation(itemData.location_id);
+          setItemLocation(location);
+        }
+      }
     } catch (error) {
       console.error('Error loading item:', error);
       Alert.alert(t('alert.error'), t('alert.loadFailed'));
@@ -573,7 +587,7 @@ export default function ItemDetailsScreen() {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.category')}</Text>
-                <Text style={styles.detailValue}>{item.category_name || 'Unknown'}</Text>
+                <Text style={styles.detailValue}>{itemCategory ? getCategoryName(itemCategory) : (item.category_name || 'Unknown')}</Text>
               </View>
             </View>
 
@@ -583,7 +597,7 @@ export default function ItemDetailsScreen() {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.location')}</Text>
-                <Text style={styles.detailValue}>{item.location_name || 'Unknown'}</Text>
+                <Text style={styles.detailValue}>{itemLocation ? getLocationName(itemLocation) : (item.location_name || 'Unknown')}</Text>
               </View>
             </View>
 

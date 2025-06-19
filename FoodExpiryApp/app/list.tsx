@@ -28,8 +28,8 @@ type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function ListScreen() {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
-  const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable, dataVersion } = useDatabase();
+  const { t, language, getCategoryName, getLocationName } = useLanguage();
+  const { foodItems, deleteFoodItem, refreshFoodItems, refreshAll, getByStatus, isDataAvailable, dataVersion, categories, locations } = useDatabase();
   const router = useRouter();
   const { filterStatus } = useLocalSearchParams();
   const responsive = useResponsive();
@@ -57,6 +57,17 @@ export default function ListScreen() {
 
   // Get filter from URL params or use current state
   const activeFilter = (Array.isArray(filterStatus) ? filterStatus[0] : filterStatus) || currentFilterStatus;
+  
+  // Helper functions to get translated names
+  const getItemCategoryName = (item: FoodItemWithDetails) => {
+    const category = categories.find(cat => cat.id === item.category_id);
+    return category ? getCategoryName(category) : item.category_name;
+  };
+  
+  const getItemLocationName = (item: FoodItemWithDetails) => {
+    const location = locations.find(loc => loc.id === item.location_id);
+    return location ? getLocationName(location) : item.location_name;
+  };
 
   // Default colors for fallback
   const defaultColors = {
@@ -464,11 +475,11 @@ export default function ListScreen() {
             </View>
             <View style={styles.metaItem}>
               <CategoryIcon iconName={item.category_icon} size={14} />
-              <Text style={styles.metaText}>{item.category_name}</Text>
+              <Text style={styles.metaText}>{getItemCategoryName(item)}</Text>
             </View>
             <View style={styles.metaItem}>
               <LocationIcon iconName={item.location_icon} size={14} />
-              <Text style={styles.metaText}>{item.location_name}</Text>
+              <Text style={styles.metaText}>{getItemLocationName(item)}</Text>
             </View>
             <View style={styles.metaItem}>
               <Text style={{ fontSize: 14, color: colors.textSecondary }}>📦</Text>

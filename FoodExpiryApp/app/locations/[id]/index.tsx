@@ -122,7 +122,7 @@ const FoodItemCard: React.FC<{
 
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t, language, getLocationName } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { locations, foodItems, refreshAll, dataVersion } = useDatabase();
@@ -329,7 +329,7 @@ export default function LocationDetailScreen() {
     );
   }
 
-  const locationColor = LOCATION_COLORS[location.name as keyof typeof LOCATION_COLORS] || theme.primaryColor;
+  const locationColor = LOCATION_COLORS[getLocationName(location) as keyof typeof LOCATION_COLORS] || theme.primaryColor;
 
   return (
     <View style={styles.container}>
@@ -339,7 +339,7 @@ export default function LocationDetailScreen() {
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <LocationIcon iconName={location.icon} size={24} />
-          <Text style={styles.title}>{location.name}</Text>
+          <Text style={styles.title}>{getLocationName(location)}</Text>
         </View>
       </View>
 
@@ -352,7 +352,7 @@ export default function LocationDetailScreen() {
           <View style={[styles.statsIcon, { backgroundColor: `${locationColor}20` }]}>
             <LocationIcon iconName={location.icon} size={24} />
           </View>
-          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {location.name}</Text>
+          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {getLocationName(location)}</Text>
           <Text style={styles.statsCount}>{locationItems.length}</Text>
         </View>
 
@@ -360,7 +360,7 @@ export default function LocationDetailScreen() {
           <View style={styles.emptyState}>
             <Text style={{ fontSize: 48 }}>📦</Text>
             <Text style={styles.emptyStateText}>
-              {t('detail.noItemsInLocation').replace('{location}', location.name)}
+              {t('detail.noItemsInLocation').replace('{location}', getLocationName(location))}
             </Text>
           </View>
         ) : (
