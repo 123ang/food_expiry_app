@@ -499,7 +499,7 @@ export const FoodItemRepository = {
         });
         
         const totalTime = Date.now() - startTime;
-        console.log(`Fallback getAllWithDetails completed in ${totalTime}ms`);
+
         return result;
       }
       
@@ -518,7 +518,7 @@ export const FoodItemRepository = {
         LEFT JOIN locations l ON fi.location_id = l.id
         ORDER BY fi.expiry_date ASC
       `) as any[];
-      console.log(`SQL query took ${Date.now() - sqlStart}ms, got ${result.length} rows`);
+      
 
       
       const processStart = Date.now();
@@ -554,7 +554,7 @@ export const FoodItemRepository = {
           status: status
         };
       });
-      console.log(`Data processing took ${Date.now() - processStart}ms`);
+
       
       const totalTime = Date.now() - startTime;
       
@@ -614,7 +614,6 @@ export const FoodItemRepository = {
     const startTime = Date.now();
     
     return queuedDatabaseOperation(async () => {
-      console.log(`Queue wait: ${Date.now() - startTime}ms`);
       const dbOpStart = Date.now();
       
       try {
@@ -624,7 +623,6 @@ export const FoodItemRepository = {
           
           const fallbackDb = getFallbackStorage();
           const result = await fallbackDb.addFoodItem(item);
-          console.log(`Fallback create took ${Date.now() - dbOpStart}ms`);
           return result;
         }
 
@@ -637,7 +635,6 @@ export const FoodItemRepository = {
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
           const result = await fallbackDb.addFoodItem(item);
-          console.log(`Fallback create took ${Date.now() - dbOpStart}ms`);
           return result;
         }
         
@@ -663,7 +660,6 @@ export const FoodItemRepository = {
               item.created_at
             ]
           );
-          console.log(`SQL insert took ${Date.now() - sqlStart}ms`);
         } catch (insertError: any) {
           // Check if it's a database lock error
           if (insertError.message && insertError.message.includes('database is locked')) {
@@ -702,13 +698,11 @@ export const FoodItemRepository = {
                 item.created_at
               ]
             );
-            console.log(`SQL insert retry took ${Date.now() - sqlStart}ms`);
           } else {
             // Re-throw non-lock errors
             throw insertError;
           }
         }
-        console.log(`Create operation took ${Date.now() - dbOpStart}ms`);
         return result.lastInsertRowId;
       } catch (error) {
         console.error(`Create operation failed after ${Date.now() - dbOpStart}ms:`, error);
@@ -727,7 +721,6 @@ export const FoodItemRepository = {
     const startTime = Date.now();
 
     return queuedDatabaseOperation(async () => {
-      console.log(`Queue wait: ${Date.now() - startTime}ms`);
       const dbOpStart = Date.now();
       
       try {
@@ -737,7 +730,6 @@ export const FoodItemRepository = {
           
           const fallbackDb = getFallbackStorage();
           await fallbackDb.updateFoodItem(item);
-          console.log(`Fallback update took ${Date.now() - dbOpStart}ms`);
           return;
         }
 
@@ -750,7 +742,6 @@ export const FoodItemRepository = {
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
           await fallbackDb.updateFoodItem(item);
-          console.log(`Fallback update took ${Date.now() - dbOpStart}ms`);
           return;
         }
         
@@ -776,7 +767,6 @@ export const FoodItemRepository = {
               item.id
             ]
           );
-          console.log(`SQL update took ${Date.now() - sqlStart}ms`);
         } catch (updateError: any) {
           // Check if it's a database lock error
           if (updateError.message && updateError.message.includes('database is locked')) {
@@ -787,7 +777,6 @@ export const FoodItemRepository = {
             
             // Clear database locks and invalidate cache
             await clearDatabaseLocks();
-            invalidateDatabaseCache();
             
             // Wait a moment for cleanup
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -816,13 +805,12 @@ export const FoodItemRepository = {
                 item.id
               ]
             );
-            console.log(`SQL update retry took ${Date.now() - sqlStart}ms`);
           } else {
             // Re-throw non-lock errors
             throw updateError;
           }
         }
-        console.log(`Update operation took ${Date.now() - dbOpStart}ms`);
+
       } catch (error) {
         console.error(`Update operation failed after ${Date.now() - dbOpStart}ms:`, error);
         throw error;

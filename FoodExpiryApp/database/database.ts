@@ -1435,7 +1435,7 @@ export const createBackup = async (): Promise<{ version: number; data: any }> =>
       timestamp: new Date().toISOString()
     };
     
-    console.log(`Backup completed in ${Date.now() - backupStartTime}ms`);
+
     return { version: DATABASE_VERSION, data: backupData };
   }, 'createBackup');
 };
@@ -1480,7 +1480,7 @@ export const restoreFromBackup = async (backup: any): Promise<void> => {
       }
     }
     
-    console.log(`Restore completed in ${Date.now() - restoreStartTime}ms`);
+
   }, 'restoreFromBackup');
 };
 

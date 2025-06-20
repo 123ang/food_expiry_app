@@ -382,7 +382,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           locationsData = await LocationRepository.getAll();
         } catch (error) {
           
-          rr
         }
         
         // Set categories and locations immediately for faster UI rendering
@@ -837,17 +836,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const createStart = Date.now();
       const id = await FoodItemRepository.create(item);
-      console.log(`Create took ${Date.now() - createStart}ms, got ID: ${id}`);
+
       
       
       const cacheStart = Date.now();
       invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
-      console.log(`Cache invalidation took ${Date.now() - cacheStart}ms`);
       
       
       const refreshStart = Date.now();
       await refreshFoodItems();
-      console.log(`Refresh took ${Date.now() - refreshStart}ms`);
       
       
       incrementDataVersion();
@@ -874,17 +871,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const updateStart = Date.now();
       await FoodItemRepository.update(item);
-      console.log(`Update took ${Date.now() - updateStart}ms`);
       
       
       const cacheStart = Date.now();
       invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
-      console.log(`Cache invalidation took ${Date.now() - cacheStart}ms`);
       
       
       const refreshStart = Date.now();
       await refreshFoodItems();
-      console.log(`Refresh took ${Date.now() - refreshStart}ms`);
       
       
       incrementDataVersion();
