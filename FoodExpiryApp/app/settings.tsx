@@ -611,6 +611,7 @@ const EditModal: React.FC<EditModalProps> = ({
   isCategory = true,
 }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [name, setName] = useState(initialName);
   const [icon, setIcon] = useState(initialIcon || (isCategory ? '🍎' : '❄️'));
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
@@ -665,7 +666,7 @@ const EditModal: React.FC<EditModalProps> = ({
                 borderColor: theme.borderColor,
                 backgroundColor: theme.backgroundColor
               }]}
-              placeholder="Name"
+              placeholder={t('categoryName')}
               placeholderTextColor={theme.textSecondary}
               value={name}
               onChangeText={setName}
@@ -682,7 +683,7 @@ const EditModal: React.FC<EditModalProps> = ({
                 <Text style={{ fontSize: 24 }}>{icon}</Text>
               </View>
               <Text style={[styles.iconText, { color: theme.textColor }]}>
-                Select Icon (Current: {icon})
+                {t('selectIcon')} ({icon})
               </Text>
               <Text style={{ color: theme.textSecondary, fontSize: 16 }}>▶</Text>
             </TouchableOpacity>
@@ -692,13 +693,13 @@ const EditModal: React.FC<EditModalProps> = ({
                 style={[styles.modalButton, { backgroundColor: theme.dangerColor }]}
                 onPress={handleClose}
               >
-                <Text style={styles.modalButtonText}>Cancel</Text>
+                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, { backgroundColor: theme.primaryColor }]}
                 onPress={handleSave}
               >
-                <Text style={styles.modalButtonText}>Save</Text>
+                <Text style={styles.modalButtonText}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -902,13 +903,13 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await resetDatabase();
+                    await resetDatabase();
               Alert.alert(
                 t('common.success') || 'Success', 
                 t('settings.resetDatabaseSuccess') || 'Database has been reset to original defaults!'
               );
-            } catch (error) {
-              Alert.alert(
+                    } catch (error) {
+          Alert.alert(
                 t('common.error') || 'Error', 
                 t('settings.resetDatabaseError') || 'Failed to reset database. Please try again.'
               );

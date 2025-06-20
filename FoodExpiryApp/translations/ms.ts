@@ -126,6 +126,7 @@ export default {
   'common.success': 'Berjaya',
   'common.error': 'Ralat',
   'common.ok': 'OK',
+  'common.info': 'Maklumat',
   
   // Months
   'month.january': 'Januari',

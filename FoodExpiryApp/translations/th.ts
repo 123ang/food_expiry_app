@@ -126,6 +126,7 @@ export default {
   'common.success': 'สำเร็จ',
   'common.error': 'ข้อผิดพลาด',
   'common.ok': 'ตกลง',
+  'common.info': 'ข้อมูล',
   
   // Months
   'month.january': 'มกราคม',

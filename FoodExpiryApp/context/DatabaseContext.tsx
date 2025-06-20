@@ -80,6 +80,9 @@ interface DatabaseContextType {
   refreshDashboardCounts: () => Promise<void>;
   refreshAll: () => Promise<void>;
   resetDatabase: () => Promise<void>;
+  
+  // Smart dashboard function (no database queries)
+  ensureDashboardCounts: () => void;
 
   // Cache management
   clearCache: () => void;
@@ -130,6 +133,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isReady, setIsReady] = useState(false);
   const [dataVersion, setDataVersion] = useState(1);
 
+  // Debounce mechanism to prevent rapid successive refresh calls
+  const refreshDebounceRef = useRef<number | null>(null);
+  const refreshAllDebounceRef = useRef<number | null>(null);
+
   // Cache refs with proper typing
   const categoriesCache = useRef<CacheEntry<Category[]> | null>(null);
   const locationsCache = useRef<CacheEntry<Location[]> | null>(null);
@@ -154,7 +161,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const currentLocations = await LocationRepository.getAll();
       
       // If we have very few categories (< 4) or they all have default icons, check for backup
-      if (currentCategories.length < 4 || currentCategories.every(cat => cat.icon === '🍎')) {
+      if (currentCategories.length < 4 || currentCategories.every((cat: Category) => cat.icon === '🍎')) {
         console.warn('Categories may have been reset, attempting restoration...');
         
         // Try to restore from preserved categories backup
@@ -319,28 +326,42 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       try {
         const startTime = Date.now();
         
+        // Initialize database (this includes proper skip logic for existing installations)
         await initDatabase();
         
-        // Initialize image storage and restore if needed
-        await initializeImageStorage();
-        await restoreImagesFromBackup();
+        // Check if this is first-time setup or if we need to run expensive operations
+        const isFirstTime = await AsyncStorage.getItem('app_initialized') !== 'true';
         
-        // iOS App Store: Initialize enhanced image system
-        if (Platform.OS === 'ios') {
-          console.log('Initializing iOS App Store image compatibility...');
-          const iosImageResult = await initializeImageSystemForIOS();
-          if (!iosImageResult.success) {
-            console.warn('iOS image system issues detected:', iosImageResult.compatibilityIssues);
-          } else if (iosImageResult.recoveredImages > 0) {
-            console.log(`iOS: Recovered ${iosImageResult.recoveredImages} broken image links`);
+        if (isFirstTime) {
+          console.log('[Setup] First-time initialization detected - running full setup...');
+          
+          // Initialize image storage and restore if needed (only on first run)
+          await initializeImageStorage();
+          await restoreImagesFromBackup();
+          
+          // iOS App Store: Initialize enhanced image system (only on first run)
+          if (Platform.OS === 'ios') {
+            console.log('Initializing iOS App Store image compatibility...');
+            const iosImageResult = await initializeImageSystemForIOS();
+            if (!iosImageResult.success) {
+              console.warn('iOS image system issues detected:', iosImageResult.compatibilityIssues);
+            } else if (iosImageResult.recoveredImages > 0) {
+              console.log(`iOS: Recovered ${iosImageResult.recoveredImages} broken image links`);
+            }
           }
+          
+          // Check and restore categories/locations if they were lost (only on first run)
+          await validateAndRestoreCategoriesAndLocations();
+          
+          // Auto-fix any corrupted data (only on first run)
+          await autoFixCorruptedData();
+          
+          // Mark app as initialized
+          await AsyncStorage.setItem('app_initialized', 'true');
+          console.log('[Setup] First-time setup completed');
+        } else {
+          console.log('[Setup] Existing installation - skipping expensive initialization steps');
         }
-        
-        // Check and restore categories/locations if they were lost
-        await validateAndRestoreCategoriesAndLocations();
-        
-        // Auto-fix any corrupted categories/locations
-        await autoFixCorruptedData();
         
         // Load data with performance monitoring - load categories and locations in parallel
         const loadStartTime = Date.now();
@@ -354,24 +375,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           categoriesData = await CategoryRepository.getAll();
         } catch (error) {
           console.warn('Categories failed, using defaults:', error);
-          categoriesData = [
-            { id: 1, name: 'Fruits', icon: 'apple' },
-            { id: 2, name: 'Vegetables', icon: 'leaf' },
-            { id: 3, name: 'Dairy', icon: 'cheese' },
-            { id: 4, name: 'Meat', icon: 'drumstick-bite' }
-          ];
+          
         }
         
         try {
           locationsData = await LocationRepository.getAll();
         } catch (error) {
           console.warn('Locations failed, using defaults:', error);
-          locationsData = [
-            { id: 1, name: 'Refrigerator', icon: 'snowflake' },
-            { id: 2, name: 'Freezer', icon: 'ice-cube' },
-            { id: 3, name: 'Pantry', icon: 'box' },
-            { id: 4, name: 'Counter', icon: 'home' }
-          ];
+          
         }
         
         // Set categories and locations immediately for faster UI rendering
@@ -400,36 +411,54 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           await refreshDashboardCounts();
         }, 50);
         
-        // Validate and cleanup images (after 1 second)
-        setTimeout(async () => {
-          try {
-            // Get all image URIs from database (filter out null/undefined and emojis)
-            const allImageUris = foodItemsData
-              .map(item => item.image_uri)
-              .filter((uri): uri is string => uri !== null && uri !== undefined && !uri.startsWith('emoji:'));
-            
-            // Validate image links
-            const validation = await validateDatabaseImageLinks(allImageUris);
-            if (validation.broken.length > 0) {
-              console.warn(`Found ${validation.broken.length} broken image links`);
-            }
-            if (validation.repaired.length > 0) {
-              console.log(`Repaired ${validation.repaired.length} image links`);
-            }
-            
-            // Cleanup orphaned images
-            await cleanupOrphanedImages(allImageUris);
-          } catch (error) {
-            console.error('Error validating images:', error);
-          }
-        }, 1000);
+        // Only run expensive background operations if we have food items with images
+        const hasImages = foodItemsData.some(item => item.image_uri && !item.image_uri.startsWith('emoji:'));
         
-        // Perform initial backup for iOS stability (after 2 seconds)
-        setTimeout(async () => {
-          await performRegularBackup();
-        }, 2000);
+        if (hasImages) {
+          // Validate and cleanup images (after 1 second, only if there are images)
+          setTimeout(async () => {
+            try {
+              // Get all image URIs from database (filter out null/undefined and emojis)
+              const allImageUris = foodItemsData
+                .map(item => item.image_uri)
+                .filter((uri): uri is string => uri !== null && uri !== undefined && !uri.startsWith('emoji:'));
+              
+              // Validate image links
+              const validation = await validateDatabaseImageLinks(allImageUris);
+              if (validation.broken.length > 0) {
+                console.warn(`Found ${validation.broken.length} broken image links`);
+              }
+              if (validation.repaired.length > 0) {
+                console.log(`Repaired ${validation.repaired.length} image links`);
+              }
+              
+              // Cleanup orphaned images
+              await cleanupOrphanedImages(allImageUris);
+            } catch (error) {
+              console.error('Error validating images:', error);
+            }
+          }, 1000);
+        }
+        
+        // Perform backup only occasionally (not every startup)
+        const lastBackup = await AsyncStorage.getItem('last_startup_backup');
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        
+        if (!lastBackup || (now - parseInt(lastBackup)) > oneDay) {
+          // Perform backup for iOS stability (after 2 seconds, only once per day)
+          setTimeout(async () => {
+            try {
+              await performRegularBackup();
+              await AsyncStorage.setItem('last_startup_backup', now.toString());
+            } catch (error) {
+              console.error('Error performing startup backup:', error);
+            }
+          }, 2000);
+        }
         
         const totalTime = Date.now() - startTime;
+        console.log(`[Setup] Database setup completed in ${totalTime}ms`);
         
         setIsLoading(false);
         setIsReady(true);
@@ -534,78 +563,127 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const refreshFoodItems = async () => {
+    console.log('[RefreshFoodItems] Starting refresh...');
+    const startTime = Date.now();
+    
+    // Check if we already have fresh cached data
+    const cachedFoodItems = getCacheEntry(foodItemsCache);
+    if (cachedFoodItems && isCacheValid(foodItemsCache)) {
+      console.log('[RefreshFoodItems] Cache is still valid, skipping refresh');
+      return;
+    }
+    
+    // Debounce rapid successive calls
+    if (refreshDebounceRef.current) {
+      console.log('[RefreshFoodItems] Debouncing rapid call');
+      return;
+    }
+    
+    refreshDebounceRef.current = setTimeout(() => {
+      refreshDebounceRef.current = null;
+    }, 500); // 500ms debounce
+    
     try {
+      console.log('[RefreshFoodItems] Invalidating cache...');
       // Invalidate cache first
-      invalidateCache([CACHE_KEYS.FOOD_ITEMS]);
+      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
       
+      console.log('[RefreshFoodItems] Loading food items...');
+      const loadStart = Date.now();
       const data = await FoodItemRepository.getAllWithDetails();
-      setFoodItems(data);
+      console.log(`[RefreshFoodItems] Load completed in ${Date.now() - loadStart}ms, got ${data.length} items`);
       
-      // Update cache with fresh data
+      console.log('[RefreshFoodItems] Updating state and cache...');
+      setFoodItems(data);
       setCacheEntry(foodItemsCache, data);
       
-      // Also refresh dashboard counts when food items are updated
-      await refreshDashboardCounts();
+      console.log('[RefreshFoodItems] Calculating dashboard counts from food items...');
+      const countsStart = Date.now();
+      // Calculate dashboard counts from the loaded data instead of separate DB query
+      const total = data.length;
+      const expiring_soon = data.filter(item => item.status === 'expiring_soon').length;
+      const expired = data.filter(item => item.status === 'expired').length;
+      const fresh = data.filter(item => item.status === 'fresh').length;
+      
+      const counts = { total, expiring_soon, expired, fresh };
+      setDashboardCounts(counts);
+      setCacheEntry(dashboardCountsCache, counts);
+      console.log(`[RefreshFoodItems] Dashboard counts calculated in ${Date.now() - countsStart}ms`);
+      
+      const totalTime = Date.now() - startTime;
+      console.log(`[RefreshFoodItems] ✅ COMPLETED in ${totalTime}ms`);
     } catch (err) {
+      const totalTime = Date.now() - startTime;
+      console.error(`[RefreshFoodItems] ❌ FAILED after ${totalTime}ms:`, err);
       setError(err instanceof Error ? err : new Error('Failed to fetch food items'));
     }
   };
 
-  const refreshDashboardCounts = async (): Promise<void> => {
+  // Smart dashboard counts getter - calculates from existing data without database queries
+  const ensureDashboardCounts = (): void => {
+    // If we already have valid cached dashboard counts, do nothing
     const cached = getCacheEntry(dashboardCountsCache);
     if (cached) {
       return;
     }
 
-    try {
-      const currentDate = getCurrentDate();
-      const db = await getDatabase();
+    // Calculate from existing food items if available
+    const cachedFoodItems = getCacheEntry(foodItemsCache);
+    if (cachedFoodItems) {
+      console.log('[EnsureDashboardCounts] Calculating from existing food items cache...');
       
-      if (!db) {
-        // If database not available, set default counts
-        const defaultCounts = {
-          total: 0,
-          expired: 0,
-          expiring_soon: 0,
-          fresh: 0
-        };
-        setDashboardCounts(defaultCounts);
-        setCacheEntry(dashboardCountsCache, defaultCounts);
-        return;
-      }
+      const total = cachedFoodItems.length;
+      const expiring_soon = cachedFoodItems.filter(item => item.status === 'expiring_soon').length;
+      const expired = cachedFoodItems.filter(item => item.status === 'expired').length;
+      const fresh = cachedFoodItems.filter(item => item.status === 'fresh').length;
       
-      const countsResult = await db.getAllAsync(`
-        SELECT 
-          COUNT(*) as total,
-          COUNT(CASE WHEN date(expiry_date) < date(?) THEN 1 END) as expired,
-          COUNT(CASE WHEN date(expiry_date) BETWEEN date(?) AND date(?, '+3 days') THEN 1 END) as expiring_soon,
-          COUNT(CASE WHEN date(expiry_date) > date(?, '+3 days') THEN 1 END) as fresh
-        FROM food_items
-      `, [currentDate, currentDate, currentDate, currentDate]);
-      
-      const counts = countsResult[0] as any;
-      const dashboardData = {
-        total: counts.total || 0,
-        expired: counts.expired || 0,
-        expiring_soon: counts.expiring_soon || 0,
-        fresh: counts.fresh || 0
-      };
-      
-      setDashboardCounts(dashboardData);
-      setCacheEntry(dashboardCountsCache, dashboardData);
-    } catch (error) {
-      // Silent error handling in production - set default counts
-      const defaultCounts = {
-        total: 0,
-        expired: 0,
-        expiring_soon: 0,
-        fresh: 0
-      };
-      setDashboardCounts(defaultCounts);
+      const counts = { total, expiring_soon, expired, fresh };
+      setDashboardCounts(counts);
+      setCacheEntry(dashboardCountsCache, counts);
+      return;
     }
+
+    // Use current foodItems state if cache is empty
+    if (foodItems.length > 0) {
+      console.log('[EnsureDashboardCounts] Calculating from current food items state...');
+      
+      const total = foodItems.length;
+      const expiring_soon = foodItems.filter(item => item.status === 'expiring_soon').length;
+      const expired = foodItems.filter(item => item.status === 'expired').length;
+      const fresh = foodItems.filter(item => item.status === 'fresh').length;
+      
+      const counts = { total, expiring_soon, expired, fresh };
+      setDashboardCounts(counts);
+      setCacheEntry(dashboardCountsCache, counts);
+      return;
+    }
+
+    // No data available - dashboard will load it when needed
+    console.log('[EnsureDashboardCounts] No food items data available yet');
+  };
+
+  const refreshDashboardCounts = async (): Promise<void> => {
+    console.log('[RefreshDashboardCounts] ⚠️ WARNING: This function should not be called directly!');
+    console.log('[RefreshDashboardCounts] CALL STACK:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
+    console.log('[RefreshDashboardCounts] Use ensureDashboardCounts() instead for dashboard display');
+    
+    // Just ensure counts are calculated from existing data
+    ensureDashboardCounts();
   };
 
   const refreshAll = async (): Promise<void> => {
+    console.log('[RefreshAll] Starting refresh all...');
+    
+    // Debounce rapid successive calls
+    if (refreshAllDebounceRef.current) {
+      console.log('[RefreshAll] Debouncing rapid call');
+      return;
+    }
+    
+    refreshAllDebounceRef.current = setTimeout(() => {
+      refreshAllDebounceRef.current = null;
+    }, 1000); // 1 second debounce for refreshAll
+    
     try {
       setIsLoading(true);
       setError(null);
@@ -754,33 +832,73 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const createFoodItem = async (item: FoodItem): Promise<number> => {
-    await ensureDatabaseReady();
+    console.log('[CreateFoodItem] Starting create operation...');
+    const startTime = Date.now();
     
     try {
+      console.log('[CreateFoodItem] Calling FoodItemRepository.create...');
+      const createStart = Date.now();
       const id = await FoodItemRepository.create(item);
+      console.log(`[CreateFoodItem] Repository.create completed in ${Date.now() - createStart}ms, got ID: ${id}`);
       
-      // Refresh data to show the new item
-      await refreshAll();
+      console.log('[CreateFoodItem] Invalidating caches...');
+      const cacheStart = Date.now();
+      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
+      console.log(`[CreateFoodItem] Cache invalidation completed in ${Date.now() - cacheStart}ms`);
       
-      // Trigger backup after data modification
+      console.log('[CreateFoodItem] Refreshing food items...');
+      const refreshStart = Date.now();
+      await refreshFoodItems();
+      console.log(`[CreateFoodItem] Refresh completed in ${Date.now() - refreshStart}ms`);
+      
+      console.log('[CreateFoodItem] Incrementing data version...');
+      incrementDataVersion();
+      
+      console.log('[CreateFoodItem] Scheduling backup...');
       setTimeout(() => performRegularBackup(), 1000);
+      
+      const totalTime = Date.now() - startTime;
+      console.log(`[CreateFoodItem] ✅ COMPLETED in ${totalTime}ms`);
       
       return id;
     } catch (error) {
+      const totalTime = Date.now() - startTime;
+      console.error(`[CreateFoodItem] ❌ FAILED after ${totalTime}ms:`, error);
       throw error;
     }
   };
 
   const updateFoodItem = async (item: FoodItem): Promise<void> => {
+    console.log('[UpdateFoodItem] Starting update operation...');
+    const startTime = Date.now();
+    
     try {
+      console.log('[UpdateFoodItem] Calling FoodItemRepository.update...');
+      const updateStart = Date.now();
       await FoodItemRepository.update(item);
+      console.log(`[UpdateFoodItem] Repository.update completed in ${Date.now() - updateStart}ms`);
       
-      // Refresh data to show updated item
-      await refreshAll();
+      console.log('[UpdateFoodItem] Invalidating caches...');
+      const cacheStart = Date.now();
+      invalidateCache([CACHE_KEYS.FOOD_ITEMS, CACHE_KEYS.DASHBOARD_COUNTS]);
+      console.log(`[UpdateFoodItem] Cache invalidation completed in ${Date.now() - cacheStart}ms`);
       
-      // Trigger backup after data modification
+      console.log('[UpdateFoodItem] Refreshing food items...');
+      const refreshStart = Date.now();
+      await refreshFoodItems();
+      console.log(`[UpdateFoodItem] Refresh completed in ${Date.now() - refreshStart}ms`);
+      
+      console.log('[UpdateFoodItem] Incrementing data version...');
+      incrementDataVersion();
+      
+      console.log('[UpdateFoodItem] Scheduling backup...');
       setTimeout(() => performRegularBackup(), 1000);
+      
+      const totalTime = Date.now() - startTime;
+      console.log(`[UpdateFoodItem] ✅ COMPLETED in ${totalTime}ms`);
     } catch (error) {
+      const totalTime = Date.now() - startTime;
+      console.error(`[UpdateFoodItem] ❌ FAILED after ${totalTime}ms:`, error);
       throw error;
     }
   };
@@ -933,6 +1051,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     refreshFoodItems,
     refreshDashboardCounts,
     refreshAll,
+    ensureDashboardCounts,
     resetDatabase: resetDatabaseData,
     clearCache,
     invalidateCache,

@@ -91,7 +91,8 @@ function RootLayoutContent() {
           fontSize: 16,
           fontWeight: '600'
         }}>
-          Loading Expiry Alert...
+          {/* Loading text will be handled by the app after language context is ready */}
+          Loading...
         </Text>
       </View>
     );

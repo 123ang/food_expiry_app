@@ -467,13 +467,13 @@ export default function ItemDetailsScreen() {
       <View style={styles.container}>
         <Stack.Screen 
           options={{ 
-            title: 'Loading...',
+            title: t('status.loading'),
             headerShown: false
           }} 
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme?.primaryColor || '#000000'} />
-          <Text style={{ color: theme?.textColor || '#000000', marginTop: 16 }}>Loading item...</Text>
+          <Text style={{ color: theme?.textColor || '#000000', marginTop: 16 }}>{t('status.loading')}...</Text>
         </View>
       </View>
     );
@@ -490,7 +490,7 @@ export default function ItemDetailsScreen() {
         />
         <View style={styles.loadingContainer}>
           <Text style={{ fontSize: 48, color: theme?.textSecondary || '#666666' }}>⚠️</Text>
-          <Text style={{ color: theme?.textColor || '#000000', marginTop: 16 }}>Item not found</Text>
+          <Text style={{ color: theme?.textColor || '#000000', marginTop: 16 }}>{t('error.itemNotFound')}</Text>
         </View>
       </View>
     );
@@ -502,7 +502,7 @@ export default function ItemDetailsScreen() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{ 
-          title: item?.name || 'Item Details',
+          title: item?.name || t('item.details'),
           headerShown: false // Keep header hidden since we have custom UI
         }} 
       />

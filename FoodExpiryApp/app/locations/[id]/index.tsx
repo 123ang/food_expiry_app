@@ -32,7 +32,8 @@ const FoodItemCard: React.FC<{
   onPress: () => void; 
   theme: any;
   styles: any;
-}> = ({ item, onPress, theme, styles }) => {
+  t: (key: string) => string;
+}> = ({ item, onPress, theme, styles, t }) => {
   const [imageError, setImageError] = useState(false);
 
   // Determine status icon and color based on days until expiry
@@ -51,21 +52,21 @@ const FoodItemCard: React.FC<{
       return (
         <Text style={[styles.metaText, { color: statusInfo.color }]}>
           <Text style={styles.daysNumber}>{item.days_until_expiry}</Text>
-          <Text style={styles.daysText}> days left</Text>
+          <Text style={styles.daysText}> {t('foodStatus.daysLeft')}</Text>
         </Text>
       );
     } else if (item.days_until_expiry === 0) {
       return (
         <Text style={[styles.metaText, { color: statusInfo.color }]}>
-          Expires today
+          {t('foodStatus.expirestoday')}
         </Text>
       );
     } else {
       return (
         <Text style={[styles.metaText, { color: statusInfo.color }]}>
-          <Text style={styles.daysText}>Expired </Text>
+          <Text style={styles.daysText}>{t('foodStatus.expired')} </Text>
           <Text style={styles.daysNumber}>{Math.abs(item.days_until_expiry)}</Text>
-          <Text style={styles.daysText}> days ago</Text>
+          <Text style={styles.daysText}> {t('foodStatus.expiredDays')}</Text>
         </Text>
       );
     }
@@ -146,9 +147,9 @@ export default function LocationDetailScreen() {
           const refreshData = async () => {
             try {
               await refreshAll();
-            } catch (error) {
-              console.error('Location detail: Error refreshing data:', error);
-            }
+                  } catch (error) {
+        // Error refreshing location data
+      }
           };
           
           refreshData();
@@ -371,6 +372,7 @@ export default function LocationDetailScreen() {
               onPress={() => router.push(`/item/${item.id}`)}
               theme={theme}
               styles={styles}
+              t={t}
             />
           ))
         )}

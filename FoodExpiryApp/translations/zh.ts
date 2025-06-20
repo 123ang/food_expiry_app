@@ -126,6 +126,7 @@ export default {
   'common.success': '成功',
   'common.error': '错误',
   'common.ok': '确定',
+  'common.info': '信息',
   
   // Months
   'month.january': '一月',

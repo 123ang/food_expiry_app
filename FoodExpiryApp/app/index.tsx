@@ -28,6 +28,7 @@ import LocationIcon from '../components/LocationIcon';
 import { useTypography } from '../hooks/useTypography';
 import { useResponsive } from '../hooks/useResponsive';
 
+
 type IconName = keyof typeof FontAwesome.glyphMap;
 
 export default function DashboardScreen() {
@@ -66,44 +67,20 @@ export default function DashboardScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const lastLanguage = React.useRef(language);
 
-  // Load data when screen comes into focus or language changes
-  useFocusEffect(
-    React.useCallback(() => {
-      const loadData = async () => {
-        // Check if essential data is already available from cache or state
-        const hasCategories = categories && categories.length > 0;
-        const hasLocations = locations && locations.length > 0;
-        const hasDashboardCounts = dashboardCounts && dashboardCounts.total >= 0;
-        
-        // If we have cached data, show it immediately without loading state
-        if (hasCategories && hasLocations && hasDashboardCounts) {
-          setIsLoading(false);
-          
-          // Optionally refresh in background if data is stale (don't show loading)
-          setTimeout(async () => {
-            try {
-              await refreshAll();
-            } catch (error) {
-              // Silent error handling for production
-            }
-          }, 50);
-          
-          return;
-        }
-        
-        // Only show loading if we don't have essential data
-        setIsLoading(true);
-        try {
-          await refreshAll();
-        } catch (error) {
-          // Silent error handling for production
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      loadData();
-    }, [categories, locations, dashboardCounts, refreshAll, language])
-  );
+  // Automatic loading state based on database-context helper.
+  useEffect(() => {
+    // Use stable state values instead of the function reference
+    const hasCategories = categories.length > 0;
+    const hasLocations = locations.length > 0;
+    
+    if (hasCategories && hasLocations) {
+      setIsLoading(false);
+    } else {
+      // Hard-stop after 3 s so the UI never blocks indefinitely.
+      const timer = setTimeout(() => setIsLoading(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [categories.length, locations.length]);
 
   // Handle language changes
   useFocusEffect(
@@ -194,7 +171,7 @@ export default function DashboardScreen() {
 
       setModalVisible(false);
       handleCloseModal();
-      await refreshAll();
+      // No need to call refreshAll() - createFoodItem/updateFoodItem already refresh
     } catch (error) {
       Alert.alert(t('alert.error'), t('alert.saveFailed'));
     } finally {
@@ -863,7 +840,14 @@ export default function DashboardScreen() {
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 14 }}>⏰</Text>
-            <Text style={styles.metaText}>{item.daysLeft} days left</Text>
+            <Text style={styles.metaText}>
+              {item.daysLeft > 0
+                ? `${item.daysLeft} ${t('foodStatus.daysLeft')}`
+                : item.daysLeft === 0
+                ? t('foodStatus.expirestoday')
+                : `${t('foodStatus.expired')} ${Math.abs(item.daysLeft)} ${t('foodStatus.expiredDays')}`
+              }
+            </Text>
           </View>
           <View style={styles.metaItem}>
             <LocationIcon iconName={item.locationIcon} size={14} />
@@ -1044,6 +1028,8 @@ export default function DashboardScreen() {
       )}
 
       <BottomNav />
+      
+
 
       <Modal
         visible={modalVisible}

@@ -58,19 +58,19 @@ export default function ClearItemsScreen() {
             try {
               const deletedCount = await deleteMultipleItems(Array.from(selectedItems));
               Alert.alert(
-                'Success',
-                `Successfully removed ${deletedCount} item${deletedCount === 1 ? '' : 's'} from your inventory.`,
+                t('common.success'),
+                t('clearItems.success').replace('{count}', deletedCount.toString()).replace('{plural}', deletedCount === 1 ? '' : 's'),
                 [
                   {
-                    text: 'OK',
+                    text: t('common.ok'),
                     onPress: () => router.back(),
                   }
                 ]
               );
             } catch (error) {
               Alert.alert(
-                'Error',
-                'Failed to clear selected items. Please try again.'
+                t('common.error'),
+                t('clearItems.error')
               );
             } finally {
               setIsLoading(false);
@@ -307,10 +307,10 @@ export default function ClearItemsScreen() {
                 item.days_until_expiry > 5 && { color: theme.successColor }
               ]}>
                 {item.days_until_expiry > 0 
-                  ? `${item.days_until_expiry} days left`
+                  ? `${item.days_until_expiry} ${t('foodStatus.daysLeft')}`
                   : item.days_until_expiry === 0 
-                  ? 'Expires today'
-                  : `Expired ${Math.abs(item.days_until_expiry)} days ago`
+                  ? t('foodStatus.expirestoday')
+                  : `${t('foodStatus.expired')} ${Math.abs(item.days_until_expiry)} ${t('foodStatus.expiredDays')}`
                 }
               </Text>
             </View>
@@ -335,19 +335,19 @@ export default function ClearItemsScreen() {
               style={styles.actionButton}
               onPress={selectAll}
             >
-              <Text style={styles.actionButtonText}>Select All</Text>
+              <Text style={styles.actionButtonText}>{t('clearItems.selectAll')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={clearSelection}
             >
-              <Text style={styles.actionButtonText}>Clear</Text>
+              <Text style={styles.actionButtonText}>{t('clearItems.clearSelection')}</Text>
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.bottomRow}>
           <Text style={styles.selectionText}>
-            {selectedItems.size} of {foodItems.length} items selected
+            {t('clearItems.selectedCount').replace('{count}', selectedItems.size.toString())} {t('common.of')} {foodItems.length}
           </Text>
           <TouchableOpacity 
             style={styles.clearButton}
@@ -355,7 +355,7 @@ export default function ClearItemsScreen() {
             disabled={selectedItems.size === 0 || isLoading}
           >
             <Text style={styles.clearButtonText}>
-              {isLoading ? 'Clearing...' : 'Clear Selected'}
+              {isLoading ? t('common.loading') : t('clearItems.clearSelected')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -364,9 +364,9 @@ export default function ClearItemsScreen() {
       {foodItems.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={styles.emptyTitle}>No Items Found</Text>
+          <Text style={styles.emptyTitle}>{t('clearItems.noItems')}</Text>
           <Text style={styles.emptyDescription}>
-            You don't have any items in your inventory to clear.
+            {t('dashboard.noItemsToDisplay')}
           </Text>
         </View>
       ) : (

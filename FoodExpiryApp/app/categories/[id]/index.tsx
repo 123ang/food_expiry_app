@@ -46,12 +46,12 @@ const FoodItemCard: React.FC<{
   // Determine status icon and color based on days until expiry
   const getStatusInfo = () => {
     if (item.days_until_expiry <= 0) {
-      return { icon: '⚠️', color: '#F44336', text: 'Expired' };
-    } else if (item.days_until_expiry <= 5) {
-      return { icon: '⏰', color: '#FF9800', text: 'Expiring' };
-    } else {
-      return { icon: '✅', color: '#4CAF50', text: 'In-date' };
-    }
+      return { icon: '⚠️', color: '#F44336', text: t('foodStatus.expired') };
+          } else if (item.days_until_expiry <= 5) {
+        return { icon: '⏰', color: '#FF9800', text: t('foodStatus.expiring') };
+      } else {
+        return { icon: '✅', color: '#4CAF50', text: t('foodStatus.indate') };
+      }
   };
 
   const renderDaysText = () => {
@@ -59,21 +59,21 @@ const FoodItemCard: React.FC<{
       return (
         <Text style={[styles.metaText, { color: statusInfo.color }]}>
           <Text style={styles.daysNumber}>{item.days_until_expiry}</Text>
-          <Text style={styles.daysText}> days left</Text>
+          <Text style={styles.daysText}> {t('foodStatus.daysLeft')}</Text>
         </Text>
       );
     } else if (item.days_until_expiry === 0) {
       return (
         <Text style={[styles.metaText, { color: statusInfo.color }]}>
-          Expires today
+          {t('foodStatus.expirestoday')}
         </Text>
       );
     } else {
       return (
         <Text style={[styles.metaText, { color: statusInfo.color }]}>
-          <Text style={styles.daysText}>Expired </Text>
+          <Text style={styles.daysText}>{t('foodStatus.expired')} </Text>
           <Text style={styles.daysNumber}>{Math.abs(item.days_until_expiry)}</Text>
-          <Text style={styles.daysText}> days ago</Text>
+          <Text style={styles.daysText}> {t('foodStatus.expiredDays')}</Text>
         </Text>
       );
     }
@@ -172,7 +172,7 @@ export default function CategoryDetailScreen() {
           setCategoryItems(items);
         }
       } catch (error) {
-        console.error('Error loading category data:', error);
+        // Error loading category data
       } finally {
         setLoading(false);
       }

@@ -73,9 +73,9 @@ export default function CalendarScreen() {
         const refreshData = async () => {
           try {
             await refreshAll();
-          } catch (error) {
-            console.error('Calendar: Error refreshing data:', error);
-          }
+                } catch (error) {
+        // Error refreshing calendar data
+      }
         };
         
         refreshData();
@@ -738,7 +738,12 @@ export default function CalendarScreen() {
               item.days_until_expiry >= 0 && item.days_until_expiry <= 5 && { color: theme.warningColor },
               item.days_until_expiry > 5 && { color: theme.successColor }
             ]}>
-              {item.days_until_expiry} days left
+              {item.days_until_expiry > 0
+                ? `${item.days_until_expiry} ${t('foodStatus.daysLeft')}`
+                : item.days_until_expiry === 0
+                ? t('foodStatus.expirestoday')
+                : `${t('foodStatus.expired')} ${Math.abs(item.days_until_expiry)} ${t('foodStatus.expiredDays')}`
+              }
             </Text>
           </View>
           <View style={styles.metaItem}>

@@ -126,6 +126,7 @@ export default {
   'common.success': 'Success',
   'common.error': 'Error',
   'common.ok': 'OK',
+  'common.info': 'Info',
   
   // Months
   'month.january': 'January',

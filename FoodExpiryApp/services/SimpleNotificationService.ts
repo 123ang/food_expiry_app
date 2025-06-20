@@ -126,6 +126,40 @@ class SimpleNotificationService {
         'notification.in': ' in ',
         'notification.days': 'days',
         'notification.day': 'day',
+        // Category translations
+        'category.vegetables': 'Vegetables',
+        'category.fruits': 'Fruits',
+        'category.dairy': 'Dairy',
+        'category.meat': 'Meat',
+        'category.snacks': 'Snacks',
+        'category.desserts': 'Desserts',
+        'category.seafood': 'Seafood',
+        'category.bread': 'Bread',
+        'category.contactLenses': 'Contact Lenses',
+        'category.medications': 'Medications',
+        'category.vitamins': 'Vitamins & Supplements',
+        'category.firstAid': 'First Aid',
+        'category.bloodTestKits': 'Blood Test Kits',
+        'category.medicalDevices': 'Medical Devices',
+        'category.makeup': 'Makeup',
+        'category.skincare': 'Skincare',
+        'category.hairCare': 'Hair Care',
+        'category.perfume': 'Perfume & Fragrance',
+        'category.sunscreen': 'Sunscreen',
+        'category.beautyTools': 'Beauty Tools',
+        'category.cleaningSupplies': 'Cleaning Supplies',
+        'category.laundryProducts': 'Laundry Products',
+        'category.batteries': 'Batteries',
+        'category.safetyEquipment': 'Safety Equipment',
+        'category.paintCoatings': 'Paint & Coatings',
+        'category.motorOil': 'Motor Oil',
+        'category.fuelAdditives': 'Fuel Additives',
+        // Location translations
+        'defaultLocation.fridge': 'Fridge',
+        'defaultLocation.freezer': 'Freezer',
+        'defaultLocation.pantry': 'Pantry',
+        'defaultLocation.counter': 'Counter',
+        'defaultLocation.cabinet': 'Cabinet',
       },
       zh: {
         'notification.expiringTodayTitle': '🚨 今天过期的食品！',
@@ -139,6 +173,40 @@ class SimpleNotificationService {
         'notification.in': ' 在 ',
         'notification.days': '天',
         'notification.day': '天',
+        // Category translations
+        'category.vegetables': '蔬菜',
+        'category.fruits': '水果',
+        'category.dairy': '乳制品',
+        'category.meat': '肉类',
+        'category.snacks': '零食',
+        'category.desserts': '甜点',
+        'category.seafood': '海鲜',
+        'category.bread': '面包',
+        'category.contactLenses': '隐形眼镜',
+        'category.medications': '药物',
+        'category.vitamins': '维生素和补品',
+        'category.firstAid': '急救用品',
+        'category.bloodTestKits': '血液检测套件',
+        'category.medicalDevices': '医疗设备',
+        'category.makeup': '化妆品',
+        'category.skincare': '护肤品',
+        'category.hairCare': '护发产品',
+        'category.perfume': '香水和香氛',
+        'category.sunscreen': '防晒霜',
+        'category.beautyTools': '美容工具',
+        'category.cleaningSupplies': '清洁用品',
+        'category.laundryProducts': '洗衣产品',
+        'category.batteries': '电池',
+        'category.safetyEquipment': '安全设备',
+        'category.paintCoatings': '油漆和涂料',
+        'category.motorOil': '机油',
+        'category.fuelAdditives': '燃料添加剂',
+        // Location translations
+        'defaultLocation.fridge': '冰箱',
+        'defaultLocation.freezer': '冷冻室',
+        'defaultLocation.pantry': '食品储藏室',
+        'defaultLocation.counter': '柜台',
+        'defaultLocation.cabinet': '橱柜',
       },
       ja: {
         'notification.expiringTodayTitle': '🚨 今日期限切れの食品！',
@@ -152,6 +220,40 @@ class SimpleNotificationService {
         'notification.in': ' に ',
         'notification.days': '日',
         'notification.day': '日',
+        // Category translations
+        'category.vegetables': '野菜',
+        'category.fruits': '果物',
+        'category.dairy': '乳製品',
+        'category.meat': '肉類',
+        'category.snacks': 'スナック',
+        'category.desserts': 'デザート',
+        'category.seafood': '海鮮',
+        'category.bread': 'パン',
+        'category.contactLenses': 'コンタクトレンズ',
+        'category.medications': '薬物',
+        'category.vitamins': 'ビタミンとサプリメント',
+        'category.firstAid': '応急処置',
+        'category.bloodTestKits': '血液検査キット',
+        'category.medicalDevices': '医療機器',
+        'category.makeup': '化粧品',
+        'category.skincare': 'スキンケア',
+        'category.hairCare': 'ヘアケア',
+        'category.perfume': '香水とフレグランス',
+        'category.sunscreen': '日焼け止め',
+        'category.beautyTools': '美容ツール',
+        'category.cleaningSupplies': '清掃用品',
+        'category.laundryProducts': '洗濯製品',
+        'category.batteries': 'バッテリー',
+        'category.safetyEquipment': '安全機器',
+        'category.paintCoatings': 'ペイントとコーティング',
+        'category.motorOil': 'モーターオイル',
+        'category.fuelAdditives': '燃料添加剤',
+        // Location translations
+        'defaultLocation.fridge': '冷蔵庫',
+        'defaultLocation.freezer': '冷凍庫',
+        'defaultLocation.pantry': 'パントリー',
+        'defaultLocation.counter': 'カウンター',
+        'defaultLocation.cabinet': 'キャビネット',
       }
     };
 
@@ -165,6 +267,19 @@ class SimpleNotificationService {
     return text;
   }
 
+  // Helper method to translate category and location names
+  private async translateName(name: string): Promise<string> {
+    if (!name) return '';
+    
+    // Check if it's a translation key (starts with category. or defaultLocation.)
+    if (name.startsWith('category.') || name.startsWith('defaultLocation.')) {
+      return await this.getTranslatedText(name);
+    }
+    
+    // Return as-is if not a translation key
+    return name;
+  }
+
   async scheduleNotificationForItem(item: FoodItemWithDetails): Promise<void> {
     // Always load latest settings first
     await this.loadSettings();
@@ -175,7 +290,11 @@ class SimpleNotificationService {
 
     const daysUntilExpiry = this.calculateDaysUntilExpiry(item.expiry_date);
     const quantityText = item.quantity > 1 ? `${item.quantity} ` : '';
-    const locationText = item.location_name ? await this.getTranslatedText('notification.in') + item.location_name : '';
+    
+    // Translate category and location names properly
+    const translatedCategory = await this.translateName(item.category_name || '');
+    const translatedLocation = await this.translateName(item.location_name || '');
+    const locationText = translatedLocation ? await this.getTranslatedText('notification.in') + translatedLocation : '';
 
     let shouldNotify = false;
     let titleKey = '';
@@ -189,7 +308,7 @@ class SimpleNotificationService {
       bodyParams = {
         quantity: quantityText,
         name: item.name,
-        category: item.category_name || '',
+        category: translatedCategory,
         location: locationText
       };
     } else if (daysUntilExpiry > 0 && daysUntilExpiry <= 3 && this.settings.expiringSoonAlerts) {
@@ -202,8 +321,8 @@ class SimpleNotificationService {
       bodyParams = {
         quantity: quantityText,
         name: item.name,
-        category: item.category_name || '',
-        days: daysUntilExpiry,
+        category: translatedCategory,
+        days: daysUntilExpiry.toString(),
         plural: dayWord,
         location: locationText
       };
@@ -218,8 +337,8 @@ class SimpleNotificationService {
       bodyParams = {
         quantity: quantityText,
         name: item.name,
-        category: item.category_name || '',
-        days: expiredDays,
+        category: translatedCategory,
+        days: expiredDays.toString(),
         plural: dayWord,
         location: locationText
       };
