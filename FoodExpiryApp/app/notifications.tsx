@@ -57,7 +57,7 @@ export default function NotificationsScreen() {
       const { status } = await Notifications.getPermissionsAsync();
       setPermissionStatus(status);
     } catch (error) {
-      console.error('Failed to load notification settings:', error);
+      
     }
   };
 

@@ -619,7 +619,7 @@ export default function CategoriesScreen() {
           // Small delay to prevent database conflicts
           await new Promise(resolve => setTimeout(resolve, 50));
         } catch (error) {
-          console.warn(`Failed to create category ${categoryData.name}:`, error);
+          
         }
       }
 

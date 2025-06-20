@@ -63,7 +63,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       DeviceEventEmitter.emit('languageChanged', { language: lang });
       
     } catch (error) {
-      console.error('Error setting language:', error);
+      
     }
   };
 

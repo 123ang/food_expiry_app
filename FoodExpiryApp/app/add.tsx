@@ -69,7 +69,7 @@ export default function AddScreen() {
       const photos = await getSavedImages();
       setSavedPhotos(photos);
     } catch (error) {
-      console.error('Error loading saved photos:', error);
+      
     }
   };
 
@@ -89,11 +89,11 @@ export default function AddScreen() {
         if (safeImageUri) {
           setImageUri(safeImageUri);
         } else {
-          console.error('getSafeImageUri returned null for gallery image');
+          
         }
       }
     } catch (error) {
-      console.error('Error processing gallery image:', error);
+      
     }
   };
 
@@ -120,11 +120,11 @@ export default function AddScreen() {
         if (safeImageUri) {
           setImageUri(safeImageUri);
         } else {
-          console.error('getSafeImageUri returned null for camera image');
+          
         }
       }
     } catch (error) {
-      console.error('Error processing camera image:', error);
+      
     }
   };
 
@@ -192,7 +192,7 @@ export default function AddScreen() {
       // Navigate back to previous page instead of always going to home
       router.back();
     } catch (error) {
-      console.error('Error creating food item:', error);
+      
       Alert.alert(
         t('alert.error'), 
         error instanceof Error ? error.message : t('error.failedToCreate')

@@ -31,7 +31,7 @@ export const loadCustomFonts = async () => {
 
     return true;
   } catch (error) {
-    console.warn('⚠️ Some fonts failed to load:', error);
+    
     // App will fallback to system fonts
     return false;
   }

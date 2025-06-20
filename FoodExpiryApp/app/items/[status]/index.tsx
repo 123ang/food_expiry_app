@@ -221,7 +221,7 @@ export default function ItemStatusScreen() {
           const items = await getByStatus(dbStatus);
           setCurrentItems(items || []);
         } catch (error) {
-          console.error('Error loading items:', error);
+          // Error loading items
           setError(error instanceof Error ? error.message : 'Failed to load items');
           setCurrentItems([]);
         } finally {

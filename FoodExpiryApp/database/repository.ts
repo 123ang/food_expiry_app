@@ -2,12 +2,21 @@ import { getDatabase, getCurrentDate, calculateDaysUntilExpiry, isUsingFallbackS
 import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Generic Repository interface
+interface Repository<T> {
+  getAll: () => Promise<T[]>;
+  getById: (id: number) => Promise<T | null>;
+  create: (item: Omit<T, 'id'>) => Promise<number>;
+  update: (item: T) => Promise<void>;
+  delete: (id: number) => Promise<void>;
+}
+
 // Simplified database getter that uses the cached version from database.ts
 const getDatabaseSafely = async (): Promise<any> => {
   try {
     return await getDatabase();
   } catch (error) {
-    console.error('Failed to get database, falling back to storage:', error);
+    
     return null;
   }
 };
@@ -37,7 +46,7 @@ export const CategoryRepository: Repository<Category> = {
         try {
           await db.getAllAsync('SELECT 1'); // Test query to ensure connection is valid
         } catch (connectionError) {
-          console.warn('Database connection invalid, falling back to storage');
+          
           const fallbackDb = getFallbackStorage();
           return await fallbackDb.getAllCategories();
         }
@@ -59,7 +68,7 @@ export const CategoryRepository: Repository<Category> = {
             retryCount++;
             if (retryCount >= maxRetries) {
               // If SQLite fails completely, fall back to storage
-              console.warn('SQLite operations failed, using fallback storage');
+              
               const fallbackDb = getFallbackStorage();
               return await fallbackDb.getAllCategories();
             }
@@ -73,13 +82,13 @@ export const CategoryRepository: Repository<Category> = {
         return await fallbackDb.getAllCategories();
         
       } catch (error) {
-        console.error('Error getting categories:', error);
+        
         // As last resort, try fallback storage
         try {
           const fallbackDb = getFallbackStorage();
           return await fallbackDb.getAllCategories();
         } catch (fallbackError) {
-          console.error('Fallback storage also failed:', fallbackError);
+          
           return []; // Return empty array rather than throwing
         }
       }
@@ -120,7 +129,7 @@ export const CategoryRepository: Repository<Category> = {
         }
         return null;
       } catch (error) {
-        console.error('Error getting category by ID:', error);
+        
         throw error;
       }
     }, `Category.getById(id:${id})`);
@@ -162,7 +171,7 @@ export const CategoryRepository: Repository<Category> = {
         );
         return result.lastInsertRowId;
       } catch (error) {
-        console.error('Error creating category:', error);
+        
         throw error;
       }
     }, `Category.create("${item.name}")`);
@@ -185,7 +194,7 @@ export const CategoryRepository: Repository<Category> = {
           [item.name, item.icon, item.id]
         );
       } catch (error) {
-        console.error('Error updating category:', error);
+        
         throw error;
       }
     }, `Category.update(id:${item.id})`);
@@ -205,7 +214,7 @@ export const CategoryRepository: Repository<Category> = {
         }
         await db.runAsync('DELETE FROM categories WHERE id = ?', [id]);
       } catch (error) {
-        console.error('Error deleting category:', error);
+        
         throw error;
       }
     }, `Category.delete(id:${id})`);
@@ -237,7 +246,7 @@ export const LocationRepository: Repository<Location> = {
         try {
           await db.getAllAsync('SELECT 1'); // Test query to ensure connection is valid
         } catch (connectionError) {
-          console.warn('Database connection invalid, falling back to storage');
+          
           const fallbackDb = getFallbackStorage();
           return await fallbackDb.getAllLocations();
         }
@@ -259,7 +268,7 @@ export const LocationRepository: Repository<Location> = {
             retryCount++;
             if (retryCount >= maxRetries) {
               // If SQLite fails completely, fall back to storage
-              console.warn('SQLite operations failed, using fallback storage');
+              
               const fallbackDb = getFallbackStorage();
               return await fallbackDb.getAllLocations();
             }
@@ -273,13 +282,13 @@ export const LocationRepository: Repository<Location> = {
         return await fallbackDb.getAllLocations();
         
       } catch (error) {
-        console.error('Error getting locations:', error);
+        
         // As last resort, try fallback storage
         try {
           const fallbackDb = getFallbackStorage();
           return await fallbackDb.getAllLocations();
         } catch (fallbackError) {
-          console.error('Fallback storage also failed:', fallbackError);
+          
           return []; // Return empty array rather than throwing
         }
       }
@@ -320,7 +329,7 @@ export const LocationRepository: Repository<Location> = {
         }
         return null;
       } catch (error) {
-        console.error('Error getting location by ID:', error);
+        
         throw error;
       }
     }, `Location.getById(id:${id})`);
@@ -337,7 +346,7 @@ export const LocationRepository: Repository<Location> = {
         );
         return result.lastInsertRowId;
       } catch (error) {
-        console.error('Error creating location:', error);
+        
         throw error;
       }
     }, `Location.create("${item.name}")`);
@@ -357,7 +366,7 @@ export const LocationRepository: Repository<Location> = {
           [item.name, item.icon, item.id]
         );
       } catch (error) {
-        console.error('Error updating location:', error);
+        
         throw error;
       }
     }, `Location.update(id:${item.id})`);
@@ -374,7 +383,7 @@ export const LocationRepository: Repository<Location> = {
         const db = await getDatabaseSafely();
         await db.runAsync('DELETE FROM locations WHERE id = ?', [id]);
       } catch (error) {
-        console.error('Error deleting location:', error);
+        
         throw error;
       }
     }, `Location.delete(id:${id})`);
@@ -385,20 +394,20 @@ export const LocationRepository: Repository<Location> = {
 export const FoodItemRepository = {
   // Get all food items with details
   getAllWithDetails: async (): Promise<FoodItemWithDetails[]> => {
-    console.log('[Repository.getAllWithDetails] Starting...');
+    // Starting getAllWithDetails operation
     const startTime = Date.now();
     
     return queuedDatabaseOperation(async () => {
-      console.log('[Repository.getAllWithDetails] Checking fallback storage...');
+      // Checking fallback storage
       // Check if we're using fallback storage first
       if (isUsingFallbackStorage()) {
-        console.log('[Repository.getAllWithDetails] Using fallback storage');
+        // Using fallback storage
         const fallbackDb = getFallbackStorage();
         const items = await fallbackDb.getAllFoodItems();
         const categories = await fallbackDb.getAllCategories();
         const locations = await fallbackDb.getAllLocations();
         
-        console.log(`[Repository.getAllWithDetails] Processing ${items.length} items from fallback`);
+        // Processing items from fallback
         // Transform fallback data to match expected format
         const result = items.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
@@ -436,23 +445,23 @@ export const FoodItemRepository = {
         });
         
         const totalTime = Date.now() - startTime;
-        console.log(`[Repository.getAllWithDetails] ✅ Fallback completed in ${totalTime}ms`);
+        
         return result;
       }
 
-      console.log('[Repository.getAllWithDetails] Getting SQLite database...');
+      
       // Try to get the SQLite database
       const db = await getDatabaseSafely();
       
       if (!db) {
-        console.log('[Repository.getAllWithDetails] No SQLite database, using fallback...');
+        
         // If no database available, try fallback
         const fallbackDb = getFallbackStorage();
         const items = await fallbackDb.getAllFoodItems();
         const categories = await fallbackDb.getAllCategories();
         const locations = await fallbackDb.getAllLocations();
         
-        console.log(`[Repository.getAllWithDetails] Processing ${items.length} items from fallback (no DB)`);
+        console.log('Using fallback database for getAllWithDetails');
         // Transform fallback data to match expected format
         const result = items.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
@@ -490,11 +499,11 @@ export const FoodItemRepository = {
         });
         
         const totalTime = Date.now() - startTime;
-        console.log(`[Repository.getAllWithDetails] ✅ Fallback (no DB) completed in ${totalTime}ms`);
+        console.log(`Fallback getAllWithDetails completed in ${totalTime}ms`);
         return result;
       }
       
-      console.log('[Repository.getAllWithDetails] Executing SQLite query...');
+      
       const sqlStart = Date.now();
       // Regular SQLite operation
       const result = await db.getAllAsync(`
@@ -509,9 +518,9 @@ export const FoodItemRepository = {
         LEFT JOIN locations l ON fi.location_id = l.id
         ORDER BY fi.expiry_date ASC
       `) as any[];
-      console.log(`[Repository.getAllWithDetails] SQL query completed in ${Date.now() - sqlStart}ms, got ${result.length} rows`);
+      console.log(`SQL query took ${Date.now() - sqlStart}ms, got ${result.length} rows`);
 
-      console.log('[Repository.getAllWithDetails] Processing results...');
+      
       const processStart = Date.now();
       const processedResult = result.map(row => {
         const daysUntilExpiry = calculateDaysUntilExpiry(row.expiry_date);
@@ -545,10 +554,10 @@ export const FoodItemRepository = {
           status: status
         };
       });
-      console.log(`[Repository.getAllWithDetails] Processing completed in ${Date.now() - processStart}ms`);
+      console.log(`Data processing took ${Date.now() - processStart}ms`);
       
       const totalTime = Date.now() - startTime;
-      console.log(`[Repository.getAllWithDetails] ✅ SQLite completed in ${totalTime}ms`);
+      
       return processedResult;
     }, 'FoodItem.getAllWithDetails');
   },
@@ -593,7 +602,7 @@ export const FoodItemRepository = {
         }
         return null;
       } catch (error) {
-        console.error('Error getting food item by ID:', error);
+        
         throw error;
       }
     }, `FoodItem.getById(id:${id})`);
@@ -601,38 +610,38 @@ export const FoodItemRepository = {
 
   // Create a new food item
   create: async (item: FoodItem): Promise<number> => {
-    console.log('[Repository.create] Starting database operation...');
+    
     const startTime = Date.now();
     
     return queuedDatabaseOperation(async () => {
-      console.log(`[Repository.create] Queue operation started after ${Date.now() - startTime}ms wait`);
+      console.log(`Queue wait: ${Date.now() - startTime}ms`);
       const dbOpStart = Date.now();
       
       try {
-        console.log('[Repository.create] Checking fallback storage...');
+        
         // Check if we're using fallback storage first
         if (isUsingFallbackStorage()) {
-          console.log('[Repository.create] Using fallback storage');
+          
           const fallbackDb = getFallbackStorage();
           const result = await fallbackDb.addFoodItem(item);
-          console.log(`[Repository.create] ✅ Fallback completed in ${Date.now() - dbOpStart}ms`);
+          console.log(`Fallback create took ${Date.now() - dbOpStart}ms`);
           return result;
         }
 
-        console.log('[Repository.create] Getting SQLite database...');
+        
         // Try to get the SQLite database
         const db = await getDatabaseSafely();
         
         if (!db) {
-          console.log('[Repository.create] No SQLite database, falling back...');
+          
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
           const result = await fallbackDb.addFoodItem(item);
-          console.log(`[Repository.create] ✅ Fallback completed in ${Date.now() - dbOpStart}ms`);
+          console.log(`Fallback create took ${Date.now() - dbOpStart}ms`);
           return result;
         }
         
-        console.log('[Repository.create] Executing SQLite INSERT...');
+        
         const sqlStart = Date.now();
         
         // Try the insert operation with automatic lock recovery
@@ -654,11 +663,11 @@ export const FoodItemRepository = {
               item.created_at
             ]
           );
-          console.log(`[Repository.create] SQLite INSERT completed in ${Date.now() - sqlStart}ms`);
+          console.log(`SQL insert took ${Date.now() - sqlStart}ms`);
         } catch (insertError: any) {
           // Check if it's a database lock error
           if (insertError.message && insertError.message.includes('database is locked')) {
-            console.warn('[Repository.create] Database lock detected, attempting recovery...');
+            
             
             // Import the recovery function
             const { clearDatabaseLocks, invalidateDatabaseCache } = await import('./database');
@@ -671,7 +680,7 @@ export const FoodItemRepository = {
             await new Promise(resolve => setTimeout(resolve, 100));
             
             // Get a fresh database connection and retry
-            console.log('[Repository.create] Retrying with fresh database connection...');
+            
             const freshDb = await getDatabaseSafely();
             if (!freshDb) {
               throw new Error('Failed to get fresh database connection after lock recovery');
@@ -693,16 +702,16 @@ export const FoodItemRepository = {
                 item.created_at
               ]
             );
-            console.log(`[Repository.create] SQLite INSERT completed after recovery in ${Date.now() - sqlStart}ms`);
+            console.log(`SQL insert retry took ${Date.now() - sqlStart}ms`);
           } else {
             // Re-throw non-lock errors
             throw insertError;
           }
         }
-        console.log(`[Repository.create] ✅ Total DB operation completed in ${Date.now() - dbOpStart}ms`);
+        console.log(`Create operation took ${Date.now() - dbOpStart}ms`);
         return result.lastInsertRowId;
       } catch (error) {
-        console.error(`[Repository.create] ❌ FAILED after ${Date.now() - dbOpStart}ms:`, error);
+        console.error(`Create operation failed after ${Date.now() - dbOpStart}ms:`, error);
         throw error;
       }
     }, `FoodItem.create("${item.name}")`);
@@ -714,38 +723,38 @@ export const FoodItemRepository = {
       throw new Error('Food item ID is required for update');
     }
 
-    console.log('[Repository.update] Starting database operation...');
+    
     const startTime = Date.now();
 
     return queuedDatabaseOperation(async () => {
-      console.log(`[Repository.update] Queue operation started after ${Date.now() - startTime}ms wait`);
+      console.log(`Queue wait: ${Date.now() - startTime}ms`);
       const dbOpStart = Date.now();
       
       try {
-        console.log('[Repository.update] Checking fallback storage...');
+        
         // Check if we're using fallback storage first
         if (isUsingFallbackStorage()) {
-          console.log('[Repository.update] Using fallback storage');
+          
           const fallbackDb = getFallbackStorage();
           await fallbackDb.updateFoodItem(item);
-          console.log(`[Repository.update] ✅ Fallback completed in ${Date.now() - dbOpStart}ms`);
+          console.log(`Fallback update took ${Date.now() - dbOpStart}ms`);
           return;
         }
 
-        console.log('[Repository.update] Getting SQLite database...');
+        
         // Try to get the SQLite database
         const db = await getDatabaseSafely();
         
         if (!db) {
-          console.log('[Repository.update] No SQLite database, falling back...');
+          
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
           await fallbackDb.updateFoodItem(item);
-          console.log(`[Repository.update] ✅ Fallback completed in ${Date.now() - dbOpStart}ms`);
+          console.log(`Fallback update took ${Date.now() - dbOpStart}ms`);
           return;
         }
         
-        console.log('[Repository.update] Executing SQLite UPDATE...');
+        
         const sqlStart = Date.now();
         
         // Try the update operation with automatic lock recovery
@@ -767,11 +776,11 @@ export const FoodItemRepository = {
               item.id
             ]
           );
-          console.log(`[Repository.update] SQLite UPDATE completed in ${Date.now() - sqlStart}ms`);
+          console.log(`SQL update took ${Date.now() - sqlStart}ms`);
         } catch (updateError: any) {
           // Check if it's a database lock error
           if (updateError.message && updateError.message.includes('database is locked')) {
-            console.warn('[Repository.update] Database lock detected, attempting recovery...');
+            
             
             // Import the recovery function
             const { clearDatabaseLocks, invalidateDatabaseCache } = await import('./database');
@@ -784,7 +793,7 @@ export const FoodItemRepository = {
             await new Promise(resolve => setTimeout(resolve, 100));
             
             // Get a fresh database connection and retry
-            console.log('[Repository.update] Retrying with fresh database connection...');
+            
             const freshDb = await getDatabaseSafely();
             if (!freshDb) {
               throw new Error('Failed to get fresh database connection after lock recovery');
@@ -807,18 +816,18 @@ export const FoodItemRepository = {
                 item.id
               ]
             );
-            console.log(`[Repository.update] SQLite UPDATE completed after recovery in ${Date.now() - sqlStart}ms`);
+            console.log(`SQL update retry took ${Date.now() - sqlStart}ms`);
           } else {
             // Re-throw non-lock errors
             throw updateError;
           }
         }
-        console.log(`[Repository.update] ✅ Total DB operation completed in ${Date.now() - dbOpStart}ms`);
+        console.log(`Update operation took ${Date.now() - dbOpStart}ms`);
       } catch (error) {
-        console.error(`[Repository.update] ❌ FAILED after ${Date.now() - dbOpStart}ms:`, error);
+        console.error(`Update operation failed after ${Date.now() - dbOpStart}ms:`, error);
         throw error;
       }
-    }, `FoodItem.update("${item.name}", id:${item.id})`);
+    }, `FoodItem.update(${item.id})`);
   },
 
   // Delete a food item
@@ -846,7 +855,7 @@ export const FoodItemRepository = {
         
         await db.runAsync('DELETE FROM food_items WHERE id = ?', [id]);
       } catch (error) {
-        console.error('Error deleting food item:', error);
+        
         throw error;
       }
     }, `FoodItem.delete(id:${id})`);
@@ -894,7 +903,7 @@ export const FoodItemRepository = {
         days_until_expiry: calculateDaysUntilExpiry(row.expiry_date)
       }));
     } catch (error) {
-      console.error('Error getting expired items:', error);
+      
       throw error;
     }
   },
@@ -945,7 +954,7 @@ export const FoodItemRepository = {
         days_until_expiry: calculateDaysUntilExpiry(row.expiry_date)
       }));
     } catch (error) {
-      console.error('Error getting expiring items:', error);
+      
       throw error;
     }
   },
@@ -986,7 +995,7 @@ export const FoodItemRepository = {
       const result = await db.runAsync('DELETE FROM food_items WHERE expiry_date < ?', [today]);
       return result.changes || 0;
     } catch (error) {
-      console.error('Error deleting expired items:', error);
+      
       throw error;
     }
   },
@@ -1008,7 +1017,7 @@ export const FoodItemRepository = {
             await fallbackDb.deleteFoodItem(id);
             deletedCount++;
           } catch (error) {
-            console.error(`Error deleting item ${id}:`, error);
+            
           }
         }
         return deletedCount;
@@ -1027,7 +1036,7 @@ export const FoodItemRepository = {
             await fallbackDb.deleteFoodItem(id);
             deletedCount++;
           } catch (error) {
-            console.error(`Error deleting item ${id}:`, error);
+            
           }
         }
         return deletedCount;
@@ -1038,7 +1047,7 @@ export const FoodItemRepository = {
       const result = await db.runAsync(`DELETE FROM food_items WHERE id IN (${placeholders})`, ids);
       return result.changes || 0;
     } catch (error) {
-      console.error('Error deleting multiple items:', error);
+      
       throw error;
     }
   }

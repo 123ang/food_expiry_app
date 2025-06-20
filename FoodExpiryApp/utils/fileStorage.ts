@@ -27,6 +27,33 @@ interface ImageValidationCache {
 }
 
 /**
+ * Add image to backup registry
+ */
+const addToImageRegistry = async (uri: string, fileName: string, linkedToDatabase: boolean = false, fileSize?: number): Promise<void> => {
+  try {
+    const backupData = await AsyncStorage.getItem(IMAGE_BACKUP_KEY);
+    const registry: ImageRegistryEntry[] = backupData ? JSON.parse(backupData) : [];
+    
+    const newEntry: ImageRegistryEntry = {
+      uri,
+      originalName: fileName,
+      createdAt: new Date().toISOString(),
+      isBackedUp: true,
+      linkedToDatabase
+    };
+    
+    if (fileSize !== undefined) {
+      newEntry.fileSize = fileSize;
+    }
+    
+    registry.push(newEntry);
+    await AsyncStorage.setItem(IMAGE_BACKUP_KEY, JSON.stringify(registry));
+  } catch (error) {
+    
+  }
+};
+
+/**
  * Enhanced iOS compatibility check
  */
 const ensureIOSCompatibility = async (): Promise<boolean> => {
@@ -37,7 +64,7 @@ const ensureIOSCompatibility = async (): Promise<boolean> => {
     await FileSystem.deleteAsync(testFile, { idempotent: true });
     return true;
   } catch (error) {
-    console.error('iOS compatibility check failed:', error);
+    
     return false;
   }
 };
@@ -63,7 +90,7 @@ const validateImageCache = async (): Promise<void> => {
     
     await AsyncStorage.setItem(IMAGE_VALIDATION_KEY, JSON.stringify(cleanedCache));
   } catch (error) {
-    console.error('Error validating image cache:', error);
+    
   }
 };
 
@@ -80,7 +107,7 @@ export const initializeImageStorage = async (): Promise<void> => {
     // Just perform a simple backup of existing images
     await backupImageRegistry();
   } catch (error) {
-    console.error('Error initializing image storage:', error);
+    
   }
 };
 
@@ -110,7 +137,7 @@ const backupImageRegistry = async (): Promise<void> => {
     
     await AsyncStorage.setItem(IMAGE_BACKUP_KEY, JSON.stringify(registry));
   } catch (error) {
-    console.error('Error backing up image registry:', error);
+    
   }
 };
 
@@ -130,7 +157,7 @@ export const restoreImagesFromBackup = async (): Promise<boolean> => {
       const fileInfo = await FileSystem.getInfoAsync(entry.uri);
       if (!fileInfo.exists) {
         // Image is missing, try to restore from backup or mark as lost
-        console.warn(`Image ${entry.originalName} is missing and cannot be restored`);
+        
       } else {
         restoredCount++;
       }
@@ -138,7 +165,7 @@ export const restoreImagesFromBackup = async (): Promise<boolean> => {
     
     return restoredCount > 0;
   } catch (error) {
-    console.error('Error restoring images from backup:', error);
+    
     return false;
   }
 };
@@ -151,7 +178,7 @@ const getValidationCache = async (): Promise<ImageValidationCache> => {
     const cacheData = await AsyncStorage.getItem(IMAGE_VALIDATION_KEY);
     return cacheData ? JSON.parse(cacheData) : {};
   } catch (error) {
-    console.error('Error getting validation cache:', error);
+    
     return {};
   }
 };
@@ -170,7 +197,7 @@ const updateValidationCache = async (imageUri: string, exists: boolean, fileSize
     
     await AsyncStorage.setItem(IMAGE_VALIDATION_KEY, JSON.stringify(cache));
   } catch (error) {
-    console.error('Error updating validation cache:', error);
+    
   }
 };
 
@@ -219,7 +246,7 @@ export const verifyImageExists = async (imageUri: string): Promise<boolean> => {
           exists = readTest.length > 0;
         }
       } catch (error) {
-        console.warn(`Image verification failed for ${imageUri}:`, error);
+        
         exists = false;
       }
       
@@ -232,7 +259,7 @@ export const verifyImageExists = async (imageUri: string): Promise<boolean> => {
     const fileInfo = await FileSystem.getInfoAsync(imageUri);
     return fileInfo.exists;
   } catch (error) {
-    console.error('Error verifying image:', error);
+    
     return false;
   }
 };
@@ -247,7 +274,7 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
     if (Platform.OS === 'ios') {
       const isCompatible = await ensureIOSCompatibility();
       if (!isCompatible) {
-        console.error('iOS file system not accessible');
+        
         return null;
       }
     }
@@ -280,7 +307,7 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
           throw new Error('Source image is invalid or empty');
         }
       } catch (error) {
-        console.error('Source image validation failed:', error);
+        
         return null;
       }
     }
@@ -292,7 +319,7 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
         to: destinationUri,
       });
     } catch (copyError) {
-      console.error('Image copy failed:', copyError);
+      
       
       // iOS: Try alternative copy method
       if (Platform.OS === 'ios') {
@@ -305,7 +332,7 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
             encoding: FileSystem.EncodingType.Base64
           });
         } catch (fallbackError) {
-          console.error('Fallback copy method failed:', fallbackError);
+          
           return null;
         }
       } else {
@@ -348,10 +375,10 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
       await updateValidationCache(destinationUri, true, fileSize);
     }
     
-    console.log(`Image saved successfully: ${destinationUri} (${fileSize} bytes)`);
+    console.log('Image saved successfully to:', destinationUri);
     return destinationUri;
   } catch (error) {
-    console.error('Error saving image to storage:', error);
+    console.error('Error saving image:', error);
     return null;
   }
 };
@@ -378,12 +405,12 @@ export const getSafeImageUri = async (sourceUri: string): Promise<string> => {
       if (Platform.OS === 'ios') {
         const recoveredUri = await attemptImageRecovery(sourceUri);
         if (recoveredUri) {
-          console.log(`Recovered broken image link: ${sourceUri} -> ${recoveredUri}`);
+          
           return recoveredUri;
         }
       }
       
-      console.warn(`Stored image no longer exists: ${sourceUri}`);
+      
       return '';
     }
     
@@ -393,11 +420,11 @@ export const getSafeImageUri = async (sourceUri: string): Promise<string> => {
       try {
         const sourceInfo = await FileSystem.getInfoAsync(sourceUri);
         if (!sourceInfo.exists) {
-          console.error('Source image does not exist');
+          
           return '';
         }
       } catch (error) {
-        console.error('Cannot access source image:', error);
+        
         return '';
       }
     }
@@ -406,7 +433,7 @@ export const getSafeImageUri = async (sourceUri: string): Promise<string> => {
     const savedUri = await saveImageToStorage(sourceUri);
     return savedUri || '';
   } catch (error) {
-    console.error('Error getting safe image URI:', error);
+    
     return '';
   }
 };
@@ -421,33 +448,29 @@ const attemptImageRecovery = async (brokenUri: string): Promise<string | null> =
       return null;
     }
     
-    // Extract filename from broken URI
     const fileName = brokenUri.split('/').pop();
     if (!fileName) {
       return null;
     }
     
-    // Try different possible locations
     const possiblePaths = [
-      `${IMAGES_DIR}${fileName}`,
-      `${FileSystem.documentDirectory}${fileName}`,
-      `${FileSystem.documentDirectory}images/${fileName}`,
+      IMAGES_DIR + fileName,
+      FileSystem.documentDirectory + fileName,
+      FileSystem.documentDirectory + 'images/' + fileName,
     ];
     
     for (const possiblePath of possiblePaths) {
       try {
         const exists = await verifyImageExists(possiblePath);
         if (exists) {
-          // Update validation cache with recovered path
           await updateValidationCache(possiblePath, true);
           return possiblePath;
         }
       } catch (error) {
-        continue; // Try next path
+        continue;
       }
     }
     
-    // Check backup registry for alternative locations
     try {
       const backupData = await AsyncStorage.getItem(IMAGE_BACKUP_KEY);
       if (backupData) {
@@ -462,12 +485,11 @@ const attemptImageRecovery = async (brokenUri: string): Promise<string | null> =
         }
       }
     } catch (error) {
-      console.error('Error checking backup registry:', error);
+      // Recovery failed
     }
     
     return null;
   } catch (error) {
-    console.error('Error during image recovery:', error);
     return null;
   }
 };
@@ -498,7 +520,7 @@ export const cleanupOrphanedImages = async (databaseImageUris: string[]): Promis
     
     return orphanedImages.length;
   } catch (error) {
-    console.error('Error cleaning up orphaned images:', error);
+    
     return 0;
   }
 };
@@ -537,10 +559,10 @@ export const validateDatabaseImageLinks = async (
           const foundExists = await verifyImageExists(possiblePath);
           if (foundExists) {
             result.repaired.push({ oldUri: imageUri, newUri: possiblePath });
-            console.log(`Repaired image link: ${imageUri} -> ${possiblePath}`);
+            
           } else {
             result.broken.push(imageUri);
-            console.warn(`Broken image link: ${imageUri}`);
+            
           }
         } else {
           result.broken.push(imageUri);
@@ -550,35 +572,8 @@ export const validateDatabaseImageLinks = async (
 
     return result;
   } catch (error) {
-    console.error('Error validating database image links:', error);
+    
     return result;
-  }
-};
-
-/**
- * Add image to backup registry
- */
-const addToImageRegistry = async (uri: string, fileName: string, linkedToDatabase: boolean = false, fileSize?: number): Promise<void> => {
-  try {
-    const backupData = await AsyncStorage.getItem(IMAGE_BACKUP_KEY);
-    const registry: ImageRegistryEntry[] = backupData ? JSON.parse(backupData) : [];
-    
-    const newEntry: ImageRegistryEntry = {
-      uri,
-      originalName: fileName,
-      createdAt: new Date().toISOString(),
-      isBackedUp: true,
-      linkedToDatabase
-    };
-    
-    if (fileSize !== undefined) {
-      newEntry.fileSize = fileSize;
-    }
-    
-    registry.push(newEntry);
-    await AsyncStorage.setItem(IMAGE_BACKUP_KEY, JSON.stringify(registry));
-  } catch (error) {
-    console.error('Error adding to image registry:', error);
   }
 };
 
@@ -595,7 +590,7 @@ const removeFromImageRegistry = async (uri: string): Promise<void> => {
     
     await AsyncStorage.setItem(IMAGE_BACKUP_KEY, JSON.stringify(updatedRegistry));
   } catch (error) {
-    console.error('Error removing from image registry:', error);
+    
   }
 };
 
@@ -618,7 +613,7 @@ export const getSavedImages = async (): Promise<string[]> => {
     
     return imageFiles;
   } catch (error) {
-    console.error('Error getting saved images:', error);
+    
     return [];
   }
 };
@@ -637,7 +632,7 @@ export const deleteImageFromStorage = async (imageUri: string): Promise<boolean>
     }
     return false;
   } catch (error) {
-    console.error('Error deleting image from storage:', error);
+    
     return false;
   }
 };
@@ -654,7 +649,7 @@ export const cleanupUnusedImages = async (usedImageUris: string[]): Promise<void
       await deleteImageFromStorage(unusedImage);
     }
   } catch (error) {
-    console.error('Error cleaning up unused images:', error);
+    
   }
 };
 
@@ -687,7 +682,7 @@ export const getImageStorageStats = async (): Promise<{
           totalSize += fileInfo.size || 0;
         }
       } catch (error) {
-        console.warn(`Error getting size for ${imageUri}:`, error);
+        
       }
     }
     
@@ -715,21 +710,21 @@ export const getImageStorageStats = async (): Promise<{
         return {
           ...result,
           iosCompatible: false,
-          iosIssues: [`iOS compatibility check failed: ${error}`]
+          iosIssues: [`iOS compatibility check failed: ${String(error)}`]
         };
       }
     }
     
     return result;
   } catch (error) {
-    console.error('Error getting image storage stats:', error);
+    
     return { 
       totalImages: 0, 
       totalSize: 0, 
       registryEntries: 0, 
       databaseLinked: 0,
       iosCompatible: false,
-      iosIssues: [`Stats collection failed: ${error}`]
+      iosIssues: [`Stats collection failed: ${String(error)}`]
     };
   }
 };
@@ -750,7 +745,7 @@ export const initializeImageSystemForIOS = async (): Promise<{
   };
   
   try {
-    console.log('Initializing image system for iOS App Store compatibility...');
+    
     
     // 1. Check iOS compatibility
     if (Platform.OS === 'ios') {
@@ -766,7 +761,7 @@ export const initializeImageSystemForIOS = async (): Promise<{
       const dirInfo = await FileSystem.getInfoAsync(IMAGES_DIR);
       if (!dirInfo.exists) {
         await FileSystem.makeDirectoryAsync(IMAGES_DIR, { intermediates: true });
-        console.log('Created images directory');
+        
       }
     } catch (error) {
       result.compatibilityIssues.push('Cannot create images directory');
@@ -802,22 +797,22 @@ export const initializeImageSystemForIOS = async (): Promise<{
           if (recoveredCount > 0) {
             await AsyncStorage.setItem(IMAGE_BACKUP_KEY, JSON.stringify(registry));
             result.recoveredImages = recoveredCount;
-            console.log(`Recovered ${recoveredCount} image links`);
+            
           }
         }
       } catch (error) {
-        console.error('Error during image recovery scan:', error);
+        
         result.compatibilityIssues.push('Image recovery scan failed');
       }
     }
     
     // 5. Success
     result.success = true;
-    console.log('Image system initialization completed successfully');
+    
     
   } catch (error) {
-    console.error('Image system initialization failed:', error);
-    result.compatibilityIssues.push(`Initialization error: ${error}`);
+    
+    result.compatibilityIssues.push(`Initialization error: ${String(error)}`);
   }
   
   return result;

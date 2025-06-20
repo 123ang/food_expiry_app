@@ -73,7 +73,7 @@ export default function ItemDetailsScreen() {
         }
       }
     } catch (error) {
-      console.error('Error loading item:', error);
+              // Error loading item
       Alert.alert(t('alert.error'), t('alert.loadFailed'));
     } finally {
       setIsLoading(false);
@@ -607,7 +607,9 @@ export default function ItemDetailsScreen() {
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>{t('item.reminderDays')}</Text>
-                <Text style={styles.detailValue}>{item.reminder_days} days</Text>
+                <Text style={styles.detailValue}>
+                  {item.reminder_days} {item.reminder_days > 1 ? t('notification.days') : t('notification.day')}
+                </Text>
               </View>
             </View>
           </View>

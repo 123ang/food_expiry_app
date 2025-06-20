@@ -25,7 +25,7 @@ class DatabaseQueue {
       const operationId = `op_${++this.operationCounter}`;
       const opName = operationName || 'unknown';
       
-      console.log(`[DB Queue] Adding operation "${opName}" (${operationId}), queue size: ${this.queue.length}`);
+      // Queue operation added
       
       // Track active operations
       this.activeOperations.set(operationId, {
@@ -35,7 +35,7 @@ class DatabaseQueue {
       
       // Add timeout to prevent stuck operations
       const timeoutId = setTimeout(() => {
-        console.error(`[DB Queue] ❌ TIMEOUT: Operation "${opName}" (${operationId}) stuck for ${DatabaseQueue.OPERATION_TIMEOUT}ms`);
+        // Database operation timeout
         this.logActiveOperations();
         this.activeOperations.delete(operationId);
         reject(new Error(`Database operation "${opName}" timed out after ${DatabaseQueue.OPERATION_TIMEOUT}ms`));
@@ -43,7 +43,7 @@ class DatabaseQueue {
       
       this.queue.push(async () => {
         const waitTime = Date.now() - queueStartTime;
-        console.log(`[DB Queue] Starting operation "${opName}" (${operationId}) after ${waitTime}ms wait`);
+        // Starting operation
         const operationStartTime = Date.now();
         
         try {
@@ -51,10 +51,10 @@ class DatabaseQueue {
           const operationDuration = Date.now() - operationStartTime;
           const totalDuration = Date.now() - queueStartTime;
           
-          console.log(`[DB Queue] ✅ Operation "${opName}" (${operationId}) completed - Wait: ${waitTime}ms, Execution: ${operationDuration}ms, Total: ${totalDuration}ms`);
+          // Operation completed
           
           if (operationDuration > 100) {
-            console.warn(`[DB Queue] ⚠️ SLOW OPERATION: "${opName}" (${operationId}) took ${operationDuration}ms`);
+            // Operation took longer than expected
           }
           
           this.activeOperations.delete(operationId);
@@ -62,12 +62,11 @@ class DatabaseQueue {
           resolve(result);
         } catch (error: any) {
           const totalDuration = Date.now() - queueStartTime;
-          console.error(`[DB Queue] ❌ Operation "${opName}" (${operationId}) failed after ${totalDuration}ms:`, error);
+          // Database operation failed
           
           // Log what operation was running when the lock occurred
           if (error.message && error.message.includes('database is locked')) {
-            console.error(`[DB Queue] 🔒 DATABASE LOCK DETECTED in operation: "${opName}" (${operationId})`);
-            console.error(`[DB Queue] 🔒 Lock occurred after ${totalDuration}ms total time`);
+            // Database lock detected
             this.logActiveOperations();
           }
           
@@ -83,13 +82,13 @@ class DatabaseQueue {
 
   private logActiveOperations(): void {
     if (this.activeOperations.size > 0) {
-      console.warn(`[DB Queue] 📊 ACTIVE OPERATIONS (${this.activeOperations.size}):`);
+      // Active operations detected
       this.activeOperations.forEach((info, id) => {
         const duration = Date.now() - info.startTime;
-        console.warn(`[DB Queue] 📊   - ${id}: "${info.operation}" (running for ${duration}ms)`);
+        // Operation running for duration
       });
     } else {
-      console.log(`[DB Queue] 📊 No active operations when lock occurred`);
+      // No active operations
     }
   }
 
@@ -98,11 +97,11 @@ class DatabaseQueue {
       return;
     }
 
-    console.log(`[DB Queue] Starting to process queue with ${this.queue.length} operations`);
+            // Processing queue
     
     // Warn about queue backlog
     if (this.queue.length > 10) {
-      console.warn(`[DB Queue] ⚠️ LARGE QUEUE: ${this.queue.length} operations queued - possible performance issue`);
+      
     }
     
     this.isProcessing = true;
@@ -114,16 +113,16 @@ class DatabaseQueue {
           await operation();
           // Add a minimal delay between operations to prevent locks (reduced to 1ms)
           if (this.queue.length > 0) {
-            console.log(`[DB Queue] Waiting 1ms before next operation, ${this.queue.length} remaining`);
+            // Waiting before next operation
             await new Promise(resolve => setTimeout(resolve, 1));
           }
         } catch (error) {
-          console.error('[DB Queue] Database operation failed:', error);
+          
         }
       }
     }
     
-    console.log('[DB Queue] Queue processing completed');
+          // Queue processing completed
     this.isProcessing = false;
   }
 }
@@ -215,7 +214,7 @@ const backupUserData = async (database: SQLite.SQLiteDatabase): Promise<any> => 
     
     return backup;
   } catch (error) {
-    console.error('Failed to backup user data:', error);
+    
     return null;
   }
 };
@@ -279,7 +278,7 @@ const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promi
     
     return true;
   } catch (error) {
-    console.error('Failed to restore user data from backup:', error);
+    
     return false;
   }
 };
@@ -332,7 +331,7 @@ const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDat
       }
     }
   } catch (error) {
-    console.error('Error preserving existing categories and locations:', error);
+    
   }
 };
 
@@ -488,7 +487,7 @@ export const resetDatabase = async (): Promise<void> => {
     await initDatabase();
 
   } catch (error) {
-    console.error('Failed to reset database:', error);
+    
     throw error;
   }
 };
@@ -514,7 +513,7 @@ export const getDatabaseSafely = async (): Promise<SQLite.SQLiteDatabase | null>
     
     return database;
   } catch (error) {
-    console.warn('Failed to get database safely, will use fallback storage');
+    
     
     // Update cache with failure
     databaseStatusCache = {
@@ -919,7 +918,7 @@ const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Lang
   const defaultLocations = getDefaultLocations(language);
 
   // Use batch operations for much faster insertion
-  console.log('[InsertDefaultData] Inserting categories in batch...');
+  
   await database.withTransactionAsync(async () => {
     for (const category of defaultCategories) {
       await database.runAsync(
@@ -929,7 +928,7 @@ const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Lang
     }
   });
 
-  console.log('[InsertDefaultData] Inserting locations in batch...');
+  
   await database.withTransactionAsync(async () => {
     for (const location of defaultLocations) {
       await database.runAsync(
@@ -939,7 +938,7 @@ const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Lang
     }
   });
   
-  console.log('[InsertDefaultData] ✅ Default data insertion completed');
+  
 };
 
 // Function to update existing default categories and locations with translation keys
@@ -972,7 +971,7 @@ const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQ
     const defaultLocations = getDefaultLocations('en');
     
     // Update default categories (IDs 1-8) with translation keys using batch operation
-    console.log('[UpdateTranslationKeys] Updating categories...');
+    
     await database.withTransactionAsync(async () => {
       for (let i = 0; i < defaultCategories.length; i++) {
         const categoryId = i + 1;
@@ -988,7 +987,7 @@ const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQ
     });
     
     // Update default locations (IDs 1-4) with translation keys using batch operation
-    console.log('[UpdateTranslationKeys] Updating locations...');
+    
     await database.withTransactionAsync(async () => {
       for (let i = 0; i < defaultLocations.length; i++) {
         const locationId = i + 1;
@@ -1007,7 +1006,7 @@ const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQ
     await AsyncStorage.setItem(migrationKey, 'true');
     
   } catch (error) {
-    console.error('Error updating existing items with translation keys:', error);
+    
     // Don't throw error, just log it to prevent database locks
   }
 };
@@ -1020,15 +1019,15 @@ export const initDatabase = async (): Promise<void> => {
       if (!database) {
         // Using fallback storage
         const currentLanguage = await getStoredLanguage();
-        await updateDefaultDataForLanguage(currentLanguage);
-        console.log('[InitDB] Using fallback storage - initialization complete');
+        // Using fallback storage - initialization complete
+        
         return;
       }
 
-      console.log('[InitDB] Starting database initialization...');
+      // Starting database initialization
       
       // FIRST: Always create tables before any database queries
-      console.log('[InitDB] Creating/updating tables...');
+      // Creating/updating tables
       await createTables(database);
       
       // THEN: Check database version for migrations
@@ -1043,37 +1042,37 @@ export const initDatabase = async (): Promise<void> => {
           const locationCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM locations');
           
           if ((categoryCount as any)?.count > 0 && (locationCount as any)?.count > 0) {
-            console.log('[InitDB] Recovery: Database has data but version is 0. Setting correct version...');
+            
             await setDatabaseVersion(DATABASE_VERSION);
-            console.log('[InitDB] ✅ Recovery complete - database version corrected');
+            
             return;
           }
         } catch (error) {
-          console.log('[InitDB] No existing data found, proceeding with fresh installation...');
+          
         }
       }
       
-      console.log(`[InitDB] Current version: ${currentVersion}, Target version: ${DATABASE_VERSION}, Migration needed: ${needsMigration}`);
+      // Database version check completed
       
       // Backup user data before any major changes
       if (needsMigration && currentVersion > 0) {
-        console.log('[InitDB] Backing up user data before migration...');
+        
         await backupUserData(database);
       }
       
       const currentLanguage = await getStoredLanguage();
-      console.log(`[InitDB] Using language: ${currentLanguage}`);
+      // Using current language for initialization
       
       // If this is a new installation or migration, handle accordingly
       if (currentVersion === 0) {
-        console.log('[InitDB] Fresh installation - inserting default data...');
+        // Fresh installation - inserting default data
         await insertDefaultData(database, currentLanguage);
       } else if (needsMigration) {
-        console.log('[InitDB] Migration needed - preserving user data...');
+        // Migration needed - preserving user data
         await insertDefaultData(database, currentLanguage);
         await restoreUserDataFromBackup(database);
       } else {
-        console.log('[InitDB] Existing installation - skipping default data insertion...');
+        // Existing installation - skipping default data insertion
         // Skip insertDefaultData for existing installations - data already exists!
       }
       
@@ -1082,33 +1081,33 @@ export const initDatabase = async (): Promise<void> => {
 
       // Only run migrations if we're upgrading from an older version
       if (currentVersion > 0 && currentVersion < DATABASE_VERSION) {
-        console.log('[InitDB] Running database migrations...');
+        
         await migrateToNewCategories(database, currentLanguage);
       }
       
       // Update database version
-      console.log('[InitDB] Updating database version...');
+      
       await setDatabaseVersion(DATABASE_VERSION);
       
-      console.log('[InitDB] ✅ Database initialization completed successfully');
+      // Database initialization completed successfully
       
     } catch (error) {
-      console.error('[InitDB] ❌ Database initialization failed:', error);
+      
       
       // Try to recover using backup data
-      console.log('[InitDB] Attempting recovery using backup data...');
+      
       try {
         const recovered = await restoreFromFullBackup();
         if (recovered) {
-          console.log('[InitDB] ✅ Successfully recovered data from backup');
+          
           return;
         }
       } catch (recoveryError) {
-        console.error('[InitDB] Recovery failed:', recoveryError);
+        
       }
       
       // Fall back to using AsyncStorage
-      console.log('[InitDB] Falling back to AsyncStorage mode...');
+      
       useFallbackStorage = true;
       await ensureFallbackStorage();
     }
@@ -1147,7 +1146,7 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
     await AsyncStorage.setItem(migrationKey, 'true');
     
   } catch (error) {
-    console.warn('Category migration warning (non-critical):', error);
+    // Migration error - non-critical
     // Continue execution as this is not a critical error
   }
 };
@@ -1196,24 +1195,24 @@ export const performRegularBackup = async (): Promise<void> => {
       await AsyncStorage.setItem('full_data_backup', JSON.stringify(allData));
     }
   } catch (error) {
-    console.error('Regular backup failed:', error);
+    
   }
 };
 
 // Restore from full backup if database is completely lost
 export const restoreFromFullBackup = async (): Promise<boolean> => {
   try {
-    console.log('[RestoreFullBackup] Starting restore from backup...');
+    
     
     const database = await getDatabase();
     if (!database) {
-      console.log('[RestoreFullBackup] No database available');
+      
       return false;
     }
     
     const fullBackup = await AsyncStorage.getItem('full_data_backup');
     if (!fullBackup) {
-      console.log('[RestoreFullBackup] No full backup found, ensuring default data...');
+      
       
       // No backup found, ensure default data exists
       const currentLanguage = await getStoredLanguage();
@@ -1222,7 +1221,7 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
     }
     
     const backup = JSON.parse(fullBackup);
-    console.log('[RestoreFullBackup] Restoring from backup...');
+    
     
     // Restore all categories
     for (const category of backup.categories) {
@@ -1252,10 +1251,10 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
     const currentLanguage = await getStoredLanguage();
     await preserveExistingCategoriesAndLocations(database, currentLanguage);
     
-    console.log('[RestoreFullBackup] ✅ Successfully restored from backup');
+    
     return true;
   } catch (error) {
-    console.error('[RestoreFullBackup] ❌ Restore failed:', error);
+    
     
     // If restore fails completely, ensure we at least have default data
     try {
@@ -1263,10 +1262,10 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
       if (database) {
         const currentLanguage = await getStoredLanguage();
         await insertDefaultData(database, currentLanguage);
-        console.log('[RestoreFullBackup] ✅ Fallback: inserted default data');
+        
       }
     } catch (fallbackError) {
-      console.error('[RestoreFullBackup] ❌ Even fallback insertion failed:', fallbackError);
+      
     }
     
     return false;
@@ -1276,7 +1275,7 @@ export const restoreFromFullBackup = async (): Promise<boolean> => {
 // Utility function to clear database locks
 export const clearDatabaseLocks = async (): Promise<void> => {
   try {
-    console.log('[ClearDatabaseLocks] Starting database lock recovery...');
+    
     
     // First, try a gentle approach - just invalidate cache and wait
     invalidateDatabaseCache();
@@ -1288,15 +1287,15 @@ export const clearDatabaseLocks = async (): Promise<void> => {
       // Test if the database is responsive with a simple query
       try {
         await testDb.getFirstAsync('SELECT 1');
-        console.log('[ClearDatabaseLocks] Database is responsive, lock may have cleared');
+        
         return;
       } catch (testError) {
-        console.warn('[ClearDatabaseLocks] Database still locked, proceeding with full reset...');
+        
       }
     }
     
     // If gentle approach failed, close and reinitialize
-    console.log('[ClearDatabaseLocks] Closing database connection...');
+    
     await closeDatabase();
     
     // Wait longer for any pending operations to complete
@@ -1306,14 +1305,14 @@ export const clearDatabaseLocks = async (): Promise<void> => {
     invalidateDatabaseCache();
     
     // Reinitialize the database
-    console.log('[ClearDatabaseLocks] Reinitializing database...');
+    
     await initDatabase();
     
-    console.log('[ClearDatabaseLocks] ✅ Database locks cleared and connection reestablished');
+    
   } catch (error) {
-    console.error('[ClearDatabaseLocks] ❌ Failed to clear database locks:', error);
+    
     // Fall back to using AsyncStorage
-    console.log('[ClearDatabaseLocks] Falling back to AsyncStorage...');
+    
     useFallbackStorage = true;
     await ensureFallbackStorage();
   }
@@ -1325,19 +1324,20 @@ export const executeWithRetry = async <T>(
   maxRetries: number = 3,
   delayMs: number = 100
 ): Promise<T> => {
+  let lastError: any;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error: any) {
+      lastError = error;
       if (error.message?.includes('database is locked') && attempt < maxRetries) {
-        console.warn(`Database lock detected, retrying in ${delayMs}ms (attempt ${attempt}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
         continue;
       }
       throw error;
     }
   }
-  throw new Error('Max retries exceeded');
+  throw lastError || new Error('Max retries exceeded');
 };
 
 export const updateDefaultDataForLanguage = async (language: Language, t?: (key: string) => string): Promise<void> => {
@@ -1349,13 +1349,13 @@ export const updateDefaultDataForLanguage = async (language: Language, t?: (key:
 // Global database lock error handler
 export const handleDatabaseLockError = async (error: any, operation: string): Promise<void> => {
   if (error.message && error.message.includes('database is locked')) {
-    console.error(`[GlobalLockHandler] Database lock detected in ${operation}, attempting automatic recovery...`);
+    
     
     try {
       await clearDatabaseLocks();
-      console.log(`[GlobalLockHandler] ✅ Recovery completed for ${operation}`);
+      
     } catch (recoveryError) {
-      console.error(`[GlobalLockHandler] ❌ Recovery failed for ${operation}:`, recoveryError);
+      
       // Force fallback storage as last resort
       useFallbackStorage = true;
       await ensureFallbackStorage();
@@ -1365,7 +1365,7 @@ export const handleDatabaseLockError = async (error: any, operation: string): Pr
 
 // Database lock testing and monitoring functions
 export const testDatabaseLock = async (): Promise<void> => {
-  console.log('[LockTest] 🧪 Starting database lock test...');
+  
   
   try {
     // Simulate multiple concurrent operations
@@ -1395,9 +1395,9 @@ export const testDatabaseLock = async (): Promise<void> => {
     ];
     
     await Promise.all(operations);
-    console.log('[LockTest] ✅ All test operations completed successfully');
+    
   } catch (error) {
-    console.error('[LockTest] ❌ Test failed:', error);
+    
   }
 };
 
@@ -1421,7 +1421,7 @@ export const createBackup = async (): Promise<{ version: number; data: any }> =>
   // This is a read-only operation, but we queue it to avoid conflicts
   return queuedDatabaseOperation(async () => {
     const backupStartTime = Date.now();
-    console.log('[Backup] Starting database backup...');
+    
     
     const database = await getDatabase();
     if (!database) {
@@ -1435,7 +1435,7 @@ export const createBackup = async (): Promise<{ version: number; data: any }> =>
       timestamp: new Date().toISOString()
     };
     
-    console.log(`[Backup] ✅ Backup completed in ${Date.now() - backupStartTime}ms`);
+    console.log(`Backup completed in ${Date.now() - backupStartTime}ms`);
     return { version: DATABASE_VERSION, data: backupData };
   }, 'createBackup');
 };
@@ -1448,7 +1448,7 @@ export const restoreFromBackup = async (backup: any): Promise<void> => {
 
   return queuedDatabaseOperation(async () => {
     const restoreStartTime = Date.now();
-    console.log('[Restore] Starting database restore...');
+    
     
     // Restore categories
     if (backup.data && backup.data.categories) {
@@ -1480,14 +1480,14 @@ export const restoreFromBackup = async (backup: any): Promise<void> => {
       }
     }
     
-    console.log(`[Restore] ✅ Restore completed in ${Date.now() - restoreStartTime}ms`);
+    console.log(`Restore completed in ${Date.now() - restoreStartTime}ms`);
   }, 'restoreFromBackup');
 };
 
 // Emergency recovery function to restore default categories and locations
 export const emergencyRestoreDefaults = async (): Promise<void> => {
   return queuedDatabaseOperation(async () => {
-    console.log('[EmergencyRestore] Starting emergency restore of default data...');
+    
     
     const database = await getDatabase();
     if (!database) {
@@ -1504,14 +1504,14 @@ export const emergencyRestoreDefaults = async (): Promise<void> => {
     // Insert fresh default data
     await insertDefaultData(database, currentLanguage);
     
-    console.log('[EmergencyRestore] ✅ Emergency restore completed');
+    
   }, 'emergencyRestoreDefaults');
 };
 
 // Diagnostic function to check and force update translation keys
 export const forceUpdateTranslationKeys = async (): Promise<void> => {
   return queuedDatabaseOperation(async () => {
-    console.log('[ForceUpdateTranslationKeys] Starting forced translation key update...');
+    
     
     const database = await getDatabase();
     if (!database) {
@@ -1520,11 +1520,11 @@ export const forceUpdateTranslationKeys = async (): Promise<void> => {
     
     // Check current state of categories
     const categories = await database.getAllAsync('SELECT id, name, translation_key FROM categories ORDER BY id');
-    console.log('[ForceUpdateTranslationKeys] Current categories:', categories);
+    
     
     // Check current state of locations
     const locations = await database.getAllAsync('SELECT id, name, translation_key FROM locations ORDER BY id');
-    console.log('[ForceUpdateTranslationKeys] Current locations:', locations);
+    
     
     const defaultCategories = getDefaultCategories('en'); // Use English as reference
     const defaultLocations = getDefaultLocations('en');
@@ -1539,7 +1539,7 @@ export const forceUpdateTranslationKeys = async (): Promise<void> => {
           'UPDATE categories SET translation_key = ? WHERE id = ?',
           [category.translationKey, categoryId]
         );
-        console.log(`[ForceUpdateTranslationKeys] Updated category ${categoryId}: ${category.translationKey}`);
+        
       }
     }
     
@@ -1553,20 +1553,20 @@ export const forceUpdateTranslationKeys = async (): Promise<void> => {
           'UPDATE locations SET translation_key = ? WHERE id = ?',
           [location.translationKey, locationId]
         );
-        console.log(`[ForceUpdateTranslationKeys] Updated location ${locationId}: ${location.translationKey}`);
+        
       }
     }
     
     // Verify the updates
     const updatedCategories = await database.getAllAsync('SELECT id, name, translation_key FROM categories ORDER BY id');
-    console.log('[ForceUpdateTranslationKeys] Updated categories:', updatedCategories);
+    
     
     const updatedLocations = await database.getAllAsync('SELECT id, name, translation_key FROM locations ORDER BY id');
-    console.log('[ForceUpdateTranslationKeys] Updated locations:', updatedLocations);
+    
     
     // Reset the migration flag so it can run again if needed
     await AsyncStorage.removeItem('translation_keys_migration_completed');
     
-    console.log('[ForceUpdateTranslationKeys] ✅ Translation key update completed');
+    console.log('Translation keys update completed');
   }, 'forceUpdateTranslationKeys');
-}; 
+};

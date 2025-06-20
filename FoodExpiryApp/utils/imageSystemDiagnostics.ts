@@ -49,7 +49,7 @@ export const runImageSystemDiagnostics = async (): Promise<DiagnosticResult> => 
   };
 
   try {
-    console.log('Running image system diagnostics...');
+    
 
     // 1. Get basic storage stats
     const storageStats = await getImageStorageStats();
@@ -161,7 +161,7 @@ export const runImageSystemDiagnostics = async (): Promise<DiagnosticResult> => 
     result.recommendations.push('Unable to complete diagnostics. Please try restarting the app.');
   }
 
-  console.log('Image system diagnostics completed:', result.overallHealth);
+  
   return result;
 };
 
@@ -221,7 +221,7 @@ export const attemptImageSystemRepair = async (): Promise<{
   };
 
   try {
-    console.log('Attempting image system repair...');
+    
 
     // 1. iOS-specific repairs
     if (Platform.OS === 'ios') {

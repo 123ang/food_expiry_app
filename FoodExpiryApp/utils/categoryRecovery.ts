@@ -20,11 +20,11 @@ export interface LocationBackup {
 // Emergency function to restore categories if they become "No Category" with apple icons
 export const emergencyRestoreCategories = async (): Promise<boolean> => {
   try {
-    console.log('🚨 Emergency category restoration initiated...');
+    
     
     const database = await getDatabaseSafely();
     if (!database) {
-      console.error('Database not available for emergency restoration');
+      
       return false;
     }
     
@@ -50,17 +50,17 @@ export const emergencyRestoreCategories = async (): Promise<boolean> => {
           }
           
           if (restoredCategories.length > 0) {
-            console.log(`Found ${restoredCategories.length} categories in ${backupKey}`);
+            
             break;
           }
         }
       } catch (error) {
-        console.warn(`Failed to read backup from ${backupKey}:`, error);
+        
       }
     }
     
     if (restoredCategories.length === 0) {
-      console.warn('No category backups found for emergency restoration');
+      
       return false;
     }
     
@@ -82,15 +82,15 @@ export const emergencyRestoreCategories = async (): Promise<boolean> => {
         );
         restored++;
       } catch (error) {
-        console.warn(`Failed to restore category ${category.name}:`, error);
+        
       }
     }
     
-    console.log(`✅ Emergency restoration complete: ${restored}/${restoredCategories.length} categories restored`);
+    
     return restored > 0;
     
   } catch (error) {
-    console.error('Emergency category restoration failed:', error);
+    
     return false;
   }
 };
@@ -98,11 +98,11 @@ export const emergencyRestoreCategories = async (): Promise<boolean> => {
 // Emergency function to restore locations
 export const emergencyRestoreLocations = async (): Promise<boolean> => {
   try {
-    console.log('🚨 Emergency location restoration initiated...');
+    
     
     const database = await getDatabaseSafely();
     if (!database) {
-      console.error('Database not available for emergency restoration');
+      
       return false;
     }
     
@@ -128,17 +128,17 @@ export const emergencyRestoreLocations = async (): Promise<boolean> => {
           }
           
           if (restoredLocations.length > 0) {
-            console.log(`Found ${restoredLocations.length} locations in ${backupKey}`);
+            
             break;
           }
         }
       } catch (error) {
-        console.warn(`Failed to read backup from ${backupKey}:`, error);
+        
       }
     }
     
     if (restoredLocations.length === 0) {
-      console.warn('No location backups found for emergency restoration');
+      
       return false;
     }
     
@@ -160,15 +160,15 @@ export const emergencyRestoreLocations = async (): Promise<boolean> => {
         );
         restored++;
       } catch (error) {
-        console.warn(`Failed to restore location ${location.name}:`, error);
+        
       }
     }
     
-    console.log(`✅ Emergency restoration complete: ${restored}/${restoredLocations.length} locations restored`);
+    
     return restored > 0;
     
   } catch (error) {
-    console.error('Emergency location restoration failed:', error);
+    
     return false;
   }
 };
@@ -195,7 +195,7 @@ export const checkCategoriesCorrupted = async (): Promise<boolean> => {
     return corruptedCount > categories.length * 0.5;
     
   } catch (error) {
-    console.error('Error checking category corruption:', error);
+    
     return false;
   }
 };
@@ -206,19 +206,19 @@ export const autoFixCorruptedData = async (): Promise<void> => {
     const isCorrupted = await checkCategoriesCorrupted();
     
     if (isCorrupted) {
-      console.warn('🔧 Corrupted categories detected, attempting auto-fix...');
+      
       
       const categoriesRestored = await emergencyRestoreCategories();
       const locationsRestored = await emergencyRestoreLocations();
       
       if (categoriesRestored || locationsRestored) {
-        console.log('✅ Auto-fix completed successfully');
+        
       } else {
-        console.warn('⚠️ Auto-fix could not restore from backups');
+        
       }
     }
   } catch (error) {
-    console.error('Auto-fix failed:', error);
+    
   }
 };
 

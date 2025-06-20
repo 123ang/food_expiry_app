@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useDatabase } from '../../context/DatabaseContext';
-import { saveImageToStorage, getSavedImages, getSafeImageUri } from '../../utils/fileStorage';
+import { saveImageToStorage, getSafeImageUri, getSavedImages } from '../../utils/fileStorage';
 import { DatePicker } from '../../components/DatePicker';
 import { getCurrentDate } from '../../database/database';
 import { BottomNav } from '../../components/BottomNav';
@@ -66,11 +66,11 @@ export default function EditScreen() {
 
   const loadSavedPhotos = async () => {
     try {
-      // Get all saved photos from file storage
       const photos = await getSavedImages();
       setSavedPhotos(photos);
     } catch (error) {
       console.error('Error loading saved photos:', error);
+      setSavedPhotos([]);
     }
   };
 
@@ -94,7 +94,7 @@ export default function EditScreen() {
           router.back();
         }
       } catch (error) {
-        console.error('Error loading item:', error);
+        // Error loading item
         Alert.alert(t('alert.error'), t('error.failedToLoad'));
       } finally {
         setIsLoading(false);
@@ -120,11 +120,11 @@ export default function EditScreen() {
         if (safeImageUri) {
           setImageUri(safeImageUri);
         } else {
-          console.error('getSafeImageUri returned null for gallery image (edit)');
+          // getSafeImageUri returned null for gallery image
         }
       }
     } catch (error) {
-      console.error('Error processing gallery image (edit):', error);
+              // Error processing gallery image
     }
   };
 
@@ -151,11 +151,11 @@ export default function EditScreen() {
         if (safeImageUri) {
           setImageUri(safeImageUri);
         } else {
-          console.error('getSafeImageUri returned null for camera image (edit)');
+          // getSafeImageUri returned null for camera image
         }
       }
     } catch (error) {
-      console.error('Error processing camera image (edit):', error);
+              // Error processing camera image
     }
   };
 

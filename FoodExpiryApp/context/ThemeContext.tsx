@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setCurrentThemeType('original');
       }
     } catch (error) {
-      console.log('Error loading saved theme:', error);
+      
       // Fallback to original theme on error
       setCurrentThemeType('original');
     } finally {
@@ -61,7 +61,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setCurrentThemeType(themeType);
       await AsyncStorage.setItem(THEME_STORAGE_KEY, themeType);
     } catch (error) {
-      console.log('Error saving theme:', error);
+      
     }
   };
 
