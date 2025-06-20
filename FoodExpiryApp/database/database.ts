@@ -870,35 +870,6 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
   }
 };
 
-export const resetDatabase = async (): Promise<void> => {
-  try {
-    // Ensure the database connection is closed before deletion
-    await closeDatabase();
-
-    // Delete the database file to ensure a clean reset
-    const dbPath = `${FileSystem.documentDirectory}SQLite/${DATABASE_NAME}`;
-    const dbInfo = await FileSystem.getInfoAsync(dbPath);
-    
-    if (dbInfo.exists) {
-      await FileSystem.deleteAsync(dbPath);
-    }
-
-    // Also clear any fallback storage
-    await AsyncStorage.removeItem('fallback_data');
-
-    // Clear versioning and other metadata from AsyncStorage
-    await AsyncStorage.removeItem(VERSION_KEY);
-    await AsyncStorage.removeItem('last_image_validation');
-
-    // Re-initialize the database completely
-    await initDatabase();
-
-  } catch (error) {
-    console.error('Failed to reset database:', error);
-    throw error;
-  }
-};
-
 // Utility functions
 export const getCurrentDate = (): string => {
   return new Date().toISOString().split('T')[0];
