@@ -48,6 +48,8 @@ export const LANGUAGE_FONTS = {
   en: 'merriweather',
   zh: 'inter', // Chinese uses Inter for now
   ja: 'inter', // Use Inter as fallback for Japanese until Shippori Mincho is set up
+  th: 'inter', // Thai uses Inter for now
+  ms: 'inter', // Malay uses Inter for now
 } as const;
 
 // Font weights mapping
@@ -63,7 +65,7 @@ export const CURRENT_FONT_FAMILY = 'inter';
 
 // Get font family based on language with fallback support
 export const getFontFamilyForLanguage = (
-  language?: 'en' | 'zh' | 'ja',
+  language?: 'en' | 'zh' | 'ja' | 'th' | 'ms',
   enableFallback: boolean = true
 ): keyof typeof FONT_FAMILIES => {
   if (language && LANGUAGE_FONTS[language]) {
@@ -84,7 +86,7 @@ export const getFontFamilyForLanguage = (
 // Typography styles with enhanced language support
 export const getTypography = (
   fontFamily: keyof typeof FONT_FAMILIES = CURRENT_FONT_FAMILY,
-  language?: 'en' | 'zh' | 'ja'
+  language?: 'en' | 'zh' | 'ja' | 'th' | 'ms'
 ) => {
   // Use language-specific font if language is provided
   const selectedFontFamily = language ? getFontFamilyForLanguage(language) : fontFamily;

@@ -3,7 +3,7 @@ import { getTypography, CURRENT_FONT_FAMILY, FONT_FAMILIES, getFontFamilyForLang
 
 export const useTypography = (
   fontFamily?: keyof typeof FONT_FAMILIES,
-  language?: 'en' | 'zh' | 'ja'
+  language?: 'en' | 'zh' | 'ja' | 'th' | 'ms'
 ) => {
   const typography = useMemo(() => {
     return getTypography(fontFamily || CURRENT_FONT_FAMILY, language);
