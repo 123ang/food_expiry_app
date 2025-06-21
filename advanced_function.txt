@@ -1,0 +1,2 @@
+1. shopping list and wish list (shopping list can recommend user, based on things which has expired or item used in a month)
+2. cloud, family sharing ({Welcome back} card there can select user such as personal, family or hostel)
