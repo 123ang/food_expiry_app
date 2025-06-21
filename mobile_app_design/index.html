@@ -6,6 +6,7 @@
     <title>Food Expiry App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="custom.css">
 </head>
 <body>
     <div class="container">
@@ -144,6 +145,242 @@
             </div>
         </div>
         
+        <!-- Additional Prototype Screens -->
+
+        <!-- Food List Screen -->
+        <div class="prototype-screen">
+            <h2>Food List</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content list-view">
+                    <div class="header">
+                        <h3>My Food List</h3>
+                        <div class="header-actions">
+                            <button class="icon-btn"><i class="fas fa-search"></i></button>
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </div>
+                    </div>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search food…" />
+                    </div>
+
+                    <!-- Sample Food Items -->
+                    <div class="food-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
+                        <img src="https://source.unsplash.com/collection/928423/60x60" alt="Food" />
+                        <div class="food-info">
+                            <div class="food-details">
+                                <h5>Strawberries</h5>
+                                <div class="food-meta">
+                                    <span><i class="fas fa-calendar-day"></i> 3 days left</span>
+                                    <span><i class="fas fa-map-marker-alt"></i> Fridge</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="food-actions">
+                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="food-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
+                        <img src="https://source.unsplash.com/collection/1424340/60x60" alt="Food" />
+                        <div class="food-info">
+                            <div class="food-details">
+                                <h5>Chicken Breast</h5>
+                                <div class="food-meta">
+                                    <span><i class="fas fa-calendar-day"></i> 7 days left</span>
+                                    <span><i class="fas fa-map-marker-alt"></i> Freezer</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="food-actions">
+                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="food-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
+                        <img src="https://source.unsplash.com/collection/8360932/60x60" alt="Food" />
+                        <div class="food-info">
+                            <div class="food-details">
+                                <h5>Bread Loaf</h5>
+                                <div class="food-meta">
+                                    <span><i class="fas fa-calendar-day"></i> 1 day left</span>
+                                    <span><i class="fas fa-map-marker-alt"></i> Pantry</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="food-actions">
+                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Navigation -->
+                    <div class="bottom-nav">
+                        <div class="nav-item" data-screen="dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
+                        </div>
+                        <div class="nav-item active" data-screen="list">
+                            <i class="fas fa-list"></i>
+                            <span>List</span>
+                        </div>
+                        <div class="nav-item add-btn" data-screen="add">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="nav-item" data-screen="calendar">
+                            <i class="fas fa-calendar"></i>
+                            <span>Calendar</span>
+                        </div>
+                        <div class="nav-item" data-screen="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Screen -->
+        <div class="prototype-screen">
+            <h2>Calendar</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content calendar-screen" style="padding:20px 15px;">
+                    <div class="header">
+                        <h3>Expiry Calendar</h3>
+                        <div class="header-actions">
+                            <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-header" style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                        <button class="icon-btn"><i class="fas fa-chevron-left"></i></button>
+                        <h4>May 2025</h4>
+                        <button class="icon-btn"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="calendar-grid" style="margin-top:15px;">
+                        <div class="weekday">Sun</div>
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                        <!-- Calendar days (simplified) -->
+                        <!-- Blank days for offset -->
+                        <div></div><div></div><div></div><div class="day">1</div><div class="day">2</div><div class="day">3</div><div class="day">4</div>
+                        <div class="day">5</div><div class="day">6</div><div class="day has-items"><span>7</span><span class="event-dot urgent"></span></div><div class="day">8</div><div class="day">9</div><div class="day">10</div><div class="day">11</div>
+                        <div class="day">12</div><div class="day">13</div><div class="day has-items warning"><span>14</span><span class="event-dot"></span></div><div class="day">15</div><div class="day">16</div><div class="day">17</div><div class="day">18</div>
+                        <div class="day">19</div><div class="day">20</div><div class="day">21</div><div class="day">22</div><div class="day">23</div><div class="day">24</div><div class="day">25</div>
+                        <div class="day">26</div><div class="day">27</div><div class="day">28</div><div class="day">29</div><div class="day">30</div><div class="day">31</div>
+                    </div>
+
+                    <!-- Event list -->
+                    <div class="calendar-events" style="margin-top:20px;">
+                        <h4>Upcoming Expiries</h4>
+                        <div class="event-item urgent"><span class="event-dot"></span> Strawberries expiring today</div>
+                        <div class="event-item warning"><span class="event-dot"></span> Bread expiring in 1 day</div>
+                        <div class="event-item"><span class="event-dot"></span> Milk expiring in 3 days</div>
+                    </div>
+
+                    <!-- Bottom Navigation -->
+                    <div class="bottom-nav">
+                        <div class="nav-item" data-screen="dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
+                        </div>
+                        <div class="nav-item" data-screen="list">
+                            <i class="fas fa-list"></i>
+                            <span>List</span>
+                        </div>
+                        <div class="nav-item add-btn" data-screen="add">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="nav-item active" data-screen="calendar">
+                            <i class="fas fa-calendar"></i>
+                            <span>Calendar</span>
+                        </div>
+                        <div class="nav-item" data-screen="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div class="prototype-screen">
+            <h2>Settings</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content settings-screen" style="padding:20px 0;">
+                    <div class="header" style="margin-bottom:10px;">
+                        <h3>Settings</h3>
+                    </div>
+                    <div class="settings-list">
+                        <div class="settings-group card-base" style="margin:10px 15px; padding:15px;">
+                            <h4>General</h4>
+                            <div class="setting-item" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                                <div class="setting-label"><i class="fas fa-language"></i> Language</div>
+                                <div class="setting-value">English</div>
+                            </div>
+                            <div class="setting-item" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                                <div class="setting-label"><i class="fas fa-bell"></i> Notifications</div>
+                                <label class="toggle-switch"><input type="checkbox" checked></label>
+                            </div>
+                        </div>
+                        <div class="settings-group card-base" style="margin:10px 15px; padding:15px;">
+                            <h4>Account</h4>
+                            <div class="setting-item" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                                <div class="setting-label"><i class="fas fa-user"></i> Profile</div>
+                                <i class="fas fa-chevron-right" style="color:var(--text-secondary);"></i>
+                            </div>
+                            <div class="setting-item" style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                                <div class="setting-label"><i class="fas fa-sign-out-alt"></i> Log Out</div>
+                                <i class="fas fa-chevron-right" style="color:var(--text-secondary);"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Bottom Navigation -->
+                    <div class="bottom-nav">
+                        <div class="nav-item" data-screen="dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
+                        </div>
+                        <div class="nav-item" data-screen="list">
+                            <i class="fas fa-list"></i>
+                            <span>List</span>
+                        </div>
+                        <div class="nav-item add-btn" data-screen="add">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="nav-item" data-screen="calendar">
+                            <i class="fas fa-calendar"></i>
+                            <span>Calendar</span>
+                        </div>
+                        <div class="nav-item active" data-screen="settings">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- End of Additional Prototype Screens -->
+
         <!-- Add Item Modal -->
         <div class="modal-overlay" id="add-item-modal">
             <div class="modal">
