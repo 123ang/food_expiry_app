@@ -16,24 +16,28 @@ export const imageConfig = {
   },
 
   /**
-   * Compression quality for JPEG images
+   * Compression quality for images
    * Range: 0.0 (maximum compression, worst quality) to 1.0 (no compression, best quality)
-   * Recommended: 0.7-0.8 for good quality with reasonable file size
+   * We use 0.95 for high quality with minimal compression to preserve colors
+   * Note: PNG format is now used for better color preservation
    */
-  compressionQuality: 0.8,
+  compressionQuality: 0.95,
 
   /**
    * Thumbnail size for list views and small displays
    * Used when displaying images in lists or small containers
+   * Note: We use higher quality thumbnails (0.95 compression) with PNG format
+   * to ensure good color reproduction even at smaller sizes
    */
   thumbnailDimensions: {
-    width: 100,
-    height: 100,
+    width: 150, // Square thumbnail for consistent display
+    height: 150, // Same as width to maintain square aspect ratio
   },
 
   /**
    * Default maximum file size (in bytes) for images
    * Used for validation purposes and warnings
+   * PNG files may be larger than JPEGs but offer better quality
    */
-  maxFileSize: 1024 * 1024, // 1MB
+  maxFileSize: 2 * 1024 * 1024, // 2MB (increased to accommodate PNG format)
 }; 

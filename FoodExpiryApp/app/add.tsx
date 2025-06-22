@@ -89,7 +89,7 @@ export default function AddScreen() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -110,8 +110,12 @@ export default function AddScreen() {
     }
   };
 
+  /**
+   * Take a photo with the camera and provide enhanced editing options
+   */
   const takePhoto = async () => {
     try {
+      // First, request camera permission
       const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
       
       if (cameraPermission.granted === false) {
@@ -119,25 +123,41 @@ export default function AddScreen() {
         return;
       }
       
+      // Launch camera with enhanced options
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
+        mediaTypes: ['images'],
+        allowsEditing: true,      // Enable the built-in editor
+        aspect: [1, 1],           // Use square aspect ratio for consistent food photos
+        quality: 1.0,             // Take at full quality - we'll resize later
+        exif: false,              // Don't need EXIF data for food items
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        // Get a safe URI that works across platforms
-        const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        // Show loading indication
+        setIsSaving(true);
         
-        if (safeImageUri) {
-          setImageUri(safeImageUri);
-        } else {
+        try {
+          // Get a safe URI that works across platforms
+          const safeImageUri = await getSafeImageUri(result.assets[0].uri);
           
+          if (safeImageUri) {
+            setImageUri(safeImageUri);
+            // Optional: Provide confirmation feedback
+            if (Platform.OS === 'ios') {
+              // On iOS, vibrate to confirm image saved
+              // This would require react-native-haptic-feedback
+              // Haptics.notificationSuccess();
+            }
+          } else {
+            Alert.alert(t('alert.error'), t('alert.failedToSaveImage'));
+          }
+        } finally {
+          setIsSaving(false);
         }
       }
     } catch (error) {
-      
+      Alert.alert(t('alert.error'), t('alert.cameraError'));
+      console.error('Camera error:', error);
     }
   };
 
@@ -333,13 +353,13 @@ export default function AddScreen() {
     },
     imagePreview: {
       width: 200,
-      height: 150,
+      height: 200,
       borderRadius: 8,
       marginBottom: 12,
     },
     imagePlaceholder: {
       width: 200,
-      height: 150,
+      height: 200,
       borderRadius: 8,
       backgroundColor: `${theme.primaryColor}10`,
       justifyContent: 'center',
@@ -377,7 +397,7 @@ export default function AddScreen() {
     },
     emojiPreview: {
       width: 200,
-      height: 150,
+      height: 200,
       borderRadius: 8,
       backgroundColor: `${theme.primaryColor}10`,
       justifyContent: 'center',
@@ -568,7 +588,7 @@ export default function AddScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('form.photo')}</Text>
             <View style={styles.imageContainer}>
-              {imageUri && (
+              {imageUri ? (
                 <>
                   <TouchableOpacity onPress={showImageOptions}>
                     {imageUri.startsWith('emoji:') ? (
@@ -598,6 +618,23 @@ export default function AddScreen() {
                       <Text style={[styles.imageButtonText, styles.imageButtonTextSecondary]}>{t('image.removePhoto')}</Text>
                     </TouchableOpacity>
                   </View>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity 
+                    style={styles.imagePlaceholder}
+                    onPress={showImageOptions}
+                  >
+                    <FontAwesome name="camera" size={32} color={theme.textSecondary} />
+                    <Text style={{ color: theme.textSecondary, marginTop: 8 }}>{t('image.addPhoto')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.imageButton}
+                    onPress={showImageOptions}
+                  >
+                    <FontAwesome name="plus" size={14} color="#FFFFFF" />
+                    <Text style={styles.imageButtonText}>{t('image.addPhoto')}</Text>
+                  </TouchableOpacity>
                 </>
               )}
             </View>

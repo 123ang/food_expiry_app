@@ -315,15 +315,18 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
     }
     
     try {
-      // Resize the image before saving, using the configuration
-      console.log('Resizing image...');
+      // Resize the image before saving, using the configuration with enhanced quality
+      console.log('Resizing image with enhanced quality...');
       const resizedImage = await ImageManipulator.manipulateAsync(
         sourceUri,
         [{ resize: { 
           width: imageConfig.maxImageDimensions.width, 
           height: imageConfig.maxImageDimensions.height 
         } }],
-        { compress: imageConfig.compressionQuality, format: ImageManipulator.SaveFormat.JPEG }
+        { 
+          compress: 0.95, // Higher quality to preserve colors
+          format: ImageManipulator.SaveFormat.PNG // Use PNG for better color preservation
+        }
       );
       
       // Copy the resized image to permanent storage
@@ -621,7 +624,7 @@ const removeFromImageRegistry = async (uri: string): Promise<void> => {
 };
 
 /**
- * Get all saved images from storage
+ * Get all saved images from storage, excluding thumbnails
  */
 export const getSavedImages = async (): Promise<string[]> => {
   try {
@@ -633,13 +636,17 @@ export const getSavedImages = async (): Promise<string[]> => {
     
     const files = await FileSystem.readDirectoryAsync(IMAGES_DIR);
     const imageFiles = files
-      .filter(file => file.endsWith('.jpg') || file.endsWith('.png') || file.endsWith('.jpeg'))
+      // Filter out thumbnail images (which have _thumb in their filename)
+      .filter(file => 
+        (file.endsWith('.jpg') || file.endsWith('.png') || file.endsWith('.jpeg')) && 
+        !file.includes('_thumb')
+      )
       .map(file => `${IMAGES_DIR}${file}`)
       .sort((a, b) => b.localeCompare(a)); // Sort by newest first
     
     return imageFiles;
   } catch (error) {
-    
+    console.error('Error getting saved images:', error);
     return [];
   }
 };
@@ -876,14 +883,22 @@ export const generateThumbnail = async (imageUri: string): Promise<string | null
       return thumbnailUri;
     }
     
-    // Create thumbnail using ImageManipulator
+    // Create thumbnail using ImageManipulator with higher quality to preserve colors
     const thumbnail = await ImageManipulator.manipulateAsync(
       imageUri,
-      [{ resize: {
-        width: imageConfig.thumbnailDimensions.width,
-        height: imageConfig.thumbnailDimensions.height
-      } }],
-      { compress: imageConfig.compressionQuality, format: ImageManipulator.SaveFormat.JPEG }
+      [
+        // First crop to a square (1:1 aspect ratio)
+        { crop: { originX: 0, originY: 0, width: 800, height: 800 } },
+        // Then resize to the target thumbnail size
+        { resize: {
+          width: imageConfig.thumbnailDimensions.width,
+          height: imageConfig.thumbnailDimensions.height
+        }}
+      ],
+      { 
+        compress: 0.95, // Higher quality (0.95 instead of 0.8) to preserve colors
+        format: ImageManipulator.SaveFormat.PNG // Use PNG for better color preservation
+      }
     );
     
     // Copy to permanent storage

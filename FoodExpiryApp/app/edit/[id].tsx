@@ -27,6 +27,7 @@ import CategoryIcon from '../../components/CategoryIcon';
 import LocationIcon from '../../components/LocationIcon';
 import { EMOJI_CATEGORIES, CATEGORY_EMOJIS } from '../../constants/emojis';
 import { useResponsive } from '../../hooks/useResponsive';
+import { ImageDisplayContext, getOptimizedImageUri } from '../../utils/imageUtils';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -61,8 +62,21 @@ export default function EditScreen() {
   const [savedPhotos, setSavedPhotos] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [optimizedImageUri, setOptimizedImageUri] = useState<string | null>(null);
 
-
+  // Add effect to optimize images whenever imageUri changes
+  useEffect(() => {
+    const updateOptimizedUri = async () => {
+      if (imageUri) {
+        const optimized = await getOptimizedImageUri(imageUri, ImageDisplayContext.EDIT_PREVIEW);
+        setOptimizedImageUri(optimized);
+      } else {
+        setOptimizedImageUri(null);
+      }
+    };
+    
+    updateOptimizedUri();
+  }, [imageUri]);
 
   const loadSavedPhotos = async () => {
     try {
@@ -107,10 +121,10 @@ export default function EditScreen() {
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
+        aspect: [1, 1],
+        quality: 1.0,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -120,11 +134,11 @@ export default function EditScreen() {
         if (safeImageUri) {
           setImageUri(safeImageUri);
         } else {
-          // getSafeImageUri returned null for gallery image
+          Alert.alert(t('alert.error'), t('alert.failedToSaveImage'));
         }
       }
     } catch (error) {
-              // Error processing gallery image
+      Alert.alert(t('alert.error'), t('alert.imageFailed'));
     }
   };
 
@@ -138,24 +152,32 @@ export default function EditScreen() {
       }
       
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
+        aspect: [1, 1],
+        quality: 1.0,
+        exif: false,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        // Get a safe URI that works across platforms
-        const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+        // Show loading indication
+        setIsSaving(true);
         
-        if (safeImageUri) {
-          setImageUri(safeImageUri);
-        } else {
-          // getSafeImageUri returned null for camera image
+        try {
+          // Get a safe URI that works across platforms
+          const safeImageUri = await getSafeImageUri(result.assets[0].uri);
+          
+          if (safeImageUri) {
+            setImageUri(safeImageUri);
+          } else {
+            Alert.alert(t('alert.error'), t('alert.failedToSaveImage'));
+          }
+        } finally {
+          setIsSaving(false);
         }
       }
     } catch (error) {
-              // Error processing camera image
+      Alert.alert(t('alert.error'), t('alert.cameraError'));
     }
   };
 
@@ -361,13 +383,13 @@ export default function EditScreen() {
     },
     imagePreview: {
       width: 200,
-      height: 150,
+      height: 200,
       borderRadius: 8,
       marginBottom: 12,
     },
     imagePlaceholder: {
       width: 200,
-      height: 150,
+      height: 200,
       borderRadius: 8,
       backgroundColor: `${theme.primaryColor}10`,
       justifyContent: 'center',
@@ -419,7 +441,7 @@ export default function EditScreen() {
     },
     emojiPreview: {
       width: 200,
-      height: 150,
+      height: 200,
       borderRadius: 8,
       backgroundColor: `${theme.primaryColor}10`,
       justifyContent: 'center',
@@ -649,7 +671,7 @@ export default function EditScreen() {
                       <Text style={styles.emojiText}>{imageUri.replace('emoji:', '')}</Text>
                     </View>
                   ) : (
-                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
+                    <Image source={{ uri: optimizedImageUri || imageUri }} style={styles.imagePreview} />
                   )}
                   <View style={styles.imageButtons}>
                     <TouchableOpacity 
