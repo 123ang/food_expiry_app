@@ -27,6 +27,7 @@ import LocationIcon from '../components/LocationIcon';
 import { FoodItem } from '../database/models';
 import { useResponsive } from '../hooks/useResponsive';
 import { EMOJI_CATEGORIES, CATEGORY_EMOJIS } from '../constants/emojis';
+import { ImageDisplayContext, getOptimizedImageUri } from '../utils/imageUtils';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -51,8 +52,7 @@ export default function AddScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [showImageOptionsModal, setShowImageOptionsModal] = useState(false);
   const [savedPhotos, setSavedPhotos] = useState<string[]>([]);
-
-
+  const [optimizedImageUri, setOptimizedImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (prefilledDate && typeof prefilledDate === 'string') {
@@ -62,6 +62,19 @@ export default function AddScreen() {
     }
     loadSavedPhotos();
   }, [prefilledDate]);
+
+  useEffect(() => {
+    const updateOptimizedUri = async () => {
+      if (imageUri) {
+        const optimized = await getOptimizedImageUri(imageUri, ImageDisplayContext.EDIT_PREVIEW);
+        setOptimizedImageUri(optimized);
+      } else {
+        setOptimizedImageUri(null);
+      }
+    };
+    
+    updateOptimizedUri();
+  }, [imageUri]);
 
   const loadSavedPhotos = async () => {
     try {
@@ -555,15 +568,20 @@ export default function AddScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('form.photo')}</Text>
             <View style={styles.imageContainer}>
-              {imageUri ? (
+              {imageUri && (
                 <>
-                  {imageUri.startsWith('emoji:') ? (
-                    <View style={styles.emojiPreview}>
-                      <Text style={styles.emojiText}>{imageUri.replace('emoji:', '')}</Text>
-                    </View>
-                  ) : (
-                    <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                  )}
+                  <TouchableOpacity onPress={showImageOptions}>
+                    {imageUri.startsWith('emoji:') ? (
+                      <View style={[styles.imagePreview, { justifyContent: 'center', alignItems: 'center', backgroundColor: `${theme.primaryColor}10` }]}>
+                        <Text style={{ fontSize: 48 }}>{imageUri.replace('emoji:', '')}</Text>
+                      </View>
+                    ) : (
+                      <Image 
+                        source={{ uri: optimizedImageUri || imageUri }} 
+                        style={styles.imagePreview} 
+                      />
+                    )}
+                  </TouchableOpacity>
                   <View style={styles.imageButtons}>
                     <TouchableOpacity 
                       style={styles.imageButton}
@@ -580,23 +598,6 @@ export default function AddScreen() {
                       <Text style={[styles.imageButtonText, styles.imageButtonTextSecondary]}>{t('image.removePhoto')}</Text>
                     </TouchableOpacity>
                   </View>
-                </>
-              ) : (
-                <>
-                  <TouchableOpacity 
-                    style={styles.imagePlaceholder}
-                    onPress={showImageOptions}
-                  >
-                    <FontAwesome name="camera" size={32} color={theme.textSecondary} />
-                    <Text style={{ color: theme.textSecondary, marginTop: 8 }}>{t('image.addPhoto')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.imageButton}
-                    onPress={showImageOptions}
-                  >
-                    <FontAwesome name="plus" size={14} color="#FFFFFF" />
-                    <Text style={styles.imageButtonText}>{t('image.addPhoto')}</Text>
-                  </TouchableOpacity>
                 </>
               )}
             </View>
@@ -733,11 +734,16 @@ export default function AddScreen() {
                 numColumns={3}
                 keyExtractor={(item, index) => index.toString()}
                 columnWrapperStyle={styles.photoGrid}
-                renderItem={({ item }) => (
-                  <TouchableOpacity onPress={() => selectSavedPhoto(item)}>
-                    <Image source={{ uri: item }} style={styles.photoItem} />
-                  </TouchableOpacity>
-                )}
+                                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => selectSavedPhoto(item)}
+                    >
+                      <Image 
+                        source={{ uri: item }} 
+                        style={styles.photoItem} 
+                      />
+                    </TouchableOpacity>
+                  )}
               />
             ) : (
               <Text style={styles.noPhotosText}>{t('image.noSavedPhotos')}</Text>

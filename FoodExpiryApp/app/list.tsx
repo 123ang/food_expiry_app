@@ -23,8 +23,52 @@ import { FoodItemWithDetails } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { useResponsive } from '../hooks/useResponsive';
+import { ImageDisplayContext, getOptimizedImageUri } from '../utils/imageUtils';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
+
+// Add a new component for optimized image display
+interface OptimizedFoodImageProps {
+  imageUri: string | null;
+  style: any; // Use the appropriate type from your styles
+}
+
+const OptimizedFoodImage = ({ imageUri, style }: OptimizedFoodImageProps) => {
+  const [optimizedUri, setOptimizedUri] = useState<string | null>(null);
+  const { theme } = useTheme();
+  
+  // Use theme colors with fallbacks
+  const colors = {
+    primaryColor: theme?.primaryColor || '#007AFF',
+  };
+  
+  // Load optimized image when component mounts
+  useEffect(() => {
+    const loadOptimizedImage = async () => {
+      if (imageUri) {
+        // Use LIST_ITEM context to get appropriate sizing
+        const uri = await getOptimizedImageUri(imageUri, ImageDisplayContext.LIST_ITEM);
+        setOptimizedUri(uri);
+      }
+    };
+    
+    loadOptimizedImage();
+  }, [imageUri]);
+  
+  if (!imageUri) {
+    return <View style={[style, { backgroundColor: `${colors.primaryColor}20` }]} />;
+  }
+  
+  if (imageUri.startsWith('emoji:')) {
+    return (
+      <View style={[style, { backgroundColor: `${colors.primaryColor}10`, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 24 }}>{imageUri.replace('emoji:', '')}</Text>
+      </View>
+    );
+  }
+  
+  return <Image source={{ uri: optimizedUri || imageUri }} style={style} />;
+};
 
 export default function ListScreen() {
   const { theme } = useTheme();
@@ -453,69 +497,57 @@ export default function ListScreen() {
           ]}
           onPress={() => router.push(`/item/${item.id}`)}
         >
-        {item.image_uri ? (
-          item.image_uri.startsWith('emoji:') ? (
-            <View style={[styles.foodImage, { backgroundColor: `${colors.primaryColor}10`, justifyContent: 'center', alignItems: 'center' }]}>
-              <Text style={{ fontSize: 24 }}>{item.image_uri.replace('emoji:', '')}</Text>
-            </View>
-          ) : (
-            <Image source={{ uri: item.image_uri }} style={styles.foodImage} />
-          )
-        ) : (
-          <View style={[styles.foodImage, { backgroundColor: `${colors.primaryColor}20` }]}>
-            <CategoryIcon iconName={item.category_icon} size={24} />
-          </View>
-        )}
-        <View style={styles.foodInfo}>
-          <Text style={styles.foodName}>{item.name}</Text>
-          <View style={styles.foodMeta}>
-            <View style={styles.metaItem}>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>📅</Text>
-              <Text style={styles.metaText}>{item.expiry_date}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <CategoryIcon iconName={item.category_icon} size={14} />
-              <Text style={styles.metaText}>{getItemCategoryName(item)}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <LocationIcon iconName={item.location_icon} size={14} />
-              <Text style={styles.metaText}>{getItemLocationName(item)}</Text>
-            </View>
-            <View style={styles.metaItem}>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>📦</Text>
-              <Text style={styles.metaText}>{item.quantity}</Text>
-              <Text style={{ 
-                fontSize: 14, 
-                marginLeft: 8,
-                color: item.status === 'expired' ? '#F44336' :
-                       item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
-              }}>
-                {item.status === 'expired' ? '⚠️' :
-                 item.status === 'expiring_soon' ? '⏰' : '✅'}
-              </Text>
+          <OptimizedFoodImage imageUri={item.image_uri} style={styles.foodImage} />
+          <View style={styles.foodInfo}>
+            <Text style={styles.foodName}>{item.name}</Text>
+            <View style={styles.foodMeta}>
+              <View style={styles.metaItem}>
+                <Text style={{ fontSize: 14, color: colors.textSecondary }}>📅</Text>
+                <Text style={styles.metaText}>{item.expiry_date}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <CategoryIcon iconName={item.category_icon} size={14} />
+                <Text style={styles.metaText}>{getItemCategoryName(item)}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <LocationIcon iconName={item.location_icon} size={14} />
+                <Text style={styles.metaText}>{getItemLocationName(item)}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Text style={{ fontSize: 14, color: colors.textSecondary }}>📦</Text>
+                <Text style={styles.metaText}>{item.quantity}</Text>
+                <Text style={{ 
+                  fontSize: 14, 
+                  marginLeft: 8,
+                  color: item.status === 'expired' ? '#F44336' :
+                         item.status === 'expiring_soon' ? '#FF9800' : '#4CAF50'
+                }}>
+                  {item.status === 'expired' ? '⚠️' :
+                   item.status === 'expiring_soon' ? '⏰' : '✅'}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-        <View style={styles.foodActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => router.push({
-              pathname: '/edit/[id]',
-              params: { id: item.id }
-            })}
-            disabled={isRefreshing}
-          >
-            <Text style={{ fontSize: 16, color: colors.primaryColor }}>✏️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => handleDelete(item)}
-            disabled={isRefreshing}
-          >
-            <Text style={{ fontSize: 16, color: theme.dangerColor || '#FF3B30' }}>🗑️</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+          <View style={styles.foodActions}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push({
+                pathname: '/edit/[id]',
+                params: { id: item.id }
+              })}
+              disabled={isRefreshing}
+            >
+              <Text style={{ fontSize: 16, color: colors.primaryColor }}>✏️</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleDelete(item)}
+              disabled={isRefreshing}
+            >
+              <Text style={{ fontSize: 16, color: theme.dangerColor || '#FF3B30' }}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       );
     });
   };

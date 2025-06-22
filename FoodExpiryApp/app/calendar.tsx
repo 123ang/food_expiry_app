@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,51 @@ import { BottomNav } from '../components/BottomNav';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { useResponsive } from '../hooks/useResponsive';
+import { ImageDisplayContext, getOptimizedImageUri } from '../utils/imageUtils';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
+
+// Add OptimizedFoodImage component
+interface OptimizedFoodImageProps {
+  imageUri: string | null;
+  style: any; // Use the appropriate type from your styles
+}
+
+const OptimizedFoodImage = ({ imageUri, style }: OptimizedFoodImageProps) => {
+  const [optimizedUri, setOptimizedUri] = useState<string | null>(null);
+  const { theme } = useTheme();
+  
+  // Load optimized image when component mounts
+  useEffect(() => {
+    const loadOptimizedImage = async () => {
+      if (imageUri) {
+        // Use LIST_ITEM context to get appropriate sizing
+        const uri = await getOptimizedImageUri(imageUri, ImageDisplayContext.LIST_ITEM);
+        setOptimizedUri(uri);
+      }
+    };
+    
+    loadOptimizedImage();
+  }, [imageUri]);
+  
+  if (!imageUri) {
+    return (
+      <View style={[style, { backgroundColor: `${theme.primaryColor}20`, justifyContent: 'center', alignItems: 'center' }]}>
+        <CategoryIcon iconName="cutlery" size={24} />
+      </View>
+    );
+  }
+  
+  if (imageUri.startsWith('emoji:')) {
+    return (
+      <View style={[style, { backgroundColor: `${theme.primaryColor}10`, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 24 }}>{imageUri.replace('emoji:', '')}</Text>
+      </View>
+    );
+  }
+  
+  return <Image source={{ uri: optimizedUri || imageUri }} style={style} />;
+};
 
 export default function CalendarScreen() {
   const { theme } = useTheme();
@@ -717,16 +760,7 @@ export default function CalendarScreen() {
         ]}
         onPress={() => router.push(`/item/${item.id}`)}
       >
-      {item.image_uri ? (
-        <Image 
-          source={{ uri: item.image_uri }} 
-          style={styles.foodImage} 
-        />
-      ) : (
-        <View style={[styles.foodImage, { backgroundColor: `${theme.primaryColor}20`, justifyContent: 'center', alignItems: 'center' }]}>
-          <CategoryIcon iconName={item.category_icon} size={24} />
-        </View>
-      )}
+      <OptimizedFoodImage imageUri={item.image_uri} style={styles.foodImage} />
       <View style={styles.foodInfo}>
         <Text style={styles.foodName}>{item.name}</Text>
         <View style={styles.foodMeta}>

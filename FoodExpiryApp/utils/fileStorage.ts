@@ -1,6 +1,8 @@
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { imageConfig } from '../constants/imageConfig';
 
 const IMAGES_DIR = `${FileSystem.documentDirectory}images/`;
 const IMAGE_BACKUP_KEY = 'image_backup_registry';
@@ -265,8 +267,8 @@ export const verifyImageExists = async (imageUri: string): Promise<boolean> => {
 };
 
 /**
- * Enhanced iOS App Store compatible image saving
- * Includes validation, backup, and recovery mechanisms
+ * Save image to internal storage, with resizing for efficiency
+ * Includes enhanced error handling and iOS App Store compatibility
  */
 export const saveImageToStorage = async (sourceUri: string): Promise<string | null> => {
   try {
@@ -312,31 +314,55 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
       }
     }
     
-    // Copy the image to permanent storage with error handling
     try {
+      // Resize the image before saving, using the configuration
+      console.log('Resizing image...');
+      const resizedImage = await ImageManipulator.manipulateAsync(
+        sourceUri,
+        [{ resize: { 
+          width: imageConfig.maxImageDimensions.width, 
+          height: imageConfig.maxImageDimensions.height 
+        } }],
+        { compress: imageConfig.compressionQuality, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      
+      // Copy the resized image to permanent storage
       await FileSystem.copyAsync({
-        from: sourceUri,
+        from: resizedImage.uri,
         to: destinationUri,
       });
-    } catch (copyError) {
       
+      console.log('Resized and saved image successfully');
+    } catch (resizeError) {
+      console.error('Error resizing image:', resizeError);
       
-      // iOS: Try alternative copy method
-      if (Platform.OS === 'ios') {
-        try {
-          // Read and write manually as fallback
-          const imageData = await FileSystem.readAsStringAsync(sourceUri, {
-            encoding: FileSystem.EncodingType.Base64
-          });
-          await FileSystem.writeAsStringAsync(destinationUri, imageData, {
-            encoding: FileSystem.EncodingType.Base64
-          });
-        } catch (fallbackError) {
-          
+      // Fallback: Try to save original if resize fails
+      try {
+        console.log('Falling back to original image save...');
+        await FileSystem.copyAsync({
+          from: sourceUri,
+          to: destinationUri,
+        });
+      } catch (fallbackError) {
+        console.error('Fallback save failed:', fallbackError);
+        
+        // iOS: Try alternative copy method
+        if (Platform.OS === 'ios') {
+          try {
+            // Read and write manually as fallback
+            const imageData = await FileSystem.readAsStringAsync(sourceUri, {
+              encoding: FileSystem.EncodingType.Base64
+            });
+            await FileSystem.writeAsStringAsync(destinationUri, imageData, {
+              encoding: FileSystem.EncodingType.Base64
+            });
+          } catch (fallbackError) {
+            
+            return null;
+          }
+        } else {
           return null;
         }
-      } else {
-        return null;
       }
     }
     
@@ -816,4 +842,59 @@ export const initializeImageSystemForIOS = async (): Promise<{
   }
   
   return result;
+};
+
+/**
+ * Generate a smaller thumbnail version of an image for use in lists and previews
+ * @param imageUri The URI of the full-sized image
+ * @returns The URI of the generated thumbnail or null if failed
+ */
+export const generateThumbnail = async (imageUri: string): Promise<string | null> => {
+  // Skip for emoji images
+  if (!imageUri || imageUri.startsWith('emoji:')) {
+    return imageUri;
+  }
+  
+  try {
+    // Check if image exists
+    const exists = await verifyImageExists(imageUri);
+    if (!exists) {
+      console.error('Cannot generate thumbnail: Image does not exist');
+      return null;
+    }
+    
+    // Generate a filename for the thumbnail with a _thumb suffix
+    const originalName = imageUri.split('/').pop() || '';
+    const nameWithoutExt = originalName.split('.')[0];
+    const ext = originalName.split('.').pop();
+    const thumbFileName = `${nameWithoutExt}_thumb.${ext}`;
+    const thumbnailUri = `${IMAGES_DIR}${thumbFileName}`;
+    
+    // Check if thumbnail already exists
+    const thumbExists = await FileSystem.getInfoAsync(thumbnailUri);
+    if (thumbExists.exists) {
+      return thumbnailUri;
+    }
+    
+    // Create thumbnail using ImageManipulator
+    const thumbnail = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [{ resize: {
+        width: imageConfig.thumbnailDimensions.width,
+        height: imageConfig.thumbnailDimensions.height
+      } }],
+      { compress: imageConfig.compressionQuality, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    
+    // Copy to permanent storage
+    await FileSystem.copyAsync({
+      from: thumbnail.uri,
+      to: thumbnailUri,
+    });
+    
+    return thumbnailUri;
+  } catch (error) {
+    console.error('Error generating thumbnail:', error);
+    return null;
+  }
 }; 

@@ -119,6 +119,20 @@
                         </div>
                     </div>
 
+                    <!-- Shopping To-Do List -->
+                    <div class="add-item-bar" style="display:flex; gap:8px; margin:10px 0 20px 0;">
+                        <input type="text" id="shopping-input" placeholder="Add item…" style="flex:1; padding:10px; border:1px solid var(--border-color,#ccc); border-radius:6px;">
+                        <button id="shopping-add-btn" class="action-btn" style="padding:10px 14px;"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <ul class="shopping-items" id="shopping-items-list" style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;"></ul>
+
+                    <!-- Wishlist Section -->
+                    <h4 style="margin:25px 0 10px 5px;">Wishlist</h4>
+                    <ul class="wishlist-items" id="wishlist-items-list" style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;"></ul>
+
+                    <!-- Floating Action Button for Wishlist -->
+                    <button id="wishlist-fab" style="position:fixed; bottom:90px; right:25px; width:56px; height:56px; border-radius:50%; background-color:#ff6f61; color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 3px 6px rgba(0,0,0,0.15); z-index:1000;"><i class="fas fa-heart"></i></button>
+
                     <!-- Bottom Navigation -->
                     <div class="bottom-nav">
                         <div class="nav-item active" data-screen="dashboard">
@@ -127,7 +141,7 @@
                         </div>
                         <div class="nav-item" data-screen="list">
                             <i class="fas fa-list"></i>
-                            <span data-translate="nav.list">List</span>
+                            <span data-translate="nav.list">Shop</span>
                         </div>
                         <div class="nav-item add-btn" data-screen="add">
                             <i class="fas fa-plus"></i>
@@ -149,7 +163,7 @@
 
         <!-- Food List Screen -->
         <div class="prototype-screen">
-            <h2>Food List</h2>
+            <h2>Shopping List</h2>
             <div class="phone-frame">
                 <div class="status-bar">
                     <span>9:41</span>
@@ -157,7 +171,7 @@
                 </div>
                 <div class="screen-content list-view">
                     <div class="header">
-                        <h3>My Food List</h3>
+                        <h3>My Shopping List</h3>
                         <div class="header-actions">
                             <button class="icon-btn"><i class="fas fa-search"></i></button>
                             <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
@@ -168,57 +182,33 @@
                         <input type="text" placeholder="Search food…" />
                     </div>
 
-                    <!-- Sample Food Items -->
-                    <div class="food-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
-                        <img src="https://source.unsplash.com/collection/928423/60x60" alt="Food" />
-                        <div class="food-info">
-                            <div class="food-details">
-                                <h5>Strawberries</h5>
+                    <!-- Recommendations Section -->
+                    <div class="recommendations" style="margin:20px 0;">
+                        <h4 style="margin:0 0 10px 5px;">Recommended For You</h4>
+                        <div class="recommendation-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
+                            <img src="https://source.unsplash.com/collection/1065394/60x60" alt="Recommendation" />
+                            <div class="recommendation-info" style="margin-left:10px;">
+                                <h5 style="margin:0 0 5px 0;">Milk</h5>
                                 <div class="food-meta">
-                                    <span><i class="fas fa-calendar-day"></i> 3 days left</span>
-                                    <span><i class="fas fa-map-marker-alt"></i> Fridge</span>
+                                    <span><i class="fas fa-calendar-day"></i> Best consumed soon</span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="food-actions">
-                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
-                            <button class="action-btn delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
 
-                    <div class="food-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
-                        <img src="https://source.unsplash.com/collection/1424340/60x60" alt="Food" />
-                        <div class="food-info">
-                            <div class="food-details">
-                                <h5>Chicken Breast</h5>
-                                <div class="food-meta">
-                                    <span><i class="fas fa-calendar-day"></i> 7 days left</span>
-                                    <span><i class="fas fa-map-marker-alt"></i> Freezer</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="food-actions">
-                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
-                            <button class="action-btn delete"><i class="fas fa-trash"></i></button>
-                        </div>
+                    <!-- Shopping To-Do List -->
+                    <div class="add-item-bar" style="display:flex; gap:8px; margin:10px 0 20px 0;">
+                        <input type="text" id="shopping-input" placeholder="Add item…" style="flex:1; padding:10px; border:1px solid var(--border-color,#ccc); border-radius:6px;">
+                        <button id="shopping-add-btn" class="action-btn" style="padding:10px 14px;"><i class="fas fa-plus"></i></button>
                     </div>
+                    <ul class="shopping-items" id="shopping-items-list" style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;"></ul>
 
-                    <div class="food-item card-base" style="display:flex; position:relative; padding:15px; align-items:center;">
-                        <img src="https://source.unsplash.com/collection/8360932/60x60" alt="Food" />
-                        <div class="food-info">
-                            <div class="food-details">
-                                <h5>Bread Loaf</h5>
-                                <div class="food-meta">
-                                    <span><i class="fas fa-calendar-day"></i> 1 day left</span>
-                                    <span><i class="fas fa-map-marker-alt"></i> Pantry</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="food-actions">
-                            <button class="action-btn edit"><i class="fas fa-edit"></i></button>
-                            <button class="action-btn delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>
+                    <!-- Wishlist Section -->
+                    <h4 style="margin:25px 0 10px 5px;">Wishlist</h4>
+                    <ul class="wishlist-items" id="wishlist-items-list" style="list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;"></ul>
+
+                    <!-- Floating Action Button for Wishlist -->
+                    <button id="wishlist-fab" style="position:fixed; bottom:90px; right:25px; width:56px; height:56px; border-radius:50%; background-color:#ff6f61; color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:24px; box-shadow:0 3px 6px rgba(0,0,0,0.15); z-index:1000;"><i class="fas fa-heart"></i></button>
 
                     <!-- Bottom Navigation -->
                     <div class="bottom-nav">
@@ -228,7 +218,7 @@
                         </div>
                         <div class="nav-item active" data-screen="list">
                             <i class="fas fa-list"></i>
-                            <span>List</span>
+                            <span>Shop</span>
                         </div>
                         <div class="nav-item add-btn" data-screen="add">
                             <i class="fas fa-plus"></i>
@@ -299,7 +289,7 @@
                         </div>
                         <div class="nav-item" data-screen="list">
                             <i class="fas fa-list"></i>
-                            <span>List</span>
+                            <span>Shop</span>
                         </div>
                         <div class="nav-item add-btn" data-screen="add">
                             <i class="fas fa-plus"></i>
@@ -361,7 +351,7 @@
                         </div>
                         <div class="nav-item" data-screen="list">
                             <i class="fas fa-list"></i>
-                            <span>List</span>
+                            <span>Shop</span>
                         </div>
                         <div class="nav-item add-btn" data-screen="add">
                             <i class="fas fa-plus"></i>
@@ -375,6 +365,58 @@
                             <span>Settings</span>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Screen -->
+        <div class="prototype-screen">
+            <h2>Login</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content auth-screen" style="padding:30px 20px; display:flex; flex-direction:column; gap:20px;">
+                    <h3 style="text-align:center; margin-bottom:10px;">Welcome Back</h3>
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email" />
+                    </div>
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" />
+                    </div>
+                    <button class="modal-btn confirm" style="width:100%;">Login</button>
+                    <p style="text-align:center; font-size:0.9rem;">Don't have an account? <a href="#" data-screen-link="signup">Sign Up</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sign Up Screen -->
+        <div class="prototype-screen" id="signup-screen">
+            <h2>Sign Up</h2>
+            <div class="phone-frame">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+                </div>
+                <div class="screen-content auth-screen" style="padding:30px 20px; display:flex; flex-direction:column; gap:20px;">
+                    <h3 style="text-align:center; margin-bottom:10px;">Create Account</h3>
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="signup-name">Name</label>
+                        <input type="text" id="signup-name" placeholder="Your name" />
+                    </div>
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Your email" />
+                    </div>
+                    <div class="form-group" style="display:flex; flex-direction:column; gap:6px;">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Create password" />
+                    </div>
+                    <button class="modal-btn confirm" style="width:100%;">Sign Up</button>
+                    <p style="text-align:center; font-size:0.9rem;">Already have an account? <a href="#" data-screen-link="login">Login</a></p>
                 </div>
             </div>
         </div>
@@ -493,6 +535,26 @@
             </div>
         </div>
         
+        <!-- Wishlist Modal -->
+        <div class="modal-overlay" id="wishlist-modal" style="display:none;">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>Add Wishlist Item</h3>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-content">
+                    <div class="form-group">
+                        <label for="wishlist-item-name">Name</label>
+                        <input type="text" id="wishlist-item-name" placeholder="Enter item name" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="modal-btn cancel">Cancel</button>
+                    <button class="modal-btn confirm" id="wishlist-save-btn">Save</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Delete Confirmation Modal -->
         <div class="modal-overlay" id="delete-modal">
             <div class="modal">
