@@ -23,6 +23,7 @@ import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
+import { getItemCategoryName, getItemLocationName } from '../utils/translationHelpers';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -1600,13 +1601,16 @@ export default function SettingsScreen() {
   );
 
   const ManagementModal: React.FC<ManagementModalProps> = ({ visible, onClose, type }) => {
-    const { t } = useLanguage();
-    const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation } = useDatabase();
-    const [editModalVisible, setEditModalVisible] = useState(false);
-    const [itemToEdit, setItemToEdit] = useState<Category | Location | null>(null);
+    const { theme } = useTheme();
+    const { t, language, getCategoryName, getLocationName } = useLanguage();
+    const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation } = useDatabase();
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingItem, setEditingItem] = useState<Category | Location | null>(null);
   
-    const listData = type === 'categories' ? categories : locations;
-    const title = type === 'categories' ? t('settings.manageCategories') : t('settings.manageLocations');
+    const items = type === 'categories' ? categories : locations;
+    const getDisplayName = type === 'categories' 
+      ? (item: Category) => getItemCategoryName(item.id || null, categories, { getCategoryName, t })
+      : (item: Location) => getItemLocationName(item.id || null, locations, { getLocationName, t });
   
     const handleDelete = (item: Category | Location) => {
       if (type === 'categories') {
@@ -1617,11 +1621,11 @@ export default function SettingsScreen() {
     };
   
     const handleSave = async (name: string, icon: string) => {
-      if (itemToEdit) {
+      if (editingItem) {
         if (type === 'categories') {
-          await updateCategory({ ...itemToEdit as Category, name, icon });
+          await updateCategory({ ...editingItem as Category, name, icon });
         } else {
-          await updateLocation({ ...itemToEdit as Location, name, icon });
+          await updateLocation({ ...editingItem as Location, name, icon });
         }
       } else {
         if (type === 'categories') {
@@ -1630,75 +1634,71 @@ export default function SettingsScreen() {
           await createLocation({ name, icon } as Location);
         }
       }
-      setItemToEdit(null);
-      setEditModalVisible(false);
+      setEditingItem(null);
+      setShowEditModal(false);
     };
   
     return (
-      <>
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { width: '90%', maxHeight: '80%' }]}>
-              <Text style={styles.modalTitle}>{title}</Text>
-              <ScrollView>
-                {listData.map((item) => (
-                  <View key={item.id} style={styles.managementItem}>
-                    <View style={styles.managementItemIcon}>
-                      {type === 'categories' ? (
-                        <CategoryIcon iconName={item.icon} size={24} />
-                      ) : (
-                        <LocationIcon iconName={item.icon} size={24} />
-                      )}
-                    </View>
-                    <Text style={styles.managementItemText}>{item.name}</Text>
-                    <View style={styles.managementItemActions}>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => {
-                          setItemToEdit(item);
-                          setEditModalVisible(true);
-                        }}
-                      >
-                        <FontAwesome name="pencil" size={14} color={theme.textColor} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => handleDelete(item)}
-                      >
-                        <FontAwesome name="trash" size={14} color={theme.dangerColor} />
-                      </TouchableOpacity>
-                    </View>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t(type === 'categories' ? 'settings.manageCategories' : 'settings.manageLocations')}</Text>
+            <ScrollView style={styles.itemList}>
+              {items.map((item) => (
+                <View key={item.id} style={styles.itemRow}>
+                  {type === 'categories' ? (
+                    <CategoryIcon iconName={item.icon} size={24} />
+                  ) : (
+                    <LocationIcon iconName={item.icon} size={24} />
+                  )}
+                  <Text style={styles.itemName}>{getDisplayName(item)}</Text>
+                  <View style={styles.itemActions}>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() => {
+                        setEditingItem(item);
+                        setShowEditModal(true);
+                      }}
+                    >
+                      <FontAwesome name="edit" size={20} color={theme.primaryColor} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDelete(item)}
+                    >
+                      <FontAwesome name="trash" size={20} color={theme.dangerColor} />
+                    </TouchableOpacity>
                   </View>
-                ))}
-              </ScrollView>
-              <TouchableOpacity
-                style={styles.addNewButton}
-                onPress={() => {
-                  setItemToEdit(null);
-                  setEditModalVisible(true);
-                }}
-              >
-                <FontAwesome name="plus" size={16} color="#FFFFFF" />
-                <Text style={styles.addNewButtonText}>
-                  {type === 'categories' ? t('addCategory') : t('addLocation')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.dangerColor, marginTop: 10 }]} onPress={onClose}>
-                <Text style={styles.modalButtonText}>{t('common.close')}</Text>
-              </TouchableOpacity>
-            </View>
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.addNewButton}
+              onPress={() => {
+                setEditingItem(null);
+                setShowEditModal(true);
+              }}
+            >
+              <FontAwesome name="plus" size={16} color="#FFFFFF" />
+              <Text style={styles.addNewButtonText}>
+                {type === 'categories' ? t('addCategory') : t('addLocation')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.dangerColor, marginTop: 10 }]} onPress={onClose}>
+              <Text style={styles.modalButtonText}>{t('common.close')}</Text>
+            </TouchableOpacity>
           </View>
-        </Modal>
+        </View>
         <EditModal
-          visible={editModalVisible}
-          onClose={() => setEditModalVisible(false)}
+          visible={showEditModal}
+          onClose={() => setShowEditModal(false)}
           onSave={handleSave}
-          title={itemToEdit ? (type === 'categories' ? t('editCategory') : t('editLocation')) : (type === 'categories' ? t('addCategory') : t('addLocation'))}
-          initialName={itemToEdit?.name}
-          initialIcon={itemToEdit?.icon}
+          title={editingItem ? (type === 'categories' ? t('editCategory') : t('editLocation')) : (type === 'categories' ? t('addCategory') : t('addLocation'))}
+          initialName={editingItem?.name}
+          initialIcon={editingItem?.icon}
           isCategory={type === 'categories'}
         />
-      </>
+      </Modal>
     );
   };
 

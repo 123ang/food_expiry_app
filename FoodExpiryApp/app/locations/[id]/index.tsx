@@ -16,6 +16,7 @@ import { BottomNav } from '../../../components/BottomNav';
 import { FoodItemWithDetails } from '../../../database/models';
 import LocationIcon from '../../../components/LocationIcon';
 import CategoryIcon from '../../../components/CategoryIcon';
+import { getItemCategoryName, getItemLocationName } from '../../../utils/translationHelpers';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -123,7 +124,7 @@ const FoodItemCard: React.FC<{
 
 export default function LocationDetailScreen() {
   const { theme } = useTheme();
-  const { t, language, getLocationName } = useLanguage();
+  const { t, language, getCategoryName, getLocationName } = useLanguage();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { locations, foodItems, refreshAll, dataVersion } = useDatabase();

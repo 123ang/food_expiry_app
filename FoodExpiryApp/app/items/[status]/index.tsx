@@ -19,6 +19,7 @@ import LocationIcon from '../../../components/LocationIcon';
 import { useLanguage } from '../../../context/LanguageContext';
 import { Alert } from 'react-native';
 import { getCategoryEmojiByKey, getLocationEmojiByKey } from '../../../constants/emojis';
+import { getItemCategoryName, getItemLocationName } from '../../../utils/translationHelpers';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -36,24 +37,9 @@ const FoodItemCard: React.FC<{
 }> = ({ item, onPress, theme, styles, t, getCategoryName, getLocationName, categories, locations }) => {
   const [imageError, setImageError] = useState(false);
 
-  // Find category and location objects for translation
-  const itemCategory = item.category_id ? categories.find(cat => cat.id === item.category_id) : null;
-  const itemLocation = item.location_id ? locations.find(loc => loc.id === item.location_id) : null;
-
-  // Get translated names
-  const getCategoryDisplayName = () => {
-    if (itemCategory) {
-      return getCategoryName(itemCategory);
-    }
-    return item.category_name || t('foodStatus.noCategory');
-  };
-
-  const getLocationDisplayName = () => {
-    if (itemLocation) {
-      return getLocationName(itemLocation);
-    }
-    return item.location_name || t('foodStatus.noLocation');
-  };
+  // Get translated names using helper functions
+  const categoryDisplayName = getItemCategoryName(item.category_id, categories, { getCategoryName, t });
+  const locationDisplayName = getItemLocationName(item.location_id, locations, { getLocationName, t });
 
   // Determine status based on days until expiry
   const getStatusInfo = () => {
@@ -104,11 +90,11 @@ const FoodItemCard: React.FC<{
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <CategoryIcon iconName={item.category_icon} size={16} />
-            <Text style={styles.metaText}>{getCategoryDisplayName()}</Text>
+            <Text style={styles.metaText}>{categoryDisplayName}</Text>
           </View>
           <View style={styles.metaItem}>
             <LocationIcon iconName={item.location_icon} size={16} />
-            <Text style={styles.metaText}>{getLocationDisplayName()}</Text>
+            <Text style={styles.metaText}>{locationDisplayName}</Text>
           </View>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 16, color: theme.textSecondary }}>📅</Text>

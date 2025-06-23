@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -24,6 +25,7 @@ import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { useResponsive } from '../hooks/useResponsive';
 import { ImageDisplayContext, getOptimizedImageUri } from '../utils/imageUtils';
+import { getItemCategoryName, getItemLocationName } from '../utils/translationHelpers';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 

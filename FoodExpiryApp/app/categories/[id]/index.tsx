@@ -7,6 +7,7 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -17,6 +18,7 @@ import { useDatabase } from '../../../context/DatabaseContext';
 import { FoodItemWithDetails } from '../../../database/models';
 import CategoryIcon from '../../../components/CategoryIcon';
 import LocationIcon from '../../../components/LocationIcon';
+import { getItemCategoryName } from '../../../utils/translationHelpers';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -137,7 +139,7 @@ export default function CategoryDetailScreen() {
   const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [categoryItems, setCategoryItems] = useState<FoodItemWithDetails[]>([]);
-  const [category, setCategory] = useState<{ name: string; icon: string; color: string } | null>(null);
+  const [category, setCategory] = useState<{ name: string; icon: IconName; color: string } | null>(null);
 
   const colors = {
     1: '#4CAF50', // Vegetables
@@ -161,9 +163,9 @@ export default function CategoryDetailScreen() {
           const foundCategory = categories.find(cat => cat.id === categoryId);
           if (foundCategory) {
             setCategory({
-              name: foundCategory.name,
+              name: getCategoryName(foundCategory),
               icon: foundCategory.icon as IconName,
-              color: theme.primaryColor, // Use theme color instead of hardcoded colors
+              color: theme.primaryColor,
             });
           }
 
@@ -172,22 +174,14 @@ export default function CategoryDetailScreen() {
           setCategoryItems(items);
         }
       } catch (error) {
-        // Error loading category data
+        console.error('Error loading category data:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadCategoryData();
-  }, [id, foodItems, language, categories, theme.primaryColor]);
-
-  // Helper function to get translated category name
-  const getItemCategoryName = (categoryId: string | string[]) => {
-    const idString = Array.isArray(categoryId) ? categoryId[0] : categoryId;
-    const numericId = parseInt(idString);
-    const category = categories.find(cat => cat.id === numericId);
-    return category ? getCategoryName(category) : t('common.unknownCategory');
-  };
+  }, [id, categories, foodItems]);
 
   const styles = StyleSheet.create({
     container: {
@@ -366,7 +360,7 @@ export default function CategoryDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color={theme.primaryColor} />
       </View>
     );
@@ -380,7 +374,7 @@ export default function CategoryDetailScreen() {
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <CategoryIcon iconName={category?.icon} size={24} />
-          <Text style={styles.title}>{getItemCategoryName(id)}</Text>
+          <Text style={styles.title}>{getItemCategoryName(id, categories, { getCategoryName, t })}</Text>
         </View>
       </View>
       
@@ -393,7 +387,7 @@ export default function CategoryDetailScreen() {
           <View style={[styles.statsIcon, { backgroundColor: `${category?.color || theme.primaryColor}20` }]}>
             <CategoryIcon iconName={category?.icon} size={24} />
           </View>
-          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {getItemCategoryName(id)}</Text>
+          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {getItemCategoryName(id, categories, { getCategoryName, t })}</Text>
           <Text style={styles.statsCount}>{categoryItems.length}</Text>
         </View>
 
