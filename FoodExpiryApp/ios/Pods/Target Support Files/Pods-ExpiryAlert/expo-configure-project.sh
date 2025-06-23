@@ -45,7 +45,7 @@ with_node \
   --no-warnings \
   --eval "require(require.resolve('expo-modules-autolinking', { paths: [require.resolve('expo/package.json')] }))(process.argv.slice(1))" \
   generate-modules-provider  \
-  --target "/Users/kevinsoon/Documents/GitHub/food_expiry_app/FoodExpiryApp/FoodExpiryApp/ios/Pods/Target Support Files/Pods-ExpiryAlert/ExpoModulesProvider.swift" \
-  --entitlement "/Users/kevinsoon/Documents/GitHub/food_expiry_app/FoodExpiryApp/FoodExpiryApp/ios/ExpiryAlert/ExpiryAlert.entitlements" \
+  --target "/Users/kevinsoon/Documents/GitHub/food_expiry_app/FoodExpiryApp/ios/Pods/Target Support Files/Pods-ExpiryAlert/ExpoModulesProvider.swift" \
+  --entitlement "/Users/kevinsoon/Documents/GitHub/food_expiry_app/FoodExpiryApp/ios/ExpiryAlert/ExpiryAlert.entitlements" \
   --platform "apple" \
-  --packages "expo" "expo-application" "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-image-picker" "expo-keep-awake" "expo-linking" "expo-notifications" "expo-router" "expo-splash-screen" "expo-sqlite"
+  --packages "expo" "expo-application" "expo-asset" "expo-constants" "expo-dev-launcher" "expo-dev-menu" "expo-file-system" "expo-font" "expo-image-manipulator" "expo-image-picker" "expo-keep-awake" "expo-linking" "expo-notifications" "expo-router" "expo-splash-screen" "expo-sqlite"

@@ -20,7 +20,7 @@
   "pod_target_xcconfig": {
     "DEFINES_MODULE": "YES",
     "SWIFT_COMPILATION_MODE": "wholemodule",
-    "OTHER_SWIFT_FLAGS": "$(inherited) -DRCT_NEW_ARCH_ENABLED"
+    "OTHER_SWIFT_FLAGS": "$(inherited) "
   },
   "source_files": "**/*.{h,m,swift}"
 }
