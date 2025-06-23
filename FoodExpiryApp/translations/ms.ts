@@ -191,7 +191,7 @@ export default {
   'settings.backupSync': 'Sandaran & Segerak',
   'settings.backupSyncDescription': 'Sandarkan dan segerakkan data anda',
   'settings.about': 'Tentang',
-  'settings.aboutDescription': 'Maklumat aplikasi dan versi',
+  'settings.aboutDescription': 'Ketahui lebih lanjut mengenai aplikasi',
   'settings.resetDatabase': 'Set Semula Pangkalan Data',
   'settings.resetDatabaseDescription': 'Set semula kepada 8 kategori dan 4 lokasi asal',
   'settings.resetDatabaseConfirmation': 'Ini akan set semula semua kategori dan lokasi kepada 8 kategori dan 4 lokasi asal. Item makanan anda akan dikekalkan. Tindakan ini tidak boleh dibatalkan.',
@@ -208,6 +208,8 @@ export default {
   'settings.clearExpiredSuccess': 'Berjaya memadamkan {count} item luput{plural}.',
   'settings.clearExpiredError': 'Gagal memadamkan item luput. Sila cuba lagi.',
   'settings.title': 'Tetapan',
+  'settings.manageCategories': 'Urus Kategori',
+  'settings.manageLocations': 'Urus Lokasi',
   
   // Clear Items Screen
   'clearItems.title': 'Kosongkan Item Terpakai',
@@ -250,8 +252,8 @@ export default {
   'header.about': 'Tentang',
   
   // About Section
-  'about.appName': 'Peringatan Luput',
-  'about.appTagline': 'Jangan biarkan makanan dibazirkan lagi',
+  'about.appName': 'Aplikasi Tarikh Luput Makanan',
+  'about.appTagline': 'Kurangkan pembaziran, jimat wang.',
   'about.sectionAbout': 'Tentang',
   'about.description': 'Peringatan Luput adalah pembantu pengurusan makanan peribadi anda. Pantau tarikh luput, atur penyimpanan makanan anda, dan kurangkan pembaziran makanan dengan aplikasi kami yang intuitif dan kaya dengan ciri-ciri.',
   'about.sectionFeatures': 'Ciri-ciri Utama',
@@ -310,9 +312,9 @@ export default {
 
   // Additional Settings Translations
   'deleteCategory': 'Padam Kategori',
-  'deleteCategoryConfirm': 'Adakah anda pasti untuk memadamkan kategori ini?',
+  'deleteCategoryConfirm': 'Adakah anda pasti untuk memadamkan kategori ini? Semua item di dalamnya juga akan dipadamkan.',
   'deleteLocation': 'Padam Lokasi',
-  'deleteLocationConfirm': 'Adakah anda pasti untuk memadamkan lokasi ini?',
+  'deleteLocationConfirm': 'Adakah anda pasti mahu memadamkan lokasi ini? Semua item di dalamnya akan dipindahkan ke tidak ditugaskan.',
   'cancel': 'Batal',
   'delete': 'Padam',
   'close': 'Tutup',
@@ -321,9 +323,9 @@ export default {
   'add': 'Tambah',
 
   // Edit Modal Translations
-  'editCategory': 'Edit Kategori',
+  'editCategory': 'Sunting Kategori',
   'addCategory': 'Tambah Kategori',
-  'editLocation': 'Edit Lokasi',
+  'editLocation': 'Sunting Lokasi',
   'addLocation': 'Tambah Lokasi',
   'categoryName': 'Nama Kategori',
   'locationName': 'Nama Lokasi',
@@ -474,4 +476,8 @@ export default {
   'foodStatus.expiredDays': 'hari yang lalu',
   'foodStatus.noCategory': 'Tiada Kategori',
   'foodStatus.noLocation': 'Tiada Lokasi',
+
+  'notFound.title': 'Skrin Tidak Ditemui',
+  'notFound.message': 'Skrin yang anda cari tidak wujud.',
+  'notFound.link': 'Pergi ke Skrin Utama',
 }; 

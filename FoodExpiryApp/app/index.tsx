@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,15 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { FoodItem } from '../database/models';
+import { FoodItem, Category, Location } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
 import { getSafeIconName } from '../utils/iconUtils';
@@ -27,32 +29,217 @@ import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { useTypography } from '../hooks/useTypography';
 import { useResponsive } from '../hooks/useResponsive';
-
+import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
+import { EditModal } from '../components/ManagementModals';
+import { ThemeSelector } from '../components/ThemeSelector';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
+
+type EmojiSelectorProps = {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (emoji: string) => void;
+  isCategory: boolean;
+  selectedEmoji?: string;
+};
+
+const EmojiSelector: React.FC<EmojiSelectorProps> = ({
+  visible,
+  onClose,
+  onSelect,
+  isCategory,
+  selectedEmoji,
+}) => {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['emojiCategory.food']));
+  
+  const emojis = isCategory ? CATEGORY_EMOJIS : LOCATION_EMOJIS;
+  const categories = isCategory ? EMOJI_CATEGORIES : [{ title: 'Locations', icon: '📍', items: LOCATION_EMOJIS }];
+  
+  const toggleCategory = (categoryTitle: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryTitle)) {
+      newExpanded.delete(categoryTitle);
+    } else {
+      newExpanded.add(categoryTitle);
+    }
+    setExpandedCategories(newExpanded);
+  };
+  
+  const styles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+      width: '90%',
+      maxHeight: '80%',
+      backgroundColor: theme.cardBackground,
+      borderRadius: 16,
+      padding: 20,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    scrollContainer: {
+      maxHeight: 400,
+    },
+    categoryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      backgroundColor: theme.backgroundColor,
+      borderRadius: 8,
+      marginVertical: 4,
+    },
+    categoryIcon: {
+      fontSize: 20,
+      marginRight: 8,
+    },
+    categoryTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textColor,
+      flex: 1,
+    },
+    expandIcon: {
+      fontSize: 16,
+      color: theme.textSecondary,
+    },
+    emojiGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 8,
+      gap: 8,
+    },
+    emojiItem: {
+      width: 60,
+      height: 60,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 12,
+      backgroundColor: theme.backgroundColor,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    emojiItemSelected: {
+      borderColor: theme.primaryColor,
+      backgroundColor: `${theme.primaryColor}20`,
+    },
+    emojiIcon: {
+      fontSize: 28,
+      textAlign: 'center',
+    },
+    closeButton: {
+      marginTop: 16,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: theme.primaryColor,
+      alignItems: 'center',
+    },
+    closeButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>
+            Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
+          </Text>
+          <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+            {categories.map((category) => (
+              <View key={category.title}>
+                <TouchableOpacity 
+                  style={styles.categoryHeader}
+                  onPress={() => toggleCategory(category.title)}
+                >
+                  <Text style={styles.categoryIcon}>{category.icon}</Text>
+                  <Text style={styles.categoryTitle}>{t(category.title)}</Text>
+                  <Text style={styles.expandIcon}>
+                    {expandedCategories.has(category.title) ? '▼' : '▶'}
+                  </Text>
+                </TouchableOpacity>
+                
+                {expandedCategories.has(category.title) && (
+                  <View style={styles.emojiGrid}>
+                    {category.items.map((item) => (
+                      <TouchableOpacity
+                        key={item.key}
+                        style={[
+                          styles.emojiItem,
+                          selectedEmoji === item.emoji && styles.emojiItemSelected
+                        ]}
+                        onPress={() => {
+                          onSelect(item.emoji);
+                        }}
+                      >
+                        <Text style={styles.emojiIcon}>{item.emoji}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
   const { t, language, getCategoryName, getLocationName } = useLanguage();
-  const router = useRouter();
+  const typography = useTypography(undefined, language);
+  const responsive = useResponsive();
   const {
     foodItems,
     categories,
     locations,
-    dashboardCounts,
     createFoodItem,
     updateFoodItem,
     deleteFoodItem,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    createLocation,
+    updateLocation,
+    deleteLocation,
+    isLoading,
     refreshAll,
     refreshCategories,
     refreshLocations,
-    isDataAvailable,
+    dashboardCounts,
+    error,
   } = useDatabase();
-  
-  // Use language-aware typography and responsive design
-  const typography = useTypography(undefined, language);
-  const responsive = useResponsive();
-
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showCategoryEditModal, setShowCategoryEditModal] = useState(false);
+  const [showLocationEditModal, setShowLocationEditModal] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [itemName, setItemName] = useState('');
@@ -62,27 +249,28 @@ export default function DashboardScreen() {
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState('1');
-  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [managementModalVisible, setManagementModalVisible] = useState(false);
+  const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [itemToEdit, setItemToEdit] = useState<Category | Location | null>(null);
+  const [themeModalVisible, setThemeModalVisible] = useState(false);
   const lastLanguage = React.useRef(language);
 
-  // Automatic loading state based on database-context helper.
   useEffect(() => {
-    // Use stable state values instead of the function reference
     const hasCategories = categories.length > 0;
     const hasLocations = locations.length > 0;
     
     if (hasCategories && hasLocations) {
-      setIsLoading(false);
+      // Data is ready
     } else {
       // Hard-stop after 3 s so the UI never blocks indefinitely.
-      const timer = setTimeout(() => setIsLoading(false), 3000);
+      const timer = setTimeout(() => {}, 3000);
       return () => clearTimeout(timer);
     }
   }, [categories.length, locations.length]);
 
-  // Handle language changes
   useFocusEffect(
     React.useCallback(() => {
       if (language !== lastLanguage.current) {
@@ -90,8 +278,6 @@ export default function DashboardScreen() {
         
         const refreshData = async () => {
           try {
-            // Only refresh categories and locations for language changes
-            // Dashboard counts and food items don't need refresh
             await Promise.all([
               refreshCategories(),
               refreshLocations()
@@ -101,7 +287,6 @@ export default function DashboardScreen() {
           }
         };
         
-        // Add a small delay to ensure database update is complete
         setTimeout(() => {
           refreshData();
         }, 200);
@@ -109,7 +294,6 @@ export default function DashboardScreen() {
     }, [language, refreshCategories, refreshLocations])
   );
 
-  // Calculate location item counts
   const getLocationItemCounts = () => {
     const counts: { [key: number]: number } = {};
     foodItems.forEach(item => {
@@ -120,7 +304,6 @@ export default function DashboardScreen() {
     return counts;
   };
 
-  // Calculate category item counts
   const getCategoryItemCounts = () => {
     const counts: { [key: number]: number } = {};
     foodItems.forEach(item => {
@@ -132,7 +315,7 @@ export default function DashboardScreen() {
   };
 
   const handleSave = async () => {
-    if (isSaving) return; // Prevent duplicate submissions
+    if (isSaving) return;
     
     if (!itemName.trim()) {
       Alert.alert(t('alert.error'), t('form.nameRequired'));
@@ -171,7 +354,6 @@ export default function DashboardScreen() {
 
       setModalVisible(false);
       handleCloseModal();
-      // No need to call refreshAll() - createFoodItem/updateFoodItem already refresh
     } catch (error) {
       Alert.alert(t('alert.error'), t('alert.saveFailed'));
     } finally {
@@ -233,6 +415,70 @@ export default function DashboardScreen() {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const openManagementModal = (type: 'categories' | 'locations') => {
+    setManagementModalType(type);
+    setManagementModalVisible(true);
+  };
+
+  const handleEditCategoryOrLocation = (item: Category | Location) => {
+    setItemToEdit(item);
+    setEditModalVisible(true);
+  };
+
+  const handleDeleteCategory = async (id: number) => {
+    Alert.alert(
+      t('deleteCategory'),
+      t('deleteCategoryConfirm'),
+      [
+        {
+          text: t('cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: () => deleteCategory(id)
+        }
+      ]
+    );
+  };
+
+  const handleDeleteLocation = async (id: number) => {
+    Alert.alert(
+      t('deleteLocation'),
+      t('deleteLocationConfirm'),
+      [
+        {
+          text: t('cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: () => deleteLocation(id)
+        }
+      ]
+    );
+  };
+
+  const handleSaveCategoryOrLocation = async (name: string, icon: string) => {
+    if (itemToEdit) {
+      if (managementModalType === 'categories') {
+        await updateCategory({ ...itemToEdit as Category, name, icon });
+      } else {
+        await updateLocation({ ...itemToEdit as Location, name, icon });
+      }
+    } else {
+      if (managementModalType === 'categories') {
+        await createCategory({ name, icon } as Category);
+      } else {
+        await createLocation({ name, icon } as Location);
+      }
+    }
+    setItemToEdit(null);
+    setEditModalVisible(false);
   };
 
   const styles = StyleSheet.create({
@@ -308,10 +554,10 @@ export default function DashboardScreen() {
         largeTablet: 40,
         default: 24,
       }),
-      justifyContent: 'space-around', // Even spacing for 3 items
+      justifyContent: 'space-around',
     },
     statCard: {
-      width: '30%', // 3 cards per row - slightly smaller to ensure fit
+      width: '30%',
       backgroundColor: theme.cardBackground,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
@@ -328,9 +574,9 @@ export default function DashboardScreen() {
       minHeight: responsive.getResponsiveValue({
         tablet: 140,
         largeTablet: 160,
-        default: 120, // Fixed height to accommodate 2-line text
+        default: 120,
       }),
-      justifyContent: 'center', // Center content vertically
+      justifyContent: 'center',
       ...Platform.select({
         ios: {
           shadowColor: theme.shadowColor,
@@ -355,12 +601,12 @@ export default function DashboardScreen() {
       lineHeight: responsive.getResponsiveValue({
         tablet: 20,
         largeTablet: 22,
-        default: 18, // Better line spacing for 2-line text
+        default: 18,
       }),
       minHeight: responsive.getResponsiveValue({
         tablet: 40,
         largeTablet: 44,
-        default: 36, // Reserve space for 2 lines of text
+        default: 36,
       }),
     },
     statValue: {
@@ -831,6 +1077,103 @@ export default function DashboardScreen() {
     greyText: {
       color: theme.textSecondary,
     },
+    sectionHeaderContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: responsive.getResponsiveValue({
+        small: '95%',
+        default: '90%',
+        tablet: '80%',
+        largeTablet: '70%',
+      }),
+    },
+    managementModalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    managementModalContent: {
+      width: '90%',
+      maxHeight: '80%',
+      backgroundColor: theme.cardBackground,
+      borderRadius: 16,
+      padding: 20,
+    },
+    managementModalTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    managementList: {
+      maxHeight: 300,
+    },
+    managementItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      backgroundColor: theme.backgroundColor,
+      borderRadius: 8,
+      marginVertical: 4,
+    },
+    managementItemIcon: {
+      marginRight: 12,
+    },
+    managementItemText: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.textColor,
+    },
+    managementItemActions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    addNewButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      backgroundColor: theme.primaryColor,
+      marginTop: 16,
+      borderRadius: 8,
+    },
+    addNewButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    themeButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      backgroundColor: theme.secondaryColor,
+      marginTop: 16,
+      borderRadius: 8,
+    },
+    themeButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    closeManagementModalButton: {
+      marginTop: 12,
+      padding: 12,
+      borderRadius: 8,
+      backgroundColor: theme.dangerColor,
+      alignItems: 'center',
+    },
+    closeManagementModalButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
   });
 
   const renderFoodItem = (item: any) => (
@@ -868,7 +1211,6 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Custom Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Image 
@@ -876,7 +1218,7 @@ export default function DashboardScreen() {
             style={styles.headerLogo}
             resizeMode="contain"
           />
-                      <Text style={styles.headerTitle}>{t('app.name')}</Text>
+          <Text style={styles.headerTitle}>{t('app.name')}</Text>
         </View>
       </View>
       
@@ -952,14 +1294,12 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.sectionTitle, {
-            width: responsive.getResponsiveValue({
-              small: '95%',
-              default: '90%',
-              tablet: '80%',
-              largeTablet: '70%',
-            }),
-          }]}>{t('home.storageLocations')}</Text>
+          <View style={styles.sectionHeaderContainer}>
+            <Text style={styles.sectionTitle}>{t('home.storageLocations')}</Text>
+            <TouchableOpacity onPress={() => openManagementModal('locations')}>
+              <FontAwesome name="pencil" size={20} color={theme.primaryColor} />
+            </TouchableOpacity>
+          </View>
           <View style={[styles.locationGrid, {
             width: responsive.getResponsiveValue({
               small: '95%',
@@ -990,14 +1330,13 @@ export default function DashboardScreen() {
             ))}
           </View>
 
-          <View style={[styles.categoryList, {
-            width: responsive.getResponsiveValue({
-              small: '95%',
-              default: '90%',
-              tablet: '80%',
-              largeTablet: '70%',
-            }),
-          }]}>
+          <View style={styles.sectionHeaderContainer}>
+            <Text style={styles.sectionTitle}>{t('home.categories')}</Text>
+            <TouchableOpacity onPress={() => openManagementModal('categories')}>
+              <FontAwesome name="pencil" size={20} color={theme.primaryColor} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.categoryList}>
             <View style={styles.categoryHeader}>
               <Text style={styles.sectionTitle}>{t('home.categories')}</Text>
             </View>
@@ -1029,7 +1368,98 @@ export default function DashboardScreen() {
 
       <BottomNav />
       
+      <Modal
+        visible={managementModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setManagementModalVisible(false)}
+      >
+        <View style={styles.managementModalOverlay}>
+          <View style={styles.managementModalContent}>
+            <Text style={styles.managementModalTitle}>
+              {managementModalType === 'categories' ? t('settings.manageCategories') : t('settings.manageLocations')}
+            </Text>
+            <ScrollView style={styles.managementList}>
+              {(managementModalType === 'categories' ? categories : locations).map((item) => (
+                <View key={item.id} style={styles.managementItem}>
+                  <View style={styles.managementItemIcon}>
+                    {managementModalType === 'categories' ? (
+                      <CategoryIcon iconName={item.icon} size={24} />
+                    ) : (
+                      <LocationIcon iconName={item.icon} size={24} />
+                    )}
+                  </View>
+                  <Text style={styles.managementItemText}>{managementModalType === 'categories' ? getCategoryName(item as Category) : getLocationName(item as Location)}</Text>
+                  <View style={styles.managementItemActions}>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => handleEditCategoryOrLocation(item)}
+                    >
+                      <FontAwesome name="pencil" size={14} color={theme.textColor} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() => managementModalType === 'categories' ? handleDeleteCategory(item.id!) : handleDeleteLocation(item.id!)}
+                    >
+                      <FontAwesome name="trash" size={14} color={theme.dangerColor} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity 
+              style={styles.addNewButton}
+              onPress={() => {
+                setItemToEdit(null);
+                setEditModalVisible(true);
+              }}
+            >
+              <FontAwesome name="plus" size={16} color="#FFFFFF" />
+              <Text style={styles.addNewButtonText}>
+                {managementModalType === 'categories' ? t('addCategory') : t('addLocation')}
+              </Text>
+            </TouchableOpacity>
+            {managementModalType === 'categories' && (
+              <TouchableOpacity 
+                style={styles.themeButton}
+                onPress={() => setThemeModalVisible(true)}
+              >
+                <FontAwesome name="leaf" size={16} color="#FFFFFF" />
+                <Text style={styles.themeButtonText}>
+                  {t('themeSetup.quickSetup')}
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity 
+              style={styles.closeManagementModalButton}
+              onPress={() => setManagementModalVisible(false)}
+            >
+              <Text style={styles.closeManagementModalButtonText}>{t('common.close')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
+      <EditModal
+        visible={editModalVisible}
+        onClose={() => {
+          setEditModalVisible(false);
+          setItemToEdit(null);
+        }}
+        onSave={handleSaveCategoryOrLocation}
+        title={itemToEdit 
+          ? (managementModalType === 'categories' ? t('editCategory') : t('editLocation'))
+          : (managementModalType === 'categories' ? t('addCategory') : t('addLocation'))
+        }
+        initialName={itemToEdit ? (managementModalType === 'categories' ? getCategoryName(itemToEdit as Category) : getLocationName(itemToEdit as Location)) : ''}
+        initialIcon={itemToEdit?.icon}
+        isCategory={managementModalType === 'categories'}
+      />
+
+      <ThemeSelector 
+        visible={themeModalVisible}
+        onClose={() => setThemeModalVisible(false)}
+      />
 
       <Modal
         visible={modalVisible}

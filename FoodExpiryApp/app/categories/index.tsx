@@ -149,7 +149,7 @@ interface ThemeSetupModalProps {
 
 const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onApply, existingCategories }) => {
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, getCategoryName } = useLanguage();
   const categoryThemes = getCategoryThemes(t);
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set(['food'])); // Food expanded by default
   
@@ -668,7 +668,7 @@ export default function CategoriesScreen() {
       color: theme.textColor,
     },
     themeSetupButton: {
-      backgroundColor: theme.primaryColor,
+      backgroundColor: theme.tertiaryColor,
       borderRadius: 8,
       padding: 12,
       marginBottom: 16,
@@ -697,6 +697,7 @@ export default function CategoriesScreen() {
       borderBottomColor: theme.borderColor,
       paddingVertical: 8,
       marginBottom: 16,
+      width: '100%',
     },
     iconSelector: {
       flexDirection: 'row',
@@ -753,6 +754,7 @@ export default function CategoriesScreen() {
       flex: 1,
       fontSize: 16,
       color: theme.textColor,
+      paddingRight: 8,
     },
     actionButton: {
       padding: 8,

@@ -26,7 +26,11 @@ import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCat
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
-
+type ManagementModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  type: 'categories' | 'locations';
+};
 
 type SettingItem = {
   id: string;
@@ -734,6 +738,13 @@ export default function SettingsScreen() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [editItem, setEditItem] = useState<Category | Location | null>(null);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [managementModalVisible, setManagementModalVisible] = useState(false);
+  const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
+
+  const openManagementModal = (type: 'categories' | 'locations') => {
+    setManagementModalType(type);
+    setManagementModalVisible(true);
+  };
 
   const getThemeDisplayName = (themeType: string) => {
     switch (themeType) {
@@ -1588,6 +1599,109 @@ export default function SettingsScreen() {
     </Modal>
   );
 
+  const ManagementModal: React.FC<ManagementModalProps> = ({ visible, onClose, type }) => {
+    const { t } = useLanguage();
+    const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation } = useDatabase();
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [itemToEdit, setItemToEdit] = useState<Category | Location | null>(null);
+  
+    const listData = type === 'categories' ? categories : locations;
+    const title = type === 'categories' ? t('settings.manageCategories') : t('settings.manageLocations');
+  
+    const handleDelete = (item: Category | Location) => {
+      if (type === 'categories') {
+        handleDeleteCategory(item.id!);
+      } else {
+        handleDeleteLocation(item.id!);
+      }
+    };
+  
+    const handleSave = async (name: string, icon: string) => {
+      if (itemToEdit) {
+        if (type === 'categories') {
+          await updateCategory({ ...itemToEdit as Category, name, icon });
+        } else {
+          await updateLocation({ ...itemToEdit as Location, name, icon });
+        }
+      } else {
+        if (type === 'categories') {
+          await createCategory({ name, icon } as Category);
+        } else {
+          await createLocation({ name, icon } as Location);
+        }
+      }
+      setItemToEdit(null);
+      setEditModalVisible(false);
+    };
+  
+    return (
+      <>
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { width: '90%', maxHeight: '80%' }]}>
+              <Text style={styles.modalTitle}>{title}</Text>
+              <ScrollView>
+                {listData.map((item) => (
+                  <View key={item.id} style={styles.managementItem}>
+                    <View style={styles.managementItemIcon}>
+                      {type === 'categories' ? (
+                        <CategoryIcon iconName={item.icon} size={24} />
+                      ) : (
+                        <LocationIcon iconName={item.icon} size={24} />
+                      )}
+                    </View>
+                    <Text style={styles.managementItemText}>{item.name}</Text>
+                    <View style={styles.managementItemActions}>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => {
+                          setItemToEdit(item);
+                          setEditModalVisible(true);
+                        }}
+                      >
+                        <FontAwesome name="pencil" size={14} color={theme.textColor} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleDelete(item)}
+                      >
+                        <FontAwesome name="trash" size={14} color={theme.dangerColor} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
+              <TouchableOpacity
+                style={styles.addNewButton}
+                onPress={() => {
+                  setItemToEdit(null);
+                  setEditModalVisible(true);
+                }}
+              >
+                <FontAwesome name="plus" size={16} color="#FFFFFF" />
+                <Text style={styles.addNewButtonText}>
+                  {type === 'categories' ? t('addCategory') : t('addLocation')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.dangerColor, marginTop: 10 }]} onPress={onClose}>
+                <Text style={styles.modalButtonText}>{t('common.close')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        <EditModal
+          visible={editModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          onSave={handleSave}
+          title={itemToEdit ? (type === 'categories' ? t('editCategory') : t('editLocation')) : (type === 'categories' ? t('addCategory') : t('addLocation'))}
+          initialName={itemToEdit?.name}
+          initialIcon={itemToEdit?.icon}
+          isCategory={type === 'categories'}
+        />
+      </>
+    );
+  };
+
   return (
     <>
       <View style={styles.container}>
@@ -1619,42 +1733,10 @@ export default function SettingsScreen() {
           </View>
         </ScrollView>
 
-        <EditModal
-          visible={showCategoryModal}
-          onClose={() => {
-            setShowCategoryModal(false);
-            setEditItem(null);
-          }}
-          onSave={async (name, icon) => {
-            if (editItem) {
-              await updateCategory({ ...editItem as Category, name, icon });
-            } else {
-              await createCategory({ name, icon } as Category);
-            }
-          }}
-          title={editItem ? t('editCategory') : t('addCategory')}
-          initialName={editItem?.name}
-          initialIcon={editItem?.icon}
-          isCategory={true}
-        />
-
-        <EditModal
-          visible={showLocationModal}
-          onClose={() => {
-            setShowLocationModal(false);
-            setEditItem(null);
-          }}
-          onSave={async (name, icon) => {
-            if (editItem) {
-              await updateLocation({ ...editItem as Location, name, icon });
-            } else {
-              await createLocation({ name, icon } as Location);
-            }
-          }}
-          title={editItem ? t('editLocation') : t('addLocation')}
-          initialName={editItem?.name}
-          initialIcon={editItem?.icon}
-          isCategory={false}
+        <ManagementModal
+          visible={managementModalVisible}
+          onClose={() => setManagementModalVisible(false)}
+          type={managementModalType}
         />
 
         {renderLanguageModal()}

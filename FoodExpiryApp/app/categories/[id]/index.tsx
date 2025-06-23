@@ -131,10 +131,10 @@ const FoodItemCard: React.FC<{
 
 export default function CategoryDetailScreen() {
   const { theme } = useTheme();
-  const { t, language, getLocationName } = useLanguage();
+  const { t, language, getCategoryName, getLocationName } = useLanguage();
+  const { foodItems, categories, locations } = useDatabase();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { foodItems, categories, getCategory, locations } = useDatabase();
   const [loading, setLoading] = useState(true);
   const [categoryItems, setCategoryItems] = useState<FoodItemWithDetails[]>([]);
   const [category, setCategory] = useState<{ name: string; icon: string; color: string } | null>(null);
@@ -154,16 +154,16 @@ export default function CategoryDetailScreen() {
     const loadCategoryData = async () => {
       try {
         setLoading(true);
-        const categoryId = typeof id === 'string' ? parseInt(id) : Array.isArray(id) ? parseInt(id[0]) : null;
+        const categoryId = Array.isArray(id) ? parseInt(id[0]) : parseInt(id as string);
         
-        if (categoryId) {
-          // Find the category
-          const foundCategory = await getCategory(categoryId);
+        if (!isNaN(categoryId)) {
+          // Find the category from the categories list
+          const foundCategory = categories.find(cat => cat.id === categoryId);
           if (foundCategory) {
             setCategory({
               name: foundCategory.name,
               icon: foundCategory.icon as IconName,
-              color: colors[categoryId as keyof typeof colors] || '#9E9E9E',
+              color: theme.primaryColor, // Use theme color instead of hardcoded colors
             });
           }
 
@@ -179,7 +179,15 @@ export default function CategoryDetailScreen() {
     };
 
     loadCategoryData();
-  }, [id, foodItems, language]);
+  }, [id, foodItems, language, categories, theme.primaryColor]);
+
+  // Helper function to get translated category name
+  const getItemCategoryName = (categoryId: string | string[]) => {
+    const idString = Array.isArray(categoryId) ? categoryId[0] : categoryId;
+    const numericId = parseInt(idString);
+    const category = categories.find(cat => cat.id === numericId);
+    return category ? getCategoryName(category) : t('common.unknownCategory');
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -372,7 +380,7 @@ export default function CategoryDetailScreen() {
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <CategoryIcon iconName={category?.icon} size={24} />
-          <Text style={styles.title}>{category?.name || 'Unknown Category'}</Text>
+          <Text style={styles.title}>{getItemCategoryName(id)}</Text>
         </View>
       </View>
       
@@ -385,7 +393,7 @@ export default function CategoryDetailScreen() {
           <View style={[styles.statsIcon, { backgroundColor: `${category?.color || theme.primaryColor}20` }]}>
             <CategoryIcon iconName={category?.icon} size={24} />
           </View>
-          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {category?.name || 'Category'}</Text>
+          <Text style={styles.statsTitle}>{t('detail.itemsIn')} {getItemCategoryName(id)}</Text>
           <Text style={styles.statsCount}>{categoryItems.length}</Text>
         </View>
 

@@ -191,7 +191,7 @@ export default {
   'settings.backupSync': '备份与同步',
   'settings.backupSyncDescription': '备份和同步您的数据',
   'settings.about': '关于',
-  'settings.aboutDescription': '应用信息和版本',
+  'settings.aboutDescription': '了解有关该应用的更多信息',
   'settings.resetDatabase': '重置数据库',
   'settings.resetDatabaseDescription': '重置为原始的8个分类和4个位置',
   'settings.resetDatabaseConfirmation': '这将重置所有分类和位置为原始的8个分类和4个位置。您的食品项目将被保留。此操作不可撤销。',
@@ -207,6 +207,8 @@ export default {
   'settings.clearExpiredButton': '清除过期',
   'settings.clearExpiredSuccess': '成功删除 {count} 个过期物品。',
   'settings.clearExpiredError': '删除过期物品失败。请重试。',
+  'settings.manageCategories': '管理类别',
+  'settings.manageLocations': '管理位置',
   
   // Clear Items Screen
   'clearItems.title': '清除已使用物品',
@@ -249,8 +251,8 @@ export default {
   'header.about': '关于',
   
   // About Section
-  'about.appName': '过期警报',
-  'about.appTagline': '不再让食物浪费',
+  'about.appName': '食品效期应用',
+  'about.appTagline': '减少浪费，节省金钱。',
   'about.sectionAbout': '关于',
   'about.description': '过期警报是您的个人食品管理助手。通过我们直观且功能丰富的应用，跟踪过期日期，组织您的食品储藏，减少食物浪费。',
   'about.sectionFeatures': '主要功能',
@@ -471,4 +473,8 @@ export default {
   'foodStatus.expiredDays': '天前',
   'foodStatus.noCategory': '无分类',
   'foodStatus.noLocation': '无位置',
+
+  'notFound.title': '未找到屏幕',
+  'notFound.message': '您正在查找的屏幕不存在。',
+  'notFound.link': '转到主屏幕',
 };

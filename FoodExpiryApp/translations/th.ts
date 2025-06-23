@@ -191,7 +191,7 @@ export default {
   'settings.backupSync': 'สำรองข้อมูลและซิงค์',
   'settings.backupSyncDescription': 'สำรองข้อมูลและซิงค์ข้อมูลของคุณ',
   'settings.about': 'เกี่ยวกับ',
-  'settings.aboutDescription': 'ข้อมูลแอปและเวอร์ชัน',
+  'settings.aboutDescription': 'เรียนรู้เพิ่มเติมเกี่ยวกับแอป',
   'settings.resetDatabase': 'รีเซ็ตฐานข้อมูล',
   'settings.resetDatabaseDescription': 'รีเซ็ตกลับเป็น 8 หมวดหมู่และ 4 สถานที่ดั้งเดิม',
   'settings.resetDatabaseConfirmation': 'การทำงานนี้จะรีเซ็ตหมวดหมู่และสถานที่ทั้งหมดกลับเป็น 8 หมวดหมู่และ 4 สถานที่ดั้งเดิม รายการอาหารของคุณจะถูกเก็บไว้ การดำเนินการนี้ไม่สามารถยกเลิกได้',
@@ -240,8 +240,8 @@ export default {
   'language.english': 'อังกฤษ',
   'language.chinese': 'จีน',
   'language.japanese': 'ญี่ปุ่น',
-  'language.thai': 'ไทย',
-  'language.malay': 'มาเลย์',
+  'language.thai': 'ภาษาไทย',
+  'language.malay': 'Bahasa Melayu',
   'language.close': 'ปิด',
   
   // Screen Headers
@@ -250,8 +250,8 @@ export default {
   'header.about': 'เกี่ยวกับ',
   
   // About Section
-  'about.appName': 'แจ้งเตือนหมดอายุ',
-  'about.appTagline': 'ไม่เสียอาหารอีกต่อไป',
+  'about.appName': 'แอปวันหมดอายุอาหาร',
+  'about.appTagline': 'ลดขยะ ประหยัดเงิน',
   'about.sectionAbout': 'เกี่ยวกับ',
   'about.description': 'แจ้งเตือนหมดอายุเป็นผู้ช่วยจัดการอาหารส่วนตัวของคุณ ติดตามวันหมดอายุ จัดระเบียบตู้เก็บของ และลดการเสียอาหารด้วยแอปที่ใช้งานง่ายและมีฟีเจอร์ครบครัน',
   'about.sectionFeatures': 'ฟีเจอร์หลัก',
@@ -310,9 +310,9 @@ export default {
 
   // Additional Settings Translations
   'deleteCategory': 'ลบหมวดหมู่',
-  'deleteCategoryConfirm': 'คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้?',
+  'deleteCategoryConfirm': 'คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้? รายการทั้งหมดในหมวดหมู่นี้จะถูกลบด้วย',
   'deleteLocation': 'ลบสถานที่',
-  'deleteLocationConfirm': 'คุณแน่ใจหรือไม่ที่จะลบสถานที่นี้?',
+  'deleteLocationConfirm': 'คุณแน่ใจหรือไม่ที่จะลบสถานที่นี้? รายการทั้งหมดในสถานที่นี้จะถูกย้ายไปยังไม่ได้กำหนด',
   'cancel': 'ยกเลิก',
   'delete': 'ลบ',
   'close': 'ปิด',
@@ -474,4 +474,13 @@ export default {
   'foodStatus.expiredDays': 'วันที่ผ่านมา',
   'foodStatus.noCategory': 'ไม่มีหมวดหมู่',
   'foodStatus.noLocation': 'ไม่มีสถานที่',
+
+  // Additional Settings Translations
+  'settings.manageCategories': 'จัดการหมวดหมู่',
+  'settings.manageLocations': 'จัดการตำแหน่ง',
+
+  // New translations
+  'notFound.title': 'ไม่พบหน้าจอ',
+  'notFound.message': 'ไม่พบหน้าจอที่คุณกำลังมองหา',
+  'notFound.link': 'ไปที่หน้าจอหลัก',
 }; 

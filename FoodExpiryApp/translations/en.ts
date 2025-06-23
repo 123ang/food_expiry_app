@@ -127,6 +127,8 @@ export default {
   'common.error': 'Error',
   'common.ok': 'OK',
   'common.info': 'Info',
+  'common.close': 'Close',
+  'common.options': 'options',
   
   // Months
   'month.january': 'January',
@@ -191,7 +193,7 @@ export default {
   'settings.backupSync': 'Backup & Sync',
   'settings.backupSyncDescription': 'Backup and sync your data',
   'settings.about': 'About',
-  'settings.aboutDescription': 'App information and version',
+  'settings.aboutDescription': 'Learn more about the app',
   'settings.resetDatabase': 'Reset Database',
   'settings.resetDatabaseDescription': 'Reset to original 8 categories and 4 locations',
   'settings.resetDatabaseConfirmation': 'This will reset all categories and locations to the original 8 categories and 4 locations. Your food items will be preserved. This action cannot be undone.',
@@ -200,13 +202,15 @@ export default {
   'settings.resetDatabaseError': 'Failed to reset database. Please try again.',
   'settings.clearExpiredItems': 'Clear Expired Items',
   'settings.clearExpiredItemsDescription': 'Remove all expired items from your inventory',
-  'settings.clearUsedItems': 'Clear Used Items',
-  'settings.clearUsedItemsDescription': 'Mark items as used or removed from inventory',
+  'settings.clearUsedItems': 'Clear Used/Eaten Items',
+  'settings.clearUsedItemsDescription': 'Bulk remove items that have been consumed',
   'settings.clearExpiredConfirmTitle': 'Clear Expired Items',
   'settings.clearExpiredConfirmMessage': 'This will permanently delete all expired items. This action cannot be undone.',
   'settings.clearExpiredButton': 'Clear Expired',
   'settings.clearExpiredSuccess': 'Successfully deleted {count} expired item{plural}.',
-  'settings.clearExpiredError': 'Failed to delete expired items. Please try again.',
+  'settings.clearExpiredError': 'Failed to clear expired items. Please try again.',
+  'settings.manageCategories': 'Manage Categories',
+  'settings.manageLocations': 'Manage Locations',
   
   // Clear Items Screen
   'clearItems.title': 'Clear Used Items',
@@ -237,10 +241,10 @@ export default {
   
   // Language Names
   'language.english': 'English',
-  'language.chinese': 'Chinese',
-  'language.japanese': 'Japanese',
-  'language.thai': 'Thai',
-  'language.malay': 'Malay',
+  'language.chinese': '中文',
+  'language.japanese': '日本語',
+  'language.thai': 'ภาษาไทย',
+  'language.malay': 'Bahasa Melayu',
   'language.close': 'Close',
   
   // Screen Headers
@@ -249,8 +253,8 @@ export default {
   'header.about': 'About',
   
   // About Section
-  'about.appName': 'Expiry Alert',
-  'about.appTagline': 'Never let food go to waste again',
+  'about.appName': 'Food Expiry App',
+  'about.appTagline': 'Reduce waste, save money.',
   'about.sectionAbout': 'About',
   'about.description': 'Expiry Alert is your personal food management assistant. Keep track of expiration dates, organize your pantry, and reduce food waste with our intuitive and feature-rich app.',
   'about.sectionFeatures': 'Key Features',
@@ -308,23 +312,20 @@ export default {
   'notification.disabledErrorDesc': 'Please enable notifications in your device settings to receive expiry alerts.',
 
   // Additional Settings Translations
+  'addCategory': 'Add Category',
+  'editCategory': 'Edit Category',
   'deleteCategory': 'Delete Category',
-  'deleteCategoryConfirm': 'Are you sure you want to delete this category?',
+  'deleteCategoryConfirm': 'Are you sure you want to delete this category? All items within it will also be deleted.',
+  'addLocation': 'Add Location',
+  'editLocation': 'Edit Location',
   'deleteLocation': 'Delete Location',
-  'deleteLocationConfirm': 'Are you sure you want to delete this location?',
+  'deleteLocationConfirm': 'Are you sure you want to delete this location? All items within it will be moved to unassigned.',
   'cancel': 'Cancel',
   'delete': 'Delete',
-  'close': 'Close',
   'save': 'Save',
   'edit': 'Edit',
   'add': 'Add',
   'settings.title': 'Settings',
-
-  // Edit Modal Translations
-  'editCategory': 'Edit Category',
-  'addCategory': 'Add Category',
-  'editLocation': 'Edit Location',
-  'addLocation': 'Add Location',
   'categoryName': 'Category Name',
   'locationName': 'Location Name',
   'selectIcon': 'Select Icon',
@@ -471,4 +472,9 @@ export default {
   'foodStatus.expiredDays': 'days ago',
   'foodStatus.noCategory': 'No category',
   'foodStatus.noLocation': 'No location',
+
+  // New translations
+  'notFound.title': 'Screen Not Found',
+  'notFound.message': 'The screen you are looking for does not exist.',
+  'notFound.link': 'Go to Home Screen',
 };
