@@ -1,7 +1,26 @@
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-import * as ImageManipulator from 'expo-image-manipulator';
+import { Platform, NativeModules } from 'react-native';
+// Lazy-load ImageManipulator to avoid native module crash in environments where it's not included
+let ImageManipulator: any | null | undefined; // undefined = not loaded yet, null = unavailable
+
+const loadImageManipulator = async (): Promise<any | null> => {
+  if (ImageManipulator !== undefined) return ImageManipulator;
+  try {
+    // Check if native module exists first to avoid red box
+    if (!(NativeModules as any).ExpoImageManipulator) {
+      ImageManipulator = null;
+      return null;
+    }
+    const mod = await import('expo-image-manipulator');
+    ImageManipulator = mod;
+    return mod;
+  } catch (e) {
+    ImageManipulator = null;
+    return null;
+  }
+};
+
 import { imageConfig } from '../constants/imageConfig';
 
 const IMAGES_DIR = `${FileSystem.documentDirectory}images/`;
@@ -315,97 +334,75 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
     }
     
     try {
-      // Resize the image before saving, using the configuration with enhanced quality
-      console.log('Resizing image with enhanced quality...');
-      const resizedImage = await ImageManipulator.manipulateAsync(
-        sourceUri,
-        [{ resize: { 
-          width: imageConfig.maxImageDimensions.width, 
-          height: imageConfig.maxImageDimensions.height 
-        } }],
-        { 
-          compress: 0.95, // Higher quality to preserve colors
-          format: ImageManipulator.SaveFormat.PNG // Use PNG for better color preservation
-        }
-      );
-      
-      // Copy the resized image to permanent storage
-      await FileSystem.copyAsync({
-        from: resizedImage.uri,
-        to: destinationUri,
-      });
-      
-      console.log('Resized and saved image successfully');
-    } catch (resizeError) {
-      console.error('Error resizing image:', resizeError);
-      
-      // Fallback: Try to save original if resize fails
-      try {
-        console.log('Falling back to original image save...');
+      const imageManip = await loadImageManipulator();
+      if (imageManip) {
+        console.log('Resizing image with enhanced quality...');
+        const resizedImage = await imageManip.manipulateAsync(
+          sourceUri,
+          [{ resize: {
+            width: imageConfig.maxImageDimensions.width,
+            height: imageConfig.maxImageDimensions.height
+          }}],
+          {
+            compress: 0.95,
+            format: imageManip.SaveFormat.PNG
+          }
+        );
+
+        // Copy the resized image to permanent storage
+        await FileSystem.copyAsync({
+          from: resizedImage.uri,
+          to: destinationUri,
+        });
+      } else {
+        // If ImageManipulator is not available, simply copy the original image
         await FileSystem.copyAsync({
           from: sourceUri,
           to: destinationUri,
         });
-      } catch (fallbackError) {
-        console.error('Fallback save failed:', fallbackError);
-        
-        // iOS: Try alternative copy method
-        if (Platform.OS === 'ios') {
-          try {
-            // Read and write manually as fallback
-            const imageData = await FileSystem.readAsStringAsync(sourceUri, {
-              encoding: FileSystem.EncodingType.Base64
-            });
-            await FileSystem.writeAsStringAsync(destinationUri, imageData, {
-              encoding: FileSystem.EncodingType.Base64
-            });
-          } catch (fallbackError) {
-            
-            return null;
-          }
-        } else {
-          return null;
-        }
-      }
-    }
-    
-    // Verify the image was saved successfully with enhanced validation
-    const fileInfo = await FileSystem.getInfoAsync(destinationUri);
-    if (!fileInfo.exists) {
-      throw new Error('Failed to save image to storage');
-    }
-    
-    // iOS: Additional validation
-    if (Platform.OS === 'ios') {
-      const fileSize = 'size' in fileInfo ? fileInfo.size : 0;
-      if (!fileSize || fileSize < 100) { // Minimum reasonable image size
-        await FileSystem.deleteAsync(destinationUri, { idempotent: true });
-        throw new Error('Saved image is too small or corrupted');
       }
       
-      // Test read access
-      try {
-        await FileSystem.readAsStringAsync(destinationUri, {
-          encoding: FileSystem.EncodingType.Base64,
-          length: 100
-        });
-      } catch (readError) {
-        await FileSystem.deleteAsync(destinationUri, { idempotent: true });
-        throw new Error('Saved image is not readable');
+      // Verify the image was saved successfully with enhanced validation
+      const fileInfo = await FileSystem.getInfoAsync(destinationUri);
+      if (!fileInfo.exists) {
+        throw new Error('Failed to save image to storage');
       }
+      
+      // iOS: Additional validation
+      if (Platform.OS === 'ios') {
+        const fileSize = 'size' in fileInfo ? fileInfo.size : 0;
+        if (!fileSize || fileSize < 100) { // Minimum reasonable image size
+          await FileSystem.deleteAsync(destinationUri, { idempotent: true });
+          throw new Error('Saved image is too small or corrupted');
+        }
+        
+        // Test read access
+        try {
+          await FileSystem.readAsStringAsync(destinationUri, {
+            encoding: FileSystem.EncodingType.Base64,
+            length: 100
+          });
+        } catch (readError) {
+          await FileSystem.deleteAsync(destinationUri, { idempotent: true });
+          throw new Error('Saved image is not readable');
+        }
+      }
+      
+      // Add to backup registry with enhanced metadata
+      const fileSize = 'size' in fileInfo ? fileInfo.size : 0;
+      await addToImageRegistry(destinationUri, safeFileName, true, fileSize);
+      
+      // Update validation cache
+      if (Platform.OS === 'ios') {
+        await updateValidationCache(destinationUri, true, fileSize);
+      }
+      
+      console.log('Image saved successfully to:', destinationUri);
+      return destinationUri;
+    } catch (error) {
+      console.error('Error saving image:', error);
+      return null;
     }
-    
-    // Add to backup registry with enhanced metadata
-    const fileSize = 'size' in fileInfo ? fileInfo.size : 0;
-    await addToImageRegistry(destinationUri, safeFileName, true, fileSize);
-    
-    // Update validation cache
-    if (Platform.OS === 'ios') {
-      await updateValidationCache(destinationUri, true, fileSize);
-    }
-    
-    console.log('Image saved successfully to:', destinationUri);
-    return destinationUri;
   } catch (error) {
     console.error('Error saving image:', error);
     return null;
@@ -883,29 +880,36 @@ export const generateThumbnail = async (imageUri: string): Promise<string | null
       return thumbnailUri;
     }
     
-    // Create thumbnail using ImageManipulator with higher quality to preserve colors
-    const thumbnail = await ImageManipulator.manipulateAsync(
-      imageUri,
-      [
-        // First crop to a square (1:1 aspect ratio)
-        { crop: { originX: 0, originY: 0, width: 800, height: 800 } },
-        // Then resize to the target thumbnail size
-        { resize: {
-          width: imageConfig.thumbnailDimensions.width,
-          height: imageConfig.thumbnailDimensions.height
-        }}
-      ],
-      { 
-        compress: 0.95, // Higher quality (0.95 instead of 0.8) to preserve colors
-        format: ImageManipulator.SaveFormat.PNG // Use PNG for better color preservation
-      }
-    );
-    
-    // Copy to permanent storage
-    await FileSystem.copyAsync({
-      from: thumbnail.uri,
-      to: thumbnailUri,
-    });
+    const imageManip = await loadImageManipulator();
+    if (imageManip) {
+      // Create thumbnail using ImageManipulator with higher quality to preserve colors
+      const thumbnail = await imageManip.manipulateAsync(
+        imageUri,
+        [
+          { crop: { originX: 0, originY: 0, width: 800, height: 800 } },
+          { resize: {
+            width: imageConfig.thumbnailDimensions.width,
+            height: imageConfig.thumbnailDimensions.height
+          }}
+        ],
+        {
+          compress: 0.95,
+          format: imageManip.SaveFormat.PNG
+        }
+      );
+
+      // Copy to permanent storage
+      await FileSystem.copyAsync({
+        from: thumbnail.uri,
+        to: thumbnailUri,
+      });
+    } else {
+      console.warn('ImageManipulator not available: using original image as thumbnail');
+      await FileSystem.copyAsync({
+        from: imageUri,
+        to: thumbnailUri,
+      });
+    }
     
     return thumbnailUri;
   } catch (error) {
