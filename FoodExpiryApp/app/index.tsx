@@ -1152,7 +1152,7 @@ export default function DashboardScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       paddingVertical: 12,
-      backgroundColor: theme.secondaryColor,
+      backgroundColor: theme.tertiaryColor,
       marginTop: 16,
       borderRadius: 8,
     },
@@ -1421,7 +1421,7 @@ export default function DashboardScreen() {
                 style={styles.themeButton}
                 onPress={() => setThemeModalVisible(true)}
               >
-                <FontAwesome name="leaf" size={16} color="#FFFFFF" />
+                <FontAwesome name="magic" size={16} color="#FFFFFF" />
                 <Text style={styles.themeButtonText}>
                   {t('themeSetup.quickSetup')}
                 </Text>
