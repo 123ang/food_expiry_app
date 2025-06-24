@@ -189,12 +189,22 @@ export const CategoryRepository: Repository<Category> = {
         if (!db) {
           throw new Error('Database not available');
         }
-        await db.runAsync(
-          'UPDATE categories SET name = ?, icon = ? WHERE id = ?',
-          [item.name, item.icon, item.id]
-        );
+
+        // Check if this is a default category (id <= 8)
+        if (item.id <= 8) {
+          // For default categories, only update the icon
+          await db.runAsync(
+            'UPDATE categories SET icon = ? WHERE id = ?',
+            [item.icon, item.id]
+          );
+        } else {
+          // For user-created categories, update both name and icon
+          await db.runAsync(
+            'UPDATE categories SET name = ?, icon = ?, translation_key = ? WHERE id = ?',
+            [item.name, item.icon, null, item.id]
+          );
+        }
       } catch (error) {
-        
         throw error;
       }
     }, `Category.update(id:${item.id})`);
@@ -361,12 +371,25 @@ export const LocationRepository: Repository<Location> = {
     return queuedDatabaseOperation(async () => {
       try {
         const db = await getDatabaseSafely();
-        await db.runAsync(
-          'UPDATE locations SET name = ?, icon = ? WHERE id = ?',
-          [item.name, item.icon, item.id]
-        );
+        if (!db) {
+          throw new Error('Database not available');
+        }
+
+        // Check if this is a default location (id <= 4)
+        if (item.id <= 4) {
+          // For default locations, only update the icon
+          await db.runAsync(
+            'UPDATE locations SET icon = ? WHERE id = ?',
+            [item.icon, item.id]
+          );
+        } else {
+          // For user-created locations, update both name and icon
+          await db.runAsync(
+            'UPDATE locations SET name = ?, icon = ?, translation_key = ? WHERE id = ?',
+            [item.name, item.icon, null, item.id]
+          );
+        }
       } catch (error) {
-        
         throw error;
       }
     }, `Location.update(id:${item.id})`);

@@ -1378,6 +1378,17 @@ export default function DashboardScreen() {
             <Text style={styles.managementModalTitle}>
               {managementModalType === 'categories' ? t('settings.manageCategories') : t('settings.manageLocations')}
             </Text>
+            {managementModalType === 'categories' && (
+              <TouchableOpacity 
+                style={[styles.themeButton, { marginTop: 0, marginBottom: 16 }]}
+                onPress={() => setThemeModalVisible(true)}
+              >
+                <FontAwesome name="magic" size={16} color="#FFFFFF" />
+                <Text style={styles.themeButtonText}>
+                  {t('themeSetup.quickSetup')}
+                </Text>
+              </TouchableOpacity>
+            )}
             <ScrollView style={styles.managementList}>
               {(managementModalType === 'categories' ? categories : locations).map((item) => (
                 <View key={item.id} style={styles.managementItem}>
@@ -1419,17 +1430,6 @@ export default function DashboardScreen() {
                 {managementModalType === 'categories' ? t('addCategory') : t('addLocation')}
               </Text>
             </TouchableOpacity>
-            {managementModalType === 'categories' && (
-              <TouchableOpacity 
-                style={styles.themeButton}
-                onPress={() => setThemeModalVisible(true)}
-              >
-                <FontAwesome name="magic" size={16} color="#FFFFFF" />
-                <Text style={styles.themeButtonText}>
-                  {t('themeSetup.quickSetup')}
-                </Text>
-              </TouchableOpacity>
-            )}
             <TouchableOpacity 
               style={styles.closeManagementModalButton}
               onPress={() => setManagementModalVisible(false)}

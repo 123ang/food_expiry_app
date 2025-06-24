@@ -127,6 +127,9 @@ export default {
   'common.error': '错误',
   'common.ok': '确定',
   'common.info': '信息',
+  'common.close': '关闭',
+  'common.options': '选项',
+  'common.save': '保存',
   
   // Months
   'month.january': '一月',
@@ -316,7 +319,6 @@ export default {
   'deleteLocationConfirm': '确定要删除此位置吗？',
   'cancel': '取消',
   'delete': '删除',
-  'close': '关闭',
   'save': '保存',
   'edit': '编辑',
   'add': '添加',

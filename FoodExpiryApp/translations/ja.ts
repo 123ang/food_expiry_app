@@ -127,6 +127,9 @@ export default {
   'common.error': 'エラー',
   'common.ok': 'OK',
   'common.info': '情報',
+  'common.close': '閉じる',
+  'common.options': 'オプション',
+  'common.save': '保存',
   
   // Months
   'month.january': '1月',

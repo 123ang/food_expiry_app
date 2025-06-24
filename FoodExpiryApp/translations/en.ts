@@ -129,6 +129,7 @@ export default {
   'common.info': 'Info',
   'common.close': 'Close',
   'common.options': 'options',
+  'common.save': 'Save',
   
   // Months
   'month.january': 'January',

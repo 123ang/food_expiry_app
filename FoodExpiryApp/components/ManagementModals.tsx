@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,16 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES } from '../constants/emojis';
 import { FontAwesome } from '@expo/vector-icons';
+import type { Theme } from '../theme';
+
+type TFunction = (key: string) => string;
 
 type EditModalProps = {
   visible: boolean;
@@ -31,82 +36,80 @@ type EmojiSelectorProps = {
   selectedEmoji?: string;
 };
 
-const createStyles = (theme: any, t: any) => StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     width: '80%',
     padding: 20,
     backgroundColor: theme.cardBackground,
     borderRadius: 12,
-    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: theme.textColor,
     marginBottom: 16,
     textAlign: 'center',
-    color: theme.textColor,
   },
   input: {
     borderWidth: 1,
+    borderColor: theme.borderColor,
     borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
+    marginBottom: 16,
     color: theme.textColor,
-    borderColor: theme.borderColor,
-    backgroundColor: theme.backgroundColor,
+    backgroundColor: theme.cardBackground,
   },
   iconSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
+    borderColor: theme.borderColor,
     borderRadius: 8,
     padding: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 16,
+    backgroundColor: theme.cardBackground,
   },
-  iconSelectorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconPreview: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  iconText: {
+  iconSelectorText: {
+    color: theme.textColor,
     fontSize: 16,
-    flex: 1,
   },
-  modalButtons: {
+  buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 8,
   },
-  modalButton: {
+  button: {
     flex: 1,
     padding: 12,
     borderRadius: 8,
-    marginHorizontal: 8,
-    alignItems: 'center',
+    marginHorizontal: 4,
   },
-  modalButtonText: {
-    color: 'white',
+  cancelButton: {
+    backgroundColor: theme.secondaryColor,
+  },
+  saveButton: {
+    backgroundColor: theme.primaryColor,
+  },
+  buttonText: {
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
+    color: theme.textColor,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
   },
 });
 
@@ -284,35 +287,65 @@ export const EditModal: React.FC<EditModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const [name, setName] = useState(initialName);
-  const [icon, setIcon] = useState(initialIcon || (isCategory ? '🍎' : '❄️'));
+  const styles = createStyles(theme);
+  
+  // Check if the initial name is a translation key
+  const isTranslationKey = initialName.startsWith('category.') || initialName.startsWith('locations.');
+  const translatedInitialName = isTranslationKey ? t(initialName) : initialName;
+  
+  const [name, setName] = useState(translatedInitialName);
+  const [icon, setIcon] = useState(initialIcon);
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
-  const iconWasManuallySet = React.useRef(false);
-  const styles = createStyles(theme, t);
-
-  React.useEffect(() => {
+  
+  useEffect(() => {
     if (visible) {
-      setName(initialName);
-      if (initialIcon) {
-        setIcon(initialIcon);
-        iconWasManuallySet.current = false;
-      } else if (!initialName && !iconWasManuallySet.current) {
-        setIcon(isCategory ? '🍎' : '❄️');
-      }
+      const newTranslatedName = isTranslationKey ? t(initialName) : initialName;
+      setName(newTranslatedName);
+      setIcon(initialIcon);
     }
-  }, [visible, initialName, initialIcon, isCategory]);
+  }, [visible, initialName, initialIcon, t]);
 
   const handleSave = () => {
-    if (name.trim()) {
-      onSave(name.trim(), icon);
-      handleClose();
+    if (!name.trim()) {
+      Alert.alert(
+        t('alert.error'),
+        isCategory ? t('categories.nameRequired') : t('locations.nameRequired')
+      );
+      return;
     }
+    // If the name hasn't changed from the translation, pass the original key
+    const nameToSave = name.trim() === t(initialName) ? initialName : name.trim();
+    onSave(nameToSave, icon);
+    handleClose();
   };
 
   const handleClose = () => {
     setName('');
-    iconWasManuallySet.current = false;
+    setIcon('');
+    setShowEmojiSelector(false);
     onClose();
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setIcon(emoji);
+    if (Platform.OS === 'ios') {
+      setTimeout(() => {
+        setShowEmojiSelector(false);
+      }, 100);
+    } else {
+      setShowEmojiSelector(false);
+    }
+  };
+
+  const openEmojiSelector = () => {
+    if (Platform.OS === 'ios') {
+      handleClose();
+      setTimeout(() => {
+        setShowEmojiSelector(true);
+      }, 100);
+    } else {
+      setShowEmojiSelector(true);
+    }
   };
 
   return (
@@ -323,52 +356,43 @@ export const EditModal: React.FC<EditModalProps> = ({
         animationType="fade"
         onRequestClose={handleClose}
       >
-        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
-            <Text style={[styles.modalTitle, { color: theme.textColor }]}>{title}</Text>
-            
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{title}</Text>
             <TextInput
-              style={[styles.input, { 
-                color: theme.textColor,
-                borderColor: theme.borderColor,
-                backgroundColor: theme.backgroundColor
-              }]}
-              placeholder={t(isCategory ? 'categoryName' : 'locationName')}
-              placeholderTextColor={theme.textSecondary}
+              style={styles.input}
               value={name}
               onChangeText={setName}
+              placeholder={isCategory ? t('categories.nameRequired') : t('locations.nameRequired')}
+              placeholderTextColor={theme.textSecondary}
             />
-            
             <TouchableOpacity
-              style={[styles.iconSelector, { 
-                borderColor: theme.borderColor,
-                backgroundColor: theme.backgroundColor
-              }]}
-              onPress={() => setShowEmojiSelector(true)}
+              style={styles.iconSelector}
+              onPress={openEmojiSelector}
             >
-              <View style={styles.iconSelectorContent}>
-                <View style={styles.iconPreview}>
-                  <Text style={{ fontSize: 24 }}>{icon}</Text>
-                </View>
-                <Text style={[styles.iconText, { color: theme.textColor }]}>
-                  {t('selectIcon')} ({icon})
-                </Text>
-              </View>
-              <Text style={{ color: theme.textSecondary, fontSize: 16 }}>▶</Text>
+              <Text style={styles.iconSelectorText}>
+                {icon ? icon : t('selectIcon')}
+              </Text>
+              <FontAwesome
+                name="chevron-right"
+                size={16}
+                color={theme.textSecondary}
+              />
             </TouchableOpacity>
-
-            <View style={styles.modalButtons}>
+            <View style={styles.buttonContainer}>
               <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.dangerColor }]}
+                style={[styles.button, styles.cancelButton]}
                 onPress={handleClose}
               >
-                <Text style={styles.modalButtonText}>{t('common.cancel')}</Text>
+                <Text style={styles.buttonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primaryColor }]}
+                style={[styles.button, styles.saveButton]}
                 onPress={handleSave}
               >
-                <Text style={styles.modalButtonText}>{t('save')}</Text>
+                <Text style={[styles.buttonText, styles.saveButtonText]}>
+                  {t('common.save')}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -377,12 +401,15 @@ export const EditModal: React.FC<EditModalProps> = ({
 
       <EmojiSelector
         visible={showEmojiSelector}
-        onClose={() => setShowEmojiSelector(false)}
-        onSelect={(selectedIcon) => {
-          setIcon(selectedIcon);
-          iconWasManuallySet.current = true;
+        onClose={() => {
           setShowEmojiSelector(false);
+          if (Platform.OS === 'ios') {
+            setTimeout(() => {
+              onClose();
+            }, 100);
+          }
         }}
+        onSelect={handleEmojiSelect}
         isCategory={isCategory}
         selectedEmoji={icon}
       />

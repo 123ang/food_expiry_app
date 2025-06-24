@@ -126,7 +126,10 @@ export default {
   'common.success': 'Berjaya',
   'common.error': 'Ralat',
   'common.ok': 'OK',
-  'common.info': 'Maklumat',
+  'common.info': 'Info',
+  'common.close': 'Tutup',
+  'common.options': 'pilihan',
+  'common.save': 'Simpan',
   
   // Months
   'month.january': 'Januari',

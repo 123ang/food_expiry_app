@@ -127,6 +127,9 @@ export default {
   'common.error': 'ข้อผิดพลาด',
   'common.ok': 'ตกลง',
   'common.info': 'ข้อมูล',
+  'common.close': 'ปิด',
+  'common.options': 'ตัวเลือก',
+  'common.save': 'บันทึก',
   
   // Months
   'month.january': 'มกราคม',
