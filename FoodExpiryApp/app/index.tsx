@@ -424,6 +424,7 @@ export default function DashboardScreen() {
 
   const handleEditCategoryOrLocation = (item: Category | Location) => {
     setItemToEdit(item);
+    setManagementModalVisible(false);
     setEditModalVisible(true);
   };
 
@@ -479,6 +480,7 @@ export default function DashboardScreen() {
     }
     setItemToEdit(null);
     setEditModalVisible(false);
+    setManagementModalVisible(true);
   };
 
   const styles = StyleSheet.create({
@@ -1408,6 +1410,7 @@ export default function DashboardScreen() {
               style={styles.addNewButton}
               onPress={() => {
                 setItemToEdit(null);
+                setManagementModalVisible(false);
                 setEditModalVisible(true);
               }}
             >
@@ -1442,6 +1445,7 @@ export default function DashboardScreen() {
         onClose={() => {
           setEditModalVisible(false);
           setItemToEdit(null);
+          setManagementModalVisible(true);
         }}
         onSave={handleSaveCategoryOrLocation}
         title={itemToEdit 
