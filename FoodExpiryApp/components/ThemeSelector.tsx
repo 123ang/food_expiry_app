@@ -20,43 +20,43 @@ const THEMES = [
     key: 'theme.food', 
     icon: '🍔',
     categories: [
-      { name: 'category.vegetables', icon: '🥕' },
-      { name: 'category.fruits', icon: '🍎' },
-      { name: 'category.dairy', icon: '🧀' },
-      { name: 'category.meat', icon: '🥩' },
-      { name: 'category.snacks', icon: '🥨' },
-      { name: 'category.desserts', icon: '🍰' },
-      { name: 'category.seafood', icon: '🦞' },
-      { name: 'category.bread', icon: '🍞' },
+      { translationKey: 'category.vegetables', icon: '🥕' },
+      { translationKey: 'category.fruits', icon: '🍎' },
+      { translationKey: 'category.dairy', icon: '🧀' },
+      { translationKey: 'category.meat', icon: '🥩' },
+      { translationKey: 'category.snacks', icon: '🥨' },
+      { translationKey: 'category.desserts', icon: '🍰' },
+      { translationKey: 'category.seafood', icon: '🦞' },
+      { translationKey: 'category.bread', icon: '🍞' },
     ]
   },
   { 
     key: 'theme.health', 
     icon: '❤️',
     categories: [
-      { name: 'category.medications', icon: '💊' },
-      { name: 'category.vitamins', icon: '💪' },
-      { name: 'category.firstAid', icon: '🩹' },
-      { name: 'category.contactLenses', icon: '👁️' },
+      { translationKey: 'category.medications', icon: '💊' },
+      { translationKey: 'category.vitamins', icon: '💪' },
+      { translationKey: 'category.firstAid', icon: '🩹' },
+      { translationKey: 'category.contactLenses', icon: '👁️' },
     ]
   },
   { 
     key: 'theme.beauty', 
     icon: '💄',
     categories: [
-      { name: 'category.makeup', icon: '💅' },
-      { name: 'category.skincare', icon: '🧴' },
-      { name: 'category.hairCare', icon: '💇' },
-      { name: 'category.perfume', icon: '💨' },
+      { translationKey: 'category.makeup', icon: '💅' },
+      { translationKey: 'category.skincare', icon: '🧴' },
+      { translationKey: 'category.hairCare', icon: '💇' },
+      { translationKey: 'category.perfume', icon: '💨' },
     ]
   },
   { 
     key: 'theme.household', 
     icon: '🏠',
     categories: [
-      { name: 'category.cleaningSupplies', icon: '🧼' },
-      { name: 'category.laundryProducts', icon: '🧺' },
-      { name: 'category.batteries', icon: '🔋' },
+      { translationKey: 'category.cleaningSupplies', icon: '🧼' },
+      { translationKey: 'category.laundryProducts', icon: '🧺' },
+      { translationKey: 'category.batteries', icon: '🔋' },
     ]
   },
 ];
@@ -72,20 +72,20 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
   const { categories, createCategory } = useDatabase();
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
 
-  const toggleCategory = (categoryName: string) => {
+  const toggleCategory = (translationKey: string) => {
     const newSelection = new Set(selectedCategories);
-    if (newSelection.has(categoryName)) {
-      newSelection.delete(categoryName);
+    if (newSelection.has(translationKey)) {
+      newSelection.delete(translationKey);
     } else {
-      newSelection.add(categoryName);
+      newSelection.add(translationKey);
     }
     setSelectedCategories(newSelection);
   };
 
   const handleApply = async () => {
-    const existingCategoryNames = new Set(categories.map(c => c.name));
+    const existingTranslationKeys = new Set(categories.map(c => c.translationKey).filter(Boolean));
     const categoriesToAdd = THEMES.flatMap(theme => theme.categories)
-                                  .filter(cat => selectedCategories.has(cat.name) && !existingCategoryNames.has(cat.name));
+                                  .filter(cat => selectedCategories.has(cat.translationKey) && !existingTranslationKeys.has(cat.translationKey));
 
     if (categoriesToAdd.length === 0) {
       Alert.alert(t('common.info'), t('categories.allExist'));
@@ -95,7 +95,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
     
     try {
       for (const cat of categoriesToAdd) {
-        await createCategory(cat as Category);
+        await createCategory({ name: t(cat.translationKey), icon: cat.icon, translationKey: cat.translationKey } as Category);
       }
       Alert.alert(t('common.success'), `${t('categories.added')} ${categoriesToAdd.length} ${t('categories.newCategories')}`);
     } catch (error) {
@@ -227,8 +227,8 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
                 </View>
                 <View style={styles.categoryGrid}>
                   {themeItem.categories.map((cat) => {
-                    const isSelected = selectedCategories.has(cat.name);
-                    const isExisting = categories.some(c => c.name === cat.name);
+                    const isSelected = selectedCategories.has(cat.translationKey);
+                    const isExisting = categories.some(c => c.translationKey === cat.translationKey);
                     const buttonStyle = {
                       borderColor: isExisting ? theme.successColor : (isSelected ? theme.primaryColor : theme.borderColor),
                       backgroundColor: isExisting ? `${theme.successColor}20` : (isSelected ? `${theme.primaryColor}20` : 'transparent'),
@@ -239,13 +239,13 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
 
                     return (
                       <TouchableOpacity
-                        key={cat.name}
+                        key={cat.translationKey}
                         style={[styles.categoryButton, buttonStyle]}
-                        onPress={() => !isExisting && toggleCategory(cat.name)}
+                        onPress={() => !isExisting && toggleCategory(cat.translationKey)}
                         disabled={isExisting}
                       >
                         <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
-                        <Text style={[styles.categoryText, textStyle]}>{t(cat.name)}</Text>
+                        <Text style={[styles.categoryText, textStyle]}>{t(cat.translationKey)}</Text>
                         {isExisting && <FontAwesome name="check-circle" size={14} color={theme.successColor} />}
                       </TouchableOpacity>
                     );
