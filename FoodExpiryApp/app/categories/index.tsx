@@ -954,7 +954,7 @@ export default function CategoriesScreen() {
       </ScrollView>
 
       <EmojiSelector
-        visible={showIconSelector}
+        visible={showIconSelector && !showThemeSetup}
         onClose={() => setShowIconSelector(false)}
         onSelect={(icon) => {
           setSelectedIcon(icon);
@@ -963,12 +963,12 @@ export default function CategoriesScreen() {
         selectedEmoji={selectedIcon}
       />
 
-              <ThemeSetupModal
-          visible={showThemeSetup}
-          onClose={() => setShowThemeSetup(false)}
-          onApply={handleApplyThemes}
-          existingCategories={categories}
-        />
+      <ThemeSetupModal
+        visible={showThemeSetup}
+        onClose={() => setShowThemeSetup(false)}
+        onApply={handleApplyThemes}
+        existingCategories={categories}
+      />
 
       <BottomNav />
     </View>
