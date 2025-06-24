@@ -405,4 +405,10 @@ export default {
   'error.failedToUpdate': 'アイテムの更新に失敗しました',
   'error.failedToLoadData': 'データの読み込みに失敗しました',
   'error.tryAgain': 'もう一度お試しください',
+  'locations.addLocation': '場所を追加',
+  'locations.deleteConfirm': 'この場所を削除してもよろしいですか？',
+  'locations.deleteLocation': '場所を削除',
+  'locations.errorDelete': '場所の削除に失敗しました',
+  'locations.title': '保存場所',
+  'locations.updateLocation': '場所を更新',
 };
