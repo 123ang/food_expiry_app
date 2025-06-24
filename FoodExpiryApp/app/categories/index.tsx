@@ -886,7 +886,11 @@ export default function CategoriesScreen() {
         {/* Theme Setup Button */}
         <TouchableOpacity 
           style={styles.themeSetupButton} 
-          onPress={() => setShowThemeSetup(true)}
+          onPress={() => {
+            // Ensure no emoji selector is open when launching Theme Setup
+            setShowIconSelector(false);
+            setShowThemeSetup(true);
+          }}
           disabled={isLoading}
         >
           <FontAwesome name="magic" size={16} color="#FFFFFF" />
