@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Modal,
   Platform,
 } from 'react-native';
-import Modal from 'react-native-modal';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
@@ -77,6 +77,17 @@ export default function IconSelector({
   const { theme } = useTheme();
 
   const styles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      ...Platform.select({
+        ios: {
+          zIndex: 1100, // Higher z-index for iOS
+        },
+      }),
+    },
     modalContent: {
       width: '90%',
       maxHeight: '80%',
@@ -88,6 +99,11 @@ export default function IconSelector({
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 3.84,
+      ...Platform.select({
+        ios: {
+          zIndex: 1100, // Higher z-index for iOS
+        },
+      }),
     },
     title: {
       fontSize: 20,
@@ -139,39 +155,41 @@ export default function IconSelector({
 
   return (
     <Modal
-      isVisible={visible}
-      onBackdropPress={onClose}
-      onBackButtonPress={onClose}
-      animationIn="fadeIn"
-      animationOut="fadeOut"
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      presentationStyle="overFullScreen"
     >
-      <View style={styles.modalContent}>
-        <Text style={styles.title}>{title}</Text>
-        <ScrollView>
-          <View style={styles.iconsGrid}>
-            {icons.map((icon) => (
-              <TouchableOpacity
-                key={icon}
-                style={styles.iconButton}
-                onPress={() => onSelect(icon)}
-              >
-                <View style={[
-                  styles.iconWrapper,
-                  selectedIcon === icon && styles.selectedIcon
-                ]}>
-                  <FontAwesome
-                    name={icon}
-                    size={24}
-                    color={selectedIcon === icon ? theme.primaryColor : theme.textColor}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>{title}</Text>
+          <ScrollView>
+            <View style={styles.iconsGrid}>
+              {icons.map((icon) => (
+                <TouchableOpacity
+                  key={icon}
+                  style={styles.iconButton}
+                  onPress={() => onSelect(icon)}
+                >
+                  <View style={[
+                    styles.iconWrapper,
+                    selectedIcon === icon && styles.selectedIcon
+                  ]}>
+                    <FontAwesome
+                      name={icon}
+                      size={24}
+                      color={selectedIcon === icon ? theme.primaryColor : theme.textColor}
+                    />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </Modal>
   );

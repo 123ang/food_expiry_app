@@ -8,8 +8,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Modal,
   Platform,
-  Switch,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useDatabase } from '../../context/DatabaseContext';
@@ -21,7 +21,6 @@ import { useLanguage } from '../../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { CATEGORY_EMOJIS, EmojiItem } from '../../constants/emojis';
 import { getTranslatedThemes } from '../../database/database';
-import Modal from 'react-native-modal';
 
 // Predefined category themes
 interface CategoryTheme {
@@ -287,6 +286,12 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
   };
 
   const styles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
     modalContent: {
       width: '90%',
       maxHeight: '80%',
@@ -455,124 +460,120 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
   });
 
   return (
-    <Modal
-      isVisible={visible}
-      onBackdropPress={onClose}
-      onBackButtonPress={onClose}
-      animationIn="fadeIn"
-      animationOut="fadeOut"
-    >
-      <View style={styles.modalContent}>
-        <Text style={styles.title}>{t('themeSetup.title')}</Text>
-        <Text style={styles.subtitle}>
-          {t('themeSetup.subtitle')}
-        </Text>
-        
-        <ScrollView showsVerticalScrollIndicator={true}>
-          {categoryThemes.map((categoryTheme) => {
-            const themeCategoryKeys = categoryTheme.categories.map(cat => `${categoryTheme.id}-${cat.name}`);
-            const allSelected = themeCategoryKeys.every(key => selectedCategories.has(key));
-            const someSelected = themeCategoryKeys.some(key => selectedCategories.has(key));
-            
-            return (
-              <View key={categoryTheme.id}>
-                <TouchableOpacity
-                  style={[
-                    styles.themeItem,
-                    someSelected && styles.themeItemSelected
-                  ]}
-                  onPress={() => toggleTheme(categoryTheme.id)}
-                >
-                  <TouchableOpacity 
-                    style={styles.themeCheckbox}
-                    onPress={() => toggleAllInTheme(categoryTheme.id)}
-                  >
-                    <View style={[
-                      styles.checkbox,
-                      allSelected && styles.checkboxSelected,
-                      someSelected && !allSelected && styles.checkboxPartial
-                    ]}>
-                      {allSelected && (
-                        <Text style={styles.checkmark}>✓</Text>
-                      )}
-                      {someSelected && !allSelected && (
-                        <Text style={styles.checkmark}>-</Text>
-                      )}
-                    </View>
-                  </TouchableOpacity>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.title}>{t('themeSetup.title')}</Text>
+          <Text style={styles.subtitle}>
+            {t('themeSetup.subtitle')}
+          </Text>
+          
+          <ScrollView showsVerticalScrollIndicator={true}>
+            {categoryThemes.map((categoryTheme) => {
+              const themeCategoryKeys = categoryTheme.categories.map(cat => `${categoryTheme.id}-${cat.name}`);
+              const allSelected = themeCategoryKeys.every(key => selectedCategories.has(key));
+              const someSelected = themeCategoryKeys.some(key => selectedCategories.has(key));
               
-                  <Text style={styles.themeIcon}>{categoryTheme.icon}</Text>
-                  
-                  <View style={styles.themeInfo}>
-                    <Text style={styles.themeName}>{categoryTheme.name}</Text>
-                    <Text style={styles.themeDescription}>{categoryTheme.description}</Text>
-                    <Text style={styles.categoryCount}>
-                      {categoryTheme.categories.length} {t('themeSetup.categories')}
-                    </Text>
-                  </View>
+              return (
+                <View key={categoryTheme.id}>
+                  <TouchableOpacity
+                    style={[
+                      styles.themeItem,
+                      someSelected && styles.themeItemSelected
+                    ]}
+                    onPress={() => toggleTheme(categoryTheme.id)}
+                  >
+                    <TouchableOpacity 
+                      style={styles.themeCheckbox}
+                      onPress={() => toggleAllInTheme(categoryTheme.id)}
+                    >
+                      <View style={[
+                        styles.checkbox,
+                        allSelected && styles.checkboxSelected,
+                        someSelected && !allSelected && styles.checkboxPartial
+                      ]}>
+                        {allSelected && (
+                          <Text style={styles.checkmark}>✓</Text>
+                        )}
+                        {someSelected && !allSelected && (
+                          <Text style={styles.checkmark}>-</Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                
+                    <Text style={styles.themeIcon}>{categoryTheme.icon}</Text>
+                    
+                    <View style={styles.themeInfo}>
+                      <Text style={styles.themeName}>{categoryTheme.name}</Text>
+                      <Text style={styles.themeDescription}>{categoryTheme.description}</Text>
+                      <Text style={styles.categoryCount}>
+                        {categoryTheme.categories.length} {t('themeSetup.categories')}
+                      </Text>
+                    </View>
 
-                  <TouchableOpacity onPress={() => toggleTheme(categoryTheme.id)}>
-                    <Text style={styles.expandIcon}>
-                      {expandedThemes.has(categoryTheme.id) ? '▼' : '▶'}
-                    </Text>
+                    <TouchableOpacity onPress={() => toggleTheme(categoryTheme.id)}>
+                      <Text style={styles.expandIcon}>
+                        {expandedThemes.has(categoryTheme.id) ? '▼' : '▶'}
+                      </Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
-                </TouchableOpacity>
 
-                {/* Individual Categories */}
-                {expandedThemes.has(categoryTheme.id) && (
-                  <View style={styles.categoryList}>
-                    {categoryTheme.categories.map((category) => {
-                      const categoryKey = `${categoryTheme.id}-${category.name}`;
-                      const isSelected = selectedCategories.has(categoryKey);
-                      const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
-                      const isExisting = existingNames.includes(category.name.toLowerCase());
-                      
-                      return (
-                        <TouchableOpacity
-                          key={categoryKey}
-                          style={[
-                            styles.categoryItem,
-                            isSelected && styles.categoryItemSelected,
-                            isExisting && styles.categoryItemExisting
-                          ]}
-                          onPress={() => toggleCategory(categoryTheme.id, category.name)}
-                          disabled={isExisting}
-                        >
-                          <View style={[
-                            styles.categoryCheckbox,
-                            isSelected && styles.checkboxSelected,
-                            isExisting && styles.checkboxExisting
-                          ]}>
-                            {isSelected && (
-                              <Text style={styles.checkmark}>✓</Text>
+                  {/* Individual Categories */}
+                  {expandedThemes.has(categoryTheme.id) && (
+                    <View style={styles.categoryList}>
+                      {categoryTheme.categories.map((category) => {
+                        const categoryKey = `${categoryTheme.id}-${category.name}`;
+                        const isSelected = selectedCategories.has(categoryKey);
+                        const existingNames = existingCategories.map(cat => cat.name.toLowerCase());
+                        const isExisting = existingNames.includes(category.name.toLowerCase());
+                        
+                        return (
+                          <TouchableOpacity
+                            key={categoryKey}
+                            style={[
+                              styles.categoryItem,
+                              isSelected && styles.categoryItemSelected,
+                              isExisting && styles.categoryItemExisting
+                            ]}
+                            onPress={() => toggleCategory(categoryTheme.id, category.name)}
+                            disabled={isExisting}
+                          >
+                            <View style={[
+                              styles.categoryCheckbox,
+                              isSelected && styles.checkboxSelected,
+                              isExisting && styles.checkboxExisting
+                            ]}>
+                              {isSelected && (
+                                <Text style={styles.checkmark}>✓</Text>
+                              )}
+                            </View>
+                            
+                            <Text style={styles.categoryIcon}>{category.icon}</Text>
+                            <Text style={[
+                              styles.categoryName,
+                              isExisting && styles.categoryNameExisting
+                            ]}>{category.name}</Text>
+                            {isExisting && (
+                              <Text style={styles.existingLabel}>{t('themeSetup.added')}</Text>
                             )}
-                          </View>
-                          
-                          <Text style={styles.categoryIcon}>{category.icon}</Text>
-                          <Text style={[
-                            styles.categoryName,
-                            isExisting && styles.categoryNameExisting
-                          ]}>{category.name}</Text>
-                          {isExisting && (
-                            <Text style={styles.existingLabel}>{t('themeSetup.added')}</Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </ScrollView>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={onClose} style={[styles.button, styles.cancelButton]}>
-            <Text style={styles.buttonText}>{t('common.cancel')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleApply} style={[styles.button, styles.applyButton]}>
-            <Text style={styles.buttonText}>{t('actions.apply')}</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+              <Text style={styles.buttonText}>{t('themeSetup.cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.button, styles.applyButton]} onPress={handleApply}>
+              <Text style={styles.buttonText}>{t('themeSetup.apply')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
