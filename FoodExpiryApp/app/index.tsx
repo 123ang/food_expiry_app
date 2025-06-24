@@ -1368,7 +1368,7 @@ export default function DashboardScreen() {
       <BottomNav />
       
       <Modal
-        visible={managementModalVisible}
+        visible={managementModalVisible && !themeModalVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setManagementModalVisible(false)}
@@ -1381,7 +1381,10 @@ export default function DashboardScreen() {
             {managementModalType === 'categories' && (
               <TouchableOpacity 
                 style={[styles.themeButton, { marginTop: 0, marginBottom: 16 }]}
-                onPress={() => setThemeModalVisible(true)}
+                onPress={() => {
+                  setManagementModalVisible(false);
+                  setTimeout(() => setThemeModalVisible(true), Platform.OS === 'ios' ? 100 : 0);
+                }}
               >
                 <FontAwesome name="magic" size={16} color="#FFFFFF" />
                 <Text style={styles.themeButtonText}>
@@ -1459,7 +1462,10 @@ export default function DashboardScreen() {
 
       <ThemeSelector 
         visible={themeModalVisible}
-        onClose={() => setThemeModalVisible(false)}
+        onClose={() => {
+          setThemeModalVisible(false);
+          setManagementModalVisible(true);
+        }}
       />
 
       <Modal
