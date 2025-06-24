@@ -1337,9 +1337,6 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.categoryList}>
-            <View style={styles.categoryHeader}>
-              <Text style={styles.sectionTitle}>{t('home.categories')}</Text>
-            </View>
             <View style={styles.categoriesGrid}>
               {categories.map((category) => (
                 <TouchableOpacity

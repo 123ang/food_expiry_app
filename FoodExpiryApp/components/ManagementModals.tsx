@@ -11,6 +11,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES } from '../constants/emojis';
+import { FontAwesome } from '@expo/vector-icons';
 
 type EditModalProps = {
   visible: boolean;
@@ -29,6 +30,85 @@ type EmojiSelectorProps = {
   isCategory: boolean;
   selectedEmoji?: string;
 };
+
+const createStyles = (theme: any, t: any) => StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: theme.cardBackground,
+    borderRadius: 12,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: theme.textColor,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    color: theme.textColor,
+    borderColor: theme.borderColor,
+    backgroundColor: theme.backgroundColor,
+  },
+  iconSelector: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  iconSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconPreview: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 8,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
 
 export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   visible,
@@ -171,7 +251,10 @@ export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
                           styles.emojiItem,
                           selectedEmoji === item.emoji && styles.emojiItemSelected
                         ]}
-                        onPress={() => onSelect(item.emoji)}
+                        onPress={() => {
+                          onSelect(item.emoji);
+                          onClose();
+                        }}
                       >
                         <Text style={styles.emojiIcon}>{item.emoji}</Text>
                       </TouchableOpacity>
@@ -205,81 +288,7 @@ export const EditModal: React.FC<EditModalProps> = ({
   const [icon, setIcon] = useState(initialIcon || (isCategory ? '🍎' : '❄️'));
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
   const iconWasManuallySet = React.useRef(false);
-
-  const styles = StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    modalContent: {
-      width: '80%',
-      padding: 20,
-      backgroundColor: theme.cardBackground,
-      borderRadius: 12,
-      elevation: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 16,
-      textAlign: 'center',
-      color: theme.textColor,
-    },
-    input: {
-      borderWidth: 1,
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: 12,
-      fontSize: 16,
-      color: theme.textColor,
-      borderColor: theme.borderColor,
-      backgroundColor: theme.backgroundColor,
-    },
-    iconSelector: {
-      borderWidth: 1,
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderColor: theme.borderColor,
-      backgroundColor: theme.backgroundColor,
-    },
-    iconPreview: {
-      width: 20,
-      height: 20,
-      borderRadius: 4,
-      marginRight: 8,
-    },
-    iconText: {
-      fontSize: 16,
-      color: theme.textColor,
-      flex: 1,
-    },
-    modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 16,
-    },
-    modalButton: {
-      flex: 1,
-      padding: 12,
-      borderRadius: 8,
-      marginHorizontal: 8,
-      alignItems: 'center',
-    },
-    modalButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: '600',
-    },
-  });
+  const styles = createStyles(theme, t);
 
   React.useEffect(() => {
     if (visible) {
@@ -314,28 +323,37 @@ export const EditModal: React.FC<EditModalProps> = ({
         animationType="fade"
         onRequestClose={handleClose}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{title}</Text>
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}>{title}</Text>
             
             <TextInput
-              style={styles.input}
-              placeholder={t('categoryName')}
+              style={[styles.input, { 
+                color: theme.textColor,
+                borderColor: theme.borderColor,
+                backgroundColor: theme.backgroundColor
+              }]}
+              placeholder={t(isCategory ? 'categoryName' : 'locationName')}
               placeholderTextColor={theme.textSecondary}
               value={name}
               onChangeText={setName}
             />
             
             <TouchableOpacity
-              style={styles.iconSelector}
+              style={[styles.iconSelector, { 
+                borderColor: theme.borderColor,
+                backgroundColor: theme.backgroundColor
+              }]}
               onPress={() => setShowEmojiSelector(true)}
             >
-              <View style={styles.iconPreview}>
-                <Text style={{ fontSize: 24 }}>{icon}</Text>
+              <View style={styles.iconSelectorContent}>
+                <View style={styles.iconPreview}>
+                  <Text style={{ fontSize: 24 }}>{icon}</Text>
+                </View>
+                <Text style={[styles.iconText, { color: theme.textColor }]}>
+                  {t('selectIcon')} ({icon})
+                </Text>
               </View>
-              <Text style={styles.iconText}>
-                {t('selectIcon')} ({icon})
-              </Text>
               <Text style={{ color: theme.textSecondary, fontSize: 16 }}>▶</Text>
             </TouchableOpacity>
 
