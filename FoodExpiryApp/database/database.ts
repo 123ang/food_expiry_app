@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language } from '../context/LanguageContext';
 import { Category, Location } from './models';
 import * as FileSystem from 'expo-file-system';
+import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
 // Database configuration
 const DATABASE_VERSION = 5;
@@ -735,90 +736,8 @@ interface CategoryThemeData {
   }>;
 }
 
-export const ALL_THEMES: CategoryThemeData[] = [
-  {
-    id: 'food',
-    nameKey: 'theme.food',
-    descKey: 'theme.foodDesc',
-    icon: '🍎',
-    categories: [
-      { translationKey: 'category.vegetables', icon: '🥬' },
-      { translationKey: 'category.fruits', icon: '🍎' },
-      { translationKey: 'category.dairy', icon: '🥛' },
-      { translationKey: 'category.meat', icon: '🥩' },
-      { translationKey: 'category.snacks', icon: '🍿' },
-      { translationKey: 'category.desserts', icon: '🍰' },
-      { translationKey: 'category.seafood', icon: '🐟' },
-      { translationKey: 'category.bread', icon: '🍞' },
-    ]
-  },
-  {
-    id: 'health',
-    nameKey: 'theme.health',
-    descKey: 'theme.healthDesc',
-    icon: '💊',
-    categories: [
-      { translationKey: 'category.medications', icon: '💊' },
-      { translationKey: 'category.vitamins', icon: '🍀' },
-      { translationKey: 'category.firstAid', icon: '🩹' },
-      { translationKey: 'category.contactLenses', icon: '👓' },
-      { translationKey: 'category.bloodTestKits', icon: '🩸' },
-      { translationKey: 'category.medicalDevices', icon: '⚕️' },
-    ]
-  },
-  {
-    id: 'beauty',
-    nameKey: 'theme.beauty',
-    descKey: 'theme.beautyDesc',
-    icon: '💄',
-    categories: [
-      { translationKey: 'category.makeup', icon: '💄' },
-      { translationKey: 'category.skincare', icon: '🧴' },
-      { translationKey: 'category.hairCare', icon: '🧼' },
-      { translationKey: 'category.perfume', icon: '🌸' },
-      { translationKey: 'category.sunscreen', icon: '🌞' },
-      { translationKey: 'category.beautyTools', icon: '🧽' },
-    ]
-  },
-  {
-    id: 'household',
-    nameKey: 'theme.household',
-    descKey: 'theme.householdDesc',
-    icon: '🧹',
-    categories: [
-      { translationKey: 'category.cleaningSupplies', icon: '🧹' },
-      { translationKey: 'category.laundryProducts', icon: '🧺' },
-      { translationKey: 'category.batteries', icon: '🔋' },
-      { translationKey: 'category.safetyEquipment', icon: '🧯' },
-    ]
-  },
-  {
-    id: 'automotive',
-    nameKey: 'theme.automotive',
-    descKey: 'theme.automotiveDesc',
-    icon: '🛢️',
-    categories: [
-      { translationKey: 'category.paintCoatings', icon: '🎨' },
-      { translationKey: 'category.motorOil', icon: '🛢️' },
-      { translationKey: 'category.fuelAdditives', icon: '⛽' },
-    ]
-  }
-];
-
-// Function to get theme data with translations applied
-export const getTranslatedThemes = (t: (key: string) => string) => {
-  return ALL_THEMES.map(theme => ({
-    id: theme.id,
-    name: t(theme.nameKey),
-    description: t(theme.descKey),
-    icon: theme.icon,
-    categories: theme.categories.map(cat => ({
-      name: t(cat.translationKey),
-      icon: cat.icon,
-      translationKey: cat.translationKey // Keep for future reference
-    }))
-  }));
-};
+// Re-export helper for other modules
+export const getTranslatedThemes = translateThemesConst;
 
 // Create a mapping of category names to their translation keys
 const createCategoryTranslationMap = (): Record<string, string> => {

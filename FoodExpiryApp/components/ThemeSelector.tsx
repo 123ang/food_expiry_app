@@ -14,52 +14,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { Category } from '../database/models';
-
-const THEMES = [
-  { 
-    key: 'theme.food', 
-    icon: '🍔',
-    categories: [
-      { translationKey: 'category.vegetables', icon: '🥕' },
-      { translationKey: 'category.fruits', icon: '🍎' },
-      { translationKey: 'category.dairy', icon: '🧀' },
-      { translationKey: 'category.meat', icon: '🥩' },
-      { translationKey: 'category.snacks', icon: '🥨' },
-      { translationKey: 'category.desserts', icon: '🍰' },
-      { translationKey: 'category.seafood', icon: '🦞' },
-      { translationKey: 'category.bread', icon: '🍞' },
-    ]
-  },
-  { 
-    key: 'theme.health', 
-    icon: '❤️',
-    categories: [
-      { translationKey: 'category.medications', icon: '💊' },
-      { translationKey: 'category.vitamins', icon: '💪' },
-      { translationKey: 'category.firstAid', icon: '🩹' },
-      { translationKey: 'category.contactLenses', icon: '👁️' },
-    ]
-  },
-  { 
-    key: 'theme.beauty', 
-    icon: '💄',
-    categories: [
-      { translationKey: 'category.makeup', icon: '💅' },
-      { translationKey: 'category.skincare', icon: '🧴' },
-      { translationKey: 'category.hairCare', icon: '💇' },
-      { translationKey: 'category.perfume', icon: '💨' },
-    ]
-  },
-  { 
-    key: 'theme.household', 
-    icon: '🏠',
-    categories: [
-      { translationKey: 'category.cleaningSupplies', icon: '🧼' },
-      { translationKey: 'category.laundryProducts', icon: '🧺' },
-      { translationKey: 'category.batteries', icon: '🔋' },
-    ]
-  },
-];
+import { ALL_THEMES } from '../constants/categoryThemes';
+import { getTranslatedThemes } from '../constants/categoryThemes';
 
 type ThemeSelectorProps = {
   visible: boolean;
@@ -84,7 +40,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
 
   const handleApply = async () => {
     const existingTranslationKeys = new Set(categories.map(c => c.translationKey).filter(Boolean));
-    const categoriesToAdd = THEMES.flatMap(theme => theme.categories)
+    const categoriesToAdd = ALL_THEMES.flatMap(theme => theme.categories)
                                   .filter(cat => selectedCategories.has(cat.translationKey) && !existingTranslationKeys.has(cat.translationKey));
 
     if (categoriesToAdd.length === 0) {
@@ -219,11 +175,11 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
           <Text style={styles.title}>{t('themeSetup.title')}</Text>
           <Text style={styles.subtitle}>{t('themeSetup.subtitle')}</Text>
           <ScrollView>
-            {THEMES.map((themeItem) => (
-              <View key={themeItem.key} style={styles.themeContainer}>
+            {ALL_THEMES.map((themeItem) => (
+              <View key={themeItem.id} style={styles.themeContainer}>
                 <View style={styles.themeHeader}>
                   <Text style={styles.themeIcon}>{themeItem.icon}</Text>
-                  <Text style={styles.themeTitle}>{t(themeItem.key)}</Text>
+                  <Text style={styles.themeTitle}>{t(themeItem.nameKey)}</Text>
                 </View>
                 <View style={styles.categoryGrid}>
                   {themeItem.categories.map((cat) => {
