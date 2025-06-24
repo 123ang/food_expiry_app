@@ -334,4 +334,31 @@ export default {
   'notFound.title': '画面が見つかりません',
   'notFound.message': 'お探しの画面は存在しません。',
   'notFound.link': 'ホーム画面に移動',
+
+  // Category Names (added)
+  'category.vegetables': '野菜',
+  'category.fruits': '果物',
+  'category.dairy': '乳製品',
+  'category.meat': '肉類',
+  'category.snacks': 'スナック',
+  'category.desserts': 'デザート',
+  'category.seafood': 'シーフード',
+  'category.bread': 'パン',
+
+  // Default Categories (mirror of category names)
+  'defaultCategory.vegetables': '野菜',
+  'defaultCategory.fruits': '果物',
+  'defaultCategory.dairy': '乳製品',
+  'defaultCategory.meat': '肉類',
+  'defaultCategory.snacks': 'スナック',
+  'defaultCategory.desserts': 'デザート',
+  'defaultCategory.seafood': 'シーフード',
+  'defaultCategory.bread': 'パン',
+
+  // Default Storage Locations
+  'defaultLocation.fridge': '冷蔵庫',
+  'defaultLocation.freezer': '冷凍庫',
+  'defaultLocation.pantry': 'パントリー',
+  'defaultLocation.counter': 'カウンター',
+  'defaultLocation.cabinet': 'キャビネット',
 }; 
