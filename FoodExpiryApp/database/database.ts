@@ -7,7 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
 // Database configuration
-const DATABASE_VERSION = 5;
+const DATABASE_VERSION = 6;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -861,7 +861,7 @@ const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Lang
 };
 
 // Function to update existing default categories and locations with translation keys
-const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+export const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQLiteDatabase): Promise<void> => {
   try {
     // Check if this migration has already been completed
     const migrationKey = 'translation_keys_migration_completed';
@@ -927,6 +927,21 @@ const updateExistingDefaultItemsWithTranslationKeys = async (database: SQLite.SQ
   } catch (error) {
     
     // Don't throw error, just log it to prevent database locks
+  }
+};
+
+// Migration: for legacy theme categories added before translationKey support.
+// If translation_key is NULL but the name column already contains a translation key string (e.g. "category.dairy"),
+// copy that into translation_key. The UI layer will then translate by key and ignore the literal name.
+const addMissingTranslationKeysForThemedCategories = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  try {
+    await database.runAsync(
+      `UPDATE categories
+       SET translation_key = name
+       WHERE translation_key IS NULL AND name LIKE 'category.%'`
+    );
+  } catch (_e) {
+    // Ignore – migration is best-effort.
   }
 };
 
@@ -997,6 +1012,11 @@ export const initDatabase = async (): Promise<void> => {
       
       // Always run this to ensure existing users have translation keys
       await updateExistingDefaultItemsWithTranslationKeys(database);
+
+      // For upgrades to v6, patch themed categories that are missing translation_key.
+      if (currentVersion < 6) {
+        await addMissingTranslationKeysForThemedCategories(database);
+      }
 
       // Only run migrations if we're upgrading from an older version
       if (currentVersion > 0 && currentVersion < DATABASE_VERSION) {
