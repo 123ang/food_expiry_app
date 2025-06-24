@@ -68,7 +68,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    // Primary: current language, Fallback: English, Final fallback: key itself
+    return translations[language][key] ?? translations.en[key] ?? key;
   };
 
   // Utility function to get translated category name

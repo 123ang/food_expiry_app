@@ -361,4 +361,120 @@ export default {
   'defaultLocation.pantry': 'パントリー',
   'defaultLocation.counter': 'カウンター',
   'defaultLocation.cabinet': 'キャビネット',
-}; 
+
+  // Additional Settings Translations
+  'save': '保存',
+  'edit': '編集',
+  'add': '追加',
+  'settings.title': '設定',
+
+  // Categories Screen
+  'categories.title': 'カテゴリ',
+  'categories.updateCategory': 'カテゴリを更新',
+  'categories.addCategory': 'カテゴリを追加',
+  'categories.deleteCategory': 'カテゴリを削除',
+  'categories.deleteConfirm': 'このカテゴリを削除してもよろしいですか？',
+  'categories.errorDelete': 'カテゴリの削除に失敗しました',
+  'categories.added': '追加済み',
+  'categories.skipped': 'スキップ済み',
+  'categories.newCategories': '新しいカテゴリ',
+  'categories.existingCategories': '既存のカテゴリ',
+  'categories.newCategoriesFromThemes': '選択したテーマからの新しいカテゴリ',
+  'categories.allExist': '選択したカテゴリはすべて既に存在します。',
+  'categories.failedToAdd': '追加に失敗しました',
+  'categories.failedToAddAll': 'すべてのカテゴリの追加に失敗しました',
+
+  // Theme Setup Modal
+  'themeSetup.title': 'カテゴリテーマの設定',
+  'themeSetup.subtitle': 'テーマを選択して推奨カテゴリをアプリに素早く追加',
+  'themeSetup.quickSetup': 'テーマで素早く設定',
+  'themeSetup.categories': 'カテゴリ',
+  'themeSetup.cancel': 'キャンセル',
+  'themeSetup.apply': 'テーマを適用',
+  'themeSetup.added': '追加済み',
+
+  // Theme Names
+  'theme.food': '食品と飲料',
+  'theme.foodDesc': 'キッチン管理の基本的な食品カテゴリ',
+  'theme.health': '健康と医療',
+  'theme.healthDesc': '医療用品と健康製品',
+  'theme.beauty': '美容とパーソナルケア',
+  'theme.beautyDesc': '化粧品とパーソナルケア製品',
+  'theme.household': '家庭用品',
+  'theme.householdDesc': '掃除用品と家庭メンテナンス',
+  'theme.automotive': '自動車と化学製品',
+  'theme.automotiveDesc': '自動車メンテナンスと化学製品',
+
+  // Additional Category Names
+  'category.medications': '薬',
+  'category.vitamins': 'ビタミンとサプリメント',
+  'category.firstAid': '応急手当',
+  'category.contactLenses': 'コンタクトレンズ',
+  'category.bloodTestKits': '血液検査キット',
+  'category.medicalDevices': '医療機器',
+  'category.makeup': '化粧品',
+  'category.skincare': 'スキンケア',
+  'category.hairCare': 'ヘアケア',
+  'category.perfume': '香水とフレグランス',
+  'category.sunscreen': '日焼け止め',
+  'category.beautyTools': '美容ツール',
+  'category.cleaningSupplies': '掃除用品',
+  'category.laundryProducts': '洗濯用品',
+  'category.batteries': '電池',
+  'category.safetyEquipment': '安全装備',
+  'category.paintCoatings': 'ペイントとコーティング',
+  'category.motorOil': 'エンジンオイル',
+  'category.fuelAdditives': '燃料添加剤',
+
+  // Emoji Category Labels
+  'emojiCategory.food': '食品',
+  'emojiCategory.personalCare': 'パーソナルケアと美容',
+  'emojiCategory.medical': '医療と健康',
+  'emojiCategory.household': '家庭用品',
+  'emojiCategory.chemical': '化学と自動車',
+  'emojiCategory.other': 'その他',
+
+  // Calendar Theme Instructions
+  'calendar.androidThemeNote': '注意：Androidのカレンダーの外観は、アプリのテーマではなく、デバイスのシステムテーマ設定に従います。',
+  'calendar.systemThemeInstructions': 'カレンダーの色を変更するには、システム設定でデバイスのダーク/ライトモードを調整してください。',
+
+  // Add/Edit Food Item Page
+  'addItem.title': 'アイテムを追加',
+  'addItem.editTitle': 'アイテムを編集',
+  'addItem.itemName': 'アイテム名',
+  'addItem.itemNamePlaceholder': '食品名を入力',
+  'addItem.quantity': '数量',
+  'addItem.quantityPlaceholder': '数量を入力',
+  'addItem.category': 'カテゴリ',
+  'addItem.storageLocation': '保存場所',
+  'addItem.expiryDate': '賞味期限',
+  'addItem.reminderDays': 'リマインダー日数',
+  'addItem.reminderDaysPlaceholder': '期限切れ前のリマインダー日数',
+  'addItem.notes': 'メモ',
+  'addItem.notesPlaceholder': 'アイテムに関する備考を追加',
+  'addItem.loading': '読み込み中...',
+
+  // Error Messages for Add/Edit
+  'error.enterItemName': 'アイテム名を入力してください',
+  'error.selectStorageLocation': '保存場所を選択してください',
+  'error.failedToCreate': 'アイテムの作成に失敗しました',
+  'error.itemNotFound': 'アイテムが見つかりません',
+  'error.failedToLoad': 'アイテムの読み込みに失敗しました',
+  'errorSaving': 'アイテムの保存中にエラーが発生しました',
+
+  // Detail Pages
+  'detail.itemsIn': 'アイテム数：',
+  'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
+  'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加して表示してください！',
+  'detail.locationNotFound': '場所が見つかりません',
+
+  // Food Item Status
+  'foodStatus.indate': '期限内',
+  'foodStatus.expiring': '期限切れ間近',
+  'foodStatus.expired': '期限切れ',
+  'foodStatus.expirestoday': '今日期限切れ',
+  'foodStatus.daysLeft': '日残り',
+  'foodStatus.expiredDays': '日前',
+  'foodStatus.noCategory': 'カテゴリなし',
+  'foodStatus.noLocation': '場所なし',
+};
