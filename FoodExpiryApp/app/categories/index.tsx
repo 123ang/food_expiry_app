@@ -291,6 +291,11 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
+      ...Platform.select({
+        ios: {
+          zIndex: 1100, // Ensure this modal stays on top on iOS
+        },
+      }),
     },
     modalContent: {
       width: '90%',
@@ -298,6 +303,11 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
       padding: 20,
+      ...Platform.select({
+        ios: {
+          zIndex: 1100,
+        },
+      }),
     },
     title: {
       fontSize: 22,
