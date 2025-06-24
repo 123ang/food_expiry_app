@@ -190,24 +190,34 @@ export const CategoryRepository: Repository<Category> = {
           throw new Error('Database not available');
         }
 
-        // Check if this is a default category (id <= 8)
-        if (item.id <= 8) {
-          // For default categories, only update the icon
+        // Get the existing category to check if it's a default one
+        const existing = await db.getFirstAsync(
+          'SELECT * FROM categories WHERE id = ?',
+          [item.id]
+        ) as any;
+
+        if (!existing) {
+          throw new Error('Category not found');
+        }
+
+        // For default categories (id <= 8), if the name has been edited (not a translation key),
+        // clear the translation_key field
+        if (item.id <= 8 && !item.name.startsWith('category.')) {
           await db.runAsync(
-            'UPDATE categories SET icon = ? WHERE id = ?',
-            [item.icon, item.id]
+            'UPDATE categories SET name = ?, icon = ?, translation_key = NULL WHERE id = ?',
+            [item.name, item.icon, item.id]
           );
         } else {
-          // For user-created categories, update both name and icon
+          // For user-created categories or unedited default categories
           await db.runAsync(
             'UPDATE categories SET name = ?, icon = ?, translation_key = ? WHERE id = ?',
-            [item.name, item.icon, null, item.id]
+            [item.name, item.icon, item.name.startsWith('category.') ? item.name : null, item.id]
           );
         }
       } catch (error) {
-        throw error;
+        throw new Error(`Failed to update category: ${error}`);
       }
-    }, `Category.update(id:${item.id})`);
+    });
   },
 
   // Delete a category
@@ -375,24 +385,34 @@ export const LocationRepository: Repository<Location> = {
           throw new Error('Database not available');
         }
 
-        // Check if this is a default location (id <= 4)
-        if (item.id <= 4) {
-          // For default locations, only update the icon
+        // Get the existing location to check if it's a default one
+        const existing = await db.getFirstAsync(
+          'SELECT * FROM locations WHERE id = ?',
+          [item.id]
+        ) as any;
+
+        if (!existing) {
+          throw new Error('Location not found');
+        }
+
+        // For default locations (id <= 4), if the name has been edited (not a translation key),
+        // clear the translation_key field
+        if (item.id <= 4 && !item.name.startsWith('locations.')) {
           await db.runAsync(
-            'UPDATE locations SET icon = ? WHERE id = ?',
-            [item.icon, item.id]
+            'UPDATE locations SET name = ?, icon = ?, translation_key = NULL WHERE id = ?',
+            [item.name, item.icon, item.id]
           );
         } else {
-          // For user-created locations, update both name and icon
+          // For user-created locations or unedited default locations
           await db.runAsync(
             'UPDATE locations SET name = ?, icon = ?, translation_key = ? WHERE id = ?',
-            [item.name, item.icon, null, item.id]
+            [item.name, item.icon, item.name.startsWith('locations.') ? item.name : null, item.id]
           );
         }
       } catch (error) {
-        throw error;
+        throw new Error(`Failed to update location: ${error}`);
       }
-    }, `Location.update(id:${item.id})`);
+    });
   },
 
   // Delete a location

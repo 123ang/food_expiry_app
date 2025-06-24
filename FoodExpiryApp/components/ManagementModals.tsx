@@ -296,14 +296,21 @@ export const EditModal: React.FC<EditModalProps> = ({
   const [name, setName] = useState(translatedInitialName);
   const [icon, setIcon] = useState(initialIcon);
   const [showEmojiSelector, setShowEmojiSelector] = useState(false);
+  const [hasBeenEdited, setHasBeenEdited] = useState(false);
   
   useEffect(() => {
     if (visible) {
       const newTranslatedName = isTranslationKey ? t(initialName) : initialName;
       setName(newTranslatedName);
       setIcon(initialIcon);
+      setHasBeenEdited(false);
     }
   }, [visible, initialName, initialIcon, t]);
+
+  const handleNameChange = (text: string) => {
+    setName(text);
+    setHasBeenEdited(true);
+  };
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -313,8 +320,11 @@ export const EditModal: React.FC<EditModalProps> = ({
       );
       return;
     }
-    // If the name hasn't changed from the translation, pass the original key
-    const nameToSave = name.trim() === t(initialName) ? initialName : name.trim();
+    
+    // If the name has been edited, use the new name directly
+    // If not edited and it's a translation key, keep using the key
+    const nameToSave = hasBeenEdited ? name.trim() : initialName;
+    
     onSave(nameToSave, icon);
     handleClose();
   };
@@ -323,6 +333,7 @@ export const EditModal: React.FC<EditModalProps> = ({
     setName('');
     setIcon('');
     setShowEmojiSelector(false);
+    setHasBeenEdited(false);
     onClose();
   };
 
@@ -362,7 +373,7 @@ export const EditModal: React.FC<EditModalProps> = ({
             <TextInput
               style={styles.input}
               value={name}
-              onChangeText={setName}
+              onChangeText={handleNameChange}
               placeholder={isCategory ? t('categories.nameRequired') : t('locations.nameRequired')}
               placeholderTextColor={theme.textSecondary}
             />
