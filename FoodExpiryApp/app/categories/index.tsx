@@ -874,6 +874,18 @@ export default function CategoriesScreen() {
     );
   };
 
+  // Helper to open Theme Setup Modal safely on iOS
+  const handleOpenThemeSetup = () => {
+    if (showIconSelector) {
+      // Close emoji selector first, then open theme setup after dismissal
+      setShowIconSelector(false);
+      // iOS modal dismiss animation ~300ms; wait a bit longer to be safe
+      setTimeout(() => setShowThemeSetup(true), Platform.OS === 'ios' ? 400 : 100);
+    } else {
+      setShowThemeSetup(true);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
@@ -892,11 +904,7 @@ export default function CategoriesScreen() {
         {/* Theme Setup Button */}
         <TouchableOpacity 
           style={styles.themeSetupButton} 
-          onPress={() => {
-            setShowIconSelector(false);
-            // Give iOS a moment to finish dismissing any other modal before opening a new one.
-            setTimeout(() => setShowThemeSetup(true), 50);
-          }}
+          onPress={handleOpenThemeSetup}
           disabled={isLoading}
         >
           <FontAwesome name="magic" size={16} color="#FFFFFF" />
