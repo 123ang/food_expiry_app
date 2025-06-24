@@ -655,8 +655,12 @@ const EditModal: React.FC<EditModalProps> = ({
 
   return (
     <>
+      {/*
+        Do not display this modal while the emoji selector is open. Presenting
+        two native modals simultaneously causes issues on iOS, preventing the
+        icon picker from appearing. */}
       <Modal
-        visible={visible}
+        visible={visible && !showEmojiSelector}
         transparent
         animationType="fade"
         onRequestClose={handleClose}

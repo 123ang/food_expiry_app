@@ -375,7 +375,7 @@ export const EditModal: React.FC<EditModalProps> = ({
   return (
     <>
       <Modal
-        visible={visible}
+        visible={visible && !showEmojiSelector}
         transparent
         animationType="fade"
         onRequestClose={handleClose}
