@@ -244,7 +244,7 @@ export default {
   'language.chinese': 'จีน',
   'language.japanese': 'ญี่ปุ่น',
   'language.thai': 'ภาษาไทย',
-  'language.malay': 'Bahasa Melayu',
+  'language.malay': 'ภาษามลายู',
   'language.close': 'ปิด',
   
   // Screen Headers
