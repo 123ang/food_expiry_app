@@ -1,5 +1,4 @@
 export default {
-  // Navigation
   'nav.home': 'ホーム',
   'nav.list': 'リスト',
   'nav.calendar': 'カレンダー',
@@ -7,8 +6,6 @@ export default {
   'nav.categories': 'カテゴリ',
   'nav.settings': '設定',
   'nav.add': '追加',
-  
-  // Home Screen
   'home.welcome': 'おかえりなさい！',
   'home.welcomeToApp': '期限警報へようこそ',
   'home.expiring': '期限切れ間近',
@@ -19,8 +16,6 @@ export default {
   'home.storageLocations': '保存場所',
   'home.categories': 'カテゴリ',
   'home.loading': 'ダッシュボードを読み込み中...',
-  
-  // List Screen
   'list.search': 'アイテムを検索...',
   'list.all': 'すべて',
   'list.indate': '期限内',
@@ -30,12 +25,8 @@ export default {
   'list.noItems': 'アイテムが見つかりません。アイテムを追加してください！',
   'list.noSearch': '検索に一致するアイテムがありません',
   'list.noCategory': 'このカテゴリにアイテムが見つかりません',
-  
-  // Calendar Screen
   'calendar.noItems': 'この日付に期限切れのアイテムはありません',
   'calendar.items': '項目',
-  
-  // Status Screens
   'status.items': 'アイテム',
   'status.indate': '期限内アイテム',
   'status.indateItems': '期限内アイテム',
@@ -49,8 +40,6 @@ export default {
   'status.retry': '再試行',
   'status.loading': '読み込み中...',
   'status.error': 'データ読み込みエラー',
-  
-  // Food Item Details
   'item.details': 'アイテムの詳細',
   'item.daysLeft': '日残り',
   'item.expirestoday': '今日期限切れ',
@@ -61,8 +50,6 @@ export default {
   'item.notes': 'メモ',
   'item.reminderDays': 'リマインダー日数',
   'item.expiryDate': '賞味期限',
-  
-  // Forms
   'form.itemName': 'アイテム名',
   'form.quantity': '数量',
   'form.category': 'カテゴリ',
@@ -76,8 +63,6 @@ export default {
   'form.fillAllFields': 'すべてのフィールドを入力してください',
   'form.edit': '食品アイテムを編集',
   'form.new': '新しい食品アイテム',
-  
-  // Image Picker
   'image.selectTitle': '写真を追加',
   'image.selectMessage': '写真を追加する方法を選択してください',
   'image.camera': '写真を撮る',
@@ -101,13 +86,9 @@ export default {
   'image.useFoodEmoji': '食べ物絵文字を使用',
   'image.failedToSave': '画像の保存に失敗しました。再試行してください。',
   'image.failedToProcess': '画像の処理に失敗しました。再試行してください。',
-  
-  // Actions
   'action.edit': '編集',
   'action.delete': '削除',
   'action.add': '追加',
-  
-  // Alerts
   'alert.error': 'エラー',
   'alert.success': '成功',
   'alert.deleteTitle': 'アイテムを削除',
@@ -120,18 +101,15 @@ export default {
   'alert.unexpectedError': '予期しないエラーが発生しました',
   'alert.noItemsSelected': 'アイテムが選択されていません',
   'alert.selectItemsFirst': '在庫からクリアするアイテムを選択してください',
-  
-  // Common
   'common.cancel': 'キャンセル',
   'common.success': '成功',
   'common.error': 'エラー',
   'common.ok': 'OK',
   'common.info': '情報',
   'common.close': '閉じる',
+  'close': '閉じる',
   'common.options': 'オプション',
   'common.save': '保存',
-  
-  // Months
   'month.january': '1月',
   'month.february': '2月',
   'month.march': '3月',
@@ -144,8 +122,6 @@ export default {
   'month.october': '10月',
   'month.november': '11月',
   'month.december': '12月',
-  
-  // Week Days
   'weekday.sun': '日',
   'weekday.mon': '月',
   'weekday.tue': '火',
@@ -153,8 +129,6 @@ export default {
   'weekday.thu': '木',
   'weekday.fri': '金',
   'weekday.sat': '土',
-  
-  // Settings
   'settings.language': '言語',
   'settings.languageDescription': 'アプリの言語を変更',
   'settings.theme': 'テーマ',
@@ -210,8 +184,6 @@ export default {
   'settings.clearExpiredButton': '期限切れをクリア',
   'settings.clearExpiredSuccess': '{count}個の期限切れアイテム{plural}を正常に削除しました。',
   'settings.clearExpiredError': '期限切れアイテムの削除に失敗しました。もう一度お試しください。',
-  
-  // Clear Items Screen
   'clearItems.title': '使用済みアイテムをクリア',
   'clearItems.selectAll': 'すべて選択',
   'clearItems.clearSelection': '選択をクリア',
@@ -222,8 +194,6 @@ export default {
   'clearItems.success': '{count}個のアイテム{plural}を正常に削除しました。',
   'clearItems.error': 'アイテムの削除に失敗しました。もう一度お試しください。',
   'clearItems.noItems': 'クリアするアイテムがありません',
-  
-  // Item Actions
   'item.useItem': 'アイテムを使用',
   'item.throwAway': '捨てる',
   'item.reduceQuantity': '数量を減らす',
@@ -234,24 +204,16 @@ export default {
   'item.itemDeleted': 'アイテムが削除されました（数量が0になりました）',
   'item.invalidQuantity': '有効な数量を入力してください',
   'item.quantityTooHigh': '数量は利用可能数量を超えることはできません（{available}）',
-  
-  // App Name
   'app.name': '期限切れ警報',
-  
-  // Language Names
   'language.english': '英語',
   'language.chinese': '中国語',
   'language.japanese': '日本語',
   'language.thai': 'タイ語',
   'language.malay': 'マレー語',
   'language.close': '閉じる',
-  
-  // Screen Headers
   'header.notifications': '通知',
   'header.settings': '設定',
   'header.about': 'について',
-  
-  // About Section
   'about.appName': '食品有効期限アプリ',
   'about.appTagline': '無駄を減らし、お金を節約します。',
   'about.sectionAbout': 'について',
@@ -267,8 +229,6 @@ export default {
   'about.technologyDescription': 'すべてのプラットフォームで最適なパフォーマンスを実現するため、React NativeとExpoで構築されています。',
   'about.footerText': '食品廃棄削減のために❤️で作成',
   'about.close': '閉じる',
-
-  // Notification Messages
   'notification.testTitle': '食品期限警報',
   'notification.testBody': 'これは期限警報からのテスト通知です！',
   'notification.expiringTodayTitle': '今日期限切れの食品！',
@@ -280,8 +240,6 @@ export default {
   'notification.in': 'に',
   'notification.days': '日',
   'notification.day': '日',
-
-  // Notification Settings Screen
   'notification.enabledTitle': '通知が有効になりました',
   'notification.enableTitle': '通知を有効にする',
   'notification.enabledDesc': '食品の期限が近づくとお知らせが届きます。',
@@ -309,8 +267,6 @@ export default {
   'notification.enabledSuccessDesc': '食品の期限切れが近づくとお知らせが届くようになりました！',
   'notification.disabledError': '通知が無効になっています',
   'notification.disabledErrorDesc': '期限切れのお知らせを受け取るには、デバイス設定で通知を有効にしてください。',
-
-  // Additional Settings Translations
   'addCategory': 'カテゴリを追加',
   'editCategory': 'カテゴリを編集',
   'deleteCategory': 'カテゴリを削除',
@@ -326,16 +282,11 @@ export default {
   'selectIcon': 'アイコンを選択',
   'categories.nameRequired': 'カテゴリ名を入力してください',
   'locations.nameRequired': '場所名を入力してください',
-
-  // New translations
   'settings.manageCategories': 'カテゴリの管理',
   'settings.manageLocations': '場所の管理',
-  
   'notFound.title': '画面が見つかりません',
   'notFound.message': 'お探しの画面は存在しません。',
   'notFound.link': 'ホーム画面に移動',
-
-  // Category Names (added)
   'category.vegetables': '野菜',
   'category.fruits': '果物',
   'category.dairy': '乳製品',
@@ -344,8 +295,6 @@ export default {
   'category.desserts': 'デザート',
   'category.seafood': 'シーフード',
   'category.bread': 'パン',
-
-  // Default Categories (mirror of category names)
   'defaultCategory.vegetables': '野菜',
   'defaultCategory.fruits': '果物',
   'defaultCategory.dairy': '乳製品',
@@ -354,21 +303,15 @@ export default {
   'defaultCategory.desserts': 'デザート',
   'defaultCategory.seafood': 'シーフード',
   'defaultCategory.bread': 'パン',
-
-  // Default Storage Locations
   'defaultLocation.fridge': '冷蔵庫',
   'defaultLocation.freezer': '冷凍庫',
   'defaultLocation.pantry': 'パントリー',
   'defaultLocation.counter': 'カウンター',
   'defaultLocation.cabinet': 'キャビネット',
-
-  // Additional Settings Translations
   'save': '保存',
   'edit': '編集',
   'add': '追加',
   'settings.title': '設定',
-
-  // Categories Screen
   'categories.title': 'カテゴリ',
   'categories.updateCategory': 'カテゴリを更新',
   'categories.addCategory': 'カテゴリを追加',
@@ -383,8 +326,6 @@ export default {
   'categories.allExist': '選択したカテゴリはすべて既に存在します。',
   'categories.failedToAdd': '追加に失敗しました',
   'categories.failedToAddAll': 'すべてのカテゴリの追加に失敗しました',
-
-  // Theme Setup Modal
   'themeSetup.title': 'カテゴリテーマの設定',
   'themeSetup.subtitle': 'テーマを選択して推奨カテゴリをアプリに素早く追加',
   'themeSetup.quickSetup': 'テーマで素早く設定',
@@ -392,8 +333,6 @@ export default {
   'themeSetup.cancel': 'キャンセル',
   'themeSetup.apply': 'テーマを適用',
   'themeSetup.added': '追加済み',
-
-  // Theme Names
   'theme.food': '食品と飲料',
   'theme.foodDesc': 'キッチン管理の基本的な食品カテゴリ',
   'theme.health': '健康と医療',
@@ -404,8 +343,6 @@ export default {
   'theme.householdDesc': '掃除用品と家庭メンテナンス',
   'theme.automotive': '自動車と化学製品',
   'theme.automotiveDesc': '自動車メンテナンスと化学製品',
-
-  // Additional Category Names
   'category.medications': '薬',
   'category.vitamins': 'ビタミンとサプリメント',
   'category.firstAid': '応急手当',
@@ -425,20 +362,14 @@ export default {
   'category.paintCoatings': 'ペイントとコーティング',
   'category.motorOil': 'エンジンオイル',
   'category.fuelAdditives': '燃料添加剤',
-
-  // Emoji Category Labels
   'emojiCategory.food': '食品',
   'emojiCategory.personalCare': 'パーソナルケアと美容',
   'emojiCategory.medical': '医療と健康',
   'emojiCategory.household': '家庭用品',
   'emojiCategory.chemical': '化学と自動車',
   'emojiCategory.other': 'その他',
-
-  // Calendar Theme Instructions
   'calendar.androidThemeNote': '注意：Androidのカレンダーの外観は、アプリのテーマではなく、デバイスのシステムテーマ設定に従います。',
   'calendar.systemThemeInstructions': 'カレンダーの色を変更するには、システム設定でデバイスのダーク/ライトモードを調整してください。',
-
-  // Add/Edit Food Item Page
   'addItem.title': 'アイテムを追加',
   'addItem.editTitle': 'アイテムを編集',
   'addItem.itemName': 'アイテム名',
@@ -453,22 +384,16 @@ export default {
   'addItem.notes': 'メモ',
   'addItem.notesPlaceholder': 'アイテムに関する備考を追加',
   'addItem.loading': '読み込み中...',
-
-  // Error Messages for Add/Edit
   'error.enterItemName': 'アイテム名を入力してください',
   'error.selectStorageLocation': '保存場所を選択してください',
   'error.failedToCreate': 'アイテムの作成に失敗しました',
   'error.itemNotFound': 'アイテムが見つかりません',
   'error.failedToLoad': 'アイテムの読み込みに失敗しました',
   'errorSaving': 'アイテムの保存中にエラーが発生しました',
-
-  // Detail Pages
   'detail.itemsIn': 'アイテム数：',
   'detail.noItemsYet': 'このカテゴリにはまだアイテムがありません',
   'detail.noItemsInLocation': '{location}にはまだアイテムがありません。\nアイテムを追加して表示してください！',
   'detail.locationNotFound': '場所が見つかりません',
-
-  // Food Item Status
   'foodStatus.indate': '期限内',
   'foodStatus.expiring': '期限切れ間近',
   'foodStatus.expired': '期限切れ',
@@ -477,4 +402,13 @@ export default {
   'foodStatus.expiredDays': '日前',
   'foodStatus.noCategory': 'カテゴリなし',
   'foodStatus.noLocation': '場所なし',
+  'error.failedToUpdate': 'アイテムの更新に失敗しました',
+  'error.failedToLoadData': 'データの読み込みに失敗しました',
+  'error.tryAgain': 'もう一度お試しください',
+  'locations.addLocation': '場所を追加',
+  'locations.deleteConfirm': 'この場所を削除してもよろしいですか？',
+  'locations.deleteLocation': '場所を削除',
+  'locations.errorDelete': '場所の削除に失敗しました',
+  'locations.title': '保存場所',
+  'locations.updateLocation': '場所を更新',
 };

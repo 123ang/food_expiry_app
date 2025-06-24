@@ -274,6 +274,7 @@ export default {
   'deleteLocationConfirm': '确定要删除此位置吗？',
   'cancel': '取消',
   'delete': '删除',
+  'close': '关闭',
   'save': '保存',
   'edit': '编辑',
   'add': '添加',
@@ -407,4 +408,7 @@ export default {
   'notFound.title': '未找到屏幕',
   'notFound.message': '您正在查找的屏幕不存在。',
   'notFound.link': '转到主屏幕',
+  'error.failedToUpdate': '更新项目失败',
+  'error.failedToLoadData': '加载数据失败',
+  'error.tryAgain': '请再试一次',
 };

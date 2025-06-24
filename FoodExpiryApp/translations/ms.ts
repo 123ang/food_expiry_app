@@ -1,5 +1,4 @@
 export default {
-  // Navigation
   'nav.home': 'Utama',
   'nav.list': 'Senarai',
   'nav.calendar': 'Kalendar',
@@ -7,8 +6,6 @@ export default {
   'nav.categories': 'Kategori',
   'nav.settings': 'Tetapan',
   'nav.add': 'Tambah',
-  
-  // Home Screen
   'home.welcome': 'Selamat Kembali!',
   'home.welcomeToApp': 'Selamat Datang ke App Peringatan Luput',
   'home.expiring': 'Hampir Luput',
@@ -19,8 +16,6 @@ export default {
   'home.storageLocations': 'Lokasi Simpanan',
   'home.categories': 'Kategori',
   'home.loading': 'Memuat papan pemuka...',
-  
-  // List Screen
   'list.search': 'Cari item...',
   'list.all': 'Semua',
   'list.indate': 'Belum Luput',
@@ -30,12 +25,8 @@ export default {
   'list.noItems': 'Tiada item dijumpai. Sila tambah item untuk bermula!',
   'list.noSearch': 'Tiada item yang sepadan dengan carian',
   'list.noCategory': 'Tiada item dijumpai dalam kategori ini',
-  
-  // Calendar Screen
   'calendar.noItems': 'Tiada item luput pada tarikh ini',
   'calendar.items': 'Item',
-  
-  // Status Screens
   'status.items': 'Item',
   'status.indate': 'Item Belum Luput',
   'status.indateItems': 'Item Belum Luput',
@@ -49,8 +40,6 @@ export default {
   'status.retry': 'Cuba Lagi',
   'status.loading': 'Memuat...',
   'status.error': 'Ralat memuat data',
-  
-  // Food Item Details
   'item.details': 'Butiran Item',
   'item.daysLeft': 'hari lagi',
   'item.expirestoday': 'Luput hari ini',
@@ -61,8 +50,6 @@ export default {
   'item.notes': 'Nota',
   'item.reminderDays': 'Hari Peringatan',
   'item.expiryDate': 'Tarikh Luput',
-  
-  // Forms
   'form.itemName': 'Nama Item',
   'form.quantity': 'Kuantiti',
   'form.category': 'Kategori',
@@ -76,8 +63,6 @@ export default {
   'form.fillAllFields': 'Sila isi semua medan',
   'form.edit': 'Edit Item Makanan',
   'form.new': 'Item Makanan Baru',
-  
-  // Image Picker
   'image.selectTitle': 'Tambah Foto',
   'image.selectMessage': 'Pilih cara untuk menambah foto',
   'image.camera': 'Ambil Foto',
@@ -101,13 +86,9 @@ export default {
   'image.useFoodEmoji': 'Gunakan Emoji Makanan',
   'image.failedToSave': 'Gagal menyimpan gambar. Sila cuba lagi.',
   'image.failedToProcess': 'Gagal memproses gambar. Sila cuba lagi.',
-  
-  // Actions
   'action.edit': 'Edit',
   'action.delete': 'Padam',
   'action.add': 'Tambah',
-  
-  // Alerts
   'alert.error': 'Ralat',
   'alert.success': 'Berjaya',
   'alert.deleteTitle': 'Padam Item',
@@ -120,8 +101,6 @@ export default {
   'alert.unexpectedError': 'Ralat yang tidak dijangka berlaku',
   'alert.noItemsSelected': 'Tiada item dipilih',
   'alert.selectItemsFirst': 'Sila pilih item untuk dikosongkan dari stok',
-  
-  // Common
   'common.cancel': 'Batal',
   'common.success': 'Berjaya',
   'common.error': 'Ralat',
@@ -130,8 +109,6 @@ export default {
   'common.close': 'Tutup',
   'common.options': 'pilihan',
   'common.save': 'Simpan',
-  
-  // Months
   'month.january': 'Januari',
   'month.february': 'Februari',
   'month.march': 'Mac',
@@ -144,8 +121,6 @@ export default {
   'month.october': 'Oktober',
   'month.november': 'November',
   'month.december': 'Disember',
-  
-  // Week Days
   'weekday.sun': 'Ahd',
   'weekday.mon': 'Isn',
   'weekday.tue': 'Sel',
@@ -153,8 +128,6 @@ export default {
   'weekday.thu': 'Kha',
   'weekday.fri': 'Jum',
   'weekday.sat': 'Sab',
-  
-  // Settings
   'settings.language': 'Bahasa',
   'settings.languageDescription': 'Tukar bahasa aplikasi',
   'settings.theme': 'Tema',
@@ -213,8 +186,6 @@ export default {
   'settings.title': 'Tetapan',
   'settings.manageCategories': 'Urus Kategori',
   'settings.manageLocations': 'Urus Lokasi',
-  
-  // Clear Items Screen
   'clearItems.title': 'Kosongkan Item Terpakai',
   'clearItems.selectAll': 'Pilih Semua',
   'clearItems.clearSelection': 'Kosongkan Pilihan',
@@ -225,8 +196,6 @@ export default {
   'clearItems.success': 'Berjaya memadamkan {count} item{plural}.',
   'clearItems.error': 'Gagal memadamkan item. Sila cuba lagi.',
   'clearItems.noItems': 'Tiada item untuk dikosongkan',
-  
-  // Item Actions
   'item.useItem': 'Guna Item',
   'item.throwAway': 'Buang',
   'item.reduceQuantity': 'Kurangkan Kuantiti',
@@ -237,24 +206,16 @@ export default {
   'item.itemDeleted': 'Item dipadamkan (kuantiti mencapai 0)',
   'item.invalidQuantity': 'Sila masukkan kuantiti yang sah',
   'item.quantityTooHigh': 'Kuantiti tidak boleh lebih tinggi daripada yang ada ({available})',
-  
-  // App Name
   'app.name': 'Peringatan Luput',
-  
-  // Language Names
   'language.english': 'Bahasa Inggeris',
   'language.chinese': 'Bahasa Cina',
   'language.japanese': 'Bahasa Jepun',
   'language.thai': 'Bahasa Thai',
   'language.malay': 'Bahasa Melayu',
   'language.close': 'Tutup',
-  
-  // Screen Headers
   'header.notifications': 'Pemberitahuan',
   'header.settings': 'Tetapan',
   'header.about': 'Tentang',
-  
-  // About Section
   'about.appName': 'Aplikasi Tarikh Luput Makanan',
   'about.appTagline': 'Kurangkan pembaziran, jimat wang.',
   'about.sectionAbout': 'Tentang',
@@ -270,8 +231,6 @@ export default {
   'about.technologyDescription': 'Dibina dengan React Native dan Expo untuk prestasi optimum merentasi semua platform.',
   'about.footerText': 'Dibuat dengan ❤️ untuk mengurangkan pembaziran makanan di seluruh dunia',
   'about.close': 'Tutup',
-  
-  // Notification Messages
   'notification.testTitle': 'Peringatan Luput Makanan',
   'notification.testBody': 'Ini adalah notifikasi ujian dari Peringatan Luput!',
   'notification.expiringTodayTitle': 'Makanan Luput Hari Ini!',
@@ -283,8 +242,6 @@ export default {
   'notification.in': 'di',
   'notification.days': 'hari',
   'notification.day': 'hari',
-
-  // Notification Settings Screen
   'notification.enabledTitle': 'Pemberitahuan Diaktifkan',
   'notification.enableTitle': 'Aktifkan Pemberitahuan',
   'notification.enabledDesc': 'Anda akan menerima amaran apabila item makanan anda hampir luput.',
@@ -312,8 +269,6 @@ export default {
   'notification.enabledSuccessDesc': 'Anda sekarang akan menerima amaran apabila item makanan anda hampir luput!',
   'notification.disabledError': 'Pemberitahuan Dilumpuhkan',
   'notification.disabledErrorDesc': 'Sila aktifkan pemberitahuan dalam tetapan peranti anda untuk menerima amaran luput.',
-
-  // Additional Settings Translations
   'deleteCategory': 'Padam Kategori',
   'deleteCategoryConfirm': 'Adakah anda pasti untuk memadamkan kategori ini? Semua item di dalamnya juga akan dipadamkan.',
   'deleteLocation': 'Padam Lokasi',
@@ -324,8 +279,6 @@ export default {
   'save': 'Simpan',
   'edit': 'Edit',
   'add': 'Tambah',
-
-  // Edit Modal Translations
   'editCategory': 'Sunting Kategori',
   'addCategory': 'Tambah Kategori',
   'editLocation': 'Sunting Lokasi',
@@ -333,8 +286,6 @@ export default {
   'categoryName': 'Nama Kategori',
   'locationName': 'Nama Lokasi',
   'selectIcon': 'Pilih Ikon',
-  
-  // Categories Screen
   'categories.title': 'Kategori',
   'categories.updateCategory': 'Kemaskini Kategori',
   'categories.addCategory': 'Tambah Kategori',
@@ -350,8 +301,6 @@ export default {
   'categories.failedToAdd': 'gagal ditambah',
   'categories.failedToAddAll': 'Gagal menambah sebarang kategori',
   'categories.nameRequired': 'Sila masukkan nama kategori',
-  
-  // Theme Setup Modal
   'themeSetup.title': 'Tetapan Tema Kategori',
   'themeSetup.subtitle': 'Pilih tema untuk menambah kategori yang dicadangkan ke aplikasi anda dengan cepat',
   'themeSetup.quickSetup': 'Tetapan Cepat dengan Tema',
@@ -359,8 +308,6 @@ export default {
   'themeSetup.cancel': 'Batal',
   'themeSetup.apply': 'Guna Tema',
   'themeSetup.added': 'Ditambah',
-  
-  // Theme Names
   'theme.food': 'Makanan & Minuman',
   'theme.foodDesc': 'Kategori makanan asas untuk pengurusan dapur',
   'theme.health': 'Kesihatan & Perubatan',
@@ -371,8 +318,6 @@ export default {
   'theme.householdDesc': 'Bekalan pembersihan dan penyelenggaraan rumah',
   'theme.automotive': 'Automotif & Kimia',
   'theme.automotiveDesc': 'Penyelenggaraan kereta dan produk kimia',
-  
-  // Category Names
   'category.vegetables': 'Sayur-sayuran',
   'category.fruits': 'Buah-buahan',
   'category.dairy': 'Produk Tenusu',
@@ -400,16 +345,12 @@ export default {
   'category.paintCoatings': 'Cat & Salutan',
   'category.motorOil': 'Minyak Enjin',
   'category.fuelAdditives': 'Bahan Tambahan Bahan Api',
-  
-  // Emoji Category Labels
   'emojiCategory.food': 'Makanan',
   'emojiCategory.personalCare': 'Penjagaan Diri & Kecantikan',
   'emojiCategory.medical': 'Perubatan & Kesihatan',
   'emojiCategory.household': 'Barangan Rumah',
   'emojiCategory.chemical': 'Kimia & Automotif',
   'emojiCategory.other': 'Lain-lain',
-  
-  // Locations Screen
   'locations.title': 'Lokasi Simpanan',
   'locations.updateLocation': 'Kemaskini Lokasi',
   'locations.addLocation': 'Tambah Lokasi',
@@ -417,12 +358,8 @@ export default {
   'locations.deleteConfirm': 'Adakah anda pasti untuk memadamkan lokasi ini?',
   'locations.errorDelete': 'Gagal memadamkan lokasi',
   'locations.nameRequired': 'Sila masukkan nama lokasi',
-
-  // Calendar Theme Instructions
   'calendar.androidThemeNote': 'Nota: Penampilan kalendar pada Android mengikuti tetapan tema sistem peranti anda, bukan tema aplikasi.',
   'calendar.systemThemeInstructions': 'Untuk menukar warna kalendar, sesuaikan mod gelap/terang peranti anda dalam tetapan sistem.',
-
-  // Default Categories
   'defaultCategory.vegetables': 'Sayur-sayuran',
   'defaultCategory.fruits': 'Buah-buahan', 
   'defaultCategory.dairy': 'Produk Tenusu',
@@ -431,15 +368,11 @@ export default {
   'defaultCategory.desserts': 'Pencuci Mulut',
   'defaultCategory.seafood': 'Makanan Laut',
   'defaultCategory.bread': 'Roti',
-
-  // Default Locations
   'defaultLocation.fridge': 'Peti Sejuk',
   'defaultLocation.freezer': 'Peti Beku',
   'defaultLocation.pantry': 'Pantri',
   'defaultLocation.counter': 'Kaunter',
   'defaultLocation.cabinet': 'Kabinet',
-
-  // Add/Edit Food Item Page
   'addItem.title': 'Tambah Item Makanan',
   'addItem.editTitle': 'Edit Item Makanan',
   'addItem.itemName': 'Nama Item',
@@ -454,8 +387,6 @@ export default {
   'addItem.notes': 'Nota',
   'addItem.notesPlaceholder': 'Tambah nota tentang item',
   'addItem.loading': 'Memuat butiran item...',
-  
-  // Error Messages for Add/Edit
   'error.enterItemName': 'Sila masukkan nama item',
   'error.selectStorageLocation': 'Sila pilih lokasi simpanan',
   'error.failedToCreate': 'Gagal mencipta item',
@@ -465,14 +396,10 @@ export default {
   'error.itemNotFound': 'Item tidak dijumpai',
   'error.failedToLoad': 'Gagal memuat item',
   'errorSaving': 'Ralat berlaku semasa menyimpan item',
-
-  // Detail Pages
   'detail.itemsIn': 'Bilangan item:',
   'detail.noItemsYet': 'Belum ada item dalam kategori ini',
   'detail.noItemsInLocation': 'Belum ada item di {location}.\nTambah item di sini untuk melihat!',
   'detail.locationNotFound': 'Lokasi tidak dijumpai',
-
-  // Food Item Status
   'foodStatus.indate': 'Belum Luput',
   'foodStatus.expiring': 'Hampir Luput',
   'foodStatus.expired': 'Sudah Luput',
@@ -481,7 +408,6 @@ export default {
   'foodStatus.expiredDays': 'hari yang lalu',
   'foodStatus.noCategory': 'Tiada Kategori',
   'foodStatus.noLocation': 'Tiada Lokasi',
-
   'notFound.title': 'Skrin Tidak Ditemui',
   'notFound.message': 'Skrin yang anda cari tidak wujud.',
   'notFound.link': 'Pergi ke Skrin Utama',

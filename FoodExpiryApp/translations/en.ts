@@ -278,6 +278,7 @@ export default {
   'deleteLocationConfirm': 'Are you sure you want to delete this location? All items within it will be moved to unassigned.',
   'cancel': 'Cancel',
   'delete': 'Delete',
+  'close': 'Close',
   'save': 'Save',
   'edit': 'Edit',
   'add': 'Add',
@@ -407,4 +408,7 @@ export default {
   'notFound.title': 'Screen Not Found',
   'notFound.message': 'The screen you are looking for does not exist.',
   'notFound.link': 'Go to Home Screen',
+  'error.failedToUpdate': 'Failed to update item',
+  'error.failedToLoadData': 'Failed to load data',
+  'error.tryAgain': 'Please try again',
 };

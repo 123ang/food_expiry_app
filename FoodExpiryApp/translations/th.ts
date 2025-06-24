@@ -1,5 +1,4 @@
 export default {
-  // Navigation
   'nav.home': 'หน้าหลัก',
   'nav.list': 'รายการ',
   'nav.calendar': 'ปฏิทิน',
@@ -7,8 +6,6 @@ export default {
   'nav.categories': 'หมวดหมู่',
   'nav.settings': 'การตั้งค่า',
   'nav.add': 'เพิ่ม',
-  
-  // Home Screen
   'home.welcome': 'ยินดีต้อนรับกลับ!',
   'home.welcomeToApp': 'ยินดีต้อนรับสู่แอปแจ้งเตือนหมดอายุ',
   'home.expiring': 'ใกล้หมดอายุ',
@@ -19,8 +16,6 @@ export default {
   'home.storageLocations': 'สถานที่เก็บ',
   'home.categories': 'หมวดหมู่',
   'home.loading': 'กำลังโหลดแดชบอร์ด...',
-  
-  // List Screen
   'list.search': 'ค้นหารายการ...',
   'list.all': 'ทั้งหมด',
   'list.indate': 'ยังไม่หมดอายุ',
@@ -30,12 +25,8 @@ export default {
   'list.noItems': 'ไม่พบรายการ กรุณาเพิ่มรายการเพื่อเริ่มต้น!',
   'list.noSearch': 'ไม่มีรายการที่ตรงกับการค้นหา',
   'list.noCategory': 'ไม่พบรายการในหมวดหมู่นี้',
-  
-  // Calendar Screen
   'calendar.noItems': 'ไม่มีรายการหมดอายุในวันนี้',
   'calendar.items': 'รายการ',
-  
-  // Status Screens
   'status.items': 'รายการ',
   'status.indate': 'รายการที่ยังไม่หมดอายุ',
   'status.indateItems': 'รายการที่ยังไม่หมดอายุ',
@@ -49,8 +40,6 @@ export default {
   'status.retry': 'ลองใหม่',
   'status.loading': 'กำลังโหลด...',
   'status.error': 'เกิดข้อผิดพลาดในการโหลดข้อมูล',
-  
-  // Food Item Details
   'item.details': 'รายละเอียดรายการ',
   'item.daysLeft': 'วันที่เหลือ',
   'item.expirestoday': 'หมดอายุวันนี้',
@@ -61,8 +50,6 @@ export default {
   'item.notes': 'หมายเหตุ',
   'item.reminderDays': 'วันแจ้งเตือน',
   'item.expiryDate': 'วันหมดอายุ',
-  
-  // Forms
   'form.itemName': 'ชื่อรายการ',
   'form.quantity': 'จำนวน',
   'form.category': 'หมวดหมู่',
@@ -76,8 +63,6 @@ export default {
   'form.fillAllFields': 'กรุณากรอกข้อมูลทุกช่อง',
   'form.edit': 'แก้ไขรายการอาหาร',
   'form.new': 'รายการอาหารใหม่',
-  
-  // Image Picker
   'image.selectTitle': 'เพิ่มรูปภาพ',
   'image.selectMessage': 'เลือกวิธีการเพิ่มรูปภาพ',
   'image.camera': 'ถ่ายรูป',
@@ -101,13 +86,9 @@ export default {
   'image.useFoodEmoji': 'ใช้อีโมจิอาหาร',
   'image.failedToSave': 'บันทึกรูปภาพไม่สำเร็จ กรุณาลองใหม่',
   'image.failedToProcess': 'ประมวลผลรูปภาพไม่สำเร็จ กรุณาลองใหม่',
-  
-  // Actions
   'action.edit': 'แก้ไข',
   'action.delete': 'ลบ',
   'action.add': 'เพิ่ม',
-  
-  // Alerts
   'alert.error': 'ข้อผิดพลาด',
   'alert.success': 'สำเร็จ',
   'alert.deleteTitle': 'ลบรายการ',
@@ -120,8 +101,6 @@ export default {
   'alert.unexpectedError': 'เกิดข้อผิดพลาดที่ไม่คาดคิด',
   'alert.noItemsSelected': 'ไม่ได้เลือกรายการ',
   'alert.selectItemsFirst': 'กรุณาเลือกรายการที่จะล้างจากสต็อก',
-  
-  // Common
   'common.cancel': 'ยกเลิก',
   'common.success': 'สำเร็จ',
   'common.error': 'ข้อผิดพลาด',
@@ -130,8 +109,6 @@ export default {
   'common.close': 'ปิด',
   'common.options': 'ตัวเลือก',
   'common.save': 'บันทึก',
-  
-  // Months
   'month.january': 'มกราคม',
   'month.february': 'กุมภาพันธ์',
   'month.march': 'มีนาคม',
@@ -144,8 +121,6 @@ export default {
   'month.october': 'ตุลาคม',
   'month.november': 'พฤศจิกายน',
   'month.december': 'ธันวาคม',
-  
-  // Week Days
   'weekday.sun': 'อา',
   'weekday.mon': 'จ',
   'weekday.tue': 'อ',
@@ -153,8 +128,6 @@ export default {
   'weekday.thu': 'พฤ',
   'weekday.fri': 'ศ',
   'weekday.sat': 'ส',
-  
-  // Settings
   'settings.language': 'ภาษา',
   'settings.languageDescription': 'เปลี่ยนภาษาของแอป',
   'settings.theme': 'ธีม',
@@ -211,8 +184,6 @@ export default {
   'settings.clearExpiredSuccess': 'ลบรายการหมดอายุ {count} รายการ{plural}สำเร็จ',
   'settings.clearExpiredError': 'ลบรายการหมดอายุไม่สำเร็จ กรุณาลองใหม่',
   'settings.title': 'การตั้งค่า',
-  
-  // Clear Items Screen
   'clearItems.title': 'ล้างรายการที่ใช้แล้ว',
   'clearItems.selectAll': 'เลือกทั้งหมด',
   'clearItems.clearSelection': 'ล้างการเลือก',
@@ -223,8 +194,6 @@ export default {
   'clearItems.success': 'ลบรายการ {count} รายการ{plural}สำเร็จ',
   'clearItems.error': 'ลบรายการไม่สำเร็จ กรุณาลองใหม่',
   'clearItems.noItems': 'ไม่มีรายการที่จะล้าง',
-  
-  // Item Actions
   'item.useItem': 'ใช้รายการ',
   'item.throwAway': 'ทิ้ง',
   'item.reduceQuantity': 'ลดจำนวน',
@@ -235,24 +204,16 @@ export default {
   'item.itemDeleted': 'รายการถูกลบ (จำนวนเป็น 0)',
   'item.invalidQuantity': 'กรุณาใส่จำนวนที่ถูกต้อง',
   'item.quantityTooHigh': 'จำนวนไม่สามารถมากกว่าที่มี ({available})',
-  
-  // App Name
   'app.name': 'แจ้งเตือนหมดอายุ',
-  
-  // Language Names
   'language.english': 'อังกฤษ',
   'language.chinese': 'จีน',
   'language.japanese': 'ญี่ปุ่น',
   'language.thai': 'ภาษาไทย',
   'language.malay': 'ภาษามลายู',
   'language.close': 'ปิด',
-  
-  // Screen Headers
   'header.notifications': 'การแจ้งเตือน',
   'header.settings': 'การตั้งค่า',
   'header.about': 'เกี่ยวกับ',
-  
-  // About Section
   'about.appName': 'แอปวันหมดอายุอาหาร',
   'about.appTagline': 'ลดขยะ ประหยัดเงิน',
   'about.sectionAbout': 'เกี่ยวกับ',
@@ -268,8 +229,6 @@ export default {
   'about.technologyDescription': 'สร้างด้วย React Native และ Expo เพื่อประสิทธิภาพที่เหมาะสมที่สุดในทุกแพลตฟอร์ม',
   'about.footerText': 'สร้างด้วย ❤️ เพื่อลดการเสียอาหารทั่วโลก',
   'about.close': 'ปิด',
-
-  // Notification Messages
   'notification.testTitle': 'แจ้งเตือนหมดอายุอาหาร',
   'notification.testBody': 'นี่คือการแจ้งเตือนทดสอบจากแอปแจ้งเตือนหมดอายุ!',
   'notification.expiringTodayTitle': 'อาหารหมดอายุวันนี้!',
@@ -281,8 +240,6 @@ export default {
   'notification.in': 'ใน',
   'notification.days': 'วัน',
   'notification.day': 'วัน',
-
-  // Notification Settings Screen
   'notification.enabledTitle': 'เปิดการแจ้งเตือนแล้ว',
   'notification.enableTitle': 'เปิดการแจ้งเตือน',
   'notification.enabledDesc': 'คุณจะได้รับการแจ้งเตือนเมื่ออาหารของคุณใกล้หมดอายุ',
@@ -310,8 +267,6 @@ export default {
   'notification.enabledSuccessDesc': 'ตอนนี้คุณจะได้รับการแจ้งเตือนเมื่ออาหารของคุณใกล้หมดอายุ!',
   'notification.disabledError': 'ปิดการแจ้งเตือนแล้ว',
   'notification.disabledErrorDesc': 'กรุณาเปิดการแจ้งเตือนในการตั้งค่าอุปกรณ์เพื่อรับการแจ้งเตือนหมดอายุ',
-
-  // Additional Settings Translations
   'deleteCategory': 'ลบหมวดหมู่',
   'deleteCategoryConfirm': 'คุณแน่ใจหรือไม่ที่จะลบหมวดหมู่นี้? รายการทั้งหมดในหมวดหมู่นี้จะถูกลบด้วย',
   'deleteLocation': 'ลบสถานที่',
@@ -322,8 +277,6 @@ export default {
   'save': 'บันทึก',
   'edit': 'แก้ไข',
   'add': 'เพิ่ม',
-
-  // Edit Modal Translations
   'editCategory': 'แก้ไขหมวดหมู่',
   'addCategory': 'เพิ่มหมวดหมู่',
   'editLocation': 'แก้ไขสถานที่',
@@ -331,8 +284,6 @@ export default {
   'categoryName': 'ชื่อหมวดหมู่',
   'locationName': 'ชื่อสถานที่',
   'selectIcon': 'เลือกไอคอน',
-  
-  // Categories Screen
   'categories.title': 'หมวดหมู่',
   'categories.updateCategory': 'อัปเดตหมวดหมู่',
   'categories.addCategory': 'เพิ่มหมวดหมู่',
@@ -348,8 +299,6 @@ export default {
   'categories.failedToAdd': 'เพิ่มไม่สำเร็จ',
   'categories.failedToAddAll': 'ไม่สามารถเพิ่มหมวดหมู่ใดๆ ได้',
   'categories.nameRequired': 'กรุณากรอกชื่อหมวดหมู่',
-  
-  // Theme Setup Modal
   'themeSetup.title': 'ตั้งค่าธีมหมวดหมู่',
   'themeSetup.subtitle': 'เลือกธีมเพื่อเพิ่มหมวดหมู่แนะนำในแอปของคุณอย่างรวดเร็ว',
   'themeSetup.quickSetup': 'ตั้งค่าเร็วด้วยธีม',
@@ -357,8 +306,6 @@ export default {
   'themeSetup.cancel': 'ยกเลิก',
   'themeSetup.apply': 'ใช้ธีม',
   'themeSetup.added': 'เพิ่มแล้ว',
-  
-  // Theme Names
   'theme.food': 'อาหารและเครื่องดื่ม',
   'theme.foodDesc': 'หมวดหมู่อาหารพื้นฐานสำหรับการจัดการห้องครัว',
   'theme.health': 'สุขภาพและการแพทย์',
@@ -369,8 +316,6 @@ export default {
   'theme.householdDesc': 'อุปกรณ์ทำความสะอาดและบำรุงรักษาบ้าน',
   'theme.automotive': 'ยานยนต์และเคมี',
   'theme.automotiveDesc': 'การบำรุงรักษารถยนต์และผลิตภัณฑ์เคมี',
-  
-  // Category Names
   'category.vegetables': 'ผัก',
   'category.fruits': 'ผลไม้',
   'category.dairy': 'ผลิตภัณฑ์นม',
@@ -398,16 +343,12 @@ export default {
   'category.paintCoatings': 'สีและการเคลือบ',
   'category.motorOil': 'น้ำมันเครื่อง',
   'category.fuelAdditives': 'สารเติมแต่งเชื้อเพลิง',
-  
-  // Emoji Category Labels
   'emojiCategory.food': 'อาหาร',
   'emojiCategory.personalCare': 'ดูแลตัวและความงาม',
   'emojiCategory.medical': 'การแพทย์และสุขภาพ',
   'emojiCategory.household': 'ของใช้ในบ้าน',
   'emojiCategory.chemical': 'เคมีและยานยนต์',
   'emojiCategory.other': 'อื่นๆ',
-  
-  // Locations Screen
   'locations.title': 'สถานที่เก็บ',
   'locations.updateLocation': 'อัปเดตสถานที่',
   'locations.addLocation': 'เพิ่มสถานที่',
@@ -415,12 +356,8 @@ export default {
   'locations.deleteConfirm': 'คุณแน่ใจหรือไม่ที่จะลบสถานที่นี้?',
   'locations.errorDelete': 'ลบสถานที่ไม่สำเร็จ',
   'locations.nameRequired': 'กรุณากรอกชื่อสถานที่',
-
-  // Calendar Theme Instructions
   'calendar.androidThemeNote': 'หมายเหตุ: รูปลักษณ์ปฏิทินบน Android จะตามการตั้งค่าธีมระบบของอุปกรณ์ ไม่ใช่ธีมของแอป',
   'calendar.systemThemeInstructions': 'หากต้องการเปลี่ยนสีปฏิทิน ให้ปรับโหมดมืด/สว่างของอุปกรณ์ในการตั้งค่าระบบ',
-
-  // Default Categories
   'defaultCategory.vegetables': 'ผัก',
   'defaultCategory.fruits': 'ผลไม้', 
   'defaultCategory.dairy': 'ผลิตภัณฑ์นม',
@@ -429,15 +366,11 @@ export default {
   'defaultCategory.desserts': 'ของหวาน',
   'defaultCategory.seafood': 'อาหารทะเล',
   'defaultCategory.bread': 'ขนมปัง',
-
-  // Default Locations
   'defaultLocation.fridge': 'ตู้เย็น',
   'defaultLocation.freezer': 'ตู้แช่แข็ง',
   'defaultLocation.pantry': 'ตู้เก็บของ',
   'defaultLocation.counter': 'เคาน์เตอร์',
   'defaultLocation.cabinet': 'ตู้',
-
-  // Add/Edit Food Item Page
   'addItem.title': 'เพิ่มรายการอาหาร',
   'addItem.editTitle': 'แก้ไขรายการอาหาร',
   'addItem.itemName': 'ชื่อรายการ',
@@ -452,8 +385,6 @@ export default {
   'addItem.notes': 'หมายเหตุ',
   'addItem.notesPlaceholder': 'เพิ่มหมายเหตุเกี่ยวกับรายการ',
   'addItem.loading': 'กำลังโหลดรายละเอียดรายการ...',
-  
-  // Error Messages for Add/Edit
   'error.enterItemName': 'กรุณาใส่ชื่อรายการ',
   'error.selectStorageLocation': 'กรุณาเลือกสถานที่เก็บ',
   'error.failedToCreate': 'สร้างรายการไม่สำเร็จ',
@@ -463,14 +394,10 @@ export default {
   'error.itemNotFound': 'ไม่พบรายการ',
   'error.failedToLoad': 'โหลดรายการไม่สำเร็จ',
   'errorSaving': 'เกิดข้อผิดพลาดในการบันทึกรายการ',
-
-  // Detail Pages
   'detail.itemsIn': 'จำนวนรายการ:',
   'detail.noItemsYet': 'ยังไม่มีรายการในหมวดหมู่นี้',
   'detail.noItemsInLocation': 'ยังไม่มีรายการใน{location}\nเพิ่มรายการที่นี่เพื่อตรวจสอบ!',
   'detail.locationNotFound': 'ไม่พบสถานที่',
-
-  // Food Item Status
   'foodStatus.indate': 'ยังไม่หมดอายุ',
   'foodStatus.expiring': 'ใกล้หมดอายุ',
   'foodStatus.expired': 'หมดอายุแล้ว',
@@ -479,12 +406,8 @@ export default {
   'foodStatus.expiredDays': 'วันที่ผ่านมา',
   'foodStatus.noCategory': 'ไม่มีหมวดหมู่',
   'foodStatus.noLocation': 'ไม่มีสถานที่',
-
-  // Additional Settings Translations
   'settings.manageCategories': 'จัดการหมวดหมู่',
   'settings.manageLocations': 'จัดการตำแหน่ง',
-
-  // New translations
   'notFound.title': 'ไม่พบหน้าจอ',
   'notFound.message': 'ไม่พบหน้าจอที่คุณกำลังมองหา',
   'notFound.link': 'ไปที่หน้าจอหลัก',
