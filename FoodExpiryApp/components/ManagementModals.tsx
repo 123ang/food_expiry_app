@@ -8,6 +8,7 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -41,6 +42,11 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    ...Platform.select({
+      ios: {
+        zIndex: 1000,
+      },
+    }),
   },
   modalContent: {
     width: '80%',
@@ -52,6 +58,11 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+    ...Platform.select({
+      ios: {
+        zIndex: 1000,
+      },
+    }),
   },
   modalTitle: {
     fontSize: 20,
@@ -142,6 +153,11 @@ export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
+      ...Platform.select({
+        ios: {
+          zIndex: 1100,
+        },
+      }),
     },
     modalContent: {
       width: '90%',
@@ -149,6 +165,11 @@ export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
       padding: 20,
+      ...Platform.select({
+        ios: {
+          zIndex: 1100,
+        },
+      }),
     },
     title: {
       fontSize: 20,
@@ -224,7 +245,13 @@ export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>

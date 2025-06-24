@@ -7,6 +7,7 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -110,6 +111,11 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.6)',
+      ...Platform.select({
+        ios: {
+          zIndex: 1000,
+        },
+      }),
     },
     modalContent: {
       width: '90%',
@@ -117,6 +123,11 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
       padding: 20,
+      ...Platform.select({
+        ios: {
+          zIndex: 1000,
+        },
+      }),
     },
     title: {
       fontSize: 22,
@@ -196,7 +207,13 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>{t('themeSetup.title')}</Text>

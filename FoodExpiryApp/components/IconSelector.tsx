@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Platform,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -81,6 +82,11 @@ export default function IconSelector({
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
+      ...Platform.select({
+        ios: {
+          zIndex: 1100, // Higher z-index for iOS
+        },
+      }),
     },
     modalContent: {
       width: '90%',
@@ -93,6 +99,11 @@ export default function IconSelector({
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.25,
       shadowRadius: 3.84,
+      ...Platform.select({
+        ios: {
+          zIndex: 1100, // Higher z-index for iOS
+        },
+      }),
     },
     title: {
       fontSize: 20,
@@ -148,6 +159,7 @@ export default function IconSelector({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      presentationStyle="overFullScreen"
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
