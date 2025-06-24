@@ -893,9 +893,9 @@ export default function CategoriesScreen() {
         <TouchableOpacity 
           style={styles.themeSetupButton} 
           onPress={() => {
-            // Ensure no emoji selector is open when launching Theme Setup
             setShowIconSelector(false);
-            setShowThemeSetup(true);
+            // Give iOS a moment to finish dismissing any other modal before opening a new one.
+            setTimeout(() => setShowThemeSetup(true), 50);
           }}
           disabled={isLoading}
         >
