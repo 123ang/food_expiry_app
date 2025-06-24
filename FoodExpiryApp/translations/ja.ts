@@ -324,6 +324,8 @@ export default {
   'categoryName': 'カテゴリ名',
   'locationName': '場所名',
   'selectIcon': 'アイコンを選択',
+  'categories.nameRequired': 'カテゴリ名を入力してください',
+  'locations.nameRequired': '場所名を入力してください',
 
   // New translations
   'settings.manageCategories': 'カテゴリの管理',

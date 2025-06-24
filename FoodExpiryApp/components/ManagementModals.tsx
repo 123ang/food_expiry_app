@@ -8,7 +8,6 @@ import {
   TextInput,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -339,24 +338,11 @@ export const EditModal: React.FC<EditModalProps> = ({
 
   const handleEmojiSelect = (emoji: string) => {
     setIcon(emoji);
-    if (Platform.OS === 'ios') {
-      setTimeout(() => {
-        setShowEmojiSelector(false);
-      }, 100);
-    } else {
-      setShowEmojiSelector(false);
-    }
+    setShowEmojiSelector(false);
   };
 
   const openEmojiSelector = () => {
-    if (Platform.OS === 'ios') {
-      handleClose();
-      setTimeout(() => {
-        setShowEmojiSelector(true);
-      }, 100);
-    } else {
-      setShowEmojiSelector(true);
-    }
+    setShowEmojiSelector(true);
   };
 
   return (
@@ -412,14 +398,7 @@ export const EditModal: React.FC<EditModalProps> = ({
 
       <EmojiSelector
         visible={showEmojiSelector}
-        onClose={() => {
-          setShowEmojiSelector(false);
-          if (Platform.OS === 'ios') {
-            setTimeout(() => {
-              onClose();
-            }, 100);
-          }
-        }}
+        onClose={() => setShowEmojiSelector(false)}
         onSelect={handleEmojiSelect}
         isCategory={isCategory}
         selectedEmoji={icon}

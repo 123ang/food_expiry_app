@@ -347,6 +347,7 @@ export default {
   'categories.allExist': 'หมวดหมู่ที่เลือกทั้งหมดมีอยู่แล้ว',
   'categories.failedToAdd': 'เพิ่มไม่สำเร็จ',
   'categories.failedToAddAll': 'ไม่สามารถเพิ่มหมวดหมู่ใดๆ ได้',
+  'categories.nameRequired': 'กรุณากรอกชื่อหมวดหมู่',
   
   // Theme Setup Modal
   'themeSetup.title': 'ตั้งค่าธีมหมวดหมู่',
@@ -413,6 +414,7 @@ export default {
   'locations.deleteLocation': 'ลบสถานที่',
   'locations.deleteConfirm': 'คุณแน่ใจหรือไม่ที่จะลบสถานที่นี้?',
   'locations.errorDelete': 'ลบสถานที่ไม่สำเร็จ',
+  'locations.nameRequired': 'กรุณากรอกชื่อสถานที่',
 
   // Calendar Theme Instructions
   'calendar.androidThemeNote': 'หมายเหตุ: รูปลักษณ์ปฏิทินบน Android จะตามการตั้งค่าธีมระบบของอุปกรณ์ ไม่ใช่ธีมของแอป',

@@ -349,6 +349,7 @@ export default {
   'categories.allExist': 'Semua kategori yang dipilih sudah wujud',
   'categories.failedToAdd': 'gagal ditambah',
   'categories.failedToAddAll': 'Gagal menambah sebarang kategori',
+  'categories.nameRequired': 'Sila masukkan nama kategori',
   
   // Theme Setup Modal
   'themeSetup.title': 'Tetapan Tema Kategori',
@@ -415,6 +416,7 @@ export default {
   'locations.deleteLocation': 'Padam Lokasi',
   'locations.deleteConfirm': 'Adakah anda pasti untuk memadamkan lokasi ini?',
   'locations.errorDelete': 'Gagal memadamkan lokasi',
+  'locations.nameRequired': 'Sila masukkan nama lokasi',
 
   // Calendar Theme Instructions
   'calendar.androidThemeNote': 'Nota: Penampilan kalendar pada Android mengikuti tetapan tema sistem peranti anda, bukan tema aplikasi.',

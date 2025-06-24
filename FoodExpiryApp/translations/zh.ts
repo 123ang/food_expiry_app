@@ -348,6 +348,7 @@ export default {
   'categories.allExist': '所选分类均已存在。',
   'categories.failedToAdd': '添加失败',
   'categories.failedToAddAll': '添加所有分类都失败了',
+  'categories.nameRequired': '请输入分类名称',
   
   // Theme Setup Modal
   'themeSetup.title': '设置分类主题',
@@ -414,6 +415,7 @@ export default {
   'locations.deleteLocation': '删除位置',
   'locations.deleteConfirm': '确定要删除此位置吗？',
   'locations.errorDelete': '删除位置失败',
+  'locations.nameRequired': '请输入位置名称',
 
   // Calendar Theme Instructions
   'calendar.androidThemeNote': '注意：Android上的日历外观遵循设备的系统主题设置，而非应用主题。',

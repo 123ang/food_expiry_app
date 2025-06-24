@@ -338,6 +338,7 @@ export default {
   'categories.deleteCategory': 'Delete Category',
   'categories.deleteConfirm': 'Are you sure you want to delete this category?',
   'categories.errorDelete': 'Failed to delete category',
+  'categories.nameRequired': 'Please enter a category name',
   'categories.added': 'Added',
   'categories.skipped': 'Skipped',
   'categories.newCategories': 'new categories',
@@ -412,6 +413,7 @@ export default {
   'locations.deleteLocation': 'Delete Location',
   'locations.deleteConfirm': 'Are you sure you want to delete this location?',
   'locations.errorDelete': 'Failed to delete location',
+  'locations.nameRequired': 'Please enter a location name',
 
   // Calendar Theme Instructions
   'calendar.androidThemeNote': 'Note: Calendar appearance on Android follows your device\'s system theme settings, not the app theme.',
