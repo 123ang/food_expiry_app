@@ -1,5 +1,4 @@
 export default {
-  // Navigation
   'nav.home': 'Home',
   'nav.list': 'List',
   'nav.calendar': 'Calendar',
@@ -7,8 +6,6 @@ export default {
   'nav.categories': 'Categories',
   'nav.settings': 'Settings',
   'nav.add': 'Add',
-  
-  // Home Screen
   'home.welcome': 'Welcome Back!',
   'home.welcomeToApp': 'Welcome to Expiry Alert',
   'home.expiring': 'expiring',
@@ -19,8 +16,6 @@ export default {
   'home.storageLocations': 'Storage Locations',
   'home.categories': 'Categories',
   'home.loading': 'Loading dashboard...',
-  
-  // List Screen
   'list.search': 'Search items...',
   'list.all': 'All',
   'list.indate': 'In-date',
@@ -30,12 +25,8 @@ export default {
   'list.noItems': 'No items found. Add some items to get started!',
   'list.noSearch': 'No items match your search',
   'list.noCategory': 'No items found in this category.',
-  
-  // Calendar Screen
   'calendar.noItems': 'No items expiring on this date',
   'calendar.items': 'items',
-  
-  // Status Screens
   'status.items': 'Items',
   'status.indate': 'In-date Items',
   'status.indateItems': 'In-date Items',
@@ -49,8 +40,6 @@ export default {
   'status.retry': 'Retry',
   'status.loading': 'Loading...',
   'status.error': 'Error loading data',
-  
-  // Food Item Details
   'item.details': 'Item Details',
   'item.daysLeft': 'days left',
   'item.expirestoday': 'Expires today',
@@ -61,8 +50,6 @@ export default {
   'item.notes': 'Notes',
   'item.reminderDays': 'Reminder Days',
   'item.expiryDate': 'Expiry Date',
-  
-  // Forms
   'form.itemName': 'Item Name',
   'form.quantity': 'Quantity',
   'form.category': 'Category',
@@ -76,8 +63,6 @@ export default {
   'form.fillAllFields': 'Please fill in all fields',
   'form.edit': 'Edit Food Item',
   'form.new': 'New Food Item',
-  
-  // Image Picker
   'image.selectTitle': 'Add Photo',
   'image.selectMessage': 'Choose how you want to add a photo',
   'image.camera': 'Take Photo',
@@ -101,13 +86,9 @@ export default {
   'image.useFoodEmoji': 'Use Food Emoji',
   'image.failedToSave': 'Failed to save image. Please try again.',
   'image.failedToProcess': 'Failed to process image. Please try again.',
-  
-  // Actions
   'action.edit': 'Edit',
   'action.delete': 'Delete',
   'action.add': 'Add',
-  
-  // Alerts
   'alert.error': 'Error',
   'alert.success': 'Success',
   'alert.deleteTitle': 'Delete Item',
@@ -120,8 +101,6 @@ export default {
   'alert.unexpectedError': 'An unexpected error occurred',
   'alert.noItemsSelected': 'No Items Selected',
   'alert.selectItemsFirst': 'Please select items to clear from your inventory.',
-  
-  // Common
   'common.cancel': 'Cancel',
   'common.success': 'Success',
   'common.error': 'Error',
@@ -130,8 +109,6 @@ export default {
   'common.close': 'Close',
   'common.options': 'options',
   'common.save': 'Save',
-  
-  // Months
   'month.january': 'January',
   'month.february': 'February',
   'month.march': 'March',
@@ -144,8 +121,6 @@ export default {
   'month.october': 'October',
   'month.november': 'November',
   'month.december': 'December',
-  
-  // Week Days
   'weekday.sun': 'Sun',
   'weekday.mon': 'Mon',
   'weekday.tue': 'Tue',
@@ -153,8 +128,6 @@ export default {
   'weekday.thu': 'Thu',
   'weekday.fri': 'Fri',
   'weekday.sat': 'Sat',
-  
-  // Settings
   'settings.language': 'Language',
   'settings.languageDescription': 'Change app language',
   'settings.theme': 'Theme',
@@ -212,8 +185,6 @@ export default {
   'settings.clearExpiredError': 'Failed to clear expired items. Please try again.',
   'settings.manageCategories': 'Manage Categories',
   'settings.manageLocations': 'Manage Locations',
-  
-  // Clear Items Screen
   'clearItems.title': 'Clear Used Items',
   'clearItems.selectAll': 'Select All',
   'clearItems.clearSelection': 'Clear Selection',
@@ -224,8 +195,6 @@ export default {
   'clearItems.success': 'Successfully deleted {count} item{plural}.',
   'clearItems.error': 'Failed to delete items. Please try again.',
   'clearItems.noItems': 'No items to clear',
-  
-  // Item Actions
   'item.useItem': 'Use Item',
   'item.throwAway': 'Throw Away',
   'item.reduceQuantity': 'Reduce Quantity',
@@ -236,24 +205,16 @@ export default {
   'item.itemDeleted': 'Item deleted (quantity reached 0)',
   'item.invalidQuantity': 'Please enter a valid quantity',
   'item.quantityTooHigh': 'Quantity cannot be higher than available ({available})',
-  
-  // App Name
   'app.name': 'Expiry Alert',
-  
-  // Language Names
   'language.english': 'English',
-  'language.chinese': '中文',
-  'language.japanese': '日本語',
-  'language.thai': 'ภาษาไทย',
+  'language.chinese': 'Chinese',
+  'language.japanese': 'Japanese',
+  'language.thai': 'Thai',
   'language.malay': 'Bahasa Melayu',
   'language.close': 'Close',
-  
-  // Screen Headers
   'header.notifications': 'Notifications',
   'header.settings': 'Settings',
   'header.about': 'About',
-  
-  // About Section
   'about.appName': 'Food Expiry App',
   'about.appTagline': 'Reduce waste, save money.',
   'about.sectionAbout': 'About',
@@ -269,8 +230,6 @@ export default {
   'about.technologyDescription': 'Built with React Native and Expo for optimal performance across all platforms.',
   'about.footerText': 'Made with ❤️ for reducing food waste worldwide',
   'about.close': 'Close',
-
-  // Notification Messages
   'notification.testTitle': 'Food Expiry Alert',
   'notification.testBody': 'This is a test notification from Expiry Alert!',
   'notification.expiringTodayTitle': 'Food Expiring Today!',
@@ -282,8 +241,6 @@ export default {
   'notification.in': 'in',
   'notification.days': 'days',
   'notification.day': 'day',
-
-  // Notification Settings Screen
   'notification.enabledTitle': 'Notifications Enabled',
   'notification.enableTitle': 'Enable Notifications',
   'notification.enabledDesc': 'You will receive alerts when your food items are about to expire.',
@@ -311,8 +268,6 @@ export default {
   'notification.enabledSuccessDesc': 'You will now receive alerts when your food items are about to expire!',
   'notification.disabledError': 'Notifications Disabled',
   'notification.disabledErrorDesc': 'Please enable notifications in your device settings to receive expiry alerts.',
-
-  // Additional Settings Translations
   'addCategory': 'Add Category',
   'editCategory': 'Edit Category',
   'deleteCategory': 'Delete Category',
@@ -330,8 +285,6 @@ export default {
   'categoryName': 'Category Name',
   'locationName': 'Location Name',
   'selectIcon': 'Select Icon',
-  
-  // Categories Screen
   'categories.title': 'Categories',
   'categories.updateCategory': 'Update Category',
   'categories.addCategory': 'Add Category',
@@ -347,8 +300,6 @@ export default {
   'categories.allExist': 'All selected categories already exist.',
   'categories.failedToAdd': 'failed to add',
   'categories.failedToAddAll': 'Failed to add any categories',
-  
-  // Theme Setup Modal
   'themeSetup.title': 'Setup Category Themes',
   'themeSetup.subtitle': 'Select themes to quickly add suggested categories to your app',
   'themeSetup.quickSetup': 'Quick Setup with Themes',
@@ -356,8 +307,6 @@ export default {
   'themeSetup.cancel': 'Cancel',
   'themeSetup.apply': 'Apply Themes',
   'themeSetup.added': 'Added',
-  
-  // Theme Names
   'theme.food': 'Food & Beverages',
   'theme.foodDesc': 'Essential food categories for kitchen management',
   'theme.health': 'Health & Medical',
@@ -368,8 +317,6 @@ export default {
   'theme.householdDesc': 'Cleaning supplies and home maintenance',
   'theme.automotive': 'Automotive & Chemical',
   'theme.automotiveDesc': 'Car maintenance and chemical products',
-  
-  // Category Names
   'category.vegetables': 'Vegetables',
   'category.fruits': 'Fruits',
   'category.dairy': 'Dairy',
@@ -397,16 +344,12 @@ export default {
   'category.paintCoatings': 'Paint & Coatings',
   'category.motorOil': 'Motor Oil',
   'category.fuelAdditives': 'Fuel Additives',
-  
-  // Emoji Category Labels
   'emojiCategory.food': 'Food',
   'emojiCategory.personalCare': 'Personal Care & Beauty',
   'emojiCategory.medical': 'Medical & Health',
   'emojiCategory.household': 'Household Items',
   'emojiCategory.chemical': 'Chemical & Automotive',
   'emojiCategory.other': 'Other',
-  
-  // Locations Screen
   'locations.title': 'Storage Locations',
   'locations.updateLocation': 'Update Location',
   'locations.addLocation': 'Add Location',
@@ -414,12 +357,8 @@ export default {
   'locations.deleteConfirm': 'Are you sure you want to delete this location?',
   'locations.errorDelete': 'Failed to delete location',
   'locations.nameRequired': 'Please enter a location name',
-
-  // Calendar Theme Instructions
   'calendar.androidThemeNote': 'Note: Calendar appearance on Android follows your device\'s system theme settings, not the app theme.',
   'calendar.systemThemeInstructions': 'To change calendar colors, adjust your device\'s dark/light mode in system settings.',
-
-  // Default Categories
   'defaultCategory.vegetables': 'Vegetables',
   'defaultCategory.fruits': 'Fruits', 
   'defaultCategory.dairy': 'Dairy',
@@ -428,15 +367,11 @@ export default {
   'defaultCategory.desserts': 'Desserts',
   'defaultCategory.seafood': 'Seafood',
   'defaultCategory.bread': 'Bread',
-
-  // Default Locations
   'defaultLocation.fridge': 'Fridge',
   'defaultLocation.freezer': 'Freezer',
   'defaultLocation.pantry': 'Pantry',
   'defaultLocation.counter': 'Counter',
   'defaultLocation.cabinet': 'Cabinet',
-
-  // Add/Edit Food Item Page
   'addItem.title': 'Add Item',
   'addItem.editTitle': 'Edit Item',
   'addItem.itemName': 'Item Name',
@@ -451,22 +386,16 @@ export default {
   'addItem.notes': 'Notes',
   'addItem.notesPlaceholder': 'Add any notes about the item',
   'addItem.loading': 'Loading...',
-  
-  // Error Messages for Add/Edit
   'error.enterItemName': 'Please enter an item name',
   'error.selectStorageLocation': 'Please select a storage location',
   'error.failedToCreate': 'Failed to create item',
   'error.itemNotFound': 'Item not found',
   'error.failedToLoad': 'Failed to load item',
   'errorSaving': 'Error saving item',
-  
-  // Detail Pages
   'detail.itemsIn': 'Item Count:',
   'detail.noItemsYet': 'No items in this category yet',
   'detail.noItemsInLocation': 'No items in {location} yet.\nAdd some items here to check!',
   'detail.locationNotFound': 'Location not found',
-
-  // Food Item Status
   'foodStatus.indate': 'In-date',
   'foodStatus.expiring': 'Expiring',
   'foodStatus.expired': 'Expired',
@@ -475,8 +404,6 @@ export default {
   'foodStatus.expiredDays': 'days ago',
   'foodStatus.noCategory': 'No category',
   'foodStatus.noLocation': 'No location',
-
-  // New translations
   'notFound.title': 'Screen Not Found',
   'notFound.message': 'The screen you are looking for does not exist.',
   'notFound.link': 'Go to Home Screen',

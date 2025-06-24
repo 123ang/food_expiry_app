@@ -1,5 +1,4 @@
 export default {
-  // Navigation
   'nav.home': '首页',
   'nav.list': '列表',
   'nav.calendar': '日历',
@@ -7,8 +6,6 @@ export default {
   'nav.categories': '分类',
   'nav.settings': '设置',
   'nav.add': '添加',
-  
-  // Home Screen
   'home.welcome': '欢迎回来！',
   'home.welcomeToApp': '欢迎使用过期警报',
   'home.expiring': '即将过期',
@@ -19,8 +16,6 @@ export default {
   'home.storageLocations': '储存位置',
   'home.categories': '分类',
   'home.loading': '加载仪表板...',
-  
-  // List Screen
   'list.search': '搜索物品...',
   'list.all': '全部',
   'list.indate': '未过期',
@@ -30,12 +25,8 @@ export default {
   'list.noItems': '未找到物品。添加一些物品开始使用！',
   'list.noSearch': '没有符合搜索条件的物品',
   'list.noCategory': '此分类中没有找到物品。',
-  
-  // Calendar Screen
   'calendar.noItems': '此日期没有过期物品',
   'calendar.items': '物品',
-  
-  // Status Screens
   'status.items': '物品',
   'status.indate': '未过期物品',
   'status.indateItems': '未过期物品',
@@ -49,8 +40,6 @@ export default {
   'status.retry': '重试',
   'status.loading': '加载中...',
   'status.error': '加载数据错误',
-  
-  // Food Item Details
   'item.details': '物品详情',
   'item.daysLeft': '天剩余',
   'item.expirestoday': '今天过期',
@@ -61,8 +50,6 @@ export default {
   'item.notes': '备注',
   'item.reminderDays': '提醒天数',
   'item.expiryDate': '过期日期',
-  
-  // Forms
   'form.itemName': '物品名称',
   'form.quantity': '数量',
   'form.category': '分类',
@@ -76,8 +63,6 @@ export default {
   'form.fillAllFields': '请填写所有字段',
   'form.edit': '编辑食品',
   'form.new': '新食品',
-  
-  // Image Picker
   'image.selectTitle': '添加照片',
   'image.selectMessage': '选择如何添加照片',
   'image.camera': '拍照',
@@ -101,13 +86,9 @@ export default {
   'image.useFoodEmoji': '使用食品表情符号',
   'image.failedToSave': '保存图像失败。请重试。',
   'image.failedToProcess': '处理图像失败。请重试。',
-  
-  // Actions
   'action.edit': '编辑',
   'action.delete': '删除',
   'action.add': '添加',
-  
-  // Alerts
   'alert.error': '错误',
   'alert.success': '成功',
   'alert.deleteTitle': '删除物品',
@@ -120,8 +101,6 @@ export default {
   'alert.unexpectedError': '发生意外错误',
   'alert.noItemsSelected': '未选择物品',
   'alert.selectItemsFirst': '请先选择要从库存中清除的物品。',
-  
-  // Common
   'common.cancel': '取消',
   'common.success': '成功',
   'common.error': '错误',
@@ -130,8 +109,6 @@ export default {
   'common.close': '关闭',
   'common.options': '选项',
   'common.save': '保存',
-  
-  // Months
   'month.january': '一月',
   'month.february': '二月',
   'month.march': '三月',
@@ -144,8 +121,6 @@ export default {
   'month.october': '十月',
   'month.november': '十一月',
   'month.december': '十二月',
-  
-  // Week Days
   'weekday.sun': '日',
   'weekday.mon': '一',
   'weekday.tue': '二',
@@ -153,8 +128,6 @@ export default {
   'weekday.thu': '四',
   'weekday.fri': '五',
   'weekday.sat': '六',
-  
-  // Settings
   'settings.language': '语言',
   'settings.languageDescription': '更改应用语言',
   'settings.theme': '主题',
@@ -212,8 +185,6 @@ export default {
   'settings.clearExpiredError': '删除过期物品失败。请重试。',
   'settings.manageCategories': '管理类别',
   'settings.manageLocations': '管理位置',
-  
-  // Clear Items Screen
   'clearItems.title': '清除已使用物品',
   'clearItems.selectAll': '全选',
   'clearItems.clearSelection': '清除选择',
@@ -224,8 +195,6 @@ export default {
   'clearItems.success': '成功删除 {count} 个物品。',
   'clearItems.error': '删除物品失败。请重试。',
   'clearItems.noItems': '没有物品可清除',
-  
-  // Item Actions
   'item.useItem': '使用物品',
   'item.throwAway': '丢弃',
   'item.reduceQuantity': '减少数量',
@@ -236,24 +205,16 @@ export default {
   'item.itemDeleted': '物品已删除（数量达到0）',
   'item.invalidQuantity': '请输入有效数量',
   'item.quantityTooHigh': '数量不能高于可用数量 ({available})',
-  
-  // App Name
   'app.name': '过期警报',
-  
-  // Language Names
   'language.english': '英语',
   'language.chinese': '中文',
   'language.japanese': '日语',
   'language.thai': '泰语',
   'language.malay': '马来语',
   'language.close': '关闭',
-  
-  // Screen Headers
   'header.notifications': '通知',
   'header.settings': '设置',
   'header.about': '关于',
-  
-  // About Section
   'about.appName': '食品效期应用',
   'about.appTagline': '减少浪费，节省金钱。',
   'about.sectionAbout': '关于',
@@ -269,8 +230,6 @@ export default {
   'about.technologyDescription': '使用React Native和Expo构建，在所有平台上实现最佳性能。',
   'about.footerText': '用❤️制作，为全球减少食物浪费',
   'about.close': '关闭',
-
-  // Notification Messages
   'notification.testTitle': '食品过期警报',
   'notification.testBody': '这是来自过期警报的测试通知！',
   'notification.expiringTodayTitle': '食品今天过期！',
@@ -282,8 +241,6 @@ export default {
   'notification.in': '在',
   'notification.days': '天',
   'notification.day': '天',
-
-  // Notification Settings Screen
   'notification.enabledTitle': '已启用通知',
   'notification.enableTitle': '启用通知',
   'notification.enabledDesc': '当您的食品即将过期时，您将收到提醒。',
@@ -311,8 +268,6 @@ export default {
   'notification.enabledSuccessDesc': '当您的食品即将过期时，您现在将收到提醒！',
   'notification.disabledError': '通知已禁用',
   'notification.disabledErrorDesc': '请在设备设置中启用通知以接收过期提醒。',
-
-  // Additional Settings Translations
   'deleteCategory': '删除分类',
   'deleteCategoryConfirm': '确定要删除此分类吗？',
   'deleteLocation': '删除位置',
@@ -323,8 +278,6 @@ export default {
   'edit': '编辑',
   'add': '添加',
   'settings.title': '设置',
-
-  // Edit Modal Translations
   'editCategory': '编辑分类',
   'addCategory': '添加分类',
   'editLocation': '编辑位置',
@@ -332,8 +285,6 @@ export default {
   'categoryName': '分类名称',
   'locationName': '位置名称',
   'selectIcon': '选择图标',
-  
-  // Categories Screen
   'categories.title': '分类',
   'categories.updateCategory': '更新分类',
   'categories.addCategory': '添加分类',
@@ -349,8 +300,6 @@ export default {
   'categories.failedToAdd': '添加失败',
   'categories.failedToAddAll': '添加所有分类都失败了',
   'categories.nameRequired': '请输入分类名称',
-  
-  // Theme Setup Modal
   'themeSetup.title': '设置分类主题',
   'themeSetup.subtitle': '选择主题以快速将建议的分类添加到您的应用',
   'themeSetup.quickSetup': '使用主题快速设置',
@@ -358,8 +307,6 @@ export default {
   'themeSetup.cancel': '取消',
   'themeSetup.apply': '应用主题',
   'themeSetup.added': '已添加',
-  
-  // Theme Names
   'theme.food': '食品和饮料',
   'theme.foodDesc': '厨房管理的基本食品分类',
   'theme.health': '健康和医疗',
@@ -370,8 +317,6 @@ export default {
   'theme.householdDesc': '清洁用品和家居维护',
   'theme.automotive': '汽车和化学',
   'theme.automotiveDesc': '汽车维护和化学产品',
-  
-  // Category Names
   'category.vegetables': '蔬菜',
   'category.fruits': '水果',
   'category.dairy': '乳制品',
@@ -399,16 +344,12 @@ export default {
   'category.paintCoatings': '油漆和涂料',
   'category.motorOil': '机油',
   'category.fuelAdditives': '燃油添加剂',
-  
-  // Emoji Category Labels
   'emojiCategory.food': '食品',
   'emojiCategory.personalCare': '个人护理和美容',
   'emojiCategory.medical': '医疗和健康',
   'emojiCategory.household': '家居用品',
   'emojiCategory.chemical': '化学和汽车',
   'emojiCategory.other': '其他',
-  
-  // Locations Screen
   'locations.title': '储存位置',
   'locations.updateLocation': '更新位置',
   'locations.addLocation': '添加位置',
@@ -416,12 +357,8 @@ export default {
   'locations.deleteConfirm': '确定要删除此位置吗？',
   'locations.errorDelete': '删除位置失败',
   'locations.nameRequired': '请输入位置名称',
-
-  // Calendar Theme Instructions
   'calendar.androidThemeNote': '注意：Android上的日历外观遵循设备的系统主题设置，而非应用主题。',
   'calendar.systemThemeInstructions': '要更改日历颜色，请在系统设置中调整设备的深色/浅色模式。',
-
-  // Default Categories
   'defaultCategory.vegetables': '蔬菜',
   'defaultCategory.fruits': '水果', 
   'defaultCategory.dairy': '乳制品',
@@ -430,15 +367,11 @@ export default {
   'defaultCategory.desserts': '甜点',
   'defaultCategory.seafood': '海鲜',
   'defaultCategory.bread': '面包',
-
-  // Default Locations
   'defaultLocation.fridge': '冰箱',
   'defaultLocation.freezer': '冷冻室',
   'defaultLocation.pantry': '食品储藏室',
   'defaultLocation.counter': '柜台',
   'defaultLocation.cabinet': '橱柜',
-
-  // Add/Edit Food Item Page
   'addItem.title': '添加物品',
   'addItem.editTitle': '编辑物品',
   'addItem.itemName': '物品名称',
@@ -453,22 +386,16 @@ export default {
   'addItem.notes': '备注',
   'addItem.notesPlaceholder': '添加关于物品的任何备注',
   'addItem.loading': '加载中...',
-  
-  // Error Messages for Add/Edit
   'error.enterItemName': '请输入物品名称',
   'error.selectStorageLocation': '请选择储存位置',
   'error.failedToCreate': '创建物品失败',
   'error.itemNotFound': '未找到物品',
   'error.failedToLoad': '加载物品失败',
   'errorSaving': '保存物品时出错',
-  
-  // Detail Pages
   'detail.itemsIn': '物品数量：',
   'detail.noItemsYet': '此分类中尚无物品',
   'detail.noItemsInLocation': '{location}中尚无物品。\n添加一些物品来查看！',
   'detail.locationNotFound': '未找到位置',
-
-  // Food Item Status
   'foodStatus.indate': '未过期',
   'foodStatus.expiring': '即将过期',
   'foodStatus.expired': '已过期',
@@ -477,7 +404,6 @@ export default {
   'foodStatus.expiredDays': '天前',
   'foodStatus.noCategory': '无分类',
   'foodStatus.noLocation': '无位置',
-
   'notFound.title': '未找到屏幕',
   'notFound.message': '您正在查找的屏幕不存在。',
   'notFound.link': '转到主屏幕',
