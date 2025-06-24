@@ -7,7 +7,6 @@ import {
   FlatList,
   TextInput,
   Alert,
-  Modal,
   ScrollView,
   Platform,
   Image,
@@ -32,6 +31,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
 import { EditModal } from '../components/ManagementModals';
 import { ThemeSelector } from '../components/ThemeSelector';
+import Modal from 'react-native-modal';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -155,51 +155,49 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>
-            Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
-          </Text>
-          <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
-            {categories.map((category) => (
-              <View key={category.title}>
-                <TouchableOpacity 
-                  style={styles.categoryHeader}
-                  onPress={() => toggleCategory(category.title)}
-                >
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  <Text style={styles.categoryTitle}>{t(category.title)}</Text>
-                  <Text style={styles.expandIcon}>
-                    {expandedCategories.has(category.title) ? '▼' : '▶'}
-                  </Text>
-                </TouchableOpacity>
-                
-                {expandedCategories.has(category.title) && (
-                  <View style={styles.emojiGrid}>
-                    {category.items.map((item) => (
-                      <TouchableOpacity
-                        key={item.key}
-                        style={[
-                          styles.emojiItem,
-                          selectedEmoji === item.emoji && styles.emojiItemSelected
-                        ]}
-                        onPress={() => {
-                          onSelect(item.emoji);
-                        }}
-                      >
-                        <Text style={styles.emojiIcon}>{item.emoji}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
+    <Modal isVisible={visible} onBackdropPress={onClose} onBackButtonPress={onClose}>
+      <View style={styles.modalContent}>
+        <Text style={styles.title}>
+          Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
+        </Text>
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+          {categories.map((category) => (
+            <View key={category.title}>
+              <TouchableOpacity 
+                style={styles.categoryHeader}
+                onPress={() => toggleCategory(category.title)}
+              >
+                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                <Text style={styles.categoryTitle}>{t(category.title)}</Text>
+                <Text style={styles.expandIcon}>
+                  {expandedCategories.has(category.title) ? '▼' : '▶'}
+                </Text>
+              </TouchableOpacity>
+              
+              {expandedCategories.has(category.title) && (
+                <View style={styles.emojiGrid}>
+                  {category.items.map((item) => (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={[
+                        styles.emojiItem,
+                        selectedEmoji === item.emoji && styles.emojiItemSelected
+                      ]}
+                      onPress={() => {
+                        onSelect(item.emoji);
+                      }}
+                    >
+                      <Text style={styles.emojiIcon}>{item.emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
       </View>
     </Modal>
   );
@@ -748,12 +746,6 @@ export default function DashboardScreen() {
     actionButton: {
       padding: 8,
     },
-    modalContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      padding: responsive.layout.spacing.container,
-    },
     modalContent: {
       backgroundColor: theme.cardBackground,
       borderRadius: responsive.getResponsiveValue({
@@ -1090,12 +1082,6 @@ export default function DashboardScreen() {
         largeTablet: '70%',
       }),
     },
-    managementModalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.6)',
-    },
     managementModalContent: {
       width: '90%',
       maxHeight: '80%',
@@ -1368,75 +1354,74 @@ export default function DashboardScreen() {
       <BottomNav />
       
       <Modal
-        visible={managementModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setManagementModalVisible(false)}
+        isVisible={managementModalVisible}
+        onBackdropPress={() => setManagementModalVisible(false)}
+        onBackButtonPress={() => setManagementModalVisible(false)}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
       >
-        <View style={styles.managementModalOverlay}>
-          <View style={styles.managementModalContent}>
-            <Text style={styles.managementModalTitle}>
-              {managementModalType === 'categories' ? t('settings.manageCategories') : t('settings.manageLocations')}
-            </Text>
-            {managementModalType === 'categories' && (
-              <TouchableOpacity 
-                style={[styles.themeButton, { marginTop: 0, marginBottom: 16 }]}
-                onPress={() => setThemeModalVisible(true)}
-              >
-                <FontAwesome name="magic" size={16} color="#FFFFFF" />
-                <Text style={styles.themeButtonText}>
-                  {t('themeSetup.quickSetup')}
-                </Text>
-              </TouchableOpacity>
-            )}
-            <ScrollView style={styles.managementList}>
-              {(managementModalType === 'categories' ? categories : locations).map((item) => (
-                <View key={item.id} style={styles.managementItem}>
-                  <View style={styles.managementItemIcon}>
-                    {managementModalType === 'categories' ? (
-                      <CategoryIcon iconName={item.icon} size={24} />
-                    ) : (
-                      <LocationIcon iconName={item.icon} size={24} />
-                    )}
-                  </View>
-                  <Text style={styles.managementItemText}>{managementModalType === 'categories' ? getCategoryName(item as Category) : getLocationName(item as Location)}</Text>
-                  <View style={styles.managementItemActions}>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleEditCategoryOrLocation(item)}
-                    >
-                      <FontAwesome name="pencil" size={14} color={theme.textColor} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => managementModalType === 'categories' ? handleDeleteCategory(item.id!) : handleDeleteLocation(item.id!)}
-                    >
-                      <FontAwesome name="trash" size={14} color={theme.dangerColor} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
+        <View style={styles.managementModalContent}>
+          <Text style={styles.managementModalTitle}>
+            {managementModalType === 'categories' ? t('settings.manageCategories') : t('settings.manageLocations')}
+          </Text>
+          {managementModalType === 'categories' && (
             <TouchableOpacity 
-              style={styles.addNewButton}
-              onPress={() => {
-                setItemToEdit(null);
-                setManagementModalVisible(false);
-                setEditModalVisible(true);
-              }}
+              style={[styles.themeButton, { marginTop: 0, marginBottom: 16 }]}
+              onPress={() => setThemeModalVisible(true)}
             >
-              <FontAwesome name="plus" size={16} color="#FFFFFF" />
-              <Text style={styles.addNewButtonText}>
-                {managementModalType === 'categories' ? t('addCategory') : t('addLocation')}
+              <FontAwesome name="magic" size={16} color="#FFFFFF" />
+              <Text style={styles.themeButtonText}>
+                {t('themeSetup.quickSetup')}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.closeManagementModalButton}
-              onPress={() => setManagementModalVisible(false)}
-            >
-              <Text style={styles.closeManagementModalButtonText}>{t('common.close')}</Text>
-            </TouchableOpacity>
-          </View>
+          )}
+          <ScrollView style={styles.managementList}>
+            {(managementModalType === 'categories' ? categories : locations).map((item) => (
+              <View key={item.id} style={styles.managementItem}>
+                <View style={styles.managementItemIcon}>
+                  {managementModalType === 'categories' ? (
+                    <CategoryIcon iconName={item.icon} size={24} />
+                  ) : (
+                    <LocationIcon iconName={item.icon} size={24} />
+                  )}
+                </View>
+                <Text style={styles.managementItemText}>{managementModalType === 'categories' ? getCategoryName(item as Category) : getLocationName(item as Location)}</Text>
+                <View style={styles.managementItemActions}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleEditCategoryOrLocation(item)}
+                  >
+                    <FontAwesome name="pencil" size={14} color={theme.textColor} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => managementModalType === 'categories' ? handleDeleteCategory(item.id!) : handleDeleteLocation(item.id!)}
+                  >
+                    <FontAwesome name="trash" size={14} color={theme.dangerColor} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity 
+            style={styles.addNewButton}
+            onPress={() => {
+              setItemToEdit(null);
+              setManagementModalVisible(false);
+              setEditModalVisible(true);
+            }}
+          >
+            <FontAwesome name="plus" size={16} color="#FFFFFF" />
+            <Text style={styles.addNewButtonText}>
+              {managementModalType === 'categories' ? t('addCategory') : t('addLocation')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.closeManagementModalButton}
+            onPress={() => setManagementModalVisible(false)}
+          >
+            <Text style={styles.closeManagementModalButtonText}>{t('common.close')}</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
@@ -1463,136 +1448,135 @@ export default function DashboardScreen() {
       />
 
       <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseModal}
+        isVisible={modalVisible}
+        onBackdropPress={handleCloseModal}
+        onBackButtonPress={handleCloseModal}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <ScrollView contentContainerStyle={styles.modalScrollContent}>
-              <Text style={styles.modalTitle}>
-                {editingItem ? t('form.edit') : t('form.new')}
-              </Text>
+        <View style={styles.modalContent}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <Text style={styles.modalTitle}>
+              {editingItem ? t('form.edit') : t('form.new')}
+            </Text>
 
+            <TextInput
+              style={styles.input}
+              placeholder={t('form.itemName')}
+              placeholderTextColor={theme.textSecondary}
+              value={itemName}
+              onChangeText={setItemName}
+            />
+
+            <View style={styles.quantityContainer}>
               <TextInput
-                style={styles.input}
-                placeholder={t('form.itemName')}
+                style={[styles.input, { flex: 1, marginRight: 8 }]}
+                placeholder={t('form.quantity')}
                 placeholderTextColor={theme.textSecondary}
-                value={itemName}
-                onChangeText={setItemName}
-              />
-
-              <View style={styles.quantityContainer}>
-                <TextInput
-                  style={[styles.input, { flex: 1, marginRight: 8 }]}
-                  placeholder={t('form.quantity')}
-                  placeholderTextColor={theme.textSecondary}
-                  value={quantity}
-                  onChangeText={setQuantity}
-                  keyboardType="numeric"
-                />
-              </View>
-
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>{t('form.category')}</Text>
-                <View style={styles.pickerOptions}>
-                  {categories.map((category) => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.pickerOption,
-                        categoryId === category.id && styles.pickerOptionSelected,
-                      ]}
-                      onPress={() => setCategoryId(category.id!)}
-                    >
-                      <View style={styles.pickerOptionContent}>
-                        <CategoryIcon iconName={category.icon} size={16} />
-                        <Text
-                          style={[
-                            styles.pickerOptionText,
-                            categoryId === category.id && styles.pickerOptionTextSelected,
-                          ]}
-                        >
-                          {getCategoryName(category)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>{t('form.location')}</Text>
-                <View style={styles.pickerOptions}>
-                  {locations.map((location) => (
-                    <TouchableOpacity
-                      key={location.id}
-                      style={[
-                        styles.pickerOption,
-                        locationId === location.id && styles.pickerOptionSelected,
-                      ]}
-                      onPress={() => setLocationId(location.id!)}
-                    >
-                      <View style={styles.pickerOptionContent}>
-                        <LocationIcon iconName={location.icon} size={16} />
-                        <Text
-                          style={[
-                            styles.pickerOptionText,
-                            locationId === location.id && styles.pickerOptionTextSelected,
-                          ]}
-                        >
-                          {getLocationName(location)}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>{t('form.expiryDate')}</Text>
-                <DatePicker
-                  value={expiryDate}
-                  onChange={setExpiryDate}
-                  theme={theme}
-                />
-              </View>
-
-              <TextInput
-                style={styles.input}
-                placeholder={t('form.reminderDays')}
-                placeholderTextColor={theme.textSecondary}
-                value={reminderDays}
-                onChangeText={setReminderDays}
+                value={quantity}
+                onChangeText={setQuantity}
                 keyboardType="numeric"
               />
+            </View>
 
-              <TextInput
-                style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                placeholder={t('form.notes')}
-                placeholderTextColor={theme.textSecondary}
-                value={notes}
-                onChangeText={setNotes}
-                multiline
-              />
-
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={handleCloseModal}
-                >
-                  <Text style={styles.buttonText}>{t('form.cancel')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.saveButton]}
-                  onPress={handleSave}
-                >
-                  <Text style={styles.saveButtonText}>{t('form.save')}</Text>
-                </TouchableOpacity>
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>{t('form.category')}</Text>
+              <View style={styles.pickerOptions}>
+                {categories.map((category) => (
+                  <TouchableOpacity
+                    key={category.id}
+                    style={[
+                      styles.pickerOption,
+                      categoryId === category.id && styles.pickerOptionSelected,
+                    ]}
+                    onPress={() => setCategoryId(category.id!)}
+                  >
+                    <View style={styles.pickerOptionContent}>
+                      <CategoryIcon iconName={category.icon} size={16} />
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          categoryId === category.id && styles.pickerOptionTextSelected,
+                        ]}
+                      >
+                        {getCategoryName(category)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
               </View>
-            </ScrollView>
-          </View>
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>{t('form.location')}</Text>
+              <View style={styles.pickerOptions}>
+                {locations.map((location) => (
+                  <TouchableOpacity
+                    key={location.id}
+                    style={[
+                      styles.pickerOption,
+                      locationId === location.id && styles.pickerOptionSelected,
+                    ]}
+                    onPress={() => setLocationId(location.id!)}
+                  >
+                    <View style={styles.pickerOptionContent}>
+                      <LocationIcon iconName={location.icon} size={16} />
+                      <Text
+                        style={[
+                          styles.pickerOptionText,
+                          locationId === location.id && styles.pickerOptionTextSelected,
+                        ]}
+                      >
+                        {getLocationName(location)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.pickerLabel}>{t('form.expiryDate')}</Text>
+              <DatePicker
+                value={expiryDate}
+                onChange={setExpiryDate}
+                theme={theme}
+              />
+            </View>
+
+            <TextInput
+              style={styles.input}
+              placeholder={t('form.reminderDays')}
+              placeholderTextColor={theme.textSecondary}
+              value={reminderDays}
+              onChangeText={setReminderDays}
+              keyboardType="numeric"
+            />
+
+            <TextInput
+              style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+              placeholder={t('form.notes')}
+              placeholderTextColor={theme.textSecondary}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+            />
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={handleCloseModal}
+              >
+                <Text style={styles.buttonText}>{t('form.cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={handleSave}
+              >
+                <Text style={styles.saveButtonText}>{t('form.save')}</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>

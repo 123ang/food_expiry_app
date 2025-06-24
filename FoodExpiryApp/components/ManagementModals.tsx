@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   TextInput,
   ScrollView,
   Alert,
@@ -15,6 +14,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES } from '../constants/emojis';
 import { FontAwesome } from '@expo/vector-icons';
 import type { Theme } from '../theme';
+import Modal from 'react-native-modal';
 
 type TFunction = (key: string) => string;
 
@@ -37,17 +37,6 @@ type EmojiSelectorProps = {
 };
 
 const createStyles = (theme: Theme) => StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    ...Platform.select({
-      ios: {
-        zIndex: 1000,
-      },
-    }),
-  },
   modalContent: {
     width: '80%',
     padding: 20,
@@ -58,11 +47,6 @@ const createStyles = (theme: Theme) => StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    ...Platform.select({
-      ios: {
-        zIndex: 1000,
-      },
-    }),
   },
   modalTitle: {
     fontSize: 20,
@@ -148,28 +132,12 @@ export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   };
   
   const styles = StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      ...Platform.select({
-        ios: {
-          zIndex: 1100,
-        },
-      }),
-    },
     modalContent: {
       width: '90%',
       maxHeight: '80%',
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
       padding: 20,
-      ...Platform.select({
-        ios: {
-          zIndex: 1100,
-        },
-      }),
     },
     title: {
       fontSize: 20,
@@ -246,57 +214,56 @@ export const EmojiSelector: React.FC<EmojiSelectorProps> = ({
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onBackButtonPress={onClose}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
+      style={{ zIndex: 2000 }}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>
-            Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
-          </Text>
-          <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
-            {categories.map((category) => (
-              <View key={category.title}>
-                <TouchableOpacity 
-                  style={styles.categoryHeader}
-                  onPress={() => toggleCategory(category.title)}
-                >
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  <Text style={styles.categoryTitle}>{t(category.title)}</Text>
-                  <Text style={styles.expandIcon}>
-                    {expandedCategories.has(category.title) ? '▼' : '▶'}
-                  </Text>
-                </TouchableOpacity>
-                
-                {expandedCategories.has(category.title) && (
-                  <View style={styles.emojiGrid}>
-                    {category.items.map((item) => (
-                      <TouchableOpacity
-                        key={item.key}
-                        style={[
-                          styles.emojiItem,
-                          selectedEmoji === item.emoji && styles.emojiItemSelected
-                        ]}
-                        onPress={() => {
-                          onSelect(item.emoji);
-                          onClose();
-                        }}
-                      >
-                        <Text style={styles.emojiIcon}>{item.emoji}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.modalContent}>
+        <Text style={styles.title}>
+          Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
+        </Text>
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
+          {categories.map((category) => (
+            <View key={category.title}>
+              <TouchableOpacity 
+                style={styles.categoryHeader}
+                onPress={() => toggleCategory(category.title)}
+              >
+                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                <Text style={styles.categoryTitle}>{t(category.title)}</Text>
+                <Text style={styles.expandIcon}>
+                  {expandedCategories.has(category.title) ? '▼' : '▶'}
+                </Text>
+              </TouchableOpacity>
+              
+              {expandedCategories.has(category.title) && (
+                <View style={styles.emojiGrid}>
+                  {category.items.map((item) => (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={[
+                        styles.emojiItem,
+                        selectedEmoji === item.emoji && styles.emojiItemSelected
+                      ]}
+                      onPress={() => {
+                        onSelect(item.emoji);
+                        onClose();
+                      }}
+                    >
+                      <Text style={styles.emojiIcon}>{item.emoji}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
       </View>
     </Modal>
   );
@@ -375,50 +342,50 @@ export const EditModal: React.FC<EditModalProps> = ({
   return (
     <>
       <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleClose}
+        isVisible={visible}
+        onBackdropPress={handleClose}
+        onBackButtonPress={handleClose}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+        style={{ zIndex: 1000 }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={handleNameChange}
-              placeholder={isCategory ? t('categories.nameRequired') : t('locations.nameRequired')}
-              placeholderTextColor={theme.textSecondary}
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={handleNameChange}
+            placeholder={isCategory ? t('categories.nameRequired') : t('locations.nameRequired')}
+            placeholderTextColor={theme.textSecondary}
+          />
+          <TouchableOpacity
+            style={styles.iconSelector}
+            onPress={openEmojiSelector}
+          >
+            <Text style={styles.iconSelectorText}>
+              {icon ? icon : t('selectIcon')}
+            </Text>
+            <FontAwesome
+              name="chevron-right"
+              size={16}
+              color={theme.textSecondary}
             />
+          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={styles.iconSelector}
-              onPress={openEmojiSelector}
+              style={[styles.button, styles.cancelButton]}
+              onPress={handleClose}
             >
-              <Text style={styles.iconSelectorText}>
-                {icon ? icon : t('selectIcon')}
-              </Text>
-              <FontAwesome
-                name="chevron-right"
-                size={16}
-                color={theme.textSecondary}
-              />
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleClose}
-              >
-                <Text style={styles.buttonText}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
-                onPress={handleSave}
-              >
-                <Text style={[styles.buttonText, styles.saveButtonText]}>
-                  {t('common.save')}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.button, styles.saveButton]}
+              onPress={handleSave}
+            >
+              <Text style={[styles.buttonText, styles.saveButtonText]}>
+                {t('common.save')}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

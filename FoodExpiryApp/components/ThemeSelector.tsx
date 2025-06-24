@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Modal,
   ScrollView,
   Alert,
   Platform,
 } from 'react-native';
+import Modal from 'react-native-modal';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
@@ -106,28 +106,12 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
   };
 
   const styles = StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      ...Platform.select({
-        ios: {
-          zIndex: 1000,
-        },
-      }),
-    },
     modalContent: {
       width: '90%',
       maxHeight: '85%',
       backgroundColor: theme.cardBackground,
       borderRadius: 16,
       padding: 20,
-      ...Platform.select({
-        ios: {
-          zIndex: 1000,
-        },
-      }),
     },
     title: {
       fontSize: 22,
@@ -208,60 +192,58 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ visible, onClose }
 
   return (
     <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onBackButtonPress={onClose}
+      animationIn="fadeIn"
+      animationOut="fadeOut"
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>{t('themeSetup.title')}</Text>
-          <Text style={styles.subtitle}>{t('themeSetup.subtitle')}</Text>
-          <ScrollView>
-            {THEMES.map((themeItem) => (
-              <View key={themeItem.key} style={styles.themeContainer}>
-                <View style={styles.themeHeader}>
-                  <Text style={styles.themeIcon}>{themeItem.icon}</Text>
-                  <Text style={styles.themeTitle}>{t(themeItem.key)}</Text>
-                </View>
-                <View style={styles.categoryGrid}>
-                  {themeItem.categories.map((cat) => {
-                    const isSelected = selectedCategories.has(cat.name);
-                    const isExisting = categories.some(c => c.name === cat.name);
-                    const buttonStyle = {
-                      borderColor: isExisting ? theme.successColor : (isSelected ? theme.primaryColor : theme.borderColor),
-                      backgroundColor: isExisting ? `${theme.successColor}20` : (isSelected ? `${theme.primaryColor}20` : 'transparent'),
-                    };
-                    const textStyle = {
-                      color: isExisting ? theme.successColor : (isSelected ? theme.primaryColor : theme.textColor),
-                    };
-
-                    return (
-                      <TouchableOpacity
-                        key={cat.name}
-                        style={[styles.categoryButton, buttonStyle]}
-                        onPress={() => !isExisting && toggleCategory(cat.name)}
-                        disabled={isExisting}
-                      >
-                        <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
-                        <Text style={[styles.categoryText, textStyle]}>{t(cat.name)}</Text>
-                        {isExisting && <FontAwesome name="check-circle" size={14} color={theme.successColor} />}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+      <View style={styles.modalContent}>
+        <Text style={styles.title}>{t('themeSetup.title')}</Text>
+        <Text style={styles.subtitle}>{t('themeSetup.subtitle')}</Text>
+        <ScrollView>
+          {THEMES.map((themeItem) => (
+            <View key={themeItem.key} style={styles.themeContainer}>
+              <View style={styles.themeHeader}>
+                <Text style={styles.themeIcon}>{themeItem.icon}</Text>
+                <Text style={styles.themeTitle}>{t(themeItem.key)}</Text>
               </View>
-            ))}
-          </ScrollView>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={[styles.buttonText, { color: theme.textColor }]}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-              <Text style={styles.buttonText}>{t('themeSetup.apply')}</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.categoryGrid}>
+                {themeItem.categories.map((cat) => {
+                  const isSelected = selectedCategories.has(cat.name);
+                  const isExisting = categories.some(c => c.name === cat.name);
+                  const buttonStyle = {
+                    borderColor: isExisting ? theme.successColor : (isSelected ? theme.primaryColor : theme.borderColor),
+                    backgroundColor: isExisting ? `${theme.successColor}20` : (isSelected ? `${theme.primaryColor}20` : 'transparent'),
+                  };
+                  const textStyle = {
+                    color: isExisting ? theme.successColor : (isSelected ? theme.primaryColor : theme.textColor),
+                  };
+
+                  return (
+                    <TouchableOpacity
+                      key={cat.name}
+                      style={[styles.categoryButton, buttonStyle]}
+                      onPress={() => !isExisting && toggleCategory(cat.name)}
+                      disabled={isExisting}
+                    >
+                      <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
+                      <Text style={[styles.categoryText, textStyle]}>{t(cat.name)}</Text>
+                      {isExisting && <FontAwesome name="check-circle" size={14} color={theme.successColor} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+            <Text style={[styles.buttonText, { color: theme.textColor }]}>{t('common.cancel')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
+            <Text style={styles.buttonText}>{t('themeSetup.apply')}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
