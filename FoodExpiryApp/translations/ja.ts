@@ -402,4 +402,7 @@ export default {
   'foodStatus.expiredDays': '日前',
   'foodStatus.noCategory': 'カテゴリなし',
   'foodStatus.noLocation': '場所なし',
+  'error.failedToUpdate': 'アイテムの更新に失敗しました',
+  'error.failedToLoadData': 'データの読み込みに失敗しました',
+  'error.tryAgain': 'もう一度お試しください',
 };
