@@ -470,7 +470,13 @@ const ThemeSetupModal: React.FC<ThemeSetupModalProps> = ({ visible, onClose, onA
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.title}>{t('themeSetup.title')}</Text>
