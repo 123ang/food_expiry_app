@@ -185,6 +185,8 @@ export default {
   'settings.clearExpiredError': '删除过期物品失败。请重试。',
   'settings.manageCategories': '管理类别',
   'settings.manageLocations': '管理位置',
+  'settings.imageRecovery': '图片恢复',
+  'settings.imageRecoveryDesc': '修复iOS更新后丢失的图片',
   'clearItems.title': '清除已使用物品',
   'clearItems.selectAll': '全选',
   'clearItems.clearSelection': '清除选择',

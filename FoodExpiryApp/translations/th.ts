@@ -408,6 +408,8 @@ export default {
   'foodStatus.noLocation': 'ไม่มีสถานที่',
   'settings.manageCategories': 'จัดการหมวดหมู่',
   'settings.manageLocations': 'จัดการตำแหน่ง',
+  'settings.imageRecovery': 'กู้คืนรูปภาพ',
+  'settings.imageRecoveryDesc': 'แก้ไขรูปภาพที่หายไปหลังจากอัปเดต iOS',
   'notFound.title': 'ไม่พบหน้าจอ',
   'notFound.message': 'ไม่พบหน้าจอที่คุณกำลังมองหา',
   'notFound.link': 'ไปที่หน้าจอหลัก',

@@ -186,6 +186,8 @@ export default {
   'settings.title': 'Tetapan',
   'settings.manageCategories': 'Urus Kategori',
   'settings.manageLocations': 'Urus Lokasi',
+  'settings.imageRecovery': 'Pemulihan Imej',
+  'settings.imageRecoveryDesc': 'Betulkan imej yang hilang selepas kemas kini iOS',
   'clearItems.title': 'Kosongkan Item Terpakai',
   'clearItems.selectAll': 'Pilih Semua',
   'clearItems.clearSelection': 'Kosongkan Pilihan',
