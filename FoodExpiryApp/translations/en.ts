@@ -413,5 +413,4 @@ export default {
   'error.failedToUpdate': 'Failed to update item',
   'error.failedToLoadData': 'Failed to load data',
   'error.tryAgain': 'Please try again',
-
 };
