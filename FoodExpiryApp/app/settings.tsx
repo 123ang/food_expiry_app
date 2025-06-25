@@ -733,7 +733,7 @@ const EditModal: React.FC<EditModalProps> = ({
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired } = useDatabase();
+  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired, foodItems } = useDatabase();
   const responsive = useResponsive();
   const router = useRouter();
 
@@ -821,14 +821,14 @@ export default function SettingsScreen() {
       type: 'navigation',
       onPress: () => router.push('/notifications'),
     },
-    // {
-    //   id: 'backup',
-    //   icon: 'cloud',
-    //   title: t('settings.backupSync'),
-    //   description: t('settings.backupSyncDescription'),
-    //   type: 'navigation',
-    //   onPress: () => router.push('/backup'),
-    // },
+    {
+      id: 'imageRecovery',
+      icon: 'image',
+      title: t('settings.imageRecovery') || 'Image Recovery',
+      description: t('settings.imageRecoveryDesc') || 'Fix missing images after iOS updates',
+      type: 'navigation',
+      onPress: () => router.push('/image-recovery' as any),
+    },
     {
       id: 'clearExpired',
       icon: 'trash',

@@ -7,7 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
 // Database configuration
-const DATABASE_VERSION = 6;
+const DATABASE_VERSION = 7;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -935,13 +935,103 @@ export const updateExistingDefaultItemsWithTranslationKeys = async (database: SQ
 // copy that into translation_key. The UI layer will then translate by key and ignore the literal name.
 const addMissingTranslationKeysForThemedCategories = async (database: SQLite.SQLiteDatabase): Promise<void> => {
   try {
-    await database.runAsync(
-      `UPDATE categories
-       SET translation_key = name
-       WHERE translation_key IS NULL AND name LIKE 'category.%'`
+    // Check if this migration has already been completed
+    const migrationKey = 'themed_categories_translation_keys_added';
+    const migrationCompleted = await AsyncStorage.getItem(migrationKey);
+    
+    if (migrationCompleted === 'true') {
+      return;
+    }
+
+    // Find categories that are missing translation keys
+    const categoriesToUpdate = await database.getAllAsync(
+      'SELECT * FROM categories WHERE translation_key IS NULL OR translation_key = ""'
     );
-  } catch (_e) {
-    // Ignore – migration is best-effort.
+
+    if (categoriesToUpdate.length > 0) {
+      for (const category of categoriesToUpdate) {
+        // Try to find a matching translation key based on the name
+        const categoryName = (category as {name: string}).name;
+        const categoryId = (category as {id: number}).id;
+        const translationKey = getEnglishNameFromTranslationKey(categoryName.toLowerCase());
+        
+        if (translationKey) {
+          await database.runAsync(
+            'UPDATE categories SET translation_key = ? WHERE id = ?',
+            [translationKey, categoryId]
+          );
+        }
+      }
+    }
+
+    // Mark migration as completed
+    await AsyncStorage.setItem(migrationKey, 'true');
+  } catch (error) {
+    // Non-critical error, continue execution
+  }
+};
+
+/**
+ * Migration to version 7: Fix iOS image system issues after updates
+ * This migration specifically addresses the issue where images disappear after iOS updates
+ */
+const migrateToVersion7 = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  try {
+    // Check if this migration has already been completed
+    const migrationKey = 'ios_image_recovery_v7';
+    const migrationCompleted = await AsyncStorage.getItem(migrationKey);
+    
+    if (migrationCompleted === 'true') {
+      return;
+    }
+
+    // Get all food items with images
+    const foodItems = await database.getAllAsync('SELECT id, image_uri FROM food_items WHERE image_uri IS NOT NULL');
+    
+    // Filter out emoji images and collect real image URIs
+    const imageUris = foodItems
+      .filter((item: any) => item.image_uri && !item.image_uri.startsWith('emoji:'))
+      .map((item: any) => item.image_uri);
+    
+    if (imageUris.length > 0) {
+      // Import necessary functions from fileStorage
+      const { initializeImageStorage, restoreImagesFromBackup, initializeImageSystemForIOS, validateDatabaseImageLinks } = require('../utils/fileStorage');
+      
+      // Initialize image storage system
+      await initializeImageStorage();
+      
+      // Try to restore images from backup
+      await restoreImagesFromBackup();
+      
+      // Run iOS-specific image recovery if on iOS
+      if (Platform.OS === 'ios') {
+        const iosImageResult = await initializeImageSystemForIOS();
+        
+        // Validate database image links and attempt recovery
+        if (imageUris.length > 0) {
+          const validation = await validateDatabaseImageLinks(imageUris);
+          
+          // If any images were repaired, update the database
+          if (validation.repaired.length > 0) {
+            for (const repair of validation.repaired) {
+              await database.runAsync(
+                'UPDATE food_items SET image_uri = ? WHERE image_uri = ?',
+                [repair.newUri, repair.oldUri]
+              );
+            }
+          }
+        }
+      }
+    }
+    
+    // Mark migration as completed
+    await AsyncStorage.setItem(migrationKey, 'true');
+    
+    // Force app to be re-initialized to ensure image system is properly checked
+    await AsyncStorage.setItem('app_initialized', 'false');
+    
+  } catch (error) {
+    // Non-critical error, continue execution
   }
 };
 
@@ -1016,6 +1106,11 @@ export const initDatabase = async (): Promise<void> => {
       // For upgrades to v6, patch themed categories that are missing translation_key.
       if (currentVersion < 6) {
         await addMissingTranslationKeysForThemedCategories(database);
+      }
+      
+      // For upgrades to v7, fix iOS image system issues
+      if (currentVersion < 7) {
+        await migrateToVersion7(database);
       }
 
       // Only run migrations if we're upgrading from an older version

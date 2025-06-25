@@ -916,4 +916,53 @@ export const generateThumbnail = async (imageUri: string): Promise<string | null
     console.error('Error generating thumbnail:', error);
     return null;
   }
+};
+
+/**
+ * Force image recovery after iOS updates
+ * This function can be called manually to trigger the image recovery system
+ * when images disappear after an iOS update
+ */
+export const forceImageRecovery = async (): Promise<{
+  success: boolean;
+  recoveredImages: number;
+  errors: string[];
+}> => {
+  const result = {
+    success: false,
+    recoveredImages: 0,
+    errors: [] as string[]
+  };
+  
+  try {
+    // 1. Initialize the image storage system
+    await initializeImageStorage();
+    
+    // 2. Try to restore images from backup
+    const restored = await restoreImagesFromBackup();
+    if (restored) {
+      result.recoveredImages += 1;
+    }
+    
+    // 3. Run iOS-specific recovery
+    if (Platform.OS === 'ios') {
+      const iosResult = await initializeImageSystemForIOS();
+      if (iosResult.success) {
+        result.recoveredImages += iosResult.recoveredImages;
+      } else {
+        result.errors.push(...iosResult.compatibilityIssues);
+      }
+    }
+    
+    // 4. Reset the app initialization flag to force a full check on next app start
+    await AsyncStorage.setItem('app_initialized', 'false');
+    
+    // 5. Mark as successful if we recovered any images or had no errors
+    result.success = result.recoveredImages > 0 || result.errors.length === 0;
+    
+  } catch (error) {
+    result.errors.push(`Recovery failed: ${String(error)}`);
+  }
+  
+  return result;
 }; 

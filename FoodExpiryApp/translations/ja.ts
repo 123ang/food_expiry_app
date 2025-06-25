@@ -284,6 +284,8 @@ export default {
   'locations.nameRequired': '場所名を入力してください',
   'settings.manageCategories': 'カテゴリの管理',
   'settings.manageLocations': '場所の管理',
+  'settings.imageRecovery': '画像復旧',
+  'settings.imageRecoveryDesc': 'iOSアップデート後の画像の修復',
   'notFound.title': '画面が見つかりません',
   'notFound.message': 'お探しの画面は存在しません。',
   'notFound.link': 'ホーム画面に移動',

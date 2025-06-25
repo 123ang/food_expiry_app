@@ -185,6 +185,8 @@ export default {
   'settings.clearExpiredError': 'Failed to clear expired items. Please try again.',
   'settings.manageCategories': 'Manage Categories',
   'settings.manageLocations': 'Manage Locations',
+  'settings.imageRecovery': 'Image Recovery',
+  'settings.imageRecoveryDesc': 'Fix missing images after iOS updates',
   'clearItems.title': 'Clear Used Items',
   'clearItems.selectAll': 'Select All',
   'clearItems.clearSelection': 'Clear Selection',
@@ -411,4 +413,5 @@ export default {
   'error.failedToUpdate': 'Failed to update item',
   'error.failedToLoadData': 'Failed to load data',
   'error.tryAgain': 'Please try again',
+
 };
