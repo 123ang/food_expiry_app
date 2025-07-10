@@ -32,6 +32,26 @@ export interface FoodItemWithDetails extends Omit<FoodItem, 'id'> {
   status?: 'expired' | 'expiring_soon' | 'fresh';
 }
 
+// Shopping and Wish List models
+export interface ShoppingItem {
+  id: number;
+  name: string;
+  image_uri?: string | null;
+  done: boolean;
+  created_at: string;
+}
+
+export interface WishItem {
+  id: number;
+  name: string;
+  notes?: string;
+  price?: string;
+  rating?: number;
+  image_uri?: string | null;
+  done: boolean;
+  created_at: string;
+}
+
 // Type guard to check if an item has an ID
 export function hasId<T extends { id?: number }>(item: T): item is T & { id: number } {
   return typeof item.id === 'number';

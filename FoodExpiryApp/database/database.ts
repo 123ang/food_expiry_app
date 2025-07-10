@@ -7,7 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
 // Database configuration
-const DATABASE_VERSION = 7;
+const DATABASE_VERSION = 8;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -641,54 +641,82 @@ export const daysDifference = (date1: string, date2: string): number => {
 };
 
 const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
-  const createTableQueries = [
-    `CREATE TABLE IF NOT EXISTS categories (
+  // Create tables
+  await database.runAsync(`
+    CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       icon TEXT NOT NULL,
       translation_key TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );`,
+    );
     
-    `CREATE TABLE IF NOT EXISTS locations (
+    CREATE TABLE IF NOT EXISTS locations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       icon TEXT NOT NULL,
       translation_key TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );`,
+    );
     
-    `CREATE TABLE IF NOT EXISTS food_items (
+    CREATE TABLE IF NOT EXISTS food_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      quantity INTEGER DEFAULT 1,
+      quantity INTEGER NOT NULL DEFAULT 1,
       category_id INTEGER,
       location_id INTEGER,
       expiry_date TEXT NOT NULL,
-      reminder_days INTEGER DEFAULT 3,
+      reminder_days INTEGER NOT NULL DEFAULT 3,
       notes TEXT,
       image_uri TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
       FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
-    );`,
-    
-    `CREATE INDEX IF NOT EXISTS idx_food_items_expiry ON food_items(expiry_date);`,
-    `CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category_id);`,
-    `CREATE INDEX IF NOT EXISTS idx_food_items_location ON food_items(location_id);`
+    );
+
+    CREATE TABLE IF NOT EXISTS shopping_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      image_uri TEXT,
+      done BOOLEAN NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS wish_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      quantity INTEGER,
+      notes TEXT,
+      price TEXT,
+      rating INTEGER CHECK (rating >= 0 AND rating <= 5),
+      image_uri TEXT,
+      done BOOLEAN NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Create indexes
+  const createIndexQueries = [
+    'CREATE INDEX IF NOT EXISTS idx_food_items_expiry ON food_items(expiry_date)',
+    'CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category_id)',
+    'CREATE INDEX IF NOT EXISTS idx_food_items_location ON food_items(location_id)',
+    'CREATE INDEX IF NOT EXISTS idx_shopping_items_done ON shopping_items(done)',
+    'CREATE INDEX IF NOT EXISTS idx_wish_items_done ON wish_items(done)',
+    'CREATE INDEX IF NOT EXISTS idx_shopping_items_created ON shopping_items(created_at)',
+    'CREATE INDEX IF NOT EXISTS idx_wish_items_created ON wish_items(created_at)'
   ];
 
-  for (const query of createTableQueries) {
+  for (const query of createIndexQueries) {
     await database.execAsync(query);
   }
-  
+
   // Add translation_key columns if they don't exist (for existing databases)
   try {
     await database.execAsync('ALTER TABLE categories ADD COLUMN translation_key TEXT');
   } catch (error) {
     // Column already exists or other error, continue
   }
-  
+
   try {
     await database.execAsync('ALTER TABLE locations ADD COLUMN translation_key TEXT');
   } catch (error) {
@@ -1047,6 +1075,9 @@ export const initDatabase = async (): Promise<void> => {
         
         return;
       }
+      console.log('Database initialized');
+      // Drop and recreate wish_items table for a clean schema
+      // await ensureWishAndShoppingTables(database); // This line is removed
 
       // Starting database initialization
       
@@ -1183,6 +1214,38 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
     // Migration error - non-critical
     // Continue execution as this is not a critical error
   }
+};
+
+// Add this function to drop and recreate wish_items table
+export const resetWishItemsTable = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  console.log('Resetting wish_items table');
+  await database.execAsync('DROP TABLE IF EXISTS wish_items');
+  await database.execAsync(`
+    CREATE TABLE IF NOT EXISTS wish_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      notes TEXT,
+      price TEXT,
+      rating INTEGER CHECK (rating >= 0 AND rating <= 5),
+      image_uri TEXT,
+      done BOOLEAN NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+};
+
+// Add this function to drop and recreate shopping_items table
+export const resetShoppingItemsTable = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  await database.execAsync('DROP TABLE IF EXISTS shopping_items');
+  await database.execAsync(`
+    CREATE TABLE IF NOT EXISTS shopping_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      image_uri TEXT,
+      done BOOLEAN NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 };
 
 // Utility functions

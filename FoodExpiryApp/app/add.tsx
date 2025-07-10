@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePickerExpo from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
@@ -28,6 +28,7 @@ import { FoodItem } from '../database/models';
 import { useResponsive } from '../hooks/useResponsive';
 import { EMOJI_CATEGORIES, CATEGORY_EMOJIS } from '../constants/emojis';
 import { ImageDisplayContext, getOptimizedImageUri } from '../utils/imageUtils';
+import { ImagePicker } from '../components/ImagePicker';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -37,7 +38,7 @@ export default function AddScreen() {
   const router = useRouter();
   const responsive = useResponsive();
   const { createFoodItem, refreshFoodItems, refreshAll, locations, categories, foodItems } = useDatabase();
-  const { prefilledDate } = useLocalSearchParams();
+  const { prefilledDate, prefilledName, prefilledImage } = useLocalSearchParams();
   
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('1');
@@ -60,8 +61,19 @@ export default function AddScreen() {
       const [year, month, day] = prefilledDate.split('-').map(Number);
       setExpiryDate(new Date(year, month - 1, day)); // month is 0-indexed
     }
+    
+    // Handle prefilled name from shopping list
+    if (prefilledName && typeof prefilledName === 'string') {
+      setItemName(prefilledName);
+    }
+    
+    // Handle prefilled image from shopping list
+    if (prefilledImage && typeof prefilledImage === 'string') {
+      setImageUri(prefilledImage);
+    }
+    
     loadSavedPhotos();
-  }, [prefilledDate]);
+  }, [prefilledDate, prefilledName, prefilledImage]);
 
   useEffect(() => {
     const updateOptimizedUri = async () => {
@@ -88,7 +100,7 @@ export default function AddScreen() {
 
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
+      const result = await ImagePickerExpo.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
@@ -116,7 +128,7 @@ export default function AddScreen() {
   const takePhoto = async () => {
     try {
       // First, request camera permission
-      const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+      const cameraPermission = await ImagePickerExpo.requestCameraPermissionsAsync();
       
       if (cameraPermission.granted === false) {
         Alert.alert(t('alert.error'), t('alert.cameraPermissionDenied'));
@@ -124,7 +136,7 @@ export default function AddScreen() {
       }
       
       // Launch camera with enhanced options
-      const result = await ImagePicker.launchCameraAsync({
+      const result = await ImagePickerExpo.launchCameraAsync({
         mediaTypes: ['images'],
         allowsEditing: true,      // Enable the built-in editor
         aspect: [1, 1],           // Use square aspect ratio for consistent food photos
@@ -587,57 +599,12 @@ export default function AddScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>{t('form.photo')}</Text>
-            <View style={styles.imageContainer}>
-              {imageUri ? (
-                <>
-                  <TouchableOpacity onPress={showImageOptions}>
-                    {imageUri.startsWith('emoji:') ? (
-                      <View style={[styles.imagePreview, { justifyContent: 'center', alignItems: 'center', backgroundColor: `${theme.primaryColor}10` }]}>
-                        <Text style={{ fontSize: 48 }}>{imageUri.replace('emoji:', '')}</Text>
-                      </View>
-                    ) : (
-                      <Image 
-                        source={{ uri: optimizedImageUri || imageUri }} 
-                        style={styles.imagePreview} 
-                      />
-                    )}
-                  </TouchableOpacity>
-                  <View style={styles.imageButtons}>
-                    <TouchableOpacity 
-                      style={styles.imageButton}
-                      onPress={showImageOptions}
-                    >
-                      <FontAwesome name="camera" size={14} color="#FFFFFF" />
-                      <Text style={styles.imageButtonText}>{t('image.changePhoto')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.imageButton, styles.imageButtonSecondary]}
-                      onPress={removeImage}
-                    >
-                      <FontAwesome name="trash" size={14} color={theme.textColor} />
-                      <Text style={[styles.imageButtonText, styles.imageButtonTextSecondary]}>{t('image.removePhoto')}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <TouchableOpacity 
-                    style={styles.imagePlaceholder}
-                    onPress={showImageOptions}
-                  >
-                    <FontAwesome name="camera" size={32} color={theme.textSecondary} />
-                    <Text style={{ color: theme.textSecondary, marginTop: 8 }}>{t('image.addPhoto')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.imageButton}
-                    onPress={showImageOptions}
-                  >
-                    <FontAwesome name="plus" size={14} color="#FFFFFF" />
-                    <Text style={styles.imageButtonText}>{t('image.addPhoto')}</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
+            <ImagePicker 
+              imageUri={imageUri} 
+              onImageSelected={setImageUri} 
+              theme={theme}
+              showThumbnail={false}
+            />
           </View>
 
           <View style={styles.inputContainer}>
