@@ -7,7 +7,7 @@ import * as FileSystem from 'expo-file-system';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
 // Database configuration
-const DATABASE_VERSION = 8;
+const DATABASE_VERSION = 9;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -1114,6 +1114,13 @@ export const initDatabase = async (): Promise<void> => {
         
         await backupUserData(database);
       }
+      
+      // --- ADD MIGRATION FOR VERSION 9 ---
+      if (currentVersion < 9) {
+        await resetShoppingItemsTable(database);
+        await resetWishItemsTable(database);
+      }
+      // --- END MIGRATION ---
       
       const currentLanguage = await getStoredLanguage();
       // Using current language for initialization
