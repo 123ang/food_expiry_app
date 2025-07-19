@@ -168,6 +168,120 @@ const getCurrentDatabaseVersion = async (): Promise<number> => {
   }
 };
 
+// Utility function to log database version and table status
+export const logDatabaseStatus = async (): Promise<void> => {
+  try {
+    const currentVersion = await getCurrentDatabaseVersion();
+    console.log('=== DATABASE STATUS ===');
+    console.log(`Current Database Version: ${currentVersion}`);
+    console.log(`Target Database Version: ${DATABASE_VERSION}`);
+    console.log(`Migration Needed: ${currentVersion < DATABASE_VERSION}`);
+    
+    const database = await getDatabase();
+    if (database) {
+      try {
+        // Check if wish_items table exists and has data
+        const wishItemsCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM wish_items') as any;
+        console.log(`wish_items table exists: ${wishItemsCount !== null}`);
+        console.log(`wish_items count: ${wishItemsCount?.count || 0}`);
+        
+        // Check if shopping_items table exists and has data
+        const shoppingItemsCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM shopping_items') as any;
+        console.log(`shopping_items table exists: ${shoppingItemsCount !== null}`);
+        console.log(`shopping_items count: ${shoppingItemsCount?.count || 0}`);
+        
+        // Check table schema for wish_items
+        try {
+          const wishItemsSchema = await database.getAllAsync("PRAGMA table_info(wish_items)");
+          console.log('wish_items schema:', wishItemsSchema);
+        } catch (error) {
+          console.log('wish_items table does not exist or error reading schema');
+        }
+        
+        // Check table schema for shopping_items
+        try {
+          const shoppingItemsSchema = await database.getAllAsync("PRAGMA table_info(shopping_items)");
+          console.log('shopping_items schema:', shoppingItemsSchema);
+        } catch (error) {
+          console.log('shopping_items table does not exist or error reading schema');
+        }
+        
+      } catch (error) {
+        console.log('Error checking table status:', error);
+      }
+    } else {
+      console.log('Database not available - using fallback storage');
+    }
+    console.log('=== END DATABASE STATUS ===');
+  } catch (error) {
+    console.log('Error logging database status:', error);
+  }
+};
+
+// Enhanced function to check if tables were dropped and recreated
+export const checkTableResetStatus = async (): Promise<{
+  currentVersion: number;
+  targetVersion: number;
+  migrationNeeded: boolean;
+  wishItemsTableExists: boolean;
+  shoppingItemsTableExists: boolean;
+  wishItemsCount: number;
+  shoppingItemsCount: number;
+  wishItemsSchema: any[];
+  shoppingItemsSchema: any[];
+}> => {
+  try {
+    const currentVersion = await getCurrentDatabaseVersion();
+    const database = await getDatabase();
+    
+    const result = {
+      currentVersion,
+      targetVersion: DATABASE_VERSION,
+      migrationNeeded: currentVersion < DATABASE_VERSION,
+      wishItemsTableExists: false,
+      shoppingItemsTableExists: false,
+      wishItemsCount: 0,
+      shoppingItemsCount: 0,
+      wishItemsSchema: [],
+      shoppingItemsSchema: []
+    };
+    
+    if (database) {
+      try {
+        // Check wish_items table
+        const wishItemsCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM wish_items') as any;
+        result.wishItemsTableExists = wishItemsCount !== null;
+        result.wishItemsCount = wishItemsCount?.count || 0;
+        
+        // Check shopping_items table
+        const shoppingItemsCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM shopping_items') as any;
+        result.shoppingItemsTableExists = shoppingItemsCount !== null;
+        result.shoppingItemsCount = shoppingItemsCount?.count || 0;
+        
+        // Get schemas
+        try {
+          result.wishItemsSchema = await database.getAllAsync("PRAGMA table_info(wish_items)");
+        } catch (error) {
+          // Table doesn't exist
+        }
+        
+        try {
+          result.shoppingItemsSchema = await database.getAllAsync("PRAGMA table_info(shopping_items)");
+        } catch (error) {
+          // Table doesn't exist
+        }
+      } catch (error) {
+        console.log('Error checking table status:', error);
+      }
+    }
+    
+    return result;
+  } catch (error) {
+    console.log('Error checking table reset status:', error);
+    throw error;
+  }
+};
+
 const setDatabaseVersion = async (version: number): Promise<void> => {
   try {
     await AsyncStorage.setItem(VERSION_KEY, version.toString());
@@ -1071,15 +1185,11 @@ export const initDatabase = async (): Promise<void> => {
       if (!database) {
         // Using fallback storage
         const currentLanguage = await getStoredLanguage();
+        console.log('📱 APP START: Using fallback storage - no SQLite database available');
         // Using fallback storage - initialization complete
         
         return;
       }
-      console.log('Database initialized');
-      // Drop and recreate wish_items table for a clean schema
-      // await ensureWishAndShoppingTables(database); // This line is removed
-
-      // Starting database initialization
       
       // FIRST: Always create tables before any database queries
       // Creating/updating tables
@@ -1088,6 +1198,18 @@ export const initDatabase = async (): Promise<void> => {
       // THEN: Check database version for migrations
       const currentVersion = await getCurrentDatabaseVersion();
       const needsMigration = currentVersion < DATABASE_VERSION;
+      
+      // Log database version information on app start
+      console.log('📱 APP START: Database Version Check');
+      console.log(`   Current Version: ${currentVersion}`);
+      console.log(`   Target Version: ${DATABASE_VERSION}`);
+      console.log(`   Migration Needed: ${needsMigration ? 'YES' : 'NO'}`);
+      
+      if (needsMigration) {
+        console.log(`   🔄 Will migrate from v${currentVersion} to v${DATABASE_VERSION}`);
+      } else {
+        console.log(`   ✅ Database is up to date (v${currentVersion})`);
+      }
       
       // Recovery mechanism: If version is 0 but database has data, 
       // it means a reset was performed - set correct version without re-initializing
@@ -1117,8 +1239,12 @@ export const initDatabase = async (): Promise<void> => {
       
       // --- ADD MIGRATION FOR VERSION 9 ---
       if (currentVersion < 9) {
+        console.log('🔄 MIGRATION: Starting version 9 migration (reset wish_items and shopping_items tables)');
+        console.log('   📋 This will drop and recreate wish_items and shopping_items tables');
         await resetShoppingItemsTable(database);
         await resetWishItemsTable(database);
+        console.log('✅ MIGRATION: Version 9 migration completed');
+        console.log('   📋 wish_items and shopping_items tables have been reset');
       }
       // --- END MIGRATION ---
       
@@ -1160,6 +1286,12 @@ export const initDatabase = async (): Promise<void> => {
       // Update database version
       
       await setDatabaseVersion(DATABASE_VERSION);
+      
+      // Log final database status after initialization
+      const finalVersion = await getCurrentDatabaseVersion();
+      console.log('📱 APP START: Database Initialization Complete');
+      console.log(`   Final Version: ${finalVersion}`);
+      console.log(`   Status: ${finalVersion === DATABASE_VERSION ? '✅ SUCCESS' : '❌ FAILED'}`);
       
       // Database initialization completed successfully
       
@@ -1225,7 +1357,7 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
 
 // Add this function to drop and recreate wish_items table
 export const resetWishItemsTable = async (database: SQLite.SQLiteDatabase): Promise<void> => {
-  console.log('Resetting wish_items table');
+  console.log('🔄 MIGRATION: Resetting wish_items table');
   await database.execAsync('DROP TABLE IF EXISTS wish_items');
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS wish_items (
@@ -1239,10 +1371,12 @@ export const resetWishItemsTable = async (database: SQLite.SQLiteDatabase): Prom
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  console.log('✅ MIGRATION: wish_items table reset completed');
 };
 
 // Add this function to drop and recreate shopping_items table
 export const resetShoppingItemsTable = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  console.log('🔄 MIGRATION: Resetting shopping_items table');
   await database.execAsync('DROP TABLE IF EXISTS shopping_items');
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS shopping_items (
@@ -1253,6 +1387,7 @@ export const resetShoppingItemsTable = async (database: SQLite.SQLiteDatabase): 
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  console.log('✅ MIGRATION: shopping_items table reset completed');
 };
 
 // Utility functions

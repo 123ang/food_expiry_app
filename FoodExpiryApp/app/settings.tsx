@@ -21,6 +21,7 @@ import { BottomNav } from '../components/BottomNav';
 import { Category, Location } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+
 import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
 import { getItemCategoryName, getItemLocationName } from '../utils/translationHelpers';
@@ -859,6 +860,7 @@ export default function SettingsScreen() {
         handleResetDatabase();
       },
     },
+
     {
       id: 'about',
       icon: 'info-circle',
@@ -1735,6 +1737,8 @@ export default function SettingsScreen() {
           ]}>
             {settings.map((item, index) => renderSettingItem(item, index, settings.length))}
           </View>
+          
+
         </ScrollView>
 
         <ManagementModal
