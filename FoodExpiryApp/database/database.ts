@@ -6,6 +6,13 @@ import { Category, Location } from './models';
 import * as FileSystem from 'expo-file-system';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
+// --- DEBUG LOGGING ADDED ---
+// To ensure the database is initialized, call `await initDatabase()` at the very start of your app (e.g., in App.tsx or your main entry point, before any database usage).
+// For React Native/Expo, you can use useEffect in App.tsx:
+// useEffect(() => { initDatabase(); }, []);
+// Make sure to await or handle the promise if you need to block UI until ready.
+// --- END DEBUG LOGGING INSTRUCTIONS ---
+
 // Database configuration
 const DATABASE_VERSION = 9;
 const DATABASE_NAME = 'expiry_alert.db';
@@ -490,78 +497,75 @@ const ensureFallbackStorage = async (): Promise<void> => {
 
 export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
   if (useFallbackStorage) {
+    console.log('[DB] Fallback storage in use, returning null database');
     return null;
   }
 
   if (!db) {
     try {
-      // Try to open existing database first
+      console.log('[DB] Attempting to open database:', DATABASE_NAME);
       db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-      
-      // Test the connection
+      console.log('[DB] Database opened, testing connection...');
       await db.getAllAsync('SELECT 1');
-      
+      console.log('[DB] Database connection test succeeded');
     } catch (openError) {
-      // Database open error, attempting recovery
-      
+      console.log('[DB] Error opening database (first attempt):', openError);
       try {
-        // Close any partial connection
         if (db) {
           try {
             await db.closeAsync();
+            console.log('[DB] Closed partial connection after open error');
           } catch (closeError) {
-            // Ignore close errors
+            console.log('[DB] Error closing partial connection:', closeError);
           }
           db = null;
         }
-        
-        // Try to open database again (it might be corrupted, not missing)
+        console.log('[DB] Retrying to open database after error...');
         db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-        
-        // Test the connection again
         await db.getAllAsync('SELECT 1');
-        
+        console.log('[DB] Database opened and tested on second attempt');
       } catch (secondAttemptError) {
-        // Second attempt failed, checking for corruption
-        
-        // Only as a LAST RESORT, and only if we can backup data first
+        console.log('[DB] Error opening database (second attempt):', secondAttemptError);
         try {
-          // Try to backup any existing data before recreating
           if (db) {
-            await backupUserData(db);
+            try {
+              await backupUserData(db);
+              console.log('[DB] Backed up user data before recreation');
+            } catch (backupError) {
+              console.log('[DB] Could not backup data before recreation:', backupError);
+            }
           }
-                  } catch (backupError) {
-            // Could not backup data before recreation
+        } catch (backupOuterError) {
+          console.log('[DB] Outer backup error:', backupOuterError);
         }
-        
         try {
-          // Close and recreate only as last resort
           if (db) {
             await db.closeAsync();
             db = null;
+            console.log('[DB] Closed DB before deleting for recreation');
           }
-          
           await SQLite.deleteDatabaseAsync(DATABASE_NAME);
+          console.log('[DB] Deleted database, recreating...');
           db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-          
+          console.log('[DB] Recreated database');
         } catch (recreateError) {
-          // If SQLite completely fails, switch to fallback mode
+          console.log('[DB] Could not recreate database, switching to fallback:', recreateError);
           await ensureFallbackStorage();
           return null;
         }
       }
     }
-    
     // Final verification
     try {
       await db.getAllAsync('SELECT 1');
+      console.log('[DB] Final verification succeeded');
     } catch (verifyError) {
-      // Final fallback
+      console.log('[DB] Final verification failed, switching to fallback:', verifyError);
       await ensureFallbackStorage();
       return null;
     }
   }
-
+  console.log('[DB] Returning database instance');
   return db;
 };
 
@@ -755,8 +759,8 @@ export const daysDifference = (date1: string, date2: string): number => {
 };
 
 const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
-  // Create tables
-  await database.runAsync(`
+  // Create tables (one statement per call)
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -764,7 +768,8 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       translation_key TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-    
+  `);
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS locations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -772,7 +777,8 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       translation_key TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-    
+  `);
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS food_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -787,7 +793,8 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL,
       FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
     );
-
+  `);
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS shopping_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -795,7 +802,8 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       done BOOLEAN NOT NULL DEFAULT 0,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-
+  `);
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS wish_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -1178,142 +1186,86 @@ const migrateToVersion7 = async (database: SQLite.SQLiteDatabase): Promise<void>
 };
 
 export const initDatabase = async (): Promise<void> => {
+  console.log('[DB] initDatabase called');
   return queuedDatabaseOperation(async () => {
     try {
       const database = await getDatabase();
-      
       if (!database) {
-        // Using fallback storage
         const currentLanguage = await getStoredLanguage();
-        console.log('📱 APP START: Using fallback storage - no SQLite database available');
-        // Using fallback storage - initialization complete
-        
+        console.log('[DB] Using fallback storage - no SQLite database available');
         return;
       }
-      
-      // FIRST: Always create tables before any database queries
-      // Creating/updating tables
+      console.log('[DB] Creating/updating tables...');
       await createTables(database);
-      
-      // THEN: Check database version for migrations
       const currentVersion = await getCurrentDatabaseVersion();
       const needsMigration = currentVersion < DATABASE_VERSION;
-      
-      // Log database version information on app start
-      console.log('📱 APP START: Database Version Check');
-      console.log(`   Current Version: ${currentVersion}`);
-      console.log(`   Target Version: ${DATABASE_VERSION}`);
-      console.log(`   Migration Needed: ${needsMigration ? 'YES' : 'NO'}`);
-      
+      console.log('[DB] Database Version Check:', { currentVersion, DATABASE_VERSION, needsMigration });
       if (needsMigration) {
-        console.log(`   🔄 Will migrate from v${currentVersion} to v${DATABASE_VERSION}`);
+        console.log(`[DB] Will migrate from v${currentVersion} to v${DATABASE_VERSION}`);
       } else {
-        console.log(`   ✅ Database is up to date (v${currentVersion})`);
+        console.log(`[DB] Database is up to date (v${currentVersion})`);
       }
-      
-      // Recovery mechanism: If version is 0 but database has data, 
-      // it means a reset was performed - set correct version without re-initializing
       if (currentVersion === 0 && database) {
         try {
           const categoryCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM categories');
           const locationCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM locations');
-          
           if ((categoryCount as any)?.count > 0 && (locationCount as any)?.count > 0) {
-            
             await setDatabaseVersion(DATABASE_VERSION);
-            
+            console.log('[DB] Set database version after reset');
             return;
           }
         } catch (error) {
-          
+          console.log('[DB] Error checking category/location count:', error);
         }
       }
-      
-      // Database version check completed
-      
-      // Backup user data before any major changes
       if (needsMigration && currentVersion > 0) {
-        
+        console.log('[DB] Backing up user data before migration...');
         await backupUserData(database);
       }
-      
-      // --- ADD MIGRATION FOR VERSION 9 ---
       if (currentVersion < 9) {
-        console.log('🔄 MIGRATION: Starting version 9 migration (reset wish_items and shopping_items tables)');
-        console.log('   📋 This will drop and recreate wish_items and shopping_items tables');
+        console.log('[DB] Starting version 9 migration (reset wish_items and shopping_items tables)');
         await resetShoppingItemsTable(database);
         await resetWishItemsTable(database);
-        console.log('✅ MIGRATION: Version 9 migration completed');
-        console.log('   📋 wish_items and shopping_items tables have been reset');
+        console.log('[DB] Version 9 migration completed');
       }
-      // --- END MIGRATION ---
-      
       const currentLanguage = await getStoredLanguage();
-      // Using current language for initialization
-      
-      // If this is a new installation or migration, handle accordingly
       if (currentVersion === 0) {
-        // Fresh installation - inserting default data
+        console.log('[DB] Fresh installation - inserting default data');
         await insertDefaultData(database, currentLanguage);
       } else if (needsMigration) {
-        // Migration needed - preserving user data
+        console.log('[DB] Migration needed - preserving user data');
         await insertDefaultData(database, currentLanguage);
         await restoreUserDataFromBackup(database);
       } else {
-        // Existing installation - skipping default data insertion
-        // Skip insertDefaultData for existing installations - data already exists!
+        console.log('[DB] Existing installation - skipping default data insertion');
       }
-      
-      // Always run this to ensure existing users have translation keys
       await updateExistingDefaultItemsWithTranslationKeys(database);
-
-      // For upgrades to v6, patch themed categories that are missing translation_key.
       if (currentVersion < 6) {
         await addMissingTranslationKeysForThemedCategories(database);
       }
-      
-      // For upgrades to v7, fix iOS image system issues
       if (currentVersion < 7) {
         await migrateToVersion7(database);
       }
-
-      // Only run migrations if we're upgrading from an older version
       if (currentVersion > 0 && currentVersion < DATABASE_VERSION) {
-        
         await migrateToNewCategories(database, currentLanguage);
       }
-      
-      // Update database version
-      
       await setDatabaseVersion(DATABASE_VERSION);
-      
-      // Log final database status after initialization
       const finalVersion = await getCurrentDatabaseVersion();
-      console.log('📱 APP START: Database Initialization Complete');
-      console.log(`   Final Version: ${finalVersion}`);
-      console.log(`   Status: ${finalVersion === DATABASE_VERSION ? '✅ SUCCESS' : '❌ FAILED'}`);
-      
-      // Database initialization completed successfully
-      
+      console.log('[DB] Database Initialization Complete:', { finalVersion, expected: DATABASE_VERSION, status: finalVersion === DATABASE_VERSION ? 'SUCCESS' : 'FAILED' });
     } catch (error) {
-      
-      
-      // Try to recover using backup data
-      
+      console.log('[DB] initDatabase error:', error);
       try {
         const recovered = await restoreFromFullBackup();
         if (recovered) {
-          
+          console.log('[DB] Database recovered from full backup');
           return;
         }
       } catch (recoveryError) {
-        
+        console.log('[DB] Error during recovery from full backup:', recoveryError);
       }
-      
-      // Fall back to using AsyncStorage
-      
       useFallbackStorage = true;
       await ensureFallbackStorage();
+      console.log('[DB] Switched to fallback storage after initDatabase failure');
     }
   }, 'initDatabase');
 };
