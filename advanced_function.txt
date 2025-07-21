@@ -1,3 +1,16 @@
-1. shopping list and wish list (shopping list can recommend user, based on things which has expired or item used in a month)
-2. cloud, family sharing ({Welcome back} card there can select user such as personal, family or hostel)
-3. minimize the photos
+version 2
+[X] shopping list and wish list 
+[] (shopping list can recommend user, based on things which has expired or item used in a month)
+
+version 3
+[] login page (can skip if there is no wifi, recommend to login or register account if havent)
+[] cloud, family sharing ({Welcome back} card there can select user such as personal or group)
+[] price is annually USD120 -> USD 40
+[] minimize the photos
+[] setting there need add groups setting (can see members in your group, admin can invite or remove members)
+expiry alert UI for groups
+[] refresh button, cache data from database (last updated on WHEN)
+[] when items added, it will show added by WHO
+
+version 4
+v4.0.0 group purchase for one time
