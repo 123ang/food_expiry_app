@@ -15,6 +15,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
+import { useSupabase } from '../context/SupabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../components/BottomNav';
@@ -735,6 +736,7 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired, foodItems } = useDatabase();
+  const { user, localUser, isAuthenticated, signOut } = useSupabase();
   const responsive = useResponsive();
   const router = useRouter();
 
@@ -789,6 +791,31 @@ export default function SettingsScreen() {
       description: t('settings.languageDescription'),
       type: 'language',
       onPress: () => setShowLanguageModal(true),
+    },
+    {
+      id: 'account',
+      icon: 'user',
+      title: isAuthenticated ? 'Account' : 'Sign In',
+      description: isAuthenticated 
+        ? `${localUser?.full_name || user?.email || 'User'} • ${localUser?.subscription_type || 'Free'}`
+        : 'Sign in to sync data and access premium features',
+      type: 'navigation',
+      onPress: () => {
+        if (isAuthenticated) {
+          // Show account options or sign out
+          Alert.alert(
+            'Account',
+            'What would you like to do?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Sign Out', style: 'destructive', onPress: signOut },
+              { text: 'View Profile', onPress: () => router.push('/(auth)/login' as any) }
+            ]
+          );
+        } else {
+          router.push('/(auth)/login' as any);
+        }
+      },
     },
     {
       id: 'theme',

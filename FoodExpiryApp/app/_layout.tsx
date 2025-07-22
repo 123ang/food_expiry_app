@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { DatabaseProvider, useDatabase } from '../context/DatabaseContext';
 import { LanguageProvider, useLanguage } from '../context/LanguageContext';
+import { SupabaseProvider } from '../context/SupabaseContext';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, Image, Text } from 'react-native';
 import { useNotificationChecker } from '../hooks/useNotificationChecker';
@@ -187,7 +188,9 @@ export default function RootLayout() {
     <ThemeProvider>
       <LanguageProvider>
         <DatabaseProvider>
-          <RootLayoutContent />
+          <SupabaseProvider>
+            <RootLayoutContent />
+          </SupabaseProvider>
         </DatabaseProvider>
       </LanguageProvider>
     </ThemeProvider>

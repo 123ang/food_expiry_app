@@ -32,6 +32,20 @@ export interface FoodItemWithDetails extends Omit<FoodItem, 'id'> {
   status?: 'expired' | 'expiring_soon' | 'fresh';
 }
 
+// User model for local storage
+export interface User {
+  id: number;
+  supabase_id: string;  // Supabase user ID
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login: string;
+  subscription_type?: 'free' | 'family';
+  subscription_expires_at?: string;
+}
+
 // Shopping and Wish List models
 export interface ShoppingItem {
   id: number;

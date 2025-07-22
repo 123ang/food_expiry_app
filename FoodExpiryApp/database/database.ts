@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language } from '../context/LanguageContext';
-import { Category, Location } from './models';
+import { Category, Location, User } from './models';
 import * as FileSystem from 'expo-file-system';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 
@@ -14,7 +14,7 @@ import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../cons
 // --- END DEBUG LOGGING INSTRUCTIONS ---
 
 // Database configuration
-const DATABASE_VERSION = 9;
+const DATABASE_VERSION = 10;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -761,6 +761,20 @@ export const daysDifference = (date1: string, date2: string): number => {
 const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
   // Create tables (one statement per call)
   await database.execAsync(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      supabase_id TEXT UNIQUE NOT NULL,
+      email TEXT NOT NULL,
+      full_name TEXT NOT NULL,
+      is_active BOOLEAN NOT NULL DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      last_login TEXT DEFAULT CURRENT_TIMESTAMP,
+      subscription_type TEXT CHECK (subscription_type IN ('free', 'family')),
+      subscription_expires_at TEXT
+    );
+  `);
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -819,6 +833,9 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
 
   // Create indexes
   const createIndexQueries = [
+    'CREATE INDEX IF NOT EXISTS idx_users_supabase_id ON users(supabase_id)',
+    'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+    'CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active)',
     'CREATE INDEX IF NOT EXISTS idx_food_items_expiry ON food_items(expiry_date)',
     'CREATE INDEX IF NOT EXISTS idx_food_items_category ON food_items(category_id)',
     'CREATE INDEX IF NOT EXISTS idx_food_items_location ON food_items(location_id)',
@@ -1760,4 +1777,135 @@ export const forceUpdateTranslationKeys = async (): Promise<void> => {
     
     console.log('Translation keys update completed');
   }, 'forceUpdateTranslationKeys');
+};
+
+// User management functions
+export const saveUserToLocal = async (userData: {
+  supabase_id: string;
+  email: string;
+  full_name: string;
+  subscription_type?: 'free' | 'family';
+  subscription_expires_at?: string;
+}): Promise<number> => {
+  return queuedDatabaseOperation(async () => {
+    const database = await getDatabase();
+    if (!database) {
+      throw new Error('Database not available');
+    }
+
+    const now = new Date().toISOString();
+    
+    // Check if user already exists
+    const existingUser = await database.getFirstAsync(
+      'SELECT id FROM users WHERE supabase_id = ?',
+      [userData.supabase_id]
+    );
+
+    if (existingUser) {
+      // Update existing user
+      await database.runAsync(
+        `UPDATE users SET 
+          email = ?, 
+          full_name = ?, 
+          is_active = 1, 
+          updated_at = ?, 
+          last_login = ?,
+          subscription_type = ?,
+          subscription_expires_at = ?
+        WHERE supabase_id = ?`,
+        [
+          userData.email,
+          userData.full_name,
+          now,
+          now,
+          userData.subscription_type || null,
+          userData.subscription_expires_at || null,
+          userData.supabase_id
+        ]
+      );
+      return (existingUser as any).id;
+    } else {
+      // Insert new user
+      const result = await database.runAsync(
+        `INSERT INTO users (
+          supabase_id, email, full_name, is_active, created_at, updated_at, last_login,
+          subscription_type, subscription_expires_at
+        ) VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+        [
+          userData.supabase_id,
+          userData.email,
+          userData.full_name,
+          now,
+          now,
+          now,
+          userData.subscription_type || null,
+          userData.subscription_expires_at || null
+        ]
+      );
+      return result.lastInsertRowId as number;
+    }
+  }, 'saveUserToLocal');
+};
+
+export const getLocalUser = async (supabase_id: string): Promise<User | null> => {
+  return queuedDatabaseOperation(async () => {
+    const database = await getDatabase();
+    if (!database) {
+      return null;
+    }
+
+    const user = await database.getFirstAsync(
+      'SELECT * FROM users WHERE supabase_id = ? AND is_active = 1',
+      [supabase_id]
+    );
+
+    return user as User | null;
+  }, 'getLocalUser');
+};
+
+export const getActiveLocalUser = async (): Promise<User | null> => {
+  return queuedDatabaseOperation(async () => {
+    const database = await getDatabase();
+    if (!database) {
+      return null;
+    }
+
+    const user = await database.getFirstAsync(
+      'SELECT * FROM users WHERE is_active = 1 ORDER BY last_login DESC LIMIT 1'
+    );
+
+    return user as User | null;
+  }, 'getActiveLocalUser');
+};
+
+export const deactivateUser = async (supabase_id: string): Promise<void> => {
+  return queuedDatabaseOperation(async () => {
+    const database = await getDatabase();
+    if (!database) {
+      throw new Error('Database not available');
+    }
+
+    await database.runAsync(
+      'UPDATE users SET is_active = 0, updated_at = ? WHERE supabase_id = ?',
+      [new Date().toISOString(), supabase_id]
+    );
+  }, 'deactivateUser');
+};
+
+export const updateUserSubscription = async (
+  supabase_id: string, 
+  subscription_type: 'free' | 'family',
+  subscription_expires_at?: string
+): Promise<void> => {
+  return queuedDatabaseOperation(async () => {
+    const database = await getDatabase();
+    if (!database) {
+      throw new Error('Database not available');
+    }
+
+    await database.runAsync(
+      'UPDATE users SET subscription_type = ?, subscription_expires_at = ?, updated_at = ? WHERE supabase_id = ?',
+      [subscription_type, subscription_expires_at || null, new Date().toISOString(), supabase_id]
+    );
+  }, 'updateUserSubscription');
 };
