@@ -173,7 +173,31 @@ function RootLayoutContent() {
           }}
         />
         <Stack.Screen
+          name="edit"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="clear-items"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="image-recovery"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="notifications"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="auth"
           options={{
             headerShown: false,
           }}

@@ -63,7 +63,7 @@ export default function SignUpScreen() {
           [
                          {
                text: 'OK',
-               onPress: () => router.replace('/(auth)/login' as any)
+               onPress: () => router.replace('/auth/login' as any)
              }
           ]
         )
@@ -75,12 +75,10 @@ export default function SignUpScreen() {
     }
   }
 
-  const handleSkip = () => {
-    router.replace('/')
-  }
+
 
   const goToLogin = () => {
-    router.replace('/(auth)/login' as any)
+    router.replace('/auth/login' as any)
   }
 
   return (
@@ -202,20 +200,7 @@ export default function SignUpScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Skip Button */}
-          <View style={styles.skipSection}>
-            <Text style={[styles.skipText, { color: theme.textSecondary }]}>
-              Want to use the app offline only?
-            </Text>
-            <TouchableOpacity 
-              style={[styles.skipButton, { borderColor: theme.borderColor }]}
-              onPress={handleSkip}
-            >
-              <Text style={[styles.skipButtonText, { color: theme.textColor }]}>
-                Continue Locally
-              </Text>
-            </TouchableOpacity>
-          </View>
+
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -245,6 +230,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    marginTop: 20,
     marginBottom: 8,
   },
   subtitle: {
@@ -289,25 +275,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: 'underline',
   },
-  skipSection: {
-    alignItems: 'center',
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-  },
-  skipText: {
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  skipButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  skipButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
+
 }) 

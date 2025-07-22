@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  Image
 } from 'react-native'
 import { router } from 'expo-router'
 import { supabase } from '../../lib/supabase'
@@ -56,7 +57,7 @@ export default function LoginScreen() {
   }
 
   const goToSignUp = () => {
-    router.push('/(auth)/signup' as any)
+    router.push('/auth/signup' as any)
   }
 
   return (
@@ -68,9 +69,11 @@ export default function LoginScreen() {
         <View style={styles.content}>
           {/* Logo/Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.textColor }]}>
-              Welcome Back
-            </Text>
+            <Image 
+              source={require('../../assets/food_expiry_logo.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
               Sign in to sync your food items across devices
             </Text>
@@ -178,6 +181,11 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

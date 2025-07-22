@@ -809,11 +809,11 @@ export default function SettingsScreen() {
             [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Sign Out', style: 'destructive', onPress: signOut },
-              { text: 'View Profile', onPress: () => router.push('/(auth)/login' as any) }
+              { text: 'View Profile', onPress: () => router.push('/auth/login' as any) }
             ]
           );
         } else {
-          router.push('/(auth)/login' as any);
+          router.push('/auth/login' as any);
         }
       },
     },
