@@ -166,6 +166,8 @@ export default {
   'settings.notificationsDescription': 'Manage notification settings',
   'settings.backupSync': 'Backup & Sync',
   'settings.backupSyncDescription': 'Backup and sync your data',
+  'settings.familyPackage': 'Family Package',
+  'settings.familyPackageDescription': 'Share premium benefits with up to 3 family members',
   'settings.about': 'About',
   'settings.aboutDescription': 'Learn more about the app',
   'settings.resetDatabase': 'Reset Database',

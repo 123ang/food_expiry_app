@@ -167,6 +167,8 @@ export default {
   'settings.notificationsDescription': '通知設定を管理',
   'settings.backupSync': 'バックアップと同期',
   'settings.backupSyncDescription': 'データをバックアップして同期',
+  'settings.familyPackage': 'ファミリーパッケージ',
+  'settings.familyPackageDescription': '最大3名の家族とプレミアム機能を共有',
   'settings.about': 'について',
   'settings.aboutDescription': 'アプリに関する詳細情報',
   'settings.resetDatabase': 'データベースをリセット',

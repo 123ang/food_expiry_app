@@ -166,6 +166,8 @@ export default {
   'settings.notificationsDescription': '管理通知设置',
   'settings.backupSync': '备份与同步',
   'settings.backupSyncDescription': '备份和同步您的数据',
+  'settings.familyPackage': '家庭套餐',
+  'settings.familyPackageDescription': '与最多3名家庭成员分享高级功能',
   'settings.about': '关于',
   'settings.aboutDescription': '了解有关该应用的更多信息',
   'settings.resetDatabase': '重置数据库',

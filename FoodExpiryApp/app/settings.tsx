@@ -226,6 +226,296 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   );
 };
 
+// Family Package Modal Component
+const FamilyPackageModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+}> = ({ visible, onClose }) => {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  
+  // Calculate time remaining until January 1, 2026 00:00
+  const getTimeRemaining = () => {
+    const targetDate = new Date('2026-01-01T00:00:00Z');
+    const now = new Date();
+    const difference = targetDate.getTime() - now.getTime();
+    
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+    }
+    
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+    
+    return { days, hours, minutes, seconds, expired: false };
+  };
+
+  const [timeRemaining, setTimeRemaining] = React.useState(getTimeRemaining());
+
+  React.useEffect(() => {
+    if (!visible) return;
+    
+    const timer = setInterval(() => {
+      setTimeRemaining(getTimeRemaining());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [visible]);
+
+  const handlePurchase = () => {
+    Alert.alert(
+      'Purchase Family Package',
+      'This feature would integrate with your app store payment system.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', onPress: () => {
+          // Here you would integrate with actual payment processing
+          Alert.alert('Success', 'Family package purchase initiated!');
+          onClose();
+        }}
+      ]
+    );
+  };
+
+  const modalStyles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+    modalContent: {
+      width: '90%',
+      maxWidth: 400,
+      backgroundColor: theme.cardBackground,
+      borderRadius: 20,
+      padding: 24,
+      maxHeight: '85%',
+    },
+    modalHeader: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    packageTitle: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    packageSubtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    pricingContainer: {
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    originalPrice: {
+      fontSize: 24,
+      color: theme.textSecondary,
+      textDecorationLine: 'line-through',
+      marginBottom: 4,
+    },
+    currentPrice: {
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: theme.primaryColor,
+      marginBottom: 8,
+    },
+    priceNote: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+    countdownContainer: {
+      backgroundColor: theme.backgroundColor,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 2,
+      borderColor: theme.primaryColor,
+    },
+    countdownTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textColor,
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    countdownTimer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    timerUnit: {
+      alignItems: 'center',
+    },
+    timerValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.primaryColor,
+    },
+    timerLabel: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 4,
+    },
+    benefitsContainer: {
+      marginBottom: 24,
+    },
+    benefitsTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    benefitItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+      paddingHorizontal: 8,
+    },
+    benefitIcon: {
+      marginRight: 12,
+      marginTop: 2,
+    },
+    benefitText: {
+      flex: 1,
+      fontSize: 15,
+      color: theme.textColor,
+      lineHeight: 22,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    purchaseButton: {
+      flex: 2,
+      backgroundColor: theme.primaryColor,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    purchaseButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    closeButton: {
+      flex: 1,
+      backgroundColor: theme.backgroundColor,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    closeButtonText: {
+      color: theme.textColor,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    expiredText: {
+      fontSize: 18,
+      color: theme.dangerColor,
+      textAlign: 'center',
+      fontWeight: '600',
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={modalStyles.modalOverlay}>
+        <View style={modalStyles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={modalStyles.modalHeader}>
+              <Text style={modalStyles.packageTitle}>👨‍👩‍👧‍👦 Family Package</Text>
+              <Text style={modalStyles.packageSubtitle}>Share the benefits with your loved ones</Text>
+              
+              <View style={modalStyles.pricingContainer}>
+                <Text style={modalStyles.originalPrice}>USD $120</Text>
+                <Text style={modalStyles.currentPrice}>USD $40</Text>
+                <Text style={modalStyles.priceNote}>Special Launch Price</Text>
+              </View>
+            </View>
+
+            <View style={modalStyles.countdownContainer}>
+              <Text style={modalStyles.countdownTitle}>
+                {timeRemaining.expired ? '⏰ Offer Expired' : '⏰ Limited Time Offer'}
+              </Text>
+              {timeRemaining.expired ? (
+                <Text style={modalStyles.expiredText}>
+                  Price is now USD $120
+                </Text>
+              ) : (
+                <View style={modalStyles.countdownTimer}>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.days}</Text>
+                    <Text style={modalStyles.timerLabel}>Days</Text>
+                  </View>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.hours}</Text>
+                    <Text style={modalStyles.timerLabel}>Hours</Text>
+                  </View>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.minutes}</Text>
+                    <Text style={modalStyles.timerLabel}>Minutes</Text>
+                  </View>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.seconds}</Text>
+                    <Text style={modalStyles.timerLabel}>Seconds</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={modalStyles.benefitsContainer}>
+              <Text style={modalStyles.benefitsTitle}>✨ Family Package Benefits</Text>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👥</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Invite up to 3 family members</Text> to enjoy all premium features and share the benefits together
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👑</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Become the family admin</Text> to manage your group effortlessly - invited members will automatically join your family circle
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>☁️</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Seamless cloud synchronization</Text> across all devices - never lose your data and stay connected with your family's food inventory
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={modalStyles.buttonContainer}>
+            <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
+              <Text style={modalStyles.closeButtonText}>Later</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={modalStyles.purchaseButton} onPress={handlePurchase}>
+              <Text style={modalStyles.purchaseButtonText}>
+                {timeRemaining.expired ? 'Buy $120' : 'Buy $40'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
@@ -720,7 +1010,7 @@ const EditModal: React.FC<EditModalProps> = ({
       <EmojiSelector
         visible={showEmojiSelector}
         onClose={() => setShowEmojiSelector(false)}
-        onSelect={(selectedIcon) => {
+        onSelect={(selectedIcon: string) => {
           setIcon(selectedIcon);
           iconWasManuallySet.current = true; // Mark as manually set
           setShowEmojiSelector(false);
@@ -748,6 +1038,7 @@ export default function SettingsScreen() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [managementModalVisible, setManagementModalVisible] = useState(false);
   const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
+  const [showFamilyPackageModal, setShowFamilyPackageModal] = useState(false);
 
   const openManagementModal = (type: 'categories' | 'locations') => {
     setManagementModalType(type);
@@ -886,6 +1177,14 @@ export default function SettingsScreen() {
       onPress: () => {
         handleResetDatabase();
       },
+    },
+    {
+      id: 'familyPackage',
+      icon: 'users',
+      title: t('settings.familyPackage') || 'Family Package',
+      description: t('settings.familyPackageDescription') || 'Share premium benefits with up to 3 family members',
+      type: 'navigation',
+      onPress: () => setShowFamilyPackageModal(true),
     },
 
     {
@@ -1779,6 +2078,10 @@ export default function SettingsScreen() {
         {renderAboutModal()}
         <BottomNav />
       </View>
+      <FamilyPackageModal
+        visible={showFamilyPackageModal}
+        onClose={() => setShowFamilyPackageModal(false)}
+      />
     </>
   );
 } 
