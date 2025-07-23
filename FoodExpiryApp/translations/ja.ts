@@ -169,6 +169,8 @@ export default {
   'settings.backupSyncDescription': 'データをバックアップして同期',
   'settings.familyPackage': 'ファミリーパッケージ',
   'settings.familyPackageDescription': '最大3名の家族とプレミアム機能を共有',
+  'settings.groupManagement': 'グループ管理',
+  'settings.groupManagementDescription': 'メンバーを招待してファミリーグループを管理',
   'settings.about': 'について',
   'settings.aboutDescription': 'アプリに関する詳細情報',
   'settings.resetDatabase': 'データベースをリセット',

@@ -168,6 +168,8 @@ export default {
   'settings.backupSyncDescription': 'Backup and sync your data',
   'settings.familyPackage': 'Family Package',
   'settings.familyPackageDescription': 'Share premium benefits with up to 3 family members',
+  'settings.groupManagement': 'Manage Group',
+  'settings.groupManagementDescription': 'Invite members and manage your family group',
   'settings.about': 'About',
   'settings.aboutDescription': 'Learn more about the app',
   'settings.resetDatabase': 'Reset Database',

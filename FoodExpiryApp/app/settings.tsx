@@ -516,6 +516,412 @@ const FamilyPackageModal: React.FC<{
   );
 };
 
+// Group Management Modal Component
+const GroupManagementModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+}> = ({ visible, onClose }) => {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { localUser } = useSupabase();
+  
+  const [groupName, setGroupName] = useState('My Family Group');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [groupMembers, setGroupMembers] = useState([
+    { id: '1', name: localUser?.full_name || 'You', email: localUser?.email || '', role: 'admin', isYou: true },
+    // Mock data - in real implementation, fetch from your backend
+    { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', role: 'member', isYou: false },
+    { id: '3', name: 'Mike Wilson', email: 'mike@example.com', role: 'member', isYou: false },
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInviteUser = async () => {
+    if (!inviteEmail.trim()) {
+      Alert.alert('Error', 'Please enter an email address');
+      return;
+    }
+
+    if (groupMembers.length >= 4) { // Admin + 3 members
+      Alert.alert('Group Full', 'Family groups can have a maximum of 4 members (including you)');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Here you would integrate with your backend to send invitation
+      Alert.alert(
+        'Invitation Sent',
+        `Invitation sent to ${inviteEmail}. They will receive an email to join your family group.`,
+        [{ text: 'OK', onPress: () => setInviteEmail('') }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send invitation. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveMember = (memberId: string, memberName: string) => {
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${memberName} from your family group?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            // Here you would integrate with your backend to remove member
+            setGroupMembers(prev => prev.filter(member => member.id !== memberId));
+            Alert.alert('Success', `${memberName} has been removed from the group.`);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSaveGroupName = async () => {
+    if (!groupName.trim()) {
+      Alert.alert('Error', 'Please enter a group name');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Here you would integrate with your backend to update group name
+      Alert.alert('Success', 'Group name updated successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update group name. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const modalStyles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+    modalContent: {
+      width: '90%',
+      maxWidth: 500,
+      backgroundColor: theme.cardBackground,
+      borderRadius: 20,
+      padding: 24,
+      maxHeight: '90%',
+    },
+    modalHeader: {
+      marginBottom: 24,
+    },
+    modalTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    modalSubtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginBottom: 12,
+    },
+    groupNameContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: theme.backgroundColor,
+      padding: 12,
+      borderRadius: 8,
+      color: theme.textColor,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      fontSize: 16,
+    },
+    saveButton: {
+      backgroundColor: theme.primaryColor,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    saveButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    inviteContainer: {
+      marginBottom: 16,
+    },
+    inviteInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 8,
+    },
+    inviteButton: {
+      backgroundColor: theme.primaryColor,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    inviteButtonDisabled: {
+      backgroundColor: theme.textSecondary,
+    },
+    inviteButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    inviteNote: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      fontStyle: 'italic',
+    },
+    membersList: {
+      maxHeight: 250,
+    },
+    memberItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundColor,
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 8,
+    },
+    memberAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.primaryColor,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    memberAvatarText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    memberInfo: {
+      flex: 1,
+    },
+    memberName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginBottom: 2,
+    },
+    memberEmail: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    memberRole: {
+      backgroundColor: theme.primaryColor,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      marginRight: 8,
+    },
+    memberRoleText: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    adminRole: {
+      backgroundColor: '#FFD700',
+    },
+    removeButton: {
+      backgroundColor: theme.dangerColor,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    closeButton: {
+      backgroundColor: theme.backgroundColor,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      marginTop: 16,
+    },
+    closeButtonText: {
+      color: theme.textColor,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    groupStats: {
+      backgroundColor: theme.backgroundColor,
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 16,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    statsLabel: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    statsValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.textColor,
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={modalStyles.modalOverlay}>
+        <View style={modalStyles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={modalStyles.modalHeader}>
+              <Text style={modalStyles.modalTitle}>👨‍👩‍👧‍👦 Manage Family Group</Text>
+              <Text style={modalStyles.modalSubtitle}>Organize your family's food management</Text>
+            </View>
+
+            {/* Group Statistics */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>📊 Group Overview</Text>
+              <View style={modalStyles.groupStats}>
+                <View style={modalStyles.statsRow}>
+                  <Text style={modalStyles.statsLabel}>Total Members:</Text>
+                  <Text style={modalStyles.statsValue}>{groupMembers.length}/4</Text>
+                </View>
+                <View style={modalStyles.statsRow}>
+                  <Text style={modalStyles.statsLabel}>Available Invites:</Text>
+                  <Text style={modalStyles.statsValue}>{4 - groupMembers.length}</Text>
+                </View>
+                <View style={modalStyles.statsRow}>
+                  <Text style={modalStyles.statsLabel}>Group Admin:</Text>
+                  <Text style={modalStyles.statsValue}>You</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Group Name Section */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>✏️ Group Name</Text>
+              <View style={modalStyles.groupNameContainer}>
+                <TextInput
+                  style={modalStyles.input}
+                  value={groupName}
+                  onChangeText={setGroupName}
+                  placeholder="Enter group name"
+                  placeholderTextColor={theme.textSecondary}
+                />
+                <TouchableOpacity 
+                  style={modalStyles.saveButton} 
+                  onPress={handleSaveGroupName}
+                  disabled={isLoading}
+                >
+                  <Text style={modalStyles.saveButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Invite Members Section */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>📧 Invite New Member</Text>
+              <View style={modalStyles.inviteContainer}>
+                <View style={modalStyles.inviteInputContainer}>
+                  <TextInput
+                    style={modalStyles.input}
+                    value={inviteEmail}
+                    onChangeText={setInviteEmail}
+                    placeholder="Enter email address"
+                    placeholderTextColor={theme.textSecondary}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity 
+                    style={[
+                      modalStyles.inviteButton,
+                      (isLoading || groupMembers.length >= 4) && modalStyles.inviteButtonDisabled
+                    ]}
+                    onPress={handleInviteUser}
+                    disabled={isLoading || groupMembers.length >= 4}
+                  >
+                    <Text style={modalStyles.inviteButtonText}>
+                      {isLoading ? 'Sending...' : 'Invite'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={modalStyles.inviteNote}>
+                  {groupMembers.length >= 4 
+                    ? 'Group is full (maximum 4 members)'
+                    : `${4 - groupMembers.length} invite${4 - groupMembers.length === 1 ? '' : 's'} remaining`
+                  }
+                </Text>
+              </View>
+            </View>
+
+            {/* Current Members Section */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>👥 Current Members ({groupMembers.length})</Text>
+              <ScrollView style={modalStyles.membersList} nestedScrollEnabled>
+                {groupMembers.map((member) => (
+                  <View key={member.id} style={modalStyles.memberItem}>
+                    <View style={modalStyles.memberAvatar}>
+                      <Text style={modalStyles.memberAvatarText}>
+                        {member.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={modalStyles.memberInfo}>
+                      <Text style={modalStyles.memberName}>
+                        {member.name} {member.isYou && '(You)'}
+                      </Text>
+                      <Text style={modalStyles.memberEmail}>{member.email}</Text>
+                    </View>
+                    <View style={[
+                      modalStyles.memberRole, 
+                      member.role === 'admin' && modalStyles.adminRole
+                    ]}>
+                      <Text style={modalStyles.memberRoleText}>
+                        {member.role === 'admin' ? 'Admin' : 'Member'}
+                      </Text>
+                    </View>
+                    {!member.isYou && (
+                      <TouchableOpacity
+                        style={modalStyles.removeButton}
+                        onPress={() => handleRemoveMember(member.id, member.name)}
+                      >
+                        <FontAwesome name="times" size={14} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </ScrollView>
+
+          <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
+            <Text style={modalStyles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
@@ -1039,6 +1445,7 @@ export default function SettingsScreen() {
   const [managementModalVisible, setManagementModalVisible] = useState(false);
   const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
   const [showFamilyPackageModal, setShowFamilyPackageModal] = useState(false);
+  const [showGroupManagementModal, setShowGroupManagementModal] = useState(false);
 
   const openManagementModal = (type: 'categories' | 'locations') => {
     setManagementModalType(type);
@@ -1184,7 +1591,56 @@ export default function SettingsScreen() {
       title: t('settings.familyPackage') || 'Family Package',
       description: t('settings.familyPackageDescription') || 'Share premium benefits with up to 3 family members',
       type: 'navigation',
-      onPress: () => setShowFamilyPackageModal(true),
+      onPress: () => {
+        if (!isAuthenticated) {
+          Alert.alert(
+            'Sign In Required',
+            'Please sign in to purchase the Family Package and access premium features.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+            ]
+          );
+          return;
+        }
+        setShowFamilyPackageModal(true);
+      },
+    },
+    {
+      id: 'groupManagement',
+      icon: 'users',
+      title: t('settings.groupManagement') || 'Manage Group',
+      description: t('settings.groupManagementDescription') || 'Invite members and manage your family group',
+      type: 'navigation',
+      onPress: () => {
+        if (!isAuthenticated) {
+          Alert.alert(
+            'Sign In Required',
+            'Please sign in to manage your family group.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
+            ]
+          );
+          return;
+        }
+        
+        // Check if user has family package (for demo purposes, always show as needing purchase)
+        const hasFlamilyPackage = false; // In real implementation, check subscription status
+        if (!hasFlamilyPackage) {
+          Alert.alert(
+            'Family Package Required',
+            'You need to purchase the Family Package to manage group members.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Purchase', onPress: () => setShowFamilyPackageModal(true) }
+            ]
+          );
+          return;
+        }
+        
+        setShowGroupManagementModal(true);
+      },
     },
 
     {
@@ -2081,6 +2537,10 @@ export default function SettingsScreen() {
       <FamilyPackageModal
         visible={showFamilyPackageModal}
         onClose={() => setShowFamilyPackageModal(false)}
+      />
+      <GroupManagementModal
+        visible={showGroupManagementModal}
+        onClose={() => setShowGroupManagementModal(false)}
       />
     </>
   );

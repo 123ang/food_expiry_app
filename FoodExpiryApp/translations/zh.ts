@@ -168,6 +168,8 @@ export default {
   'settings.backupSyncDescription': '备份和同步您的数据',
   'settings.familyPackage': '家庭套餐',
   'settings.familyPackageDescription': '与最多3名家庭成员分享高级功能',
+  'settings.groupManagement': '管理群组',
+  'settings.groupManagementDescription': '邀请成员并管理您的家庭群组',
   'settings.about': '关于',
   'settings.aboutDescription': '了解有关该应用的更多信息',
   'settings.resetDatabase': '重置数据库',
