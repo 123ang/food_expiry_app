@@ -799,6 +799,7 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       quantity INTEGER NOT NULL DEFAULT 1,
       category_id INTEGER,
       location_id INTEGER,
+      group_id TEXT,
       expiry_date TEXT NOT NULL,
       reminder_days INTEGER NOT NULL DEFAULT 3,
       notes TEXT,
@@ -858,6 +859,13 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
 
   try {
     await database.execAsync('ALTER TABLE locations ADD COLUMN translation_key TEXT');
+  } catch (error) {
+    // Column already exists or other error, continue
+  }
+
+  // Add group_id column to food_items if it doesn't exist
+  try {
+    await database.execAsync('ALTER TABLE food_items ADD COLUMN group_id TEXT');
   } catch (error) {
     // Column already exists or other error, continue
   }

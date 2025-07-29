@@ -131,6 +131,8 @@ export default {
   'weekday.sat': '土',
   'settings.language': '言語',
   'settings.languageDescription': 'アプリの言語を変更',
+  'settings.account': 'アカウント',
+  'settings.accountDescription': 'アカウント設定を管理',
   'settings.theme': 'テーマ',
   'settings.themeDescription': 'お好みのテーマを選択',
   'settings.themeOriginal': 'オリジナル',

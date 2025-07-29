@@ -64,6 +64,7 @@ interface DatabaseContextType {
   deleteAllExpired: () => Promise<number>;
   deleteMultipleItems: (ids: number[]) => Promise<number>;
   getByStatus: (status: 'fresh' | 'expiring_soon' | 'expired') => Promise<FoodItemWithDetails[]>;
+  getFoodItemsByGroup: (group_id?: string) => Promise<FoodItemWithDetails[]>;
 
   // Dashboard Data
   dashboardCounts: {
@@ -969,6 +970,17 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  // Add getFoodItemsByGroup function
+  const getFoodItemsByGroup = async (group_id?: string): Promise<FoodItemWithDetails[]> => {
+    try {
+      // Always get fresh data for group filtering since cache doesn't support group filtering
+      const items = await FoodItemRepository.getAllWithDetails(group_id);
+      return items;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const resetDatabaseData = async (): Promise<void> => {
     try {
       await resetDatabase();
@@ -1038,6 +1050,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     deleteAllExpired,
     deleteMultipleItems,
     getByStatus,
+    getFoodItemsByGroup,
     refreshCategories,
     refreshLocations,
     refreshFoodItems,

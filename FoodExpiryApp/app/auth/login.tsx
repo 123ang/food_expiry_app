@@ -13,14 +13,15 @@ import {
   Image
 } from 'react-native'
 import { router } from 'expo-router'
-import { supabase } from '../../lib/supabase'
 import { useTheme } from '../../context/ThemeContext'
+import { useSupabase } from '../../context/SupabaseContext'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
+  const { signIn } = useSupabase()
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -28,24 +29,18 @@ export default function LoginScreen() {
       return
     }
 
+    console.log('LoginScreen: Starting sign in for:', email)
     setLoading(true)
+    
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: password
-      })
-
-      if (error) {
-        Alert.alert('Login Failed', error.message)
-        return
-      }
-
-      if (data.user) {
-        // Login successful, navigate to main app
-        router.replace('/')
-      }
+      await signIn(email.trim().toLowerCase(), password)
+      
+      console.log('LoginScreen: Sign in successful, navigating to home...')
+      // Login successful, navigate to main app
+      router.replace('/')
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred')
+      console.error('LoginScreen: Login error:', error)
+      Alert.alert('Login Failed', error instanceof Error ? error.message : 'An unexpected error occurred')
     } finally {
       setLoading(false)
     }

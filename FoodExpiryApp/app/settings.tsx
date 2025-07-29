@@ -1432,7 +1432,7 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired, foodItems } = useDatabase();
-  const { user, localUser, isAuthenticated, signOut } = useSupabase();
+  const { user, localUser, isAuthenticated, signOut, isOnlineMode, isOfflineMode } = useSupabase();
   const responsive = useResponsive();
   const router = useRouter();
 
@@ -1493,9 +1493,9 @@ export default function SettingsScreen() {
     {
       id: 'account',
       icon: 'user',
-      title: isAuthenticated ? 'Account' : 'Sign In',
+      title: isAuthenticated ? (t('settings.account') || 'Account') : 'Login',
       description: isAuthenticated 
-        ? `${localUser?.full_name || user?.email || 'User'} • ${localUser?.subscription_type || 'Free'}`
+        ? `${user?.email || localUser?.email || 'N/A'}`
         : 'Sign in to sync data and access premium features',
       type: 'navigation',
       onPress: () => {
@@ -1527,6 +1527,15 @@ export default function SettingsScreen() {
         }
       },
     },
+    // Group management option - only visible when authenticated
+    ...(isAuthenticated ? [{
+      id: 'groups',
+      icon: 'users' as IconName,
+      title: t('settings.groups') || 'Groups',
+      description: t('settings.groupsDescription') || 'Manage your personal and family groups',
+      type: 'navigation' as const,
+      onPress: () => setShowGroupManagementModal(true),
+    }] : []),
     {
       id: 'theme',
       icon: 'paint-brush',

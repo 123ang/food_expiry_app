@@ -15,6 +15,7 @@ export interface FoodItem {
   quantity: number;
   category_id: number | null;
   location_id: number | null;
+  group_id: string | null; // Add group_id for group-based filtering
   expiry_date: string;
   reminder_days: number;
   notes: string | null;

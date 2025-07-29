@@ -20,7 +20,7 @@ interface Group {
   name: string;
   description: string | null;
   created_by: string;
-  invite_code: string;
+  invite_code: string | null;
   max_members: number;
   created_at: string;
   updated_at: string;
@@ -44,6 +44,17 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   const { createGroup } = useSupabase();
   const [showModal, setShowModal] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+
+  // Debug: Print groups received by GroupSelector
+  console.log('GroupSelector: Received groups count:', groups.length)
+  console.log('GroupSelector: selectedGroupId:', selectedGroupId)
+  groups.forEach((group, index) => {
+    console.log(`GroupSelector: Group ${index + 1}:`, {
+      id: group.id,
+      name: group.name,
+      description: group.description
+    })
+  })
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId) || groups[0];
 
@@ -185,10 +196,23 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
     },
   });
 
-  if (isLoading) {
+  // Show loading state if no groups but user is authenticated
+  if (groups.length === 0) {
     return (
       <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading groups...</Text>
+        <FontAwesome 
+          name="users" as IconName
+          size={16} 
+          color={theme.primaryColor} 
+        />
+        <View style={styles.groupInfo}>
+          <Text style={styles.groupName}>
+            Personal
+          </Text>
+          <Text style={styles.groupDescription}>
+            Your personal food management group
+          </Text>
+        </View>
       </View>
     );
   }

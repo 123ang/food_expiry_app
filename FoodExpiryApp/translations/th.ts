@@ -130,6 +130,8 @@ export default {
   'weekday.sat': 'ส',
   'settings.language': 'ภาษา',
   'settings.languageDescription': 'เปลี่ยนภาษาของแอป',
+  'settings.account': 'บัญชี',
+  'settings.accountDescription': 'จัดการการตั้งค่าบัญชีของคุณ',
   'settings.theme': 'ธีม',
   'settings.themeDescription': 'เลือกธีมที่คุณต้องการ',
   'settings.themeOriginal': 'ต้นฉบับ',

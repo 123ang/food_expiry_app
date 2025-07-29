@@ -130,6 +130,8 @@ export default {
   'weekday.sat': '六',
   'settings.language': '语言',
   'settings.languageDescription': '更改应用语言',
+  'settings.account': '账户',
+  'settings.accountDescription': '管理您的账户设置',
   'settings.theme': '主题',
   'settings.themeDescription': '选择您喜欢的主题',
   'settings.themeOriginal': '原始',

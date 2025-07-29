@@ -23,7 +23,7 @@ import { useSupabase } from '../context/SupabaseContext';
 
 import { useRouter, useFocusEffect } from 'expo-router';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { FoodItem, Category, Location } from '../database/models';
+import { FoodItem, Category, Location, FoodItemWithDetails } from '../database/models';
 import { DatePicker } from '../components/DatePicker';
 import { BottomNav } from '../components/BottomNav';
 import { getSafeIconName } from '../utils/iconUtils';
@@ -232,6 +232,7 @@ export default function DashboardScreen() {
     refreshLocations,
     dashboardCounts,
     error,
+    getFoodItemsByGroup,
   } = useDatabase();
 
   // Group and subscription functionality
@@ -243,7 +244,8 @@ export default function DashboardScreen() {
     userGroups, 
     createGroup,
     subscription,
-    hasActiveSubscription 
+    hasActiveSubscription, 
+    syncToCloud 
   } = useSupabase();
 
   const router = useRouter();
@@ -276,20 +278,53 @@ export default function DashboardScreen() {
 
   // Group-related state
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [filteredFoodItems, setFilteredFoodItems] = useState<FoodItemWithDetails[]>([]);
 
   // Determine subscription plan
   const subscriptionPlan = subscription?.plan_type || localUser?.subscription_type || 'free';
 
   // Extract groups from userGroups
   const groups = userGroups.map(membership => membership.groups);
+  
+  // Debug: Print groups in the main component
+  console.log('DashboardScreen: userGroups count:', userGroups.length)
+  console.log('DashboardScreen: groups count:', groups.length)
+  groups.forEach((group, index) => {
+    console.log(`DashboardScreen: Group ${index + 1}:`, {
+      id: group.id,
+      name: group.name,
+      description: group.description
+    })
+  })
+
+  // Load food items for the selected group
+  useEffect(() => {
+    const loadGroupFoodItems = async () => {
+      if (activeGroupId) {
+        try {
+          const items = await getFoodItemsByGroup(activeGroupId);
+          setFilteredFoodItems(items);
+        } catch (error) {
+          console.error('Error loading group food items:', error);
+          setFilteredFoodItems([]);
+        }
+      } else {
+        // If no group selected, show all items (for non-authenticated users)
+        setFilteredFoodItems(foodItems);
+      }
+    };
+
+    loadGroupFoodItems();
+  }, [activeGroupId, foodItems, getFoodItemsByGroup]);
 
   // Set active group when groups change
   useEffect(() => {
     if (groups.length > 0 && !activeGroupId) {
       setActiveGroupId(groups[0].id);
+    } else if (groups.length === 0 && isAuthenticated) {
+      // If authenticated but no groups, the GroupSelector will show "Creating Personal Group..."
     }
-  }, [groups, activeGroupId]);
+  }, [groups, activeGroupId, isAuthenticated]);
 
   const setActiveGroup = (group: any) => {
     setActiveGroupId(group.id);
@@ -333,7 +368,7 @@ export default function DashboardScreen() {
 
   const getLocationItemCounts = () => {
     const counts: { [key: number]: number } = {};
-    foodItems.forEach(item => {
+    filteredFoodItems.forEach(item => {
       if (item.location_id) {
         counts[item.location_id] = (counts[item.location_id] || 0) + 1;
       }
@@ -343,7 +378,7 @@ export default function DashboardScreen() {
 
   const getCategoryItemCounts = () => {
     const counts: { [key: number]: number } = {};
-    foodItems.forEach(item => {
+    filteredFoodItems.forEach(item => {
       if (item.category_id) {
         counts[item.category_id] = (counts[item.category_id] || 0) + 1;
       }
@@ -380,7 +415,8 @@ export default function DashboardScreen() {
         notes: notes.trim(),
         quantity: parseInt(quantity) || 1,
         image_uri: null,
-        created_at: new Date().toISOString().split('T')[0]
+        created_at: new Date().toISOString().split('T')[0],
+        group_id: activeGroupId || null, // Add group_id
       };
 
       if (editingItem && editingItem.id) {
@@ -446,7 +482,17 @@ export default function DashboardScreen() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      // If authenticated, sync with Supabase first
+      if (isAuthenticated) {
+        await syncToCloud();
+      }
+      // Then refresh local data
       await refreshAll();
+      // Reload group-specific food items
+      if (activeGroupId) {
+        const items = await getFoodItemsByGroup(activeGroupId);
+        setFilteredFoodItems(items);
+      }
     } catch (error) {
       console.error('Error refreshing data:', error);
     } finally {
@@ -1297,12 +1343,17 @@ export default function DashboardScreen() {
                     selectedGroupId={activeGroupId}
                     onGroupChange={setActiveGroup}
                     groups={groups}
-                    isLoading={groupsLoading}
                   />
                 </View>
               )}
             </View>
-            <TouchableOpacity style={styles.bannerIcon} onPress={isAuthenticated ? handleRefresh : undefined}>
+            <TouchableOpacity style={[styles.bannerIcon, { 
+              marginLeft: responsive.getResponsiveValue({
+                tablet: 16,
+                largeTablet: 20,
+                default: 12,
+              })
+            }]} onPress={isAuthenticated ? handleRefresh : undefined}>
               <FontAwesome name={(isAuthenticated ? 'refresh' : 'cutlery') as IconName} size={responsive.getResponsiveValue({
                 tablet: 32,
                 largeTablet: 40,

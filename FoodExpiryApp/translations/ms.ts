@@ -130,6 +130,8 @@ export default {
   'weekday.sat': 'Sab',
   'settings.language': 'Bahasa',
   'settings.languageDescription': 'Tukar bahasa aplikasi',
+  'settings.account': 'Akaun',
+  'settings.accountDescription': 'Urus tetapan akaun anda',
   'settings.theme': 'Tema',
   'settings.themeDescription': 'Pilih tema pilihan anda',
   'settings.themeOriginal': 'Asal',
