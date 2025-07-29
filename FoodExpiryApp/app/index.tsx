@@ -19,6 +19,8 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
+import { useSupabase } from '../context/SupabaseContext';
+
 import { useRouter, useFocusEffect } from 'expo-router';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { FoodItem, Category, Location } from '../database/models';
@@ -32,6 +34,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
 import { EditModal } from '../components/ManagementModals';
 import { ThemeSelector } from '../components/ThemeSelector';
+import { GroupSelector } from '../components/GroupSelector';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -230,6 +233,19 @@ export default function DashboardScreen() {
     dashboardCounts,
     error,
   } = useDatabase();
+
+  // Group and subscription functionality
+  const { 
+    user, 
+    localUser, 
+    isAuthenticated, 
+    currentGroup, 
+    userGroups, 
+    createGroup,
+    subscription,
+    hasActiveSubscription 
+  } = useSupabase();
+
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -257,6 +273,27 @@ export default function DashboardScreen() {
   const [itemToEdit, setItemToEdit] = useState<Category | Location | null>(null);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const lastLanguage = React.useRef(language);
+
+  // Group-related state
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+
+  // Determine subscription plan
+  const subscriptionPlan = subscription?.plan_type || localUser?.subscription_type || 'free';
+
+  // Extract groups from userGroups
+  const groups = userGroups.map(membership => membership.groups);
+
+  // Set active group when groups change
+  useEffect(() => {
+    if (groups.length > 0 && !activeGroupId) {
+      setActiveGroupId(groups[0].id);
+    }
+  }, [groups, activeGroupId]);
+
+  const setActiveGroup = (group: any) => {
+    setActiveGroupId(group.id);
+  };
 
   useEffect(() => {
     const hasCategories = categories.length > 0;
@@ -407,11 +444,11 @@ export default function DashboardScreen() {
   };
 
   const handleRefresh = async () => {
+    setIsRefreshing(true);
     try {
-      setIsRefreshing(true);
       await refreshAll();
     } catch (error) {
-      // Silent error handling for production
+      console.error('Error refreshing data:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -482,6 +519,8 @@ export default function DashboardScreen() {
     setEditModalVisible(false);
     setManagementModalVisible(true);
   };
+
+
 
   const styles = StyleSheet.create({
     container: {
@@ -1252,14 +1291,24 @@ export default function DashboardScreen() {
           }]}>
             <View style={styles.welcomeText}>
               <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
+              {isAuthenticated && (
+                <View style={{ marginTop: 8 }}>
+                  <GroupSelector
+                    selectedGroupId={activeGroupId}
+                    onGroupChange={setActiveGroup}
+                    groups={groups}
+                    isLoading={groupsLoading}
+                  />
+                </View>
+              )}
             </View>
-            <View style={styles.bannerIcon}>
-              <FontAwesome name={'cutlery' as IconName} size={responsive.getResponsiveValue({
+            <TouchableOpacity style={styles.bannerIcon} onPress={isAuthenticated ? handleRefresh : undefined}>
+              <FontAwesome name={(isAuthenticated ? 'refresh' : 'cutlery') as IconName} size={responsive.getResponsiveValue({
                 tablet: 32,
                 largeTablet: 40,
                 default: 24,
               })} color="#FFFFFF" />
-            </View>
+            </TouchableOpacity>
           </View>
 
           <View style={[styles.quickStats, {

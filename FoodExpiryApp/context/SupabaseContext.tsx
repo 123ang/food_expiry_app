@@ -157,12 +157,15 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('SupabaseContext: Auth state change:', event, session?.user?.id)
+      
       setSession(session)
       setUser(session?.user ?? null)
 
       if (session?.user) {
         // User signed in - save to local and load their data
         try {
+          console.log('SupabaseContext: User signed in, saving to local...')
           await saveUserToLocal({
             supabase_id: session.user.id,
             email: session.user.email || '',
@@ -173,6 +176,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           // Update local user state
           const savedUser = await getLocalUser(session.user.id)
           setLocalUser(savedUser)
+          console.log('SupabaseContext: Local user saved:', savedUser?.email)
           
           // Load cloud data
           await loadUserData(session.user.id)
@@ -180,11 +184,13 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           console.error('Error handling sign in:', error)
         }
       } else {
-        // User signed out - clear cloud data but keep local user active
+        // User signed out - clear all data
+        console.log('SupabaseContext: User signed out, clearing all data...')
         setCurrentGroup(null)
         setUserGroups([])
         setSubscription(null)
-        // Don't clear localUser - it stays active for local mode
+        setLocalUser(null) // Clear local user when signed out
+        console.log('SupabaseContext: All data cleared')
       }
       
       setLoading(false)
@@ -246,27 +252,101 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   const signUp = async (email: string, password: string, userData: any): Promise<void> => {
+    console.log('SupabaseContext: Starting signup for email:', email)
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: userData
+        data: userData,
+        emailRedirectTo: undefined // Disable email confirmation
       }
     })
 
-    if (error) throw error
+    if (error) {
+      console.log('SupabaseContext: Signup error:', error)
+      throw error
+    }
+
+    console.log('SupabaseContext: Signup successful, user:', data.user?.id)
 
     // If signup successful and we have user data, save to local
     if (data.user) {
-      await saveUserToLocal({
-        supabase_id: data.user.id,
-        email: data.user.email || '',
-        full_name: userData.full_name || data.user.email || '',
-        subscription_type: 'free'
-      })
-      
-      const savedUser = await getLocalUser(data.user.id)
-      setLocalUser(savedUser)
+      try {
+        console.log('SupabaseContext: Saving user to local database...')
+        await saveUserToLocal({
+          supabase_id: data.user.id,
+          email: data.user.email || '',
+          full_name: userData.full_name || data.user.email || '',
+          subscription_type: 'free'
+        })
+        
+        const savedUser = await getLocalUser(data.user.id)
+        setLocalUser(savedUser)
+        console.log('SupabaseContext: User saved to local database successfully')
+        
+        // Manually create user profile in Supabase if trigger fails
+        try {
+          console.log('SupabaseContext: Attempting to create user profile manually...')
+          const { error: profileError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email || '',
+              full_name: userData.full_name || data.user.email || '',
+              avatar_url: userData.avatar_url || null,
+              timezone: 'UTC',
+              language_preference: 'en'
+            })
+          
+          if (profileError) {
+            if (profileError.code === '23505') { // Unique constraint violation
+              console.log('SupabaseContext: User profile already exists (trigger worked)')
+            } else {
+              console.error('SupabaseContext: Error creating user profile manually:', profileError)
+            }
+          } else {
+            console.log('SupabaseContext: User profile created manually successfully')
+          }
+        } catch (manualError) {
+          console.error('SupabaseContext: Error in manual profile creation:', manualError)
+        }
+        
+        // Automatically create personal group for new user
+        try {
+          console.log('SupabaseContext: Creating personal group for new user...')
+          await createGroup('Personal', 'Your personal food management group')
+          console.log('SupabaseContext: Personal group created successfully')
+        } catch (groupError) {
+          console.error('SupabaseContext: Error creating personal group:', groupError)
+          // Don't throw here - the signup was successful, just group creation failed
+        }
+        
+        // Test if user profile was created in Supabase
+        setTimeout(async () => {
+          try {
+            if (data.user) {
+              const { data: profileData, error: profileError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', data.user.id)
+                .single()
+              
+              if (profileError) {
+                console.error('SupabaseContext: Error checking user profile:', profileError)
+              } else {
+                console.log('SupabaseContext: User profile created in Supabase:', profileData)
+              }
+            }
+          } catch (checkError) {
+            console.error('SupabaseContext: Error checking user profile:', checkError)
+          }
+        }, 2000) // Wait 2 seconds for trigger to execute
+        
+      } catch (localError) {
+        console.error('SupabaseContext: Error saving to local database:', localError)
+        // Don't throw here - the signup was successful, just local save failed
+      }
     }
   }
 
@@ -289,26 +369,70 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const savedUser = await getLocalUser(data.user.id)
       setLocalUser(savedUser)
+      
+      // Load user data including groups
+      await loadUserData(data.user.id)
+      
+      // If user has no groups, create a personal group
+      if (userGroups.length === 0) {
+        try {
+          console.log('SupabaseContext: Creating personal group for existing user...')
+          await createGroup('Personal', 'Your personal food management group')
+          console.log('SupabaseContext: Personal group created for existing user')
+        } catch (groupError) {
+          console.error('SupabaseContext: Error creating personal group for existing user:', groupError)
+          // Don't throw here - the signin was successful, just group creation failed
+        }
+      }
     }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    try {
+      console.log('SupabaseContext: Starting sign out...')
+      
+      // Clear session and user state
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('SupabaseContext: Supabase sign out error:', error)
+        throw error
+      }
 
-    // Deactivate local user
-    if (localUser) {
-      await deactivateUser(localUser.supabase_id)
+      console.log('SupabaseContext: Supabase sign out successful')
+
+      // Clear local user data
+      if (localUser) {
+        try {
+          await deactivateUser(localUser.supabase_id)
+          console.log('SupabaseContext: Local user deactivated')
+        } catch (deactivateError) {
+          console.error('SupabaseContext: Error deactivating local user:', deactivateError)
+          // Don't throw here - the sign out was successful, just local cleanup failed
+        }
+      }
+
+      // Clear all state
       setLocalUser(null)
+      setUser(null)
+      setSession(null)
+      setCurrentGroup(null)
+      setUserGroups([])
+      setSubscription(null)
+      
+      console.log('SupabaseContext: Sign out completed successfully')
+    } catch (error) {
+      console.error('SupabaseContext: Sign out error:', error)
+      throw error
     }
   }
 
   const createGroup = async (name: string, description?: string): Promise<Group> => {
     if (!user) throw new Error('Must be logged in to create a group')
 
-    // Check if user already has a group
-    if (userGroups.length > 0) {
-      throw new Error('You can only create one group')
+    // Check if user already has a group with the same name
+    const existingGroup = userGroups.find(g => g.groups.name === name)
+    if (existingGroup) {
+      throw new Error(`You already have a group named "${name}"`)
     }
 
     const { data, error } = await supabase

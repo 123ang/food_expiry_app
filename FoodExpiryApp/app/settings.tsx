@@ -1500,14 +1500,26 @@ export default function SettingsScreen() {
       type: 'navigation',
       onPress: () => {
         if (isAuthenticated) {
-          // Show account options or sign out
+          // Show account info and sign out options
           Alert.alert(
             'Account',
-            'What would you like to do?',
+            `Email: ${user?.email || localUser?.email || 'N/A'}\nSubscription: ${localUser?.subscription_type || 'Free'}`,
             [
               { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign Out', style: 'destructive', onPress: signOut },
-              { text: 'View Profile', onPress: () => router.push('/auth/login' as any) }
+              { 
+                text: 'Sign Out', 
+                style: 'destructive', 
+                onPress: async () => {
+                  try {
+                    await signOut();
+                    // Navigate to login screen after successful sign out
+                    router.push('/auth/login');
+                  } catch (error) {
+                    Alert.alert('Error', 'Failed to sign out. Please try again.');
+                    console.error('Sign out error:', error);
+                  }
+                }
+              }
             ]
           );
         } else {
@@ -1585,72 +1597,37 @@ export default function SettingsScreen() {
         handleResetDatabase();
       },
     },
-    {
-      id: 'familyPackage',
-      icon: 'users',
-      title: t('settings.familyPackage') || 'Family Package',
-      description: t('settings.familyPackageDescription') || 'Share premium benefits with up to 3 family members',
-      type: 'navigation',
+    // Add logout button at the very bottom when authenticated
+    ...(isAuthenticated ? [{
+      id: 'logout',
+      icon: 'sign-out' as IconName,
+      title: 'Sign Out',
+      description: 'Sign out of your account',
+      type: 'navigation' as const,
       onPress: () => {
-        if (!isAuthenticated) {
-          Alert.alert(
-            'Sign In Required',
-            'Please sign in to purchase the Family Package and access premium features.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
-            ]
-          );
-          return;
-        }
-        setShowFamilyPackageModal(true);
+        Alert.alert(
+          'Sign Out',
+          'Are you sure you want to sign out?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Sign Out', 
+              style: 'destructive', 
+              onPress: async () => {
+                try {
+                  await signOut();
+                  // Navigate to login screen after successful sign out
+                  router.push('/auth/login');
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to sign out. Please try again.');
+                  console.error('Sign out error:', error);
+                }
+              }
+            }
+          ]
+        );
       },
-    },
-    {
-      id: 'groupManagement',
-      icon: 'users',
-      title: t('settings.groupManagement') || 'Manage Group',
-      description: t('settings.groupManagementDescription') || 'Invite members and manage your family group',
-      type: 'navigation',
-      onPress: () => {
-        if (!isAuthenticated) {
-          Alert.alert(
-            'Sign In Required',
-            'Please sign in to manage your family group.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign In', onPress: () => router.push('/auth/login' as any) }
-            ]
-          );
-          return;
-        }
-        
-        // Check if user has family package (for demo purposes, always show as needing purchase)
-        const hasFlamilyPackage = false; // In real implementation, check subscription status
-        if (!hasFlamilyPackage) {
-          Alert.alert(
-            'Family Package Required',
-            'You need to purchase the Family Package to manage group members.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Purchase', onPress: () => setShowFamilyPackageModal(true) }
-            ]
-          );
-          return;
-        }
-        
-        setShowGroupManagementModal(true);
-      },
-    },
-
-    {
-      id: 'about',
-      icon: 'info-circle',
-      title: t('settings.about'),
-      description: t('settings.aboutDescription'),
-      type: 'navigation',
-      onPress: () => setShowAboutModal(true),
-    },
+    }] : []),
   ];
 
   const handleDeleteCategory = async (id: number) => {

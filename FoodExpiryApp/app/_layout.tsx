@@ -173,7 +173,7 @@ function RootLayoutContent() {
           }}
         />
         <Stack.Screen
-          name="edit"
+          name="edit/[id]"
           options={{
             headerShown: false,
           }}
