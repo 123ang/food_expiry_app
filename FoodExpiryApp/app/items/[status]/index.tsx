@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { useDatabase } from '../../../context/DatabaseContext';
+import { useSupabase } from '../../../context/SupabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
@@ -117,7 +118,10 @@ export default function ItemStatusScreen() {
   const { t, language, getCategoryName, getLocationName } = useLanguage();
   const router = useRouter();
   const { status } = useLocalSearchParams();
-  const { getByStatus, refreshAll, foodItems, deleteAllExpired, categories, locations } = useDatabase();
+  const { getByStatus, refreshAll, foodItems, deleteAllExpired, categories, locations, getFoodItemsByGroup } = useDatabase();
+  
+  // Group functionality
+  const { currentGroup, isAuthenticated } = useSupabase();
   
   const [currentItems, setCurrentItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -204,7 +208,19 @@ export default function ItemStatusScreen() {
             dbStatus = 'fresh';
           }
           
-          const items = await getByStatus(dbStatus);
+          let items: FoodItemWithDetails[] = [];
+          
+          // If authenticated and have a current group, filter by group
+          if (isAuthenticated && currentGroup) {
+            // Get all items for the current group
+            const groupItems = await getFoodItemsByGroup(currentGroup.id);
+            // Then filter by status
+            items = groupItems.filter(item => item.status === dbStatus);
+          } else {
+            // Use the original getByStatus for non-authenticated users or when no group is selected
+            items = await getByStatus(dbStatus);
+          }
+          
           setCurrentItems(items || []);
         } catch (error) {
           // Error loading items
@@ -214,8 +230,9 @@ export default function ItemStatusScreen() {
           setIsLoading(false);
         }
       };
+
       loadItems();
-    }, [currentStatus, foodItems?.length, language]) // Add language to dependencies
+    }, [currentStatus, language, currentGroup, isAuthenticated])
   );
 
   const styles = StyleSheet.create({

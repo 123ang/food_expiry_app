@@ -15,6 +15,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
+import { useSupabase } from '../context/SupabaseContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../components/BottomNav';
@@ -218,6 +219,702 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
           </ScrollView>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// Family Package Modal Component
+const FamilyPackageModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+}> = ({ visible, onClose }) => {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  
+  // Calculate time remaining until January 1, 2026 00:00
+  const getTimeRemaining = () => {
+    const targetDate = new Date('2026-01-01T00:00:00Z');
+    const now = new Date();
+    const difference = targetDate.getTime() - now.getTime();
+    
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+    }
+    
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+    
+    return { days, hours, minutes, seconds, expired: false };
+  };
+
+  const [timeRemaining, setTimeRemaining] = React.useState(getTimeRemaining());
+
+  React.useEffect(() => {
+    if (!visible) return;
+    
+    const timer = setInterval(() => {
+      setTimeRemaining(getTimeRemaining());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [visible]);
+
+  const handlePurchase = () => {
+    Alert.alert(
+      'Purchase Family Package',
+      'This feature would integrate with your app store payment system.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', onPress: () => {
+          // Here you would integrate with actual payment processing
+          Alert.alert('Success', 'Family package purchase initiated!');
+          onClose();
+        }}
+      ]
+    );
+  };
+
+  const modalStyles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+    modalContent: {
+      width: '90%',
+      maxWidth: 400,
+      backgroundColor: theme.cardBackground,
+      borderRadius: 20,
+      padding: 24,
+      maxHeight: '85%',
+    },
+    modalHeader: {
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    packageTitle: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    packageSubtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    pricingContainer: {
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    originalPrice: {
+      fontSize: 24,
+      color: theme.textSecondary,
+      textDecorationLine: 'line-through',
+      marginBottom: 4,
+    },
+    currentPrice: {
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: theme.primaryColor,
+      marginBottom: 8,
+    },
+    priceNote: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+    countdownContainer: {
+      backgroundColor: theme.backgroundColor,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 2,
+      borderColor: theme.primaryColor,
+    },
+    countdownTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textColor,
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    countdownTimer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    timerUnit: {
+      alignItems: 'center',
+    },
+    timerValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.primaryColor,
+    },
+    timerLabel: {
+      fontSize: 12,
+      color: theme.textSecondary,
+      marginTop: 4,
+    },
+    benefitsContainer: {
+      marginBottom: 24,
+    },
+    benefitsTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    benefitItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+      paddingHorizontal: 8,
+    },
+    benefitIcon: {
+      marginRight: 12,
+      marginTop: 2,
+    },
+    benefitText: {
+      flex: 1,
+      fontSize: 15,
+      color: theme.textColor,
+      lineHeight: 22,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    purchaseButton: {
+      flex: 2,
+      backgroundColor: theme.primaryColor,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    purchaseButtonText: {
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+    closeButton: {
+      flex: 1,
+      backgroundColor: theme.backgroundColor,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+    },
+    closeButtonText: {
+      color: theme.textColor,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    expiredText: {
+      fontSize: 18,
+      color: theme.dangerColor,
+      textAlign: 'center',
+      fontWeight: '600',
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={modalStyles.modalOverlay}>
+        <View style={modalStyles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={modalStyles.modalHeader}>
+              <Text style={modalStyles.packageTitle}>👨‍👩‍👧‍👦 Family Package</Text>
+              <Text style={modalStyles.packageSubtitle}>Share the benefits with your loved ones</Text>
+              
+              <View style={modalStyles.pricingContainer}>
+                <Text style={modalStyles.originalPrice}>USD $120</Text>
+                <Text style={modalStyles.currentPrice}>USD $40</Text>
+                <Text style={modalStyles.priceNote}>Special Launch Price</Text>
+              </View>
+            </View>
+
+            <View style={modalStyles.countdownContainer}>
+              <Text style={modalStyles.countdownTitle}>
+                {timeRemaining.expired ? '⏰ Offer Expired' : '⏰ Limited Time Offer'}
+              </Text>
+              {timeRemaining.expired ? (
+                <Text style={modalStyles.expiredText}>
+                  Price is now USD $120
+                </Text>
+              ) : (
+                <View style={modalStyles.countdownTimer}>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.days}</Text>
+                    <Text style={modalStyles.timerLabel}>Days</Text>
+                  </View>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.hours}</Text>
+                    <Text style={modalStyles.timerLabel}>Hours</Text>
+                  </View>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.minutes}</Text>
+                    <Text style={modalStyles.timerLabel}>Minutes</Text>
+                  </View>
+                  <View style={modalStyles.timerUnit}>
+                    <Text style={modalStyles.timerValue}>{timeRemaining.seconds}</Text>
+                    <Text style={modalStyles.timerLabel}>Seconds</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            <View style={modalStyles.benefitsContainer}>
+              <Text style={modalStyles.benefitsTitle}>✨ Family Package Benefits</Text>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👥</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Invite up to 3 family members</Text> to enjoy all premium features and share the benefits together
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👑</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Become the family admin</Text> to manage your group effortlessly - invited members will automatically join your family circle
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>☁️</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Seamless cloud synchronization</Text> across all devices - never lose your data and stay connected with your family's food inventory
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={modalStyles.buttonContainer}>
+            <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
+              <Text style={modalStyles.closeButtonText}>Later</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={modalStyles.purchaseButton} onPress={handlePurchase}>
+              <Text style={modalStyles.purchaseButtonText}>
+                {timeRemaining.expired ? 'Buy $120' : 'Buy $40'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+// Group Management Modal Component
+const GroupManagementModal: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+}> = ({ visible, onClose }) => {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { localUser } = useSupabase();
+  
+  const [groupName, setGroupName] = useState('My Family Group');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [groupMembers, setGroupMembers] = useState([
+    { id: '1', name: localUser?.full_name || 'You', email: localUser?.email || '', role: 'admin', isYou: true },
+    // Mock data - in real implementation, fetch from your backend
+    { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', role: 'member', isYou: false },
+    { id: '3', name: 'Mike Wilson', email: 'mike@example.com', role: 'member', isYou: false },
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleInviteUser = async () => {
+    if (!inviteEmail.trim()) {
+      Alert.alert('Error', 'Please enter an email address');
+      return;
+    }
+
+    if (groupMembers.length >= 4) { // Admin + 3 members
+      Alert.alert('Group Full', 'Family groups can have a maximum of 4 members (including you)');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Here you would integrate with your backend to send invitation
+      Alert.alert(
+        'Invitation Sent',
+        `Invitation sent to ${inviteEmail}. They will receive an email to join your family group.`,
+        [{ text: 'OK', onPress: () => setInviteEmail('') }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send invitation. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveMember = (memberId: string, memberName: string) => {
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${memberName} from your family group?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            // Here you would integrate with your backend to remove member
+            setGroupMembers(prev => prev.filter(member => member.id !== memberId));
+            Alert.alert('Success', `${memberName} has been removed from the group.`);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleSaveGroupName = async () => {
+    if (!groupName.trim()) {
+      Alert.alert('Error', 'Please enter a group name');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Here you would integrate with your backend to update group name
+      Alert.alert('Success', 'Group name updated successfully!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update group name. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const modalStyles = StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+    modalContent: {
+      width: '90%',
+      maxWidth: 500,
+      backgroundColor: theme.cardBackground,
+      borderRadius: 20,
+      padding: 24,
+      maxHeight: '90%',
+    },
+    modalHeader: {
+      marginBottom: 24,
+    },
+    modalTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: theme.textColor,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    modalSubtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginBottom: 12,
+    },
+    groupNameContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: theme.backgroundColor,
+      padding: 12,
+      borderRadius: 8,
+      color: theme.textColor,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      fontSize: 16,
+    },
+    saveButton: {
+      backgroundColor: theme.primaryColor,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    saveButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    inviteContainer: {
+      marginBottom: 16,
+    },
+    inviteInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 8,
+    },
+    inviteButton: {
+      backgroundColor: theme.primaryColor,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    inviteButtonDisabled: {
+      backgroundColor: theme.textSecondary,
+    },
+    inviteButtonText: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+    },
+    inviteNote: {
+      fontSize: 14,
+      color: theme.textSecondary,
+      fontStyle: 'italic',
+    },
+    membersList: {
+      maxHeight: 250,
+    },
+    memberItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.backgroundColor,
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 8,
+    },
+    memberAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.primaryColor,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    memberAvatarText: {
+      color: '#FFFFFF',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    memberInfo: {
+      flex: 1,
+    },
+    memberName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textColor,
+      marginBottom: 2,
+    },
+    memberEmail: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    memberRole: {
+      backgroundColor: theme.primaryColor,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      marginRight: 8,
+    },
+    memberRoleText: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    adminRole: {
+      backgroundColor: '#FFD700',
+    },
+    removeButton: {
+      backgroundColor: theme.dangerColor,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    closeButton: {
+      backgroundColor: theme.backgroundColor,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      marginTop: 16,
+    },
+    closeButtonText: {
+      color: theme.textColor,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    groupStats: {
+      backgroundColor: theme.backgroundColor,
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 16,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    statsLabel: {
+      fontSize: 14,
+      color: theme.textSecondary,
+    },
+    statsValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.textColor,
+    },
+  });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={modalStyles.modalOverlay}>
+        <View style={modalStyles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={modalStyles.modalHeader}>
+              <Text style={modalStyles.modalTitle}>👨‍👩‍👧‍👦 Manage Family Group</Text>
+              <Text style={modalStyles.modalSubtitle}>Organize your family's food management</Text>
+            </View>
+
+            {/* Group Statistics */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>📊 Group Overview</Text>
+              <View style={modalStyles.groupStats}>
+                <View style={modalStyles.statsRow}>
+                  <Text style={modalStyles.statsLabel}>Total Members:</Text>
+                  <Text style={modalStyles.statsValue}>{groupMembers.length}/4</Text>
+                </View>
+                <View style={modalStyles.statsRow}>
+                  <Text style={modalStyles.statsLabel}>Available Invites:</Text>
+                  <Text style={modalStyles.statsValue}>{4 - groupMembers.length}</Text>
+                </View>
+                <View style={modalStyles.statsRow}>
+                  <Text style={modalStyles.statsLabel}>Group Admin:</Text>
+                  <Text style={modalStyles.statsValue}>You</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Group Name Section */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>✏️ Group Name</Text>
+              <View style={modalStyles.groupNameContainer}>
+                <TextInput
+                  style={modalStyles.input}
+                  value={groupName}
+                  onChangeText={setGroupName}
+                  placeholder="Enter group name"
+                  placeholderTextColor={theme.textSecondary}
+                />
+                <TouchableOpacity 
+                  style={modalStyles.saveButton} 
+                  onPress={handleSaveGroupName}
+                  disabled={isLoading}
+                >
+                  <Text style={modalStyles.saveButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Invite Members Section */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>📧 Invite New Member</Text>
+              <View style={modalStyles.inviteContainer}>
+                <View style={modalStyles.inviteInputContainer}>
+                  <TextInput
+                    style={modalStyles.input}
+                    value={inviteEmail}
+                    onChangeText={setInviteEmail}
+                    placeholder="Enter email address"
+                    placeholderTextColor={theme.textSecondary}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity 
+                    style={[
+                      modalStyles.inviteButton,
+                      (isLoading || groupMembers.length >= 4) && modalStyles.inviteButtonDisabled
+                    ]}
+                    onPress={handleInviteUser}
+                    disabled={isLoading || groupMembers.length >= 4}
+                  >
+                    <Text style={modalStyles.inviteButtonText}>
+                      {isLoading ? 'Sending...' : 'Invite'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={modalStyles.inviteNote}>
+                  {groupMembers.length >= 4 
+                    ? 'Group is full (maximum 4 members)'
+                    : `${4 - groupMembers.length} invite${4 - groupMembers.length === 1 ? '' : 's'} remaining`
+                  }
+                </Text>
+              </View>
+            </View>
+
+            {/* Current Members Section */}
+            <View style={modalStyles.section}>
+              <Text style={modalStyles.sectionTitle}>👥 Current Members ({groupMembers.length})</Text>
+              <ScrollView style={modalStyles.membersList} nestedScrollEnabled>
+                {groupMembers.map((member) => (
+                  <View key={member.id} style={modalStyles.memberItem}>
+                    <View style={modalStyles.memberAvatar}>
+                      <Text style={modalStyles.memberAvatarText}>
+                        {member.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={modalStyles.memberInfo}>
+                      <Text style={modalStyles.memberName}>
+                        {member.name} {member.isYou && '(You)'}
+                      </Text>
+                      <Text style={modalStyles.memberEmail}>{member.email}</Text>
+                    </View>
+                    <View style={[
+                      modalStyles.memberRole, 
+                      member.role === 'admin' && modalStyles.adminRole
+                    ]}>
+                      <Text style={modalStyles.memberRoleText}>
+                        {member.role === 'admin' ? 'Admin' : 'Member'}
+                      </Text>
+                    </View>
+                    {!member.isYou && (
+                      <TouchableOpacity
+                        style={modalStyles.removeButton}
+                        onPress={() => handleRemoveMember(member.id, member.name)}
+                      >
+                        <FontAwesome name="times" size={14} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          </ScrollView>
+
+          <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
+            <Text style={modalStyles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -719,7 +1416,7 @@ const EditModal: React.FC<EditModalProps> = ({
       <EmojiSelector
         visible={showEmojiSelector}
         onClose={() => setShowEmojiSelector(false)}
-        onSelect={(selectedIcon) => {
+        onSelect={(selectedIcon: string) => {
           setIcon(selectedIcon);
           iconWasManuallySet.current = true; // Mark as manually set
           setShowEmojiSelector(false);
@@ -735,6 +1432,7 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired, foodItems } = useDatabase();
+  const { user, localUser, isAuthenticated, signOut, isOnlineMode, isOfflineMode } = useSupabase();
   const responsive = useResponsive();
   const router = useRouter();
 
@@ -746,6 +1444,8 @@ export default function SettingsScreen() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [managementModalVisible, setManagementModalVisible] = useState(false);
   const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
+  const [showFamilyPackageModal, setShowFamilyPackageModal] = useState(false);
+  const [showGroupManagementModal, setShowGroupManagementModal] = useState(false);
 
   const openManagementModal = (type: 'categories' | 'locations') => {
     setManagementModalType(type);
@@ -790,6 +1490,52 @@ export default function SettingsScreen() {
       type: 'language',
       onPress: () => setShowLanguageModal(true),
     },
+    {
+      id: 'account',
+      icon: 'user',
+      title: isAuthenticated ? (t('settings.account') || 'Account') : 'Login',
+      description: isAuthenticated 
+        ? `${user?.email || localUser?.email || 'N/A'}`
+        : 'Sign in to sync data and access premium features',
+      type: 'navigation',
+      onPress: () => {
+        if (isAuthenticated) {
+          // Show account info and sign out options
+          Alert.alert(
+            'Account',
+            `Email: ${user?.email || localUser?.email || 'N/A'}\nSubscription: ${localUser?.subscription_type || 'Free'}`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Sign Out', 
+                style: 'destructive', 
+                onPress: async () => {
+                  try {
+                    await signOut();
+                    // Navigate to login screen after successful sign out
+                    router.push('/auth/login');
+                  } catch (error) {
+                    Alert.alert('Error', 'Failed to sign out. Please try again.');
+                    console.error('Sign out error:', error);
+                  }
+                }
+              }
+            ]
+          );
+        } else {
+          router.push('/auth/login' as any);
+        }
+      },
+    },
+    // Group management option - only visible when authenticated
+    ...(isAuthenticated ? [{
+      id: 'groups',
+      icon: 'users' as IconName,
+      title: t('settings.groups') || 'Groups',
+      description: t('settings.groupsDescription') || 'Manage your personal and family groups',
+      type: 'navigation' as const,
+      onPress: () => setShowGroupManagementModal(true),
+    }] : []),
     {
       id: 'theme',
       icon: 'paint-brush',
@@ -860,15 +1606,37 @@ export default function SettingsScreen() {
         handleResetDatabase();
       },
     },
-
-    {
-      id: 'about',
-      icon: 'info-circle',
-      title: t('settings.about'),
-      description: t('settings.aboutDescription'),
-      type: 'navigation',
-      onPress: () => setShowAboutModal(true),
-    },
+    // Add logout button at the very bottom when authenticated
+    ...(isAuthenticated ? [{
+      id: 'logout',
+      icon: 'sign-out' as IconName,
+      title: 'Sign Out',
+      description: 'Sign out of your account',
+      type: 'navigation' as const,
+      onPress: () => {
+        Alert.alert(
+          'Sign Out',
+          'Are you sure you want to sign out?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Sign Out', 
+              style: 'destructive', 
+              onPress: async () => {
+                try {
+                  await signOut();
+                  // Navigate to login screen after successful sign out
+                  router.push('/auth/login');
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to sign out. Please try again.');
+                  console.error('Sign out error:', error);
+                }
+              }
+            }
+          ]
+        );
+      },
+    }] : []),
   ];
 
   const handleDeleteCategory = async (id: number) => {
@@ -1752,6 +2520,14 @@ export default function SettingsScreen() {
         {renderAboutModal()}
         <BottomNav />
       </View>
+      <FamilyPackageModal
+        visible={showFamilyPackageModal}
+        onClose={() => setShowFamilyPackageModal(false)}
+      />
+      <GroupManagementModal
+        visible={showGroupManagementModal}
+        onClose={() => setShowGroupManagementModal(false)}
+      />
     </>
   );
 } 

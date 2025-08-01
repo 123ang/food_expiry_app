@@ -69,12 +69,13 @@ const OptimizedFoodImage = ({ imageUri, style }: OptimizedFoodImageProps) => {
 export default function CalendarScreen() {
   const { theme } = useTheme();
   const { t, language, getCategoryName, getLocationName } = useLanguage();
-  const { foodItems, refreshAll, dataVersion, categories, locations } = useDatabase();
+  const { foodItems, refreshAll, dataVersion, categories, locations, getFoodItemsByGroup } = useDatabase();
   const router = useRouter();
   const responsive = useResponsive();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [filteredItems, setFilteredItems] = useState<FoodItemWithDetails[]>([]);
+  const [allFoodItems, setAllFoodItems] = useState<FoodItemWithDetails[]>([]);
   const [lastDataVersion, setLastDataVersion] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
@@ -103,41 +104,51 @@ export default function CalendarScreen() {
     t('weekday.thu'), t('weekday.fri'), t('weekday.sat')
   ];
 
-  // Refresh data when screen comes into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      // Only refresh if we have no data or if this is the first load
-      const hasNoData = !foodItems || foodItems.length === 0;
-      const isFirstLoad = lastDataVersion === 0;
+  // Load data when component mounts or when data version changes
+  useEffect(() => {
+    const hasNoData = !foodItems || foodItems.length === 0;
+    const isFirstLoad = lastDataVersion === 0;
+    
+    if (hasNoData || isFirstLoad) {
+      setLastDataVersion(dataVersion);
       
-      if (hasNoData || isFirstLoad) {
-        setLastDataVersion(dataVersion);
-        
-        const refreshData = async () => {
-          try {
-            await refreshAll();
-                } catch (error) {
-        // Error refreshing calendar data
-      }
-        };
-        
-        refreshData();
-      } else {
-        // Update lastDataVersion to current version to prevent future unnecessary refreshes
-        if (dataVersion !== lastDataVersion) {
-          setLastDataVersion(dataVersion);
+      const refreshData = async () => {
+        try {
+          await refreshAll();
+          // Load all food items for calendar (across all groups)
+          const allItems = await getFoodItemsByGroup();
+          setAllFoodItems(allItems);
+        } catch (error) {
+          // Error refreshing calendar data
         }
+      };
+      
+      refreshData();
+    } else {
+      // Update lastDataVersion to current version to prevent future unnecessary refreshes
+      if (dataVersion !== lastDataVersion) {
+        setLastDataVersion(dataVersion);
+        // Reload all food items when data version changes
+        const loadAllItems = async () => {
+          try {
+            const allItems = await getFoodItemsByGroup();
+            setAllFoodItems(allItems);
+          } catch (error) {
+            // Error loading all items
+          }
+        };
+        loadAllItems();
       }
-    }, [foodItems?.length, lastDataVersion]) // Removed dataVersion and language from dependencies
-  );
+    }
+  }, [foodItems?.length, lastDataVersion, dataVersion]); // Added dataVersion back to dependencies
 
   // Update filtered items when selected date or food items change
   useEffect(() => {
-    if (foodItems) {
+    if (allFoodItems) {
       const items = getItemsForDate(selectedDate);
       setFilteredItems(items);
     }
-  }, [selectedDate, foodItems]); // Keep foodItems but add null check
+  }, [selectedDate, allFoodItems]); // Use allFoodItems instead of foodItems
 
   const styles = StyleSheet.create({
     container: {
@@ -682,10 +693,10 @@ export default function CalendarScreen() {
   };
 
   const getItemsForDate = (date: Date) => {
-    if (!foodItems) return [];
+    if (!allFoodItems) return [];
     
     const dateStr = date.toISOString().split('T')[0];
-    return foodItems.filter(item => item.expiry_date === dateStr);
+    return allFoodItems.filter(item => item.expiry_date === dateStr);
   };
 
   const hasItemsOnDate = (date: Date) => {

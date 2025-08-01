@@ -436,7 +436,7 @@ export const LocationRepository: Repository<Location> = {
 // Food Item Repository
 export const FoodItemRepository = {
   // Get all food items with details
-  getAllWithDetails: async (): Promise<FoodItemWithDetails[]> => {
+  getAllWithDetails: async (group_id?: string): Promise<FoodItemWithDetails[]> => {
     // Starting getAllWithDetails operation
     const startTime = Date.now();
     
@@ -450,9 +450,15 @@ export const FoodItemRepository = {
         const categories = await fallbackDb.getAllCategories();
         const locations = await fallbackDb.getAllLocations();
         
+        // Filter items by group_id if provided
+        let filteredItems = items;
+        if (group_id) {
+          filteredItems = items.filter((item: any) => item.group_id === group_id);
+        }
+        
         // Processing items from fallback
         // Transform fallback data to match expected format
-        const result = items.map((item: any) => {
+        const result = filteredItems.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
           const location = locations.find((l: any) => l.id === item.location_id);
           const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
@@ -473,6 +479,7 @@ export const FoodItemRepository = {
             quantity: item.quantity,
             category_id: item.category_id,
             location_id: item.location_id,
+            group_id: item.group_id,
             expiry_date: item.expiry_date,
             reminder_days: item.reminder_days,
             notes: item.notes,
@@ -527,6 +534,7 @@ export const FoodItemRepository = {
             quantity: item.quantity,
             category_id: item.category_id,
             location_id: item.location_id,
+            group_id: item.group_id,
             expiry_date: item.expiry_date,
             reminder_days: item.reminder_days,
             notes: item.notes,
@@ -541,15 +549,21 @@ export const FoodItemRepository = {
           };
         });
         
+        // Filter by group_id if provided
+        let filteredResult = result;
+        if (group_id) {
+          filteredResult = result.filter(item => item.group_id === group_id);
+        }
+        
         const totalTime = Date.now() - startTime;
 
-        return result;
+        return filteredResult;
       }
       
       
       const sqlStart = Date.now();
       // Regular SQLite operation
-      const result = await db.getAllAsync(`
+      let query = `
         SELECT 
           fi.*,
           c.name as category_name,
@@ -559,8 +573,17 @@ export const FoodItemRepository = {
         FROM food_items fi
         LEFT JOIN categories c ON fi.category_id = c.id
         LEFT JOIN locations l ON fi.location_id = l.id
-        ORDER BY fi.expiry_date ASC
-      `) as any[];
+      `;
+      
+      const params: any[] = [];
+      if (group_id) {
+        query += ' WHERE fi.group_id = ?';
+        params.push(group_id);
+      }
+      
+      query += ' ORDER BY fi.expiry_date ASC';
+      
+      const result = await db.getAllAsync(query, params) as any[];
       
 
       
@@ -584,6 +607,7 @@ export const FoodItemRepository = {
           quantity: row.quantity as number,
           category_id: row.category_id as number | null,
           location_id: row.location_id as number | null,
+          group_id: row.group_id as string | null,
           expiry_date: row.expiry_date as string,
           reminder_days: row.reminder_days as number,
           notes: row.notes as string | null,
@@ -922,6 +946,7 @@ export const FoodItemRepository = {
         quantity: row.quantity as number,
         category_id: row.category_id as number | null,
         location_id: row.location_id as number | null,
+        group_id: row.group_id as string | null,
         expiry_date: row.expiry_date as string,
         reminder_days: row.reminder_days as number,
         notes: row.notes as string | null,
@@ -973,6 +998,7 @@ export const FoodItemRepository = {
         quantity: row.quantity as number,
         category_id: row.category_id as number | null,
         location_id: row.location_id as number | null,
+        group_id: row.group_id as string | null,
         expiry_date: row.expiry_date as string,
         reminder_days: row.reminder_days as number,
         notes: row.notes as string | null,

@@ -9,7 +9,6 @@
     "scheme": "expiryalert",
     "sdkVersion": "53.0.0",
     "description": "Never let food go to waste again! Track expiration dates, organize your pantry, and reduce food waste with our intuitive food management app.",
-    "privacy": "public",
     "splash": {
       "image": "./assets/food_expiry_logo_adaptive.png",
       "resizeMode": "contain",
@@ -88,7 +87,8 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-router"
     ],
     "extra": {
       "eas": {

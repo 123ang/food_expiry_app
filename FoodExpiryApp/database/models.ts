@@ -15,6 +15,7 @@ export interface FoodItem {
   quantity: number;
   category_id: number | null;
   location_id: number | null;
+  group_id: string | null; // Add group_id for group-based filtering
   expiry_date: string;
   reminder_days: number;
   notes: string | null;
@@ -30,6 +31,20 @@ export interface FoodItemWithDetails extends Omit<FoodItem, 'id'> {
   location_icon: string;
   days_until_expiry: number;
   status?: 'expired' | 'expiring_soon' | 'fresh';
+}
+
+// User model for local storage
+export interface User {
+  id: number;
+  supabase_id: string;  // Supabase user ID
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login: string;
+  subscription_type?: 'free' | 'family';
+  subscription_expires_at?: string;
 }
 
 // Shopping and Wish List models
