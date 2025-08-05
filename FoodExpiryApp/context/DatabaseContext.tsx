@@ -110,14 +110,7 @@ export const useDatabase = () => {
   return context;
 };
 
-const calculateDaysUntilExpiry = (expiryDate: string) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  expiry.setHours(0, 0, 0, 0);
-  const diffTime = expiry.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
+
 
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -306,21 +299,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return data;
   };
 
-  const loadData = async () => {
-    try {
-      const [categoriesData, locationsData, foodItemsData] = await Promise.all([
-        loadCategories(),
-        loadLocations(),
-        loadFoodItems(),
-      ]);
 
-      setCategories(categoriesData);
-      setLocations(locationsData);
-      setFoodItems(foodItemsData);
-    } catch (error) {
-      setError(error instanceof Error ? error : new Error('Failed to load data'));
-    }
-  };
 
   useEffect(() => {
     const setupDatabase = async () => {
@@ -663,9 +642,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const refreshDashboardCounts = async (): Promise<void> => {
-          // Warning: This function should not be called directly
-    
-    // Just ensure counts are calculated from existing data
+
     ensureDashboardCounts();
   };
 
@@ -990,43 +967,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Ensure database is ready before operations
-  const ensureDatabaseReady = async (): Promise<void> => {
-    if (!isReady) {
-      // Wait up to 15 seconds for database to be ready (increased timeout)
-      for (let i = 0; i < 150; i++) {
-        if (isReady) {
-          return;
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-      
-      // If still not ready, try to force initialization one more time
-      if (!isReady) {
-        
-        try {
-          // Force a database refresh
-          await refreshAll();
-          
-          // Wait a bit more after forced refresh
-          for (let i = 0; i < 30; i++) {
-            if (isReady) {
-              return;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        } catch (error) {
-          
-        }
-      }
-      
-      // If everything fails, allow operation to proceed but warn
-      if (!isReady) {
-        
-        // Don't throw error, let the operation attempt to proceed
-      }
-    }
-  };
 
   const value: DatabaseContextType = {
     isLoading,

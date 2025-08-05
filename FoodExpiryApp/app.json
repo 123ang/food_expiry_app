@@ -2,7 +2,7 @@
   "expo": {
     "name": "Expiry Alert",
     "slug": "expiry-alert-app",
-    "version": "1.1.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/food_expiry_logo.png",
     "userInterfaceStyle": "automatic",
@@ -47,7 +47,7 @@
         "backgroundColor": "#006b29"
       },
       "package": "com.expiryalert.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
@@ -55,7 +55,9 @@
         "WAKE_LOCK",
         "WRITE_EXTERNAL_STORAGE",
         "READ_EXTERNAL_STORAGE",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "INTERNET",
+        "com.android.vending.BILLING"
       ]
     },
     "experiments": {

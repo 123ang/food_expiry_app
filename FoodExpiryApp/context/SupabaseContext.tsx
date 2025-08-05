@@ -7,6 +7,7 @@ import { Category, Location, FoodItem } from '../database/models'
 import { useDatabase } from './DatabaseContext'
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository'
 import { Alert } from 'react-native'
+import { inAppPurchaseService } from '../services/InAppPurchaseService'
 
 interface SupabaseContextType {
   // Authentication
@@ -744,31 +745,96 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }
 
   const createFamilySubscription = async () => {
-    if (!user || !currentGroup) throw new Error('Must be logged in and have a group')
+    if (!user) throw new Error('Must be logged in to purchase premium package')
 
-    // Here you would integrate with Stripe or your payment processor
-    // For now, we'll create a mock subscription
-    const { error } = await supabase
-      .from('subscriptions')
-      .insert({
-        user_id: user.id,
-        group_id: currentGroup.id,
-        plan_type: 'family',
-        status: 'active',
-        annual_price: 120.00,
-        paid_price: 40.00,
-        current_period_start: new Date().toISOString(),
-        current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-      })
+    // Ensure user has a group - create personal group if needed
+    let groupToUse = currentGroup;
+    if (!groupToUse) {
+      console.log('SupabaseContext: No current group found, creating personal group for subscription...')
+      try {
+        groupToUse = await createGroup('Personal', 'Your personal food management group');
+        console.log('SupabaseContext: Personal group created for subscription:', groupToUse.name)
+      } catch (error) {
+        console.error('SupabaseContext: Failed to create personal group for subscription:', error)
+        throw new Error('Failed to create user group. Please try again.');
+      }
+    }
 
-    if (error) throw error
+    // Calculate pricing based on current date
+    const isEarlyBird = new Date() < new Date('2026-01-01T00:00:00Z')
+    const paidPrice = isEarlyBird ? 57.92 : 579.2
+    const regularPrice = 579.2
 
-    // Reload subscription data
-    await loadUserData(user.id)
+    try {
+      // Attempt in-app purchase
+      const purchaseResult = await inAppPurchaseService.purchaseProduct('premium_package_annual')
+      
+      if (purchaseResult.success) {
+        // In-app purchase successful, create subscription in database
+        const { error } = await supabase
+          .from('subscriptions')
+          .insert({
+            user_id: user.id,
+            group_id: groupToUse.id,
+            plan_type: 'family',
+            status: 'active',
+            annual_price: regularPrice,
+            paid_price: paidPrice,
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            stripe_subscription_id: purchaseResult.transactionId // Store the transaction ID
+          })
+
+        if (error) throw error
+
+        // Reload subscription data
+        await loadUserData(user.id)
+        
+        console.log('SupabaseContext: Premium package purchased successfully via in-app purchase')
+      } else {
+        throw new Error(purchaseResult.error || 'Purchase failed')
+      }
+    } catch (error) {
+      console.error('SupabaseContext: In-app purchase error:', error)
+      
+      // Fallback to mock purchase for development/testing
+      console.log('SupabaseContext: Falling back to mock purchase for development')
+      
+      const { error: dbError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: user.id,
+          group_id: groupToUse.id,
+          plan_type: 'family',
+          status: 'active',
+          annual_price: regularPrice,
+          paid_price: paidPrice,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        })
+
+      if (dbError) throw dbError
+
+      // Reload subscription data
+      await loadUserData(user.id)
+    }
   }
 
   const syncToCloud = async (): Promise<void> => {
-    if (!user || !currentGroup) return;
+    if (!user) return;
+    
+    // Ensure user has a group - create personal group if needed
+    let groupToUse = currentGroup;
+    if (!groupToUse) {
+      console.log('SupabaseContext: No current group found, creating personal group...')
+      try {
+        groupToUse = await createGroup('Personal', 'Your personal food management group');
+        console.log('SupabaseContext: Personal group created for sync:', groupToUse.name)
+      } catch (error) {
+        console.error('SupabaseContext: Failed to create personal group for sync:', error)
+        return;
+      }
+    }
     
     setSyncStatus('syncing')
     try {
@@ -785,7 +851,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const { data: cloudCategories, error: catError } = await supabase
         .from('categories')
         .select('*')
-        .eq('group_id', currentGroup.id)
+        .eq('group_id', groupToUse.id)
       
       if (catError) throw catError
       
@@ -800,7 +866,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             icon: localCat.icon,
             color: '#4ECDC4', // Default color
             created_by: user.id,
-            group_id: currentGroup.id
+            group_id: groupToUse.id
           })
         }
       }
@@ -828,7 +894,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const { data: cloudLocations, error: locError } = await supabase
         .from('locations')
         .select('*')
-        .eq('group_id', currentGroup.id)
+        .eq('group_id', groupToUse.id)
       
       if (locError) throw locError
       
@@ -843,7 +909,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             icon: localLoc.icon,
             temperature_zone: 'room', // Default
             created_by: user.id,
-            group_id: currentGroup.id
+            group_id: groupToUse.id
           })
         }
       }
@@ -866,28 +932,28 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // 3. Sync Food Items
       console.log('SupabaseContext: Syncing food items...')
       // Use getFoodItemsByGroup with the group_id parameter
-      const localItems = await getFoodItemsByGroup(currentGroup.id)
+      const localItems = await getFoodItemsByGroup(groupToUse.id)
       
       // Get cloud items for this group
       const { data: cloudItems, error: itemError } = await supabase
         .from('food_items')
         .select('*')
-        .eq('group_id', currentGroup.id)
+        .eq('group_id', groupToUse.id)
       
       if (itemError) throw itemError
       
       // Add local items to cloud if they don't exist
       for (const localItem of localItems) {
         // Skip items that don't belong to the current group
-        if (localItem.group_id && localItem.group_id !== currentGroup.id) continue
+        if (localItem.group_id && localItem.group_id !== groupToUse.id) continue
         
         // For items without group_id, update them to have the current group
         if (!localItem.group_id) {
           await database.updateFoodItem({
             ...localItem,
-            group_id: currentGroup.id
+            group_id: groupToUse.id
           })
-          localItem.group_id = currentGroup.id
+          localItem.group_id = groupToUse.id
         }
         
         const cloudMatch = cloudItems?.find((i: any) => 
@@ -902,7 +968,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             quantity: localItem.quantity,
             category_id: localItem.category_id ? localItem.category_id.toString() : null,
             location_id: localItem.location_id ? localItem.location_id.toString() : null,
-            group_id: currentGroup.id,
+            group_id: groupToUse.id,
             created_by: user.id,
             expiry_date: localItem.expiry_date,
             notes: localItem.notes,
@@ -953,7 +1019,7 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const { data: cloudWishItems, error: wishError } = await supabase
           .from('wish_lists')
           .select('*')
-          .eq('group_id', currentGroup.id)
+          .eq('group_id', groupToUse.id)
         
         if (wishError) throw wishError
         

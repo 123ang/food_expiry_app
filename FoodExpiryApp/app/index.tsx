@@ -34,6 +34,7 @@ import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
 import { EditModal } from '../components/ManagementModals';
 import { ThemeSelector } from '../components/ThemeSelector';
+import SyncDebugger from '../components/SyncDebugger';
 import { GroupSelector } from '../components/GroupSelector';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
@@ -249,15 +250,6 @@ export default function DashboardScreen() {
   } = useSupabase();
 
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showCategoryEditModal, setShowCategoryEditModal] = useState(false);
-  const [showLocationEditModal, setShowLocationEditModal] = useState(false);
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<FoodItem | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [itemName, setItemName] = useState('');
@@ -267,13 +259,14 @@ export default function DashboardScreen() {
   const [reminderDays, setReminderDays] = useState('3');
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState('1');
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [managementModalVisible, setManagementModalVisible] = useState(false);
   const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<Category | Location | null>(null);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
+  const [showSyncDebugger, setShowSyncDebugger] = useState(false);
   const lastLanguage = React.useRef(language);
 
   // Group-related state
@@ -434,38 +427,6 @@ export default function DashboardScreen() {
     }
   };
 
-  const handleEdit = (item: FoodItem) => {
-    setEditingItem(item);
-    setItemName(item.name);
-    setCategoryId(item.category_id);
-    setLocationId(item.location_id);
-    setExpiryDate(new Date(item.expiry_date));
-    setReminderDays(item.reminder_days.toString());
-    setNotes(item.notes || '');
-    setQuantity(item.quantity.toString());
-    setModalVisible(true);
-  };
-
-  const handleDelete = (item: FoodItem) => {
-    Alert.alert(
-      t('alert.deleteTitle'),
-      `${t('alert.deleteMessage')} "${item.name}"?`,
-      [
-        { text: t('form.cancel'), style: 'cancel' },
-        {
-          text: t('action.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteFoodItem(item.id!);
-            } catch (error) {
-              Alert.alert(t('alert.error'), t('alert.deleteFailed'));
-            }
-          },
-        },
-      ]
-    );
-  };
 
   const handleCloseModal = () => {
     setModalVisible(false);
@@ -480,21 +441,54 @@ export default function DashboardScreen() {
   };
 
   const handleRefresh = async () => {
+    console.log('===== SYNC DEBUG: Starting refresh and sync =====');
     setIsRefreshing(true);
     try {
       // If authenticated, sync with Supabase first
       if (isAuthenticated) {
+        console.log('SYNC DEBUG: User is authenticated, syncing with Supabase...');
+        console.log('SYNC DEBUG: Current group ID:', activeGroupId);
+        console.log('SYNC DEBUG: Current user ID:', user?.id);
+        
+        // Log local data before sync
+        const localCategories = categories;
+        const localLocations = locations;
+        const localFoodItems = foodItems;
+        
+        console.log('SYNC DEBUG: Local data before sync:');
+        console.log('- Categories:', localCategories.length, 'items');
+        console.log('- Locations:', localLocations.length, 'items');
+        console.log('- Food Items:', localFoodItems.length, 'items');
+        
+        // Perform the sync
         await syncToCloud();
+        console.log('SYNC DEBUG: Sync to cloud completed');
+      } else {
+        console.log('SYNC DEBUG: User not authenticated, skipping cloud sync');
       }
+      
       // Then refresh local data
+      console.log('SYNC DEBUG: Refreshing local data...');
       await refreshAll();
+      console.log('SYNC DEBUG: Local data refresh completed');
+      
       // Reload group-specific food items
       if (activeGroupId) {
+        console.log('SYNC DEBUG: Loading group-specific food items for group:', activeGroupId);
         const items = await getFoodItemsByGroup(activeGroupId);
         setFilteredFoodItems(items);
+        console.log('SYNC DEBUG: Loaded', items.length, 'food items for current group');
       }
+      
+      // Log final counts
+      console.log('SYNC DEBUG: Final data counts:');
+      console.log('- Categories:', categories.length);
+      console.log('- Locations:', locations.length);
+      console.log('- Food Items:', foodItems.length);
+      console.log('- Filtered Food Items:', filteredFoodItems.length);
+      console.log('===== SYNC DEBUG: Refresh and sync completed =====');
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error('SYNC DEBUG: Error during refresh/sync:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -1347,13 +1341,17 @@ export default function DashboardScreen() {
                 </View>
               )}
             </View>
-            <TouchableOpacity style={[styles.bannerIcon, { 
-              marginLeft: responsive.getResponsiveValue({
-                tablet: 16,
-                largeTablet: 20,
-                default: 12,
-              })
-            }]} onPress={isAuthenticated ? handleRefresh : undefined}>
+            <TouchableOpacity 
+              style={[styles.bannerIcon, { 
+                marginLeft: responsive.getResponsiveValue({
+                  tablet: 16,
+                  largeTablet: 20,
+                  default: 12,
+                })
+              }]} 
+              onPress={isAuthenticated ? handleRefresh : undefined}
+              onLongPress={() => setShowSyncDebugger(true)}
+            >
               <FontAwesome name={(isAuthenticated ? 'refresh' : 'cutlery') as IconName} size={responsive.getResponsiveValue({
                 tablet: 32,
                 largeTablet: 40,
@@ -1698,6 +1696,29 @@ export default function DashboardScreen() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sync Debugger Modal */}
+      <Modal
+        visible={showSyncDebugger}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSyncDebugger(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={[styles.modalContent, { height: '80%' }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={styles.modalTitle}>Sync Debugger</Text>
+              <TouchableOpacity onPress={() => setShowSyncDebugger(false)}>
+                <FontAwesome name="close" size={24} color={theme.textColor} />
+              </TouchableOpacity>
+            </View>
+            <SyncDebugger 
+              userId={user?.id || null}
+              groupId={activeGroupId}
+            />
           </View>
         </View>
       </Modal>

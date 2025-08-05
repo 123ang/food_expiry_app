@@ -230,7 +230,10 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
 const FamilyPackageModal: React.FC<{
   visible: boolean;
   onClose: () => void;
-}> = ({ visible, onClose }) => {
+  onPurchase?: () => Promise<void>;
+  isAuthenticated?: boolean;
+  router?: any;
+}> = ({ visible, onClose, onPurchase, isAuthenticated, router }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
   
@@ -264,16 +267,43 @@ const FamilyPackageModal: React.FC<{
     return () => clearInterval(timer);
   }, [visible]);
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
+    const currentPrice = timeRemaining.expired ? '$579.2' : '$57.92';
+    const yearlyPrice = timeRemaining.expired ? '$579.2' : '$57.92';
+    
+    // Check if user is logged in
+    if (!isAuthenticated) {
+      Alert.alert(
+        'Login Required',
+        'Please log in to your account before purchasing the premium package. This ensures your subscription is properly linked to your account.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Login Now', onPress: () => {
+            onClose();
+            // Navigate to login screen
+            router.push('/auth/login');
+          }}
+        ]
+      );
+      return;
+    }
+    
     Alert.alert(
-      'Purchase Family Package',
-      'This feature would integrate with your app store payment system.',
+      'Purchase Premium Package',
+      `You will be charged ${currentPrice} per year. If you purchase now, this price is locked in forever. You can cancel anytime.\n\nThis will unlock:\n• Cloud synchronization\n• Family member invites\n• Shared shopping lists\n• Premium features\n\nProceed to payment?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Continue', onPress: () => {
-          // Here you would integrate with actual payment processing
-          Alert.alert('Success', 'Family package purchase initiated!');
-          onClose();
+        { text: 'Continue', onPress: async () => {
+          try {
+            if (onPurchase) {
+              await onPurchase();
+            }
+            Alert.alert('Success', `Premium package activated! You are locked in at ${yearlyPrice}/year and can cancel anytime.`);
+            onClose();
+          } catch (error) {
+            Alert.alert('Error', 'Failed to process purchase. Please try again.');
+            console.error('Purchase error:', error);
+          }
         }}
       ]
     );
@@ -434,13 +464,15 @@ const FamilyPackageModal: React.FC<{
         <View style={modalStyles.modalContent}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={modalStyles.modalHeader}>
-              <Text style={modalStyles.packageTitle}>👨‍👩‍👧‍👦 Family Package</Text>
-              <Text style={modalStyles.packageSubtitle}>Share the benefits with your loved ones</Text>
+              <Text style={modalStyles.packageTitle}>👑 Premium Package</Text>
+              <Text style={modalStyles.packageSubtitle}>Unlock all premium features and cloud sync</Text>
               
               <View style={modalStyles.pricingContainer}>
-                <Text style={modalStyles.originalPrice}>USD $120</Text>
-                <Text style={modalStyles.currentPrice}>USD $40</Text>
-                <Text style={modalStyles.priceNote}>Special Launch Price</Text>
+                <Text style={modalStyles.originalPrice}>USD $579.2</Text>
+                <Text style={modalStyles.currentPrice}>USD $57.92</Text>
+                <Text style={modalStyles.priceNote}>
+                  {timeRemaining.expired ? 'Annual Subscription' : 'Special Early Bird Price - Annual'}
+                </Text>
               </View>
             </View>
 
@@ -450,7 +482,7 @@ const FamilyPackageModal: React.FC<{
               </Text>
               {timeRemaining.expired ? (
                 <Text style={modalStyles.expiredText}>
-                  Price is now USD $120
+                  Price is now USD $579.2
                 </Text>
               ) : (
                 <View style={modalStyles.countdownTimer}>
@@ -474,27 +506,52 @@ const FamilyPackageModal: React.FC<{
               )}
             </View>
 
+            {!isAuthenticated && (
+              <View style={[modalStyles.countdownContainer, { marginBottom: 16, backgroundColor: theme.warningColor + '20', borderColor: theme.warningColor }]}>
+                <Text style={[modalStyles.countdownTitle, { color: theme.warningColor }]}>
+                  ⚠️ Login Required
+                </Text>
+                <Text style={[modalStyles.priceNote, { textAlign: 'center', marginTop: 8 }]}>
+                  Please log in to your account to purchase the premium package
+                </Text>
+              </View>
+            )}
+            
             <View style={modalStyles.benefitsContainer}>
-              <Text style={modalStyles.benefitsTitle}>✨ Family Package Benefits</Text>
+              <Text style={modalStyles.benefitsTitle}>✨ Premium Package Benefits</Text>
               
               <View style={modalStyles.benefitItem}>
                 <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👥</Text>
                 <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Invite up to 3 family members</Text> to enjoy all premium features and share the benefits together
-                </Text>
-              </View>
-              
-              <View style={modalStyles.benefitItem}>
-                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👑</Text>
-                <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Become the family admin</Text> to manage your group effortlessly - invited members will automatically join your family circle
+                  <Text style={{ fontWeight: '600' }}>Invite family members</Text> to your group and share food management responsibilities together
                 </Text>
               </View>
               
               <View style={modalStyles.benefitItem}>
                 <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>☁️</Text>
                 <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Seamless cloud synchronization</Text> across all devices - never lose your data and stay connected with your family's food inventory
+                  <Text style={{ fontWeight: '600' }}>Cloud synchronization</Text> across all devices - never lose your data and access it anywhere, anytime
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>📋</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Share shopping lists</Text> with family members and coordinate grocery shopping efficiently
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>🔒</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Lock in this price forever</Text> - pay now and your subscription rate will never increase
+                </Text>
+              </View>
+              
+              <View style={modalStyles.benefitItem}>
+                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>❌</Text>
+                <Text style={modalStyles.benefitText}>
+                  <Text style={{ fontWeight: '600' }}>Cancel anytime</Text> - no long-term commitment, cancel your subscription whenever you want
                 </Text>
               </View>
             </View>
@@ -506,7 +563,7 @@ const FamilyPackageModal: React.FC<{
             </TouchableOpacity>
             <TouchableOpacity style={modalStyles.purchaseButton} onPress={handlePurchase}>
               <Text style={modalStyles.purchaseButtonText}>
-                {timeRemaining.expired ? 'Buy $120' : 'Buy $40'}
+                {timeRemaining.expired ? 'Buy $579.2' : 'Buy $57.92'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1432,7 +1489,7 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired, foodItems } = useDatabase();
-  const { user, localUser, isAuthenticated, signOut, isOnlineMode, isOfflineMode } = useSupabase();
+  const { user, localUser, isAuthenticated, signOut, isOnlineMode, isOfflineMode, createFamilySubscription } = useSupabase();
   const responsive = useResponsive();
   const router = useRouter();
 
@@ -1536,6 +1593,17 @@ export default function SettingsScreen() {
       type: 'navigation' as const,
       onPress: () => setShowGroupManagementModal(true),
     }] : []),
+    // Premium Package option - visible for all users
+    {
+      id: 'premium',
+      icon: 'dollar' as IconName,
+      title: 'Premium Package',
+      description: isAuthenticated 
+        ? 'Unlock cloud sync, family sharing, and premium features'
+        : 'Login to unlock cloud sync, family sharing, and premium features',
+      type: 'navigation' as const,
+      onPress: () => setShowFamilyPackageModal(true),
+    },
     {
       id: 'theme',
       icon: 'paint-brush',
@@ -2523,6 +2591,9 @@ export default function SettingsScreen() {
       <FamilyPackageModal
         visible={showFamilyPackageModal}
         onClose={() => setShowFamilyPackageModal(false)}
+        onPurchase={createFamilySubscription}
+        isAuthenticated={isAuthenticated}
+        router={router}
       />
       <GroupManagementModal
         visible={showGroupManagementModal}
