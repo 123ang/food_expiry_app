@@ -869,6 +869,20 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
   } catch (error) {
     // Column already exists or other error, continue
   }
+
+  // Add group_id column to shopping_items if it doesn't exist
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN group_id TEXT');
+  } catch (error) {
+    // Column already exists or other error, continue
+  }
+
+  // Add group_id column to wish_lists if it doesn't exist
+  try {
+    await database.execAsync('ALTER TABLE wish_lists ADD COLUMN group_id TEXT');
+  } catch (error) {
+    // Column already exists or other error, continue
+  }
 };
 
 const getDefaultCategories = (language: Language): Category[] => {

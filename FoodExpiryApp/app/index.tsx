@@ -16,6 +16,7 @@ import {
   LayoutAnimation,
   UIManager,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
@@ -240,6 +241,7 @@ export default function DashboardScreen() {
   const { 
     user, 
     localUser, 
+    session,
     isAuthenticated, 
     currentGroup, 
     userGroups, 
@@ -444,11 +446,74 @@ export default function DashboardScreen() {
     console.log('===== SYNC DEBUG: Starting refresh and sync =====');
     setIsRefreshing(true);
     try {
-      // If authenticated, sync with Supabase first
+      // If authenticated, check for internet and sync with Supabase
       if (isAuthenticated) {
-        console.log('SYNC DEBUG: User is authenticated, syncing with Supabase...');
+        console.log('SYNC DEBUG: User is authenticated, checking internet connection...');
+        
+        // Check internet connectivity
+        const netInfoState = await NetInfo.fetch();
+        console.log('SYNC DEBUG: Network state:', {
+          isConnected: netInfoState.isConnected,
+          isInternetReachable: netInfoState.isInternetReachable,
+          type: netInfoState.type
+        });
+        
+        if (!netInfoState.isConnected || !netInfoState.isInternetReachable) {
+          Alert.alert(
+            'No Internet Connection',
+            'Please connect to the internet to sync your data with the cloud.',
+            [{ text: 'OK' }]
+          );
+          console.log('SYNC DEBUG: No internet connection, skipping cloud sync');
+          
+          // Still refresh local data even without internet
+          console.log('SYNC DEBUG: Refreshing local data only...');
+          await refreshAll();
+          console.log('SYNC DEBUG: Local data refresh completed');
+          return;
+        }
+        
+        console.log('SYNC DEBUG: Internet connection available, proceeding with sync...');
         console.log('SYNC DEBUG: Current group ID:', activeGroupId);
         console.log('SYNC DEBUG: Current user ID:', user?.id);
+        console.log('SYNC DEBUG: User groups count:', userGroups.length);
+        
+        // Check if user has groups - if not, explain the issue
+        if (userGroups.length === 0) {
+          console.log('SYNC DEBUG: No groups found for user');
+          console.log('SYNC DEBUG: Authentication status:');
+          console.log('- isAuthenticated:', isAuthenticated);
+          console.log('- isOnlineMode:', session && user);
+          console.log('- isOfflineMode:', localUser && !session);
+          console.log('- hasSupabaseSession:', !!session);
+          console.log('- hasSupabaseUser:', !!user);
+          console.log('- hasLocalUser:', !!localUser);
+          
+          if (!session || !user) {
+            console.log('SYNC DEBUG: User is in offline mode - no Supabase session');
+            Alert.alert(
+              'Sign In Required for Cloud Sync',
+              'You are currently in offline mode. To sync with the cloud, please:\n\n1. Go to Settings\n2. Sign in to your account\n3. This will create your Personal group and enable cloud sync',
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+          
+          console.log('SYNC DEBUG: User has Supabase session, attempting to create Personal group...');
+          try {
+            await createGroup('Personal', 'Your personal food management group');
+            console.log('SYNC DEBUG: Personal group created successfully');
+          } catch (groupError) {
+            console.error('SYNC DEBUG: Error creating Personal group:', groupError);
+            const errorMessage = groupError instanceof Error ? groupError.message : String(groupError);
+            Alert.alert(
+              'Group Creation Failed',
+              `Could not create your Personal group: ${errorMessage}\n\nPlease try signing out and signing back in.`,
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+        }
         
         // Log local data before sync
         const localCategories = categories;
@@ -465,6 +530,11 @@ export default function DashboardScreen() {
         console.log('SYNC DEBUG: Sync to cloud completed');
       } else {
         console.log('SYNC DEBUG: User not authenticated, skipping cloud sync');
+        Alert.alert(
+          'Sign In Required',
+          'Please sign in to your account to sync data with the cloud.',
+          [{ text: 'OK' }]
+        );
       }
       
       // Then refresh local data
@@ -489,6 +559,11 @@ export default function DashboardScreen() {
       console.log('===== SYNC DEBUG: Refresh and sync completed =====');
     } catch (error) {
       console.error('SYNC DEBUG: Error during refresh/sync:', error);
+      Alert.alert(
+        'Sync Error',
+        'An error occurred while syncing. Please try again later.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsRefreshing(false);
     }

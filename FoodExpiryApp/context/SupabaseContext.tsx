@@ -8,6 +8,7 @@ import { useDatabase } from './DatabaseContext'
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository'
 import { Alert } from 'react-native'
 import { inAppPurchaseService } from '../services/InAppPurchaseService'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface SupabaseContextType {
   // Authentication
@@ -78,6 +79,56 @@ interface Subscription {
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined)
 
+// Helper functions for session storage
+const getStoredSession = async (email: string) => {
+  try {
+    const sessionKey = `supabase_session_${email}`
+    const storedSession = await AsyncStorage.getItem(sessionKey)
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession)
+      // Check if session is not expired
+      const expiresAt = parsed.expires_at ? new Date(parsed.expires_at * 1000) : null
+      if (expiresAt && expiresAt > new Date()) {
+        return parsed
+      } else {
+        // Session expired, remove it
+        await AsyncStorage.removeItem(sessionKey)
+        return null
+      }
+    }
+    return null
+  } catch (error) {
+    console.error('Error getting stored session:', error)
+    return null
+  }
+}
+
+const storeSession = async (email: string, session: any) => {
+  try {
+    const sessionKey = `supabase_session_${email}`
+    await AsyncStorage.setItem(sessionKey, JSON.stringify(session))
+    console.log('SupabaseContext: Session stored for:', email)
+    console.log('SupabaseContext: Stored session data includes:', {
+      access_token: session.access_token ? 'YES' : 'NO',
+      refresh_token: session.refresh_token ? 'YES' : 'NO',
+      expires_at: session.expires_at,
+      user_id: session.user?.id
+    })
+  } catch (error) {
+    console.error('Error storing session:', error)
+  }
+}
+
+const clearStoredSession = async (email: string) => {
+  try {
+    const sessionKey = `supabase_session_${email}`
+    await AsyncStorage.removeItem(sessionKey)
+    console.log('SupabaseContext: Session cleared for:', email)
+  } catch (error) {
+    console.error('Error clearing stored session:', error)
+  }
+}
+
 export const useSupabase = () => {
   const context = useContext(SupabaseContext)
   if (!context) {
@@ -127,6 +178,47 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }
 
+  const attemptAutoSignIn = async (localUser: LocalUser) => {
+    try {
+      console.log('SupabaseContext: Attempting auto sign-in with stored credentials...')
+      
+      // Check if we have stored session data
+      const storedSession = await getStoredSession(localUser.email)
+      if (storedSession) {
+        console.log('SupabaseContext: Found stored session, attempting to restore...')
+        
+        // Try to set the session
+        const { data, error } = await supabase.auth.setSession({
+          access_token: storedSession.access_token,
+          refresh_token: storedSession.refresh_token
+        })
+        
+        if (error) {
+          console.error('SupabaseContext: Failed to restore session:', error)
+          // Clear invalid stored session
+          await clearStoredSession(localUser.email)
+          return false
+        }
+        
+        if (data.session) {
+          console.log('SupabaseContext: Session restored successfully for:', localUser.email)
+          setSession(data.session)
+          setUser(data.session.user)
+          
+          // Load user data
+          await loadUserData(data.session.user.id)
+          return true
+        }
+      }
+      
+      console.log('SupabaseContext: No valid stored session found for auto sign-in')
+      return false
+    } catch (error) {
+      console.error('SupabaseContext: Error during auto sign-in:', error)
+      return false
+    }
+  }
+
   // Enhanced authentication state calculation
   const isAuthenticated = !!(user || localUser)
   const isOnlineMode = !!(user && session)
@@ -154,8 +246,17 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setSession(session)
         setUser(session?.user ?? null)
 
-        // Then check for local user
+        // Check for local user
         await checkLocalUser()
+
+        // If no session but we have a local user, try auto sign-in
+        if (!session) {
+          const activeUser = await getActiveLocalUser()
+          if (activeUser && activeUser.email) {
+            console.log('SupabaseContext: No session found, attempting auto sign-in for:', activeUser.email)
+            await attemptAutoSignIn(activeUser)
+          }
+        }
 
         // Always set loading to false after initialization
         setLoading(false)
@@ -486,6 +587,11 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     console.log('SupabaseContext: Sign in successful')
+    
+    // Store session for auto sign-in
+    if (data.session) {
+      await storeSession(email, data.session)
+    }
 
     // If signin successful, save/update user in local database
     if (data.user) {
@@ -539,6 +645,11 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const signOut = async () => {
     try {
       console.log('SupabaseContext: Starting sign out...')
+      
+      // Clear stored session
+      if (localUser?.email) {
+        await clearStoredSession(localUser.email)
+      }
       
       // Clear session and user state
       const { error } = await supabase.auth.signOut()
@@ -820,6 +931,74 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }
 
+  // Migration function to update items without group_id
+  const migrateItemsToGroup = async (groupId: string) => {
+    try {
+      console.log('SupabaseContext: Migrating items without group_id to group:', groupId)
+      
+      // Get database instance from DatabaseContext
+      const { getDatabase } = await import('../database/database')
+      const db = await getDatabase()
+      if (!db) return
+      
+      const itemsWithoutGroup = await db.getAllAsync(
+        'SELECT * FROM food_items WHERE group_id IS NULL'
+      )
+      
+      console.log('SupabaseContext: Found', itemsWithoutGroup.length, 'items without group_id')
+      
+      // Update each item to have the current group_id
+      for (const item of itemsWithoutGroup) {
+        await db.runAsync(
+          'UPDATE food_items SET group_id = ? WHERE id = ?',
+          [groupId, item.id]
+        )
+      }
+      
+      // Also update shopping items if they exist
+      try {
+        const shoppingItemsWithoutGroup = await db.getAllAsync(
+          'SELECT * FROM shopping_items WHERE group_id IS NULL'
+        )
+        
+        console.log('SupabaseContext: Found', shoppingItemsWithoutGroup.length, 'shopping items without group_id')
+        
+        for (const item of shoppingItemsWithoutGroup) {
+          await db.runAsync(
+            'UPDATE shopping_items SET group_id = ? WHERE id = ?',
+            [groupId, item.id]
+          )
+        }
+      } catch (error) {
+        // shopping_items table might not have group_id column yet
+        console.log('SupabaseContext: Shopping items table not ready for group migration')
+      }
+      
+      // Also update wish lists if they exist
+      try {
+        const wishItemsWithoutGroup = await db.getAllAsync(
+          'SELECT * FROM wish_lists WHERE group_id IS NULL'
+        )
+        
+        console.log('SupabaseContext: Found', wishItemsWithoutGroup.length, 'wish items without group_id')
+        
+        for (const item of wishItemsWithoutGroup) {
+          await db.runAsync(
+            'UPDATE wish_lists SET group_id = ? WHERE id = ?',
+            [groupId, item.id]
+          )
+        }
+      } catch (error) {
+        // wish_lists table might not have group_id column yet
+        console.log('SupabaseContext: Wish lists table not ready for group migration')
+      }
+      
+      console.log('SupabaseContext: Migration completed successfully')
+    } catch (error) {
+      console.error('SupabaseContext: Error during migration:', error)
+    }
+  }
+
   const syncToCloud = async (): Promise<void> => {
     if (!user) return;
     
@@ -835,6 +1014,9 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
     }
+    
+    // Migrate existing items without group_id to current group
+    await migrateItemsToGroup(groupToUse.id)
     
     setSyncStatus('syncing')
     try {
@@ -931,14 +1113,49 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // 3. Sync Food Items
       console.log('SupabaseContext: Syncing food items...')
+      
+      // First, get ALL local food items (not filtered by group)
+      const { getDatabase } = await import('../database/database')
+      const db = await getDatabase()
+      const allLocalItems = await db.getAllAsync('SELECT * FROM food_items')
+      
+      console.log('===LOCAL=== All food items in local database:')
+      allLocalItems.forEach((item: any, index: number) => {
+        console.log(`Local Item ${index + 1}:`, {
+          id: item.id,
+          name: item.name,
+          group_id: item.group_id,
+          category_id: item.category_id,
+          location_id: item.location_id,
+          expiry_date: item.expiry_date
+        })
+      })
+      
       // Use getFoodItemsByGroup with the group_id parameter
       const localItems = await getFoodItemsByGroup(groupToUse.id)
+      console.log('===LOCAL=== Filtered food items for group', groupToUse.id, ':', localItems.length, 'items')
       
       // Get cloud items for this group
       const { data: cloudItems, error: itemError } = await supabase
         .from('food_items')
         .select('*')
         .eq('group_id', groupToUse.id)
+        
+      console.log('===SUPABASE=== Food items in cloud for group', groupToUse.id, ':')
+      if (cloudItems && cloudItems.length > 0) {
+        cloudItems.forEach((item: any, index: number) => {
+          console.log(`Cloud Item ${index + 1}:`, {
+            id: item.id,
+            name: item.name,
+            group_id: item.group_id,
+            category_id: item.category_id,
+            location_id: item.location_id,
+            expiry_date: item.expiry_date
+          })
+        })
+      } else {
+        console.log('No cloud items found for this group')
+      }
       
       if (itemError) throw itemError
       
@@ -1006,8 +1223,40 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // 4. Sync Shopping Items (if available)
       try {
         console.log('SupabaseContext: Syncing shopping items...')
-        // Shopping item sync would go here if we had a ShoppingItemRepository
-        // This is left for future implementation
+        
+        // Get all local shopping items
+        const allLocalShoppingItems = await db.getAllAsync('SELECT * FROM shopping_items')
+        console.log('===LOCAL=== All shopping items in local database:')
+        allLocalShoppingItems.forEach((item: any, index: number) => {
+          console.log(`Local Shopping Item ${index + 1}:`, {
+            id: item.id,
+            name: item.name,
+            group_id: item.group_id,
+            done: item.done,
+            created_at: item.created_at
+          })
+        })
+        
+        // Get cloud shopping items for this group
+        const { data: cloudShoppingItems } = await supabase
+          .from('shopping_items')
+          .select('*')
+          .eq('group_id', groupToUse.id)
+          
+        console.log('===SUPABASE=== Shopping items in cloud for group', groupToUse.id, ':')
+        if (cloudShoppingItems && cloudShoppingItems.length > 0) {
+          cloudShoppingItems.forEach((item: any, index: number) => {
+            console.log(`Cloud Shopping Item ${index + 1}:`, {
+              id: item.id,
+              name: item.name,
+              group_id: item.group_id,
+              done: item.done,
+              created_at: item.created_at
+            })
+          })
+        } else {
+          console.log('No cloud shopping items found for this group')
+        }
       } catch (error) {
         console.error('SupabaseContext: Error syncing shopping items:', error)
       }
@@ -1015,11 +1264,41 @@ export const SupabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // 5. Sync Wish Lists (if available)
       console.log('SupabaseContext: Syncing wish lists...')
       try {
+        // Get all local wish list items
+        const allLocalWishItems = await db.getAllAsync('SELECT * FROM wish_lists')
+        console.log('===LOCAL=== All wish list items in local database:')
+        allLocalWishItems.forEach((item: any, index: number) => {
+          console.log(`Local Wish Item ${index + 1}:`, {
+            id: item.id,
+            name: item.name,
+            group_id: item.group_id,
+            price: item.price,
+            rating: item.rating,
+            created_at: item.created_at
+          })
+        })
+        
         // Get cloud wish list items for this group
         const { data: cloudWishItems, error: wishError } = await supabase
           .from('wish_lists')
           .select('*')
           .eq('group_id', groupToUse.id)
+        
+        console.log('===SUPABASE=== Wish list items in cloud for group', groupToUse.id, ':')
+        if (cloudWishItems && cloudWishItems.length > 0) {
+          cloudWishItems.forEach((item: any, index: number) => {
+            console.log(`Cloud Wish Item ${index + 1}:`, {
+              id: item.id,
+              name: item.name,
+              group_id: item.group_id,
+              price: item.price,
+              rating: item.rating,
+              created_at: item.created_at
+            })
+          })
+        } else {
+          console.log('No cloud wish list items found for this group')
+        }
         
         if (wishError) throw wishError
         
