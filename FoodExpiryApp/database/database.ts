@@ -14,7 +14,7 @@ import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../cons
 // --- END DEBUG LOGGING INSTRUCTIONS ---
 
 // Database configuration
-const DATABASE_VERSION = 10;
+const DATABASE_VERSION = 12;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -775,6 +775,16 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
     );
   `);
   await database.execAsync(`
+    CREATE TABLE IF NOT EXISTS groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      created_by TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  await database.execAsync(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -800,6 +810,7 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       category_id INTEGER,
       location_id INTEGER,
       group_id TEXT,
+      cloud_id TEXT UNIQUE,
       expiry_date TEXT NOT NULL,
       reminder_days INTEGER NOT NULL DEFAULT 3,
       notes TEXT,
@@ -870,6 +881,13 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
     // Column already exists or other error, continue
   }
 
+  // Add cloud_id column to food_items if it doesn't exist
+  try {
+    await database.execAsync('ALTER TABLE food_items ADD COLUMN cloud_id TEXT UNIQUE');
+  } catch (error) {
+    // Column already exists or other error, continue
+  }
+
   // Add group_id column to shopping_items if it doesn't exist
   try {
     await database.execAsync('ALTER TABLE shopping_items ADD COLUMN group_id TEXT');
@@ -877,11 +895,27 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
     // Column already exists or other error, continue
   }
 
-  // Add group_id column to wish_lists if it doesn't exist
+  // Add group_id column to wish_items if it doesn't exist
   try {
-    await database.execAsync('ALTER TABLE wish_lists ADD COLUMN group_id TEXT');
+    await database.execAsync('ALTER TABLE wish_items ADD COLUMN group_id TEXT');
   } catch (error) {
     // Column already exists or other error, continue
+  }
+
+  // Create groups table if it doesn't exist (for local group management)
+  try {
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        created_by TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (error) {
+    // Table already exists or other error, continue
   }
 };
 

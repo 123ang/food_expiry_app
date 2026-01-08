@@ -11,7 +11,7 @@ import {
 import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useSupabase } from '../context/SupabaseContext';
+import { useApi } from '../context/ApiContext';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -41,7 +41,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
 }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { createGroup } = useSupabase();
+  const { createGroup } = useApi();
   const [showModal, setShowModal] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 

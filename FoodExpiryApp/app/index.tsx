@@ -20,7 +20,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
-import { useSupabase } from '../context/SupabaseContext';
+import { useApi } from '../context/ApiContext';
 
 import { useRouter, useFocusEffect } from 'expo-router';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -237,19 +237,15 @@ export default function DashboardScreen() {
     getFoodItemsByGroup,
   } = useDatabase();
 
-  // Group and subscription functionality
+  // Group and authentication functionality
   const { 
     user, 
-    localUser, 
-    session,
     isAuthenticated, 
     currentGroup, 
     userGroups, 
     createGroup,
-    subscription,
-    hasActiveSubscription, 
-    syncToCloud 
-  } = useSupabase();
+    syncToServer 
+  } = useApi();
 
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
@@ -276,10 +272,20 @@ export default function DashboardScreen() {
   const [filteredFoodItems, setFilteredFoodItems] = useState<FoodItemWithDetails[]>([]);
 
   // Determine subscription plan
-  const subscriptionPlan = subscription?.plan_type || localUser?.subscription_type || 'free';
+  const subscriptionPlan = user?.subscription_type || 'free';
 
-  // Extract groups from userGroups
-  const groups = userGroups.map(membership => membership.groups);
+  // Extract groups from userGroups and adapt to GroupSelector's expected format
+  const adaptGroup = (group: any): any => ({
+    id: group.id,
+    name: group.name,
+    description: group.description || null,
+    created_by: group.created_by,
+    invite_code: group.invite_code || null,
+    max_members: group.max_members || undefined,
+    created_at: group.created_at,
+    updated_at: group.updated_at
+  });
+  const groups = userGroups.map(membership => adaptGroup(membership.groups));
   
   // Debug: Print groups in the main component
   console.log('DashboardScreen: userGroups count:', userGroups.length)
@@ -411,7 +417,8 @@ export default function DashboardScreen() {
         quantity: parseInt(quantity) || 1,
         image_uri: null,
         created_at: new Date().toISOString().split('T')[0],
-        group_id: activeGroupId || null, // Add group_id
+        group_id: activeGroupId || null,
+        cloud_id: null, // New items start with no cloud_id
       };
 
       if (editingItem && editingItem.id) {
@@ -446,7 +453,7 @@ export default function DashboardScreen() {
     console.log('===== SYNC DEBUG: Starting refresh and sync =====');
     setIsRefreshing(true);
     try {
-      // If authenticated, check for internet and sync with Supabase
+      // If authenticated, check for internet and sync with cloud
       if (isAuthenticated) {
         console.log('SYNC DEBUG: User is authenticated, checking internet connection...');
         
@@ -483,13 +490,9 @@ export default function DashboardScreen() {
           console.log('SYNC DEBUG: No groups found for user');
           console.log('SYNC DEBUG: Authentication status:');
           console.log('- isAuthenticated:', isAuthenticated);
-          console.log('- isOnlineMode:', session && user);
-          console.log('- isOfflineMode:', localUser && !session);
-          console.log('- hasSupabaseSession:', !!session);
-          console.log('- hasSupabaseUser:', !!user);
-          console.log('- hasLocalUser:', !!localUser);
+          console.log('- hasApiUser:', !!user);
           
-          if (!session || !user) {
+          if (!isAuthenticated) {
             console.log('SYNC DEBUG: User is in offline mode - no Supabase session');
             Alert.alert(
               'Sign In Required for Cloud Sync',
@@ -514,20 +517,76 @@ export default function DashboardScreen() {
             return;
           }
         }
-        
-        // Log local data before sync
-        const localCategories = categories;
-        const localLocations = locations;
-        const localFoodItems = foodItems;
-        
-        console.log('SYNC DEBUG: Local data before sync:');
-        console.log('- Categories:', localCategories.length, 'items');
-        console.log('- Locations:', localLocations.length, 'items');
-        console.log('- Food Items:', localFoodItems.length, 'items');
-        
-        // Perform the sync
-        await syncToCloud();
-        console.log('SYNC DEBUG: Sync to cloud completed');
+
+        // Import SyncService for database synchronization
+        try {
+          const { syncService } = await import('../services/SyncService');
+          
+          // Make sure database has required sync columns
+          console.log('SYNC DEBUG: Preparing database for sync...');
+          await syncService.updateDatabaseForSync();
+          
+          // Log local data before sync
+          console.log('SYNC DEBUG: Local data before sync:');
+          console.log('- Categories:', categories.length, 'items');
+          console.log('- Locations:', locations.length, 'items');
+          console.log('- Food Items:', foodItems.length, 'items');
+          
+          // Convert user.id to string if needed (SyncService expects string)
+          const userId = user?.id ? String(user.id) : '';
+          const groupId = activeGroupId || '';
+          
+          if (!userId || !groupId) {
+            Alert.alert(
+              'Sync Error',
+              'User ID or Group ID is missing. Please try signing out and back in.',
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+          
+          console.log('===SYNC DEBUG=== Starting sync process with SyncService...');
+          
+          // Perform the sync using our SyncService
+          const syncResult = await syncService.syncDatabase(userId, groupId);
+          
+          if (syncResult.success) {
+            console.log('SYNC DEBUG: Sync completed successfully');
+            console.log('SYNC DEBUG: Sync stats:', syncResult.stats);
+            
+            // Show success message with stats
+            const uploadStats = syncResult.stats?.uploaded;
+            const downloadStats = syncResult.stats?.downloaded;
+            
+            Alert.alert(
+              'Sync Successful',
+              `Your data has been synchronized with the cloud.\n\n` +
+              `Uploaded: ${uploadStats?.foodItems || 0} items, ${uploadStats?.images || 0} images\n` +
+              `Downloaded: ${downloadStats?.foodItems || 0} items, ${downloadStats?.images || 0} images`,
+              [{ text: 'OK' }]
+            );
+          } else {
+            console.error('SYNC DEBUG: Sync failed with error:', syncResult.error);
+            
+            Alert.alert(
+              'Sync Failed',
+              syncResult.error || 'An unknown error occurred during sync.',
+              [{ text: 'OK' }]
+            );
+          }
+        } catch (syncError) {
+          console.error('SYNC DEBUG: Error importing or using SyncService:', syncError);
+          
+          // Fall back to old sync method
+          console.log('SYNC DEBUG: Falling back to legacy sync method...');
+          await syncToServer();
+          
+          Alert.alert(
+            'Sync Completed',
+            'Sync operation completed using legacy method.',
+            [{ text: 'OK' }]
+          );
+        }
       } else {
         console.log('SYNC DEBUG: User not authenticated, skipping cloud sync');
         Alert.alert(
@@ -1425,7 +1484,6 @@ export default function DashboardScreen() {
                 })
               }]} 
               onPress={isAuthenticated ? handleRefresh : undefined}
-              onLongPress={() => setShowSyncDebugger(true)}
             >
               <FontAwesome name={(isAuthenticated ? 'refresh' : 'cutlery') as IconName} size={responsive.getResponsiveValue({
                 tablet: 32,
@@ -1433,6 +1491,7 @@ export default function DashboardScreen() {
                 default: 24,
               })} color="#FFFFFF" />
             </TouchableOpacity>
+
           </View>
 
           <View style={[styles.quickStats, {
@@ -1791,7 +1850,7 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
             <SyncDebugger 
-              userId={user?.id || null}
+              userId={user?.id ? String(user.id) : null}
               groupId={activeGroupId}
             />
           </View>

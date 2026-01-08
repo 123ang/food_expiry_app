@@ -5,9 +5,19 @@ export interface BaseItem {
   translationKey?: string;  // Optional field for items that should be translated using translation keys
 }
 
-export interface Category extends BaseItem {}
+export interface Category extends BaseItem {
+  cloud_id?: string | null; // Unique identifier for cloud sync
+  created_at?: string;
+  updated_at?: string;
+  sync_status?: 'pending' | 'synced' | 'conflict';
+}
 
-export interface Location extends BaseItem {}
+export interface Location extends BaseItem {
+  cloud_id?: string | null; // Unique identifier for cloud sync
+  created_at?: string;
+  updated_at?: string;
+  sync_status?: 'pending' | 'synced' | 'conflict';
+}
 
 export interface FoodItem {
   id?: number;
@@ -16,15 +26,19 @@ export interface FoodItem {
   category_id: number | null;
   location_id: number | null;
   group_id: string | null; // Add group_id for group-based filtering
+  cloud_id: string | null; // Unique identifier for cloud sync
   expiry_date: string;
   reminder_days: number;
   notes: string | null;
   image_uri: string | null;
   created_at: string;
+  updated_at?: string; // Timestamp for tracking modifications
+  sync_status?: 'pending' | 'synced' | 'conflict'; // Track sync status
 }
 
 export interface FoodItemWithDetails extends Omit<FoodItem, 'id'> {
   id: number;  // Make id required for items from database
+  cloud_id: string | null; // Include cloud_id
   category_name: string;
   category_icon: string;
   location_name: string;
@@ -54,6 +68,10 @@ export interface ShoppingItem {
   image_uri?: string | null;
   done: boolean;
   created_at: string;
+  updated_at?: string;
+  cloud_id?: string | null;
+  group_id?: string | null;
+  sync_status?: 'pending' | 'synced' | 'conflict';
 }
 
 export interface WishItem {
@@ -65,6 +83,10 @@ export interface WishItem {
   image_uri?: string | null;
   done: boolean;
   created_at: string;
+  updated_at?: string;
+  cloud_id?: string | null;
+  group_id?: string | null;
+  sync_status?: 'pending' | 'synced' | 'conflict';
 }
 
 // Type guard to check if an item has an ID

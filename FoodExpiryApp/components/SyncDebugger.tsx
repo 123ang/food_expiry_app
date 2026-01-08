@@ -1,201 +1,319 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { debugSync, SyncDebugResult } from '../utils/syncDebugger';
-import { useTheme } from '../context/ThemeContext';
+import { supabaseSyncService } from '../services/SupabaseSyncService';
+import { useApi } from '../context/ApiContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getDatabase } from '../database/database';
 
-interface SyncDebuggerProps {
-  userId: string | null;
-  groupId: string | null;
-}
-
-const SyncDebugger: React.FC<SyncDebuggerProps> = ({ userId, groupId }) => {
-  const [debugResult, setDebugResult] = useState<SyncDebugResult | null>(null);
+const SyncDebugger: React.FC = () => {
+  const [syncInfo, setSyncInfo] = useState<any>({});
   const [loading, setLoading] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const { theme } = useTheme();
+  const { user, currentGroup } = useApi();
 
-  const runDebug = async () => {
-    if (!userId || !groupId) {
-      console.error('SyncDebugger: Missing userId or groupId');
-      return;
-    }
-    
+  useEffect(() => {
+    loadSyncInfo();
+  }, []);
+
+  const loadSyncInfo = async () => {
     setLoading(true);
     try {
-      const result = await debugSync(userId, groupId);
-      setDebugResult(result);
+      const info = await getSyncInfo();
+      setSyncInfo(info);
     } catch (error) {
-      console.error('SyncDebugger: Error running debug:', error);
+      console.error('Error loading sync info:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleSection = (section: string) => {
-    if (expandedSection === section) {
-      setExpandedSection(null);
-    } else {
-      setExpandedSection(section);
+  const getSyncInfo = async () => {
+    const info: any = {};
+    
+    // Last sync time
+    try {
+      const lastSyncTime = await AsyncStorage.getItem('last_sync_time');
+      info.lastSyncTime = lastSyncTime ? new Date(lastSyncTime).toLocaleString() : 'Never';
+    } catch (e) {
+      info.lastSyncTime = 'Error';
+    }
+    
+    // Sync log entries
+    try {
+      const db = await getDatabase();
+      if (db) {
+        const syncLogs = await db.getAllAsync('SELECT * FROM sync_log ORDER BY sync_time DESC LIMIT 5');
+        info.syncLogs = syncLogs;
+      }
+    } catch (e) {
+      info.syncLogs = [];
+    }
+    
+    // Pending items count
+    try {
+      const db = await getDatabase();
+      if (db) {
+        const pendingFoodItems = await db.getFirstAsync("SELECT COUNT(*) as count FROM food_items WHERE sync_status = 'pending'");
+        const pendingCategories = await db.getFirstAsync("SELECT COUNT(*) as count FROM categories WHERE sync_status = 'pending'");
+        const pendingLocations = await db.getFirstAsync("SELECT COUNT(*) as count FROM locations WHERE sync_status = 'pending'");
+        
+        info.pendingCounts = {
+          foodItems: pendingFoodItems?.count || 0,
+          categories: pendingCategories?.count || 0,
+          locations: pendingLocations?.count || 0,
+          total: (pendingFoodItems?.count || 0) + (pendingCategories?.count || 0) + (pendingLocations?.count || 0)
+        };
+      }
+    } catch (e) {
+      info.pendingCounts = { total: 'Error' };
+    }
+    
+    // Conflict items count
+    try {
+      const db = await getDatabase();
+      if (db) {
+        const conflictFoodItems = await db.getFirstAsync("SELECT COUNT(*) as count FROM food_items WHERE sync_status = 'conflict'");
+        const conflictCategories = await db.getFirstAsync("SELECT COUNT(*) as count FROM categories WHERE sync_status = 'conflict'");
+        const conflictLocations = await db.getFirstAsync("SELECT COUNT(*) as count FROM locations WHERE sync_status = 'conflict'");
+        
+        info.conflictCounts = {
+          foodItems: conflictFoodItems?.count || 0,
+          categories: conflictCategories?.count || 0,
+          locations: conflictLocations?.count || 0,
+          total: (conflictFoodItems?.count || 0) + (conflictCategories?.count || 0) + (conflictLocations?.count || 0)
+        };
+      }
+    } catch (e) {
+      info.conflictCounts = { total: 'Error' };
+    }
+    
+    // Deleted items
+    try {
+      const db = await getDatabase();
+      if (db) {
+        const deletedItems = await db.getAllAsync('SELECT * FROM deleted_items ORDER BY deleted_at DESC LIMIT 5');
+        info.deletedItems = deletedItems;
+      }
+    } catch (e) {
+      info.deletedItems = [];
+    }
+    
+    return info;
+  };
+
+  const runSync = async () => {
+    if (!user || !currentGroup) {
+      console.error('User or group not available for sync');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await supabaseSyncService.syncDatabase(user.supabase_id, currentGroup.id);
+      await loadSyncInfo();
+    } catch (error) {
+      console.error('Error running sync:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderDataSection = (title: string, localData: any[], cloudData: any[]) => {
-    const isExpanded = expandedSection === title;
-    
-    return (
-      <View style={styles.section}>
-        <TouchableOpacity 
-          style={[styles.sectionHeader, { backgroundColor: theme.colors.card }]} 
-          onPress={() => toggleSection(title)}
-        >
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            {title} (Local: {localData.length}, Cloud: {cloudData.length})
-          </Text>
-          <Text style={[styles.expandIcon, { color: theme.colors.text }]}>
-            {isExpanded ? '▼' : '►'}
-          </Text>
-        </TouchableOpacity>
-        
-        {isExpanded && (
-          <View style={styles.sectionContent}>
-            <View style={styles.comparisonContainer}>
-              <View style={styles.dataColumn}>
-                <Text style={[styles.columnHeader, { color: theme.colors.text }]}>Local ({localData.length})</Text>
-                <ScrollView style={styles.dataScroll} nestedScrollEnabled={true}>
-                  <Text style={[styles.dataText, { color: theme.colors.text }]}>
-                    {JSON.stringify(localData, null, 2)}
-                  </Text>
-                </ScrollView>
-              </View>
-              
-              <View style={styles.dataColumn}>
-                <Text style={[styles.columnHeader, { color: theme.colors.text }]}>Cloud ({cloudData.length})</Text>
-                <ScrollView style={styles.dataScroll} nestedScrollEnabled={true}>
-                  <Text style={[styles.dataText, { color: theme.colors.text }]}>
-                    {JSON.stringify(cloudData, null, 2)}
-                  </Text>
-                </ScrollView>
-              </View>
-            </View>
-          </View>
-        )}
-      </View>
-    );
+  const clearSyncData = async () => {
+    setLoading(true);
+    try {
+      await supabaseSyncService.clearSyncLog();
+      await loadSyncInfo();
+    } catch (error) {
+      console.error('Error clearing sync data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={[styles.title, { color: theme.colors.text }]}>Sync Debugger</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Supabase Sync Debugger</Text>
       
-      <View style={styles.infoContainer}>
-        <Text style={[styles.infoText, { color: theme.colors.text }]}>
-          User ID: {userId || 'Not logged in'}
-        </Text>
-        <Text style={[styles.infoText, { color: theme.colors.text }]}>
-          Group ID: {groupId || 'No group selected'}
-        </Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={[styles.button, styles.primaryButton]} 
+          onPress={runSync}
+          disabled={loading || !user || !currentGroup}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Run Sync</Text>
+          )}
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.dangerButton]} 
+          onPress={clearSyncData}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>Clear Sync Data</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.infoButton]} 
+          onPress={loadSyncInfo}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>Refresh</Text>
+        </TouchableOpacity>
       </View>
       
-      <TouchableOpacity 
-        style={[styles.debugButton, { backgroundColor: theme.colors.primary }]} 
-        onPress={runDebug}
-        disabled={loading || !userId || !groupId}
-      >
-        {loading ? (
-          <ActivityIndicator color="#ffffff" />
-        ) : (
-          <Text style={styles.debugButtonText}>Run Sync Debug</Text>
-        )}
-      </TouchableOpacity>
-      
-      {debugResult && !loading && (
-        <ScrollView style={styles.resultsContainer}>
-          {renderDataSection('Categories', debugResult.local.categories, debugResult.cloud.categories)}
-          {renderDataSection('Locations', debugResult.local.locations, debugResult.cloud.locations)}
-          {renderDataSection('Food Items', debugResult.local.food_items, debugResult.cloud.food_items)}
-          {renderDataSection('Shopping Items', debugResult.local.shopping_items, debugResult.cloud.shopping_items)}
-          {renderDataSection('Wish Lists', debugResult.local.wish_lists, debugResult.cloud.wish_lists)}
-          {renderDataSection('Groups', debugResult.local.groups, debugResult.cloud.groups)}
-          {renderDataSection('Group Members', debugResult.local.group_members, debugResult.cloud.group_members)}
-        </ScrollView>
+      {loading && (
+        <ActivityIndicator style={styles.loader} size="large" color="#0066cc" />
       )}
-    </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Sync Status</Text>
+        <Text>Last Sync: {syncInfo.lastSyncTime || 'Unknown'}</Text>
+        <Text>Current User: {user?.email || 'Not logged in'}</Text>
+        <Text>Current Group: {currentGroup?.name || 'None'}</Text>
+      </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Pending Items</Text>
+        {syncInfo.pendingCounts ? (
+          <View>
+            <Text>Food Items: {syncInfo.pendingCounts.foodItems}</Text>
+            <Text>Categories: {syncInfo.pendingCounts.categories}</Text>
+            <Text>Locations: {syncInfo.pendingCounts.locations}</Text>
+            <Text style={styles.totalCount}>Total: {syncInfo.pendingCounts.total}</Text>
+          </View>
+        ) : (
+          <Text>Loading...</Text>
+        )}
+      </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Conflicts</Text>
+        {syncInfo.conflictCounts ? (
+          <View>
+            <Text>Food Items: {syncInfo.conflictCounts.foodItems}</Text>
+            <Text>Categories: {syncInfo.conflictCounts.categories}</Text>
+            <Text>Locations: {syncInfo.conflictCounts.locations}</Text>
+            <Text style={styles.totalCount}>Total: {syncInfo.conflictCounts.total}</Text>
+          </View>
+        ) : (
+          <Text>Loading...</Text>
+        )}
+      </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Recent Sync Logs</Text>
+        {syncInfo.syncLogs && syncInfo.syncLogs.length > 0 ? (
+          syncInfo.syncLogs.map((log: any, index: number) => (
+            <View key={index} style={styles.logEntry}>
+              <Text>Time: {new Date(log.sync_time).toLocaleString()}</Text>
+              <Text>Status: {log.status}</Text>
+              <Text>Uploaded: {log.items_uploaded} items, {log.images_uploaded} images</Text>
+              <Text>Downloaded: {log.items_downloaded} items, {log.images_downloaded} images</Text>
+              {log.error && <Text style={styles.errorText}>Error: {log.error}</Text>}
+            </View>
+          ))
+        ) : (
+          <Text>No sync logs available</Text>
+        )}
+      </View>
+      
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Recent Deleted Items</Text>
+        {syncInfo.deletedItems && syncInfo.deletedItems.length > 0 ? (
+          syncInfo.deletedItems.map((item: any, index: number) => (
+            <View key={index} style={styles.logEntry}>
+              <Text>Table: {item.table_name}</Text>
+              <Text>Item ID: {item.item_id}</Text>
+              <Text>Cloud ID: {item.cloud_id || 'None'}</Text>
+              <Text>Deleted At: {new Date(item.deleted_at).toLocaleString()}</Text>
+            </View>
+          ))
+        ) : (
+          <Text>No deleted items</Text>
+        )}
+      </View>
+      
+      <View style={styles.spacer} />
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
     flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    textAlign: 'center',
   },
-  infoContainer: {
-    marginBottom: 16,
-  },
-  infoText: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  debugButton: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  debugButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  resultsContainer: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: 12,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  sectionHeader: {
-    padding: 12,
+  buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  button: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  sectionTitle: {
-    fontWeight: 'bold',
-  },
-  expandIcon: {
-    fontSize: 16,
-  },
-  sectionContent: {
-    padding: 12,
-  },
-  comparisonContainer: {
-    flexDirection: 'row',
-  },
-  dataColumn: {
     flex: 1,
     marginHorizontal: 4,
   },
-  columnHeader: {
+  primaryButton: {
+    backgroundColor: '#0066cc',
+  },
+  dangerButton: {
+    backgroundColor: '#cc3300',
+  },
+  infoButton: {
+    backgroundColor: '#33cc33',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  loader: {
+    marginVertical: 16,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
-    textAlign: 'center',
+    color: '#333',
   },
-  dataScroll: {
-    maxHeight: 300,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    padding: 8,
+  totalCount: {
+    fontWeight: 'bold',
+    marginTop: 4,
   },
-  dataText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
+  logEntry: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
+  errorText: {
+    color: 'red',
+  },
+  spacer: {
+    height: 50,
+  }
 });
 
 export default SyncDebugger;

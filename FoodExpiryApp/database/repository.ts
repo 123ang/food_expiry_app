@@ -11,6 +11,17 @@ interface Repository<T> {
   delete: (id: number) => Promise<void>;
 }
 
+// Interface for sync related operations
+interface SyncRepository<T> {
+  getItemsForSync: (groupId: string, lastSyncTime: string) => Promise<T[]>;
+  updateSyncStatus: (id: number, status: 'pending' | 'synced' | 'conflict') => Promise<void>;
+  updateFromCloud: (cloudItem: any) => Promise<number>;
+  getByCloudId: (cloudId: string) => Promise<T | null>;
+}
+
+// Combined interface for repositories that support sync
+interface SyncableRepository<T> extends Repository<T>, SyncRepository<T> {}
+
 // Simplified database getter that uses the cached version from database.ts
 const getDatabaseSafely = async (): Promise<any> => {
   try {
@@ -22,7 +33,7 @@ const getDatabaseSafely = async (): Promise<any> => {
 };
 
 // Category Repository
-export const CategoryRepository: Repository<Category> = {
+export const CategoryRepository: SyncableRepository<Category> = {
   // Get all categories
   getAll: async (): Promise<Category[]> => {
     return queuedDatabaseOperation(async () => {
@@ -232,17 +243,170 @@ export const CategoryRepository: Repository<Category> = {
         if (!db) {
           throw new Error('Database not available');
         }
+        
+        // Track deletion for sync before deleting
+        try {
+          // Get the cloud_id if available before deletion
+          const item = await db.getFirstAsync('SELECT cloud_id, group_id FROM categories WHERE id = ?', [id]);
+          if (item) {
+            // Track the deletion for sync
+            await db.runAsync(
+              'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
+              ['categories', id, item.cloud_id, item.group_id, new Date().toISOString()]
+            );
+          }
+        } catch (e) {
+          console.warn('Could not track category deletion for sync:', e);
+        }
+        
+        // Now delete the actual item
         await db.runAsync('DELETE FROM categories WHERE id = ?', [id]);
       } catch (error) {
         
         throw error;
       }
     }, `Category.delete(id:${id})`);
+  },
+  
+  // Get items for sync
+  getItemsForSync: async (groupId: string, lastSyncTime: string): Promise<Category[]> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Get items modified since last sync or with pending sync status
+        const items = await db.getAllAsync(
+          `SELECT * FROM categories WHERE 
+           (updated_at > ? OR sync_status = 'pending' OR sync_status = 'conflict') AND
+           (group_id = ? OR group_id IS NULL)`,
+          [lastSyncTime, groupId]
+        );
+        
+        return items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          icon: item.icon,
+          translationKey: item.translation_key,
+          cloud_id: item.cloud_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          sync_status: item.sync_status
+        }));
+      } catch (error) {
+        console.error('Error getting items for sync:', error);
+        throw error;
+      }
+    }, 'Category.getItemsForSync');
+  },
+  
+  // Update sync status
+  updateSyncStatus: async (id: number, status: 'pending' | 'synced' | 'conflict'): Promise<void> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        await db.runAsync(
+          'UPDATE categories SET sync_status = ? WHERE id = ?',
+          [status, id]
+        );
+      } catch (error) {
+        console.error('Error updating sync status:', error);
+        throw error;
+      }
+    }, `Category.updateSyncStatus(id:${id})`);
+  },
+  
+  // Update from cloud data
+  updateFromCloud: async (cloudItem: any): Promise<number> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Check if item with this cloud_id already exists
+        const existingItem = await db.getFirstAsync(
+          'SELECT id, updated_at FROM categories WHERE cloud_id = ?',
+          [cloudItem.cloud_id]
+        );
+        
+        if (existingItem) {
+          // Update existing item
+          // Compare timestamps to prevent overwriting newer local changes
+          if (new Date(cloudItem.updated_at) >= new Date(existingItem.updated_at)) {
+            await db.runAsync(
+              `UPDATE categories SET 
+               name = ?, icon = ?, translation_key = ?, updated_at = ?, sync_status = 'synced' 
+               WHERE id = ?`,
+              [cloudItem.name, cloudItem.icon, cloudItem.translation_key, cloudItem.updated_at, existingItem.id]
+            );
+          } else {
+            // Local copy is newer, mark as conflict
+            await db.runAsync(
+              'UPDATE categories SET sync_status = ? WHERE id = ?',
+              ['conflict', existingItem.id]
+            );
+          }
+          return existingItem.id;
+        } else {
+          // Insert new item
+          const result = await db.runAsync(
+            `INSERT INTO categories 
+             (name, icon, translation_key, cloud_id, created_at, updated_at, sync_status) 
+             VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
+            [cloudItem.name, cloudItem.icon, cloudItem.translation_key, 
+             cloudItem.cloud_id, cloudItem.created_at, cloudItem.updated_at]
+          );
+          return result.lastInsertRowId;
+        }
+      } catch (error) {
+        console.error('Error updating from cloud:', error);
+        throw error;
+      }
+    }, 'Category.updateFromCloud');
+  },
+  
+  // Get category by cloud ID
+  getByCloudId: async (cloudId: string): Promise<Category | null> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        const result = await db.getFirstAsync('SELECT * FROM categories WHERE cloud_id = ?', [cloudId]);
+        
+        if (result) {
+          return {
+            id: result.id,
+            name: result.name,
+            icon: result.icon,
+            translationKey: result.translation_key,
+            cloud_id: result.cloud_id,
+            created_at: result.created_at,
+            updated_at: result.updated_at,
+            sync_status: result.sync_status
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error('Error getting item by cloud_id:', error);
+        throw error;
+      }
+    }, `Category.getByCloudId(${cloudId})`);
   }
 };
 
 // Location Repository
-export const LocationRepository: Repository<Location> = {
+export const LocationRepository: SyncableRepository<Location> = {
   // Get all locations
   getAll: async (): Promise<Location[]> => {
     return queuedDatabaseOperation(async () => {
@@ -424,12 +588,168 @@ export const LocationRepository: Repository<Location> = {
     return queuedDatabaseOperation(async () => {
       try {
         const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Track deletion for sync before deleting
+        try {
+          // Get the cloud_id if available before deletion
+          const item = await db.getFirstAsync('SELECT cloud_id, group_id FROM locations WHERE id = ?', [id]);
+          if (item) {
+            // Track the deletion for sync
+            await db.runAsync(
+              'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
+              ['locations', id, item.cloud_id, item.group_id, new Date().toISOString()]
+            );
+          }
+        } catch (e) {
+          console.warn('Could not track location deletion for sync:', e);
+        }
+        
+        // Now delete the actual item
         await db.runAsync('DELETE FROM locations WHERE id = ?', [id]);
       } catch (error) {
         
         throw error;
       }
     }, `Location.delete(id:${id})`);
+  },
+  
+  // Get items for sync
+  getItemsForSync: async (groupId: string, lastSyncTime: string): Promise<Location[]> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Get items modified since last sync or with pending sync status
+        const items = await db.getAllAsync(
+          `SELECT * FROM locations WHERE 
+           (updated_at > ? OR sync_status = 'pending' OR sync_status = 'conflict') AND
+           (group_id = ? OR group_id IS NULL)`,
+          [lastSyncTime, groupId]
+        );
+        
+        return items.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          icon: item.icon,
+          translationKey: item.translation_key,
+          cloud_id: item.cloud_id,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          sync_status: item.sync_status
+        }));
+      } catch (error) {
+        console.error('Error getting items for sync:', error);
+        throw error;
+      }
+    }, 'Location.getItemsForSync');
+  },
+  
+  // Update sync status
+  updateSyncStatus: async (id: number, status: 'pending' | 'synced' | 'conflict'): Promise<void> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        await db.runAsync(
+          'UPDATE locations SET sync_status = ? WHERE id = ?',
+          [status, id]
+        );
+      } catch (error) {
+        console.error('Error updating sync status:', error);
+        throw error;
+      }
+    }, `Location.updateSyncStatus(id:${id})`);
+  },
+  
+  // Update from cloud data
+  updateFromCloud: async (cloudItem: any): Promise<number> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Check if item with this cloud_id already exists
+        const existingItem = await db.getFirstAsync(
+          'SELECT id, updated_at FROM locations WHERE cloud_id = ?',
+          [cloudItem.cloud_id]
+        );
+        
+        if (existingItem) {
+          // Update existing item
+          // Compare timestamps to prevent overwriting newer local changes
+          if (new Date(cloudItem.updated_at) >= new Date(existingItem.updated_at)) {
+            await db.runAsync(
+              `UPDATE locations SET 
+               name = ?, icon = ?, translation_key = ?, updated_at = ?, sync_status = 'synced' 
+               WHERE id = ?`,
+              [cloudItem.name, cloudItem.icon, cloudItem.translation_key, cloudItem.updated_at, existingItem.id]
+            );
+          } else {
+            // Local copy is newer, mark as conflict
+            await db.runAsync(
+              'UPDATE locations SET sync_status = ? WHERE id = ?',
+              ['conflict', existingItem.id]
+            );
+          }
+          return existingItem.id;
+        } else {
+          // Insert new item
+          const result = await db.runAsync(
+            `INSERT INTO locations 
+             (name, icon, translation_key, cloud_id, created_at, updated_at, sync_status) 
+             VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
+            [cloudItem.name, cloudItem.icon, cloudItem.translation_key, 
+             cloudItem.cloud_id, cloudItem.created_at, cloudItem.updated_at]
+          );
+          return result.lastInsertRowId;
+        }
+      } catch (error) {
+        console.error('Error updating from cloud:', error);
+        throw error;
+      }
+    }, 'Location.updateFromCloud');
+  },
+  
+  // Get location by cloud ID
+  getByCloudId: async (cloudId: string): Promise<Location | null> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        const result = await db.getFirstAsync('SELECT * FROM locations WHERE cloud_id = ?', [cloudId]);
+        
+        if (result) {
+          return {
+            id: result.id,
+            name: result.name,
+            icon: result.icon,
+            translationKey: result.translation_key,
+            cloud_id: result.cloud_id,
+            created_at: result.created_at,
+            updated_at: result.updated_at,
+            sync_status: result.sync_status
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error('Error getting item by cloud_id:', error);
+        throw error;
+      }
+    }, `Location.getByCloudId(${cloudId})`);
   }
 };
 
@@ -458,7 +778,7 @@ export const FoodItemRepository = {
         
         // Processing items from fallback
         // Transform fallback data to match expected format
-        const result = filteredItems.map((item: any) => {
+        const result: FoodItemWithDetails[] = filteredItems.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
           const location = locations.find((l: any) => l.id === item.location_id);
           const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
@@ -480,6 +800,7 @@ export const FoodItemRepository = {
             category_id: item.category_id,
             location_id: item.location_id,
             group_id: item.group_id,
+            cloud_id: item.cloud_id || null,
             expiry_date: item.expiry_date,
             reminder_days: item.reminder_days,
             notes: item.notes,
@@ -496,7 +817,7 @@ export const FoodItemRepository = {
         
         const totalTime = Date.now() - startTime;
         
-        return result;
+        return result as FoodItemWithDetails[];
       }
 
       
@@ -535,6 +856,7 @@ export const FoodItemRepository = {
             category_id: item.category_id,
             location_id: item.location_id,
             group_id: item.group_id,
+            cloud_id: item.cloud_id || null,
             expiry_date: item.expiry_date,
             reminder_days: item.reminder_days,
             notes: item.notes,
@@ -588,7 +910,7 @@ export const FoodItemRepository = {
 
       
       const processStart = Date.now();
-      const processedResult = result.map(row => {
+      const processedResult: FoodItemWithDetails[] = result.map(row => {
         const daysUntilExpiry = calculateDaysUntilExpiry(row.expiry_date);
         
         // Calculate status based on days until expiry
@@ -608,6 +930,7 @@ export const FoodItemRepository = {
           category_id: row.category_id as number | null,
           location_id: row.location_id as number | null,
           group_id: row.group_id as string | null,
+          cloud_id: row.cloud_id as string | null,
           expiry_date: row.expiry_date as string,
           reminder_days: row.reminder_days as number,
           notes: row.notes as string | null,
@@ -679,6 +1002,14 @@ export const FoodItemRepository = {
   create: async (item: FoodItem): Promise<number> => {
     
     const startTime = Date.now();
+    const timestamp = new Date().toISOString();
+    
+    // Generate a cloud_id for new items if not provided
+    const itemWithCloudId = {
+      ...item,
+      cloud_id: item.cloud_id || `food_${timestamp}_${Math.random().toString(36).substring(2, 9)}`,
+      created_at: item.created_at || timestamp
+    };
     
     return queuedDatabaseOperation(async () => {
       const dbOpStart = Date.now();
@@ -689,7 +1020,7 @@ export const FoodItemRepository = {
         if (isUsingFallbackStorage()) {
           
           const fallbackDb = getFallbackStorage();
-          const result = await fallbackDb.addFoodItem(item);
+          const result = await fallbackDb.addFoodItem(itemWithCloudId);
           return result;
         }
 
@@ -701,7 +1032,7 @@ export const FoodItemRepository = {
           
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
-          const result = await fallbackDb.addFoodItem(item);
+          const result = await fallbackDb.addFoodItem(itemWithCloudId);
           return result;
         }
         
@@ -713,18 +1044,21 @@ export const FoodItemRepository = {
         try {
           result = await db.runAsync(
             `INSERT INTO food_items 
-             (name, quantity, category_id, location_id, expiry_date, reminder_days, notes, image_uri, created_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (name, quantity, category_id, location_id, group_id, cloud_id, expiry_date, reminder_days, notes, image_uri, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              item.name,
-              item.quantity,
-              item.category_id,
-              item.location_id,
-              item.expiry_date,
-              item.reminder_days,
-              item.notes,
-              item.image_uri,
-              item.created_at
+              itemWithCloudId.name,
+              itemWithCloudId.quantity,
+              itemWithCloudId.category_id,
+              itemWithCloudId.location_id,
+              itemWithCloudId.group_id,
+              itemWithCloudId.cloud_id,
+              itemWithCloudId.expiry_date,
+              itemWithCloudId.reminder_days,
+              itemWithCloudId.notes,
+              itemWithCloudId.image_uri,
+              itemWithCloudId.created_at,
+              timestamp // Updated timestamp for sync tracking
             ]
           );
         } catch (insertError: any) {
@@ -751,18 +1085,21 @@ export const FoodItemRepository = {
             
             result = await freshDb.runAsync(
               `INSERT INTO food_items 
-               (name, quantity, category_id, location_id, expiry_date, reminder_days, notes, image_uri, created_at) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               (name, quantity, category_id, location_id, group_id, cloud_id, expiry_date, reminder_days, notes, image_uri, created_at, updated_at) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
-                item.name,
-                item.quantity,
-                item.category_id,
-                item.location_id,
-                item.expiry_date,
-                item.reminder_days,
-                item.notes,
-                item.image_uri,
-                item.created_at
+                itemWithCloudId.name,
+                itemWithCloudId.quantity,
+                itemWithCloudId.category_id,
+                itemWithCloudId.location_id,
+                itemWithCloudId.group_id,
+                itemWithCloudId.cloud_id,
+                itemWithCloudId.expiry_date,
+                itemWithCloudId.reminder_days,
+                itemWithCloudId.notes,
+                itemWithCloudId.image_uri,
+                itemWithCloudId.created_at,
+                timestamp
               ]
             );
           } else {
@@ -786,6 +1123,7 @@ export const FoodItemRepository = {
 
     
     const startTime = Date.now();
+    const timestamp = new Date().toISOString();
 
     return queuedDatabaseOperation(async () => {
       const dbOpStart = Date.now();
@@ -815,22 +1153,30 @@ export const FoodItemRepository = {
         
         const sqlStart = Date.now();
         
+        // If no cloud_id exists, generate one
+        if (!item.cloud_id) {
+          item.cloud_id = `food_${timestamp}_${Math.random().toString(36).substring(2, 9)}`;
+        }
+        
         // Try the update operation with automatic lock recovery
         try {
           await db.runAsync(
             `UPDATE food_items SET 
-             name = ?, quantity = ?, category_id = ?, location_id = ?, 
-             expiry_date = ?, reminder_days = ?, notes = ?, image_uri = ? 
+             name = ?, quantity = ?, category_id = ?, location_id = ?, group_id = ?, cloud_id = ?, 
+             expiry_date = ?, reminder_days = ?, notes = ?, image_uri = ?, updated_at = ?
              WHERE id = ?`,
             [
               item.name,
               item.quantity,
               item.category_id,
               item.location_id,
+              item.group_id,
+              item.cloud_id,
               item.expiry_date,
               item.reminder_days,
               item.notes,
               item.image_uri,
+              timestamp, // Add updated timestamp for sync tracking
               item.id
             ]
           );
@@ -857,18 +1203,21 @@ export const FoodItemRepository = {
             
             await freshDb.runAsync(
               `UPDATE food_items SET 
-               name = ?, quantity = ?, category_id = ?, location_id = ?, 
-               expiry_date = ?, reminder_days = ?, notes = ?, image_uri = ? 
+               name = ?, quantity = ?, category_id = ?, location_id = ?, group_id = ?, cloud_id = ?, 
+               expiry_date = ?, reminder_days = ?, notes = ?, image_uri = ?, updated_at = ?
                WHERE id = ?`,
               [
                 item.name,
                 item.quantity,
                 item.category_id,
                 item.location_id,
+                item.group_id,
+                item.cloud_id,
                 item.expiry_date,
                 item.reminder_days,
                 item.notes,
                 item.image_uri,
+                timestamp, // Add updated timestamp for sync tracking
                 item.id
               ]
             );
@@ -908,12 +1257,151 @@ export const FoodItemRepository = {
           return await fallbackDb.deleteFoodItem(id);
         }
         
+        // Track deletion for sync before deleting
+        try {
+          // Get the cloud_id if available before deletion
+          const item = await db.getFirstAsync('SELECT cloud_id, group_id FROM food_items WHERE id = ?', [id]);
+          if (item) {
+            // Track the deletion for sync
+            await db.runAsync(
+              'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
+              ['food_items', id, item.cloud_id, item.group_id, new Date().toISOString()]
+            );
+          }
+        } catch (e) {
+          console.warn('Could not track food item deletion for sync:', e);
+        }
+        
         await db.runAsync('DELETE FROM food_items WHERE id = ?', [id]);
       } catch (error) {
         
         throw error;
       }
     }, `FoodItem.delete(id:${id})`);
+  },
+  
+  // Get food items for sync
+  getItemsForSync: async (groupId: string, lastSyncTime: string): Promise<FoodItem[]> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Get items modified since last sync or with pending sync status for this group
+        const items = await db.getAllAsync(
+          `SELECT * FROM food_items WHERE 
+           (updated_at > ? OR sync_status = 'pending' OR sync_status = 'conflict') AND
+           group_id = ?`,
+          [lastSyncTime, groupId]
+        );
+        
+        return items as FoodItem[];
+      } catch (error) {
+        console.error('Error getting food items for sync:', error);
+        throw error;
+      }
+    }, 'FoodItem.getItemsForSync');
+  },
+  
+  // Update sync status for food item
+  updateSyncStatus: async (id: number, status: 'pending' | 'synced' | 'conflict'): Promise<void> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        await db.runAsync(
+          'UPDATE food_items SET sync_status = ? WHERE id = ?',
+          [status, id]
+        );
+      } catch (error) {
+        console.error('Error updating food item sync status:', error);
+        throw error;
+      }
+    }, `FoodItem.updateSyncStatus(id:${id})`);
+  },
+  
+  // Update food item from cloud data
+  updateFromCloud: async (cloudItem: any): Promise<number> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        // Check if item with this cloud_id already exists
+        const existingItem = await db.getFirstAsync(
+          'SELECT id, updated_at FROM food_items WHERE cloud_id = ?',
+          [cloudItem.cloud_id]
+        );
+        
+        if (existingItem) {
+          // Compare timestamps to prevent overwriting newer local changes
+          if (new Date(cloudItem.updated_at) >= new Date(existingItem.updated_at)) {
+            await db.runAsync(
+              `UPDATE food_items SET 
+               name = ?, quantity = ?, category_id = ?, location_id = ?, 
+               expiry_date = ?, reminder_days = ?, notes = ?, image_uri = ?, 
+               updated_at = ?, sync_status = 'synced' 
+               WHERE id = ?`,
+              [
+                cloudItem.name, cloudItem.quantity, cloudItem.category_id, cloudItem.location_id,
+                cloudItem.expiry_date, cloudItem.reminder_days, cloudItem.notes, cloudItem.image_uri,
+                cloudItem.updated_at, existingItem.id
+              ]
+            );
+          } else {
+            // Local copy is newer, mark as conflict
+            await db.runAsync(
+              'UPDATE food_items SET sync_status = ? WHERE id = ?',
+              ['conflict', existingItem.id]
+            );
+          }
+          return existingItem.id;
+        } else {
+          // Insert new item
+          const result = await db.runAsync(
+            `INSERT INTO food_items 
+             (name, quantity, category_id, location_id, group_id, cloud_id,
+              expiry_date, reminder_days, notes, image_uri, created_at, updated_at, sync_status) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced')`,
+            [
+              cloudItem.name, cloudItem.quantity, cloudItem.category_id, cloudItem.location_id,
+              cloudItem.group_id, cloudItem.cloud_id, cloudItem.expiry_date, cloudItem.reminder_days,
+              cloudItem.notes, cloudItem.image_uri, cloudItem.created_at, cloudItem.updated_at
+            ]
+          );
+          return result.lastInsertRowId;
+        }
+      } catch (error) {
+        console.error('Error updating food item from cloud:', error);
+        throw error;
+      }
+    }, 'FoodItem.updateFromCloud');
+  },
+  
+  // Get food item by cloud ID
+  getByCloudId: async (cloudId: string): Promise<FoodItem | null> => {
+    return queuedDatabaseOperation(async () => {
+      try {
+        const db = await getDatabaseSafely();
+        if (!db) {
+          throw new Error('Database not available');
+        }
+        
+        const result = await db.getFirstAsync('SELECT * FROM food_items WHERE cloud_id = ?', [cloudId]);
+        
+        return result as FoodItem | null;
+      } catch (error) {
+        console.error('Error getting food item by cloud_id:', error);
+        throw error;
+      }
+    }, `FoodItem.getByCloudId(${cloudId})`);
   },
 
   // Get expired items
@@ -947,6 +1435,7 @@ export const FoodItemRepository = {
         category_id: row.category_id as number | null,
         location_id: row.location_id as number | null,
         group_id: row.group_id as string | null,
+        cloud_id: row.cloud_id as string | null,
         expiry_date: row.expiry_date as string,
         reminder_days: row.reminder_days as number,
         notes: row.notes as string | null,
@@ -999,6 +1488,7 @@ export const FoodItemRepository = {
         category_id: row.category_id as number | null,
         location_id: row.location_id as number | null,
         group_id: row.group_id as string | null,
+        cloud_id: row.cloud_id as string | null,
         expiry_date: row.expiry_date as string,
         reminder_days: row.reminder_days as number,
         notes: row.notes as string | null,
