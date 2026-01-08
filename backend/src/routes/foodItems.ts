@@ -14,7 +14,7 @@ router.post(
   '/',
   foodItemValidation.create,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const itemData = req.body;
 
@@ -30,7 +30,7 @@ router.post(
 // GET /food-items - Get food items for a group
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, category_id, location_id, is_consumed, status } = req.query;
 
@@ -54,7 +54,7 @@ router.get(
 // GET /food-items/expiring - Get items expiring soon
 router.get(
   '/expiring',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, days } = req.query;
 
@@ -72,7 +72,7 @@ router.get(
 // GET /food-items/expired - Get expired items
 router.get(
   '/expired',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id } = req.query;
 
@@ -89,7 +89,7 @@ router.get(
 // GET /food-items/:id - Get single food item
 router.get(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -104,7 +104,7 @@ router.patch(
   '/:id',
   foodItemValidation.update,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
     const updates = req.body;
@@ -121,7 +121,7 @@ router.patch(
 // DELETE /food-items/:id - Delete food item
 router.delete(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -138,7 +138,7 @@ router.post(
   '/:id/events',
   foodItemValidation.logEvent,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
     const eventData = req.body;
@@ -155,7 +155,7 @@ router.post(
 // GET /food-items/:id/events - Get event history
 router.get(
   '/:id/events',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 

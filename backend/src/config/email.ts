@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Create transporter for Gmail SMTP
-export const emailTransporter = nodemailer.createTransporter({
+export const emailTransporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
@@ -15,7 +15,7 @@ export const emailTransporter = nodemailer.createTransporter({
 });
 
 // Verify connection configuration
-emailTransporter.verify((error, success) => {
+emailTransporter.verify((error: Error | null, success?: boolean) => {
   if (error) {
     console.error('❌ Email configuration error:', error);
   } else {

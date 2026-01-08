@@ -11,7 +11,7 @@ router.use(authenticateToken);
 // GET /locations - Get all locations
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id } = req.query;
 
@@ -24,7 +24,7 @@ router.get(
 // GET /locations/:id - Get location by ID
 router.get(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -37,7 +37,7 @@ router.get(
 // POST /locations - Create custom location
 router.post(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, name, icon, temperature_zone } = req.body;
 
@@ -57,7 +57,7 @@ router.post(
 // PATCH /locations/:id - Update location
 router.patch(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
     const updates = req.body;
@@ -74,7 +74,7 @@ router.patch(
 // DELETE /locations/:id - Delete location
 router.delete(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 

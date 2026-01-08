@@ -11,7 +11,7 @@ router.use(authenticateToken);
 // GET /categories - Get all categories
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id } = req.query;
 
@@ -24,7 +24,7 @@ router.get(
 // GET /categories/:id - Get category by ID
 router.get(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -37,7 +37,7 @@ router.get(
 // POST /categories - Create custom category
 router.post(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, name, icon, color } = req.body;
 
@@ -57,7 +57,7 @@ router.post(
 // PATCH /categories/:id - Update category
 router.patch(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
     const updates = req.body;
@@ -74,7 +74,7 @@ router.patch(
 // DELETE /categories/:id - Delete category
 router.delete(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 

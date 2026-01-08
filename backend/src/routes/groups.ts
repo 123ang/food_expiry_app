@@ -14,7 +14,7 @@ router.post(
   '/',
   groupValidation.create,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { name, description } = req.body;
 
@@ -30,7 +30,7 @@ router.post(
 // GET /groups - Get user's groups
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
 
     const groups = await GroupService.getUserGroups(userId);
@@ -42,7 +42,7 @@ router.get(
 // GET /groups/:id - Get group details
 router.get(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -57,7 +57,7 @@ router.patch(
   '/:id',
   groupValidation.update,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
     const updates = req.body;
@@ -74,7 +74,7 @@ router.patch(
 // DELETE /groups/:id - Delete group
 router.delete(
   '/:id',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -89,7 +89,7 @@ router.delete(
 // GET /groups/:id/members - Get group members
 router.get(
   '/:id/members',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -102,7 +102,7 @@ router.get(
 // DELETE /groups/:id/members/:userId - Remove member from group
 router.delete(
   '/:id/members/:memberId',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id, memberId } = req.params;
 
@@ -117,7 +117,7 @@ router.delete(
 // PATCH /groups/:id/members/:userId - Update member role
 router.patch(
   '/:id/members/:memberId',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id, memberId } = req.params;
     const { role } = req.body;

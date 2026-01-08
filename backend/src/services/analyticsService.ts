@@ -137,7 +137,7 @@ export class AnalyticsService {
       [groupId, start, end]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row: any) => ({
       category_id: row.category_id,
       category_name: row.category_name || 'Uncategorized',
       total_events: parseInt(row.total_events),
@@ -193,7 +193,7 @@ export class AnalyticsService {
       [groupId, start, end]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row: any) => ({
       location_id: row.location_id,
       location_name: row.location_name || 'Unknown',
       total_events: parseInt(row.total_events),
@@ -231,7 +231,7 @@ export class AnalyticsService {
       [groupId]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row: any) => ({
       month: row.month,
       items_added: parseInt(row.items_added),
       items_used: parseInt(row.items_used),
@@ -268,7 +268,7 @@ export class AnalyticsService {
       [groupId, limit]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row: any) => ({
       item_name: row.item_name,
       category_name: row.category_name || 'Uncategorized',
       waste_count: parseInt(row.waste_count),
@@ -301,7 +301,7 @@ export class AnalyticsService {
       [groupId]
     );
 
-    return result.rows.map(row => ({
+    return result.rows.map((row: any) => ({
       reason: row.disposal_reason,
       count: parseInt(row.count),
       percentage: parseFloat(row.percentage) || 0,

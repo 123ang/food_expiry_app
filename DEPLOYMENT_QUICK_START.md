@@ -50,7 +50,7 @@ GRANT ALL PRIVILEGES ON DATABASE expiry_alert TO expiry_user;
 
 # Run migrations
 cd /root/projects/backend
-sudo -u postgres psql -U expiry_user -d expiry_alert -f migrations/001_initial_schema.sql
+sudo -u postgres psql -d expiry_alert -f migrations/001_initial_schema.sql
 ```
 
 ---
@@ -78,13 +78,25 @@ pm2 save
 
 ### Backend .env Template
 
+**First, generate JWT secrets (run these commands in terminal):**
+
+```bash
+# Generate access token secret
+openssl rand -base64 64
+
+# Generate refresh token secret (run again)
+openssl rand -base64 64
+```
+
+**Copy the output from each command, then create your `.env` file:**
+
 ```env
 NODE_ENV=production
-PORT=3000
+PORT=3006
 API_URL=https://api.expiry-alert.link
-DATABASE_URL=postgresql://expiry_user:YOUR_PASSWORD@localhost:5432/expiry_alert
-JWT_ACCESS_SECRET=$(openssl rand -base64 64)
-JWT_REFRESH_SECRET=$(openssl rand -base64 64)
+DATABASE_URL=postgresql://expiry_user:920214_Ang@localhost:5432/expiry_alert
+JWT_ACCESS_SECRET=paste_first_generated_secret_here
+JWT_REFRESH_SECRET=paste_second_generated_secret_here
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=30d
 SMTP_HOST=smtp.gmail.com
@@ -97,6 +109,21 @@ WEB_APP_URL=https://expiry-alert.link
 MOBILE_DEEP_LINK_SCHEME=expiryalert
 UPLOAD_DIR=/root/projects/backend/uploads
 MAX_FILE_SIZE=5242880
+```
+
+**Example workflow:**
+```bash
+# 1. Generate secrets
+openssl rand -base64 64
+# Output: abc123xyz789... (copy this)
+
+openssl rand -base64 64
+# Output: def456uvw012... (copy this)
+
+# 2. Edit .env file
+nano .env
+
+# 3. Paste the secrets into JWT_ACCESS_SECRET and JWT_REFRESH_SECRET
 ```
 
 ---
@@ -137,7 +164,7 @@ server {
     client_max_body_size 10M;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3006;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

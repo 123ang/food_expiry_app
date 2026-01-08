@@ -9,7 +9,12 @@
     "start": "node dist/app.js",
     "migrate": "node dist/scripts/migrate.js"
   },
-  "keywords": ["food", "expiry", "tracking", "api"],
+  "keywords": [
+    "food",
+    "expiry",
+    "tracking",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -32,6 +37,7 @@
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.5",
     "@types/nodemailer": "^6.4.17",
+    "@types/pg": "^8.16.0",
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",

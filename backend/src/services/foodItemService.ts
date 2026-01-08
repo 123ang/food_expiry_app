@@ -141,8 +141,8 @@ export class FoodItemService {
 
   // Update food item
   static async updateFoodItem(userId: string, itemId: string, updates: Partial<FoodItem>): Promise<FoodItem> {
-    // Get item and check permissions
-    const item = await this.getFoodItemById(userId, itemId);
+    // Get item and check permissions (verify it exists and user has access)
+    await this.getFoodItemById(userId, itemId);
 
     const allowedFields = ['name', 'brand', 'quantity', 'unit', 'category_id', 'location_id', 'purchase_date', 'expiry_date', 'notes', 'image_url', 'barcode', 'purchase_price', 'remaining_quantity'];
     const fields = Object.keys(updates).filter(key => allowedFields.includes(key));

@@ -14,7 +14,7 @@ router.get(
   '/summary',
   analyticsValidation.summary,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, start_date, end_date, months } = req.query;
 
@@ -39,7 +39,7 @@ router.get(
 // GET /analytics/category-breakdown - Get category breakdown
 router.get(
   '/category-breakdown',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, start_date, end_date } = req.query;
 
@@ -61,7 +61,7 @@ router.get(
 // GET /analytics/location-breakdown - Get location breakdown
 router.get(
   '/location-breakdown',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, start_date, end_date } = req.query;
 
@@ -83,7 +83,7 @@ router.get(
 // GET /analytics/monthly-trends - Get monthly trends
 router.get(
   '/monthly-trends',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, months } = req.query;
 
@@ -106,7 +106,7 @@ router.get(
 // GET /analytics/most-wasted - Get most wasted items
 router.get(
   '/most-wasted',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, limit } = req.query;
 
@@ -129,7 +129,7 @@ router.get(
 // GET /analytics/disposal-reasons - Get disposal reasons breakdown
 router.get(
   '/disposal-reasons',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id } = req.query;
 
@@ -149,7 +149,7 @@ router.get(
 // GET /analytics/expiry-patterns - Get expiry patterns
 router.get(
   '/expiry-patterns',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id } = req.query;
 
@@ -169,7 +169,7 @@ router.get(
 // GET /analytics/comprehensive - Get all analytics in one call
 router.get(
   '/comprehensive',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, months } = req.query;
 

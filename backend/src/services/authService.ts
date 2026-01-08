@@ -122,7 +122,7 @@ export class AuthService {
   }
 
   // Refresh access token
-  static async refreshAccessToken(refreshToken: string, userId: string, deviceId?: string): Promise<AuthTokens> {
+  static async refreshAccessToken(refreshToken: string, userId: string, _deviceId?: string): Promise<AuthTokens> {
     // Verify refresh token is still valid in database
     const deviceResult = await query(
       'SELECT * FROM devices WHERE user_id = $1 AND refresh_token_hash = $2',

@@ -12,7 +12,7 @@ router.use(authenticateToken);
 // POST /invitations/send - Send invitation (also available as POST /groups/:id/invite)
 router.post(
   '/send',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { group_id, email } = req.body;
 
@@ -32,7 +32,7 @@ router.post(
 // GET /invitations - Get user's pending invitations
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
 
     const invitations = await InvitationService.getUserInvitations(userId);
@@ -46,7 +46,7 @@ router.post(
   '/join',
   groupValidation.joinWithCode,
   validate,
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { invite_code } = req.body;
 
@@ -61,7 +61,7 @@ router.post(
 // POST /invitations/:id/accept - Accept invitation
 router.post(
   '/:id/accept',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -76,7 +76,7 @@ router.post(
 // POST /invitations/:id/decline - Decline invitation
 router.post(
   '/:id/decline',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
 
@@ -91,7 +91,7 @@ router.post(
 // GET /invitations/verify/:code - Verify invite code
 router.get(
   '/verify/:code',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { code } = req.params;
 
     const result = await InvitationService.verifyInviteCode(code);

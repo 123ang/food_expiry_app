@@ -12,7 +12,7 @@ declare global {
 }
 
 // Middleware to verify JWT access token
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -38,7 +38,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 };
 
 // Middleware to verify refresh token
-export const authenticateRefreshToken = (req: Request, res: Response, next: NextFunction) => {
+export const authenticateRefreshToken = (req: Request, res: Response, next: NextFunction): void => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -71,7 +71,7 @@ export const generateAccessToken = (payload: JWTPayload): string => {
     throw new Error('JWT_ACCESS_SECRET not configured');
   }
 
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 };
 
 // Helper function to generate refresh token
@@ -83,6 +83,6 @@ export const generateRefreshToken = (payload: JWTPayload): string => {
     throw new Error('JWT_REFRESH_SECRET not configured');
   }
 
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 };
 

@@ -185,8 +185,12 @@ cd /root/projects
 # Navigate to backend
 cd backend
 
-# Run migrations
-sudo -u postgres psql -U expiry_user -d expiry_alert -f migrations/001_initial_schema.sql
+# Run migrations (as postgres user, which has full access)
+sudo -u postgres psql -d expiry_alert -f migrations/001_initial_schema.sql
+
+# Alternative: If you need to use expiry_user, use password authentication:
+# psql -U expiry_user -d expiry_alert -h localhost -f migrations/001_initial_schema.sql
+# (It will prompt for password)
 ```
 
 ---
@@ -214,20 +218,30 @@ sudo chown -R $USER:$USER uploads
 nano .env
 ```
 
-Paste the following configuration (update with your values):
+**First, generate JWT secrets (run these commands in terminal):**
+
+```bash
+# Generate access token secret
+openssl rand -base64 64
+
+# Generate refresh token secret (run again)
+openssl rand -base64 64
+```
+
+**Copy the output from each command, then paste the following configuration (update with your values):**
 
 ```env
 # Server
 NODE_ENV=production
-PORT=3000
+PORT=3006
 API_URL=https://api.expiry-alert.link
 
 # Database
 DATABASE_URL=postgresql://expiry_user:YOUR_DB_PASSWORD@localhost:5432/expiry_alert
 
-# JWT Secrets (generate with: openssl rand -base64 64)
-JWT_ACCESS_SECRET=YOUR_ACCESS_SECRET_HERE
-JWT_REFRESH_SECRET=YOUR_REFRESH_SECRET_HERE
+# JWT Secrets (paste the generated secrets here)
+JWT_ACCESS_SECRET=paste_first_generated_secret_here
+JWT_REFRESH_SECRET=paste_second_generated_secret_here
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=30d
 
@@ -248,12 +262,9 @@ UPLOAD_DIR=/root/projects/backend/uploads
 MAX_FILE_SIZE=5242880
 ```
 
-**Generate JWT secrets:**
-```bash
-openssl rand -base64 64  # Run twice for access and refresh secrets
-```
-
 **Save and exit** (Ctrl+X, then Y, then Enter)
+
+**Note:** Make sure to replace `paste_first_generated_secret_here` and `paste_second_generated_secret_here` with the actual secrets you generated above.
 
 ### Step 3: Build and Start Backend
 
@@ -352,7 +363,7 @@ server {
     client_max_body_size 10M;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3006;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -532,7 +543,7 @@ Make sure your `/root/projects/backend/.env` includes:
 
 ```env
 NODE_ENV=production
-PORT=3000
+PORT=3006
 API_URL=https://api.expiry-alert.link
 DATABASE_URL=postgresql://expiry_user:PASSWORD@localhost:5432/expiry_alert
 JWT_ACCESS_SECRET=...
@@ -567,7 +578,7 @@ Check files like:
 curl https://api.expiry-alert.link/health
 
 # Or test locally on server
-curl http://localhost:3000/health
+curl http://localhost:3006/health
 ```
 
 ### Step 2: Test Web App
@@ -604,7 +615,7 @@ sudo tail -f /var/log/nginx/error.log
 pm2 logs expiry-alert-api --lines 50
 
 # Check if port is in use
-sudo netstat -tulpn | grep 3000
+sudo netstat -tulpn | grep 3006
 
 # Verify .env file exists and has correct values
 cat /root/projects/backend/.env
@@ -622,8 +633,8 @@ pm2 status
 # Check backend logs
 pm2 logs expiry-alert-api
 
-# Verify backend is listening on port 3000
-curl http://localhost:3000/health
+# Verify backend is listening on port 3006
+curl http://localhost:3006/health
 ```
 
 ### SSL Certificate Issues

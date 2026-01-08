@@ -42,7 +42,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request logging (development)
 if (process.env.NODE_ENV === 'development') {
-  app.use((req, res, next) => {
+  app.use((req, _res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
   });
@@ -53,7 +53,7 @@ if (process.env.NODE_ENV === 'development') {
 // =====================================================
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
