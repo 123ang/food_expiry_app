@@ -42,7 +42,8 @@ router.post(
     const { group_id, name, icon, temperature_zone } = req.body;
 
     if (!group_id || !name) {
-      return res.status(400).json({ error: 'group_id and name are required' });
+      res.status(400).json({ error: 'group_id and name are required' });
+      return;
     }
 
     const location = await LocationService.createLocation(userId, group_id, { name, icon, temperature_zone });

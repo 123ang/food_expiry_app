@@ -35,7 +35,8 @@ router.get(
     const { group_id, category_id, location_id, is_consumed, status } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const filters = {
@@ -59,7 +60,8 @@ router.get(
     const { group_id, days } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const daysAhead = days ? parseInt(days as string) : 3;
@@ -77,7 +79,8 @@ router.get(
     const { group_id } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const items = await FoodItemService.getExpiredItems(userId, group_id as string);

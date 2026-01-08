@@ -42,7 +42,8 @@ router.post(
     const { group_id, name, icon, color } = req.body;
 
     if (!group_id || !name) {
-      return res.status(400).json({ error: 'group_id and name are required' });
+      res.status(400).json({ error: 'group_id and name are required' });
+      return;
     }
 
     const category = await CategoryService.createCategory(userId, group_id, { name, icon, color });

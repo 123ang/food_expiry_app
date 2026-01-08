@@ -17,7 +17,8 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
+    res.status(401).json({ error: 'Access token required' });
+    return;
   }
 
   try {
@@ -31,9 +32,11 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ error: 'Token expired' });
+      res.status(401).json({ error: 'Token expired' });
+      return;
     }
-    return res.status(403).json({ error: 'Invalid token' });
+    res.status(403).json({ error: 'Invalid token' });
+    return;
   }
 };
 
@@ -42,7 +45,8 @@ export const authenticateRefreshToken = (req: Request, res: Response, next: Next
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
-    return res.status(401).json({ error: 'Refresh token required' });
+    res.status(401).json({ error: 'Refresh token required' });
+    return;
   }
 
   try {
@@ -56,9 +60,11 @@ export const authenticateRefreshToken = (req: Request, res: Response, next: Next
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ error: 'Refresh token expired' });
+      res.status(401).json({ error: 'Refresh token expired' });
+      return;
     }
-    return res.status(403).json({ error: 'Invalid refresh token' });
+    res.status(403).json({ error: 'Invalid refresh token' });
+    return;
   }
 };
 

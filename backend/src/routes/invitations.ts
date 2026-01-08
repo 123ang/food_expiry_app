@@ -17,7 +17,8 @@ router.post(
     const { group_id, email } = req.body;
 
     if (!group_id || !email) {
-      return res.status(400).json({ error: 'group_id and email are required' });
+      res.status(400).json({ error: 'group_id and email are required' });
+      return;
     }
 
     const invitation = await InvitationService.sendInvitation(group_id, userId, email);

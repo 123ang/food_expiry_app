@@ -19,7 +19,8 @@ router.get(
     const { group_id, start_date, end_date, months } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const monthsNum = months ? parseInt(months as string) : 3;
@@ -44,7 +45,8 @@ router.get(
     const { group_id, start_date, end_date } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const breakdown = await AnalyticsService.getCategoryBreakdown(
@@ -66,7 +68,8 @@ router.get(
     const { group_id, start_date, end_date } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const breakdown = await AnalyticsService.getLocationBreakdown(
@@ -88,7 +91,8 @@ router.get(
     const { group_id, months } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const monthsNum = months ? parseInt(months as string) : 12;
@@ -111,7 +115,8 @@ router.get(
     const { group_id, limit } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const limitNum = limit ? parseInt(limit as string) : 10;
@@ -134,7 +139,8 @@ router.get(
     const { group_id } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const reasons = await AnalyticsService.getDisposalReasons(
@@ -154,7 +160,8 @@ router.get(
     const { group_id } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const patterns = await AnalyticsService.getExpiryPatterns(
@@ -174,7 +181,8 @@ router.get(
     const { group_id, months } = req.query;
 
     if (!group_id) {
-      return res.status(400).json({ error: 'group_id is required' });
+      res.status(400).json({ error: 'group_id is required' });
+      return;
     }
 
     const monthsNum = months ? parseInt(months as string) : 3;

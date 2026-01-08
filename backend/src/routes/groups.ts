@@ -123,7 +123,8 @@ router.patch(
     const { role } = req.body;
 
     if (!role) {
-      return res.status(400).json({ error: 'Role is required' });
+      res.status(400).json({ error: 'Role is required' });
+      return;
     }
 
     await GroupService.updateMemberRole(id, userId, memberId, role);
