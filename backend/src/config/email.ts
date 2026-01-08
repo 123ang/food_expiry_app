@@ -3,25 +3,35 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create transporter for Gmail SMTP
-export const emailTransporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS, // App password
-  },
-});
+// Check if email is enabled (has credentials)
+export const isEmailEnabled = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
 
-// Verify connection configuration
-emailTransporter.verify((error: Error | null) => {
-  if (error) {
-    console.error('❌ Email configuration error:', error);
-  } else {
-    console.log('✅ Email server is ready to send messages');
-  }
-});
+// Create transporter for Gmail SMTP (only if credentials are provided)
+export const emailTransporter = isEmailEnabled
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS, // App password
+      },
+    })
+  : null;
+
+// Verify connection configuration (only if email is enabled)
+if (isEmailEnabled && emailTransporter) {
+  emailTransporter.verify((error: Error | null) => {
+    if (error) {
+      console.error('❌ Email configuration error:', error);
+      console.warn('⚠️  Email features will be disabled');
+    } else {
+      console.log('✅ Email server is ready to send messages');
+    }
+  });
+} else {
+  console.log('ℹ️  Email is disabled (no SMTP credentials provided)');
+}
 
 // Email templates
 export const emailTemplates = {
@@ -153,6 +163,12 @@ This link will expire in 1 hour.
 
 // Helper function to send email
 export const sendEmail = async (to: string, subject: string, html: string, text: string) => {
+  if (!isEmailEnabled || !emailTransporter) {
+    console.warn('⚠️  Email is disabled. Cannot send email to:', to);
+    console.warn('⚠️  To enable email, set SMTP_USER and SMTP_PASS in .env file');
+    return null;
+  }
+
   try {
     const info = await emailTransporter.sendMail({
       from: process.env.EMAIL_FROM || '"Expiry Alert" <noreply@expiryalert.com>',
