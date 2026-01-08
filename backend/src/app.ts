@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 3000;
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
-    ? [process.env.WEB_APP_URL || 'https://yourdomain.com']
+    ? [process.env.WEB_APP_URL || 'https://expiry-alert.link']
     : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:19006'],
   credentials: true,
 }));
