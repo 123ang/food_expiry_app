@@ -13,7 +13,9 @@ root.render(
   </React.StrictMode>
 );
 
-// Register service worker for PWA functionality
+// Register service worker for PWA functionality (disabled - no sw.js file)
+// Uncomment and create sw.js file if you want PWA functionality
+/*
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -25,6 +27,7 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+*/
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
