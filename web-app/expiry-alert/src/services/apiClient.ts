@@ -1,7 +1,7 @@
 // API Configuration
 const API_URL = process.env.NODE_ENV === 'development'
   ? 'http://localhost:3000/api'  // Development
-  : 'https://api.yourdomain.com/api';  // Production
+  : 'https://api.expiry-alert.link/api';  // Production
 
 // Storage keys
 const ACCESS_TOKEN_KEY = 'access_token';
