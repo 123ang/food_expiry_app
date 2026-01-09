@@ -30,6 +30,7 @@ export default {
   'status.items': 'アイテム',
   'status.indate': '期限内アイテム',
   'status.indateItems': '期限内アイテム',
+  'status.fresh': '新鮮',
   'status.expiring': '期限切れ間近',
   'status.expired': '期限切れ',
   'status.expiringSoon': '期限切れ間近のアイテム',

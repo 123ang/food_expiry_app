@@ -4,45 +4,46 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  FoodItemsService, 
-  CategoriesService, 
-  LocationsService, 
-  DashboardStats,
+  getFoodItems,
+  getCategories,
+  getLocations,
+  getGroups,
+  deleteFoodItem,
+  getDashboardStats,
+  calculateItemStatus,
   FoodItem,
   Category,
   Location,
-  cleanupUserData,
-  ItemActionService,
-  PurchaseService
-} from '../services/firestoreService';
+  DashboardStats
+} from '../services/postgresApiService';
 import { notificationService } from '../services/notificationService';
 
 interface DashboardProps {
-  filter?: 'in-date' | 'expiring-soon' | 'expired';
+  filter?: 'fresh' | 'expiring-soon' | 'expired';
 }
 
-type SortOption = 'name' | 'expiryDate' | 'category' | 'location' | 'addedDate';
+type SortOption = 'name' | 'expiry_date' | 'category' | 'location' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
 const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
-    inDate: 0,
+    fresh: 0,
     expiringSoon: 0,
     expired: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
   
-  // New state for enhanced functionality
+  // Enhanced functionality state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
-  const [sortBy, setSortBy] = useState<SortOption>('expiryDate');
+  const [sortBy, setSortBy] = useState<SortOption>('expiry_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -51,63 +52,96 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
+  // Load current group
   useEffect(() => {
-    loadData();
-  }, [user, filter]);
+    const loadGroup = async () => {
+      if (!user) return;
+      
+      try {
+        const groups = await getGroups();
+        if (groups.length > 0) {
+          setCurrentGroupId(groups[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading group:', error);
+      }
+    };
+    
+    loadGroup();
+  }, [user]);
+
+  // Load data when group is available
+  useEffect(() => {
+    if (currentGroupId) {
+      loadData();
+    }
+  }, [currentGroupId, filter]);
 
   // Check for notifications when items are loaded
   useEffect(() => {
     if (foodItems.length > 0) {
-      notificationService.checkItemsForNotifications(foodItems);
+      // Convert to format expected by notification service
+      const notificationItems = foodItems.map(item => ({
+        ...item,
+        expiryDate: item.expiry_date || '',
+        categoryId: item.category_id || '',
+        locationId: item.location_id || '',
+        addedDate: item.created_at || '',
+        userId: item.created_by
+      }));
+      notificationService.checkItemsForNotifications(notificationItems as any);
     }
   }, [foodItems]);
 
   const loadData = async () => {
-    if (!user) return;
+    if (!currentGroupId) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      // Load data with individual error handling
       let itemsData: FoodItem[] = [];
       let categoriesData: Category[] = [];
       let locationsData: Location[] = [];
-      let statsData: DashboardStats = { total: 0, inDate: 0, expiringSoon: 0, expired: 0 };
 
       try {
-        itemsData = filter ? 
-          await FoodItemsService.getItemsByStatus(user.uid, filter) : 
-          await FoodItemsService.getUserItems(user.uid);
+        itemsData = await getFoodItems(currentGroupId);
+        
+        // Calculate status for each item
+        itemsData = itemsData.map(item => {
+          if (item.expiry_date) {
+            const { status, daysUntilExpiry } = calculateItemStatus(item.expiry_date);
+            return { ...item, status, daysUntilExpiry };
+          }
+          return { ...item, status: 'fresh' as const, daysUntilExpiry: 999 };
+        });
+        
+        // Filter by status if needed
+        if (filter) {
+          itemsData = itemsData.filter(item => item.status === filter);
+        }
       } catch (err) {
         console.error('Error loading food items:', err);
-        // Continue with empty array
       }
 
       try {
-        categoriesData = await CategoriesService.getUserCategories(user.uid);
+        categoriesData = await getCategories(currentGroupId);
       } catch (err) {
         console.error('Error loading categories:', err);
-        // Continue with empty array
       }
 
       try {
-        locationsData = await LocationsService.getUserLocations(user.uid);
+        locationsData = await getLocations(currentGroupId);
       } catch (err) {
         console.error('Error loading locations:', err);
-        // Continue with empty array
-      }
-
-      try {
-        statsData = await FoodItemsService.getDashboardStats(user.uid);
-      } catch (err) {
-        console.error('Error loading stats:', err);
-        // Continue with default stats
       }
 
       setFoodItems(itemsData);
       setCategories(categoriesData);
       setLocations(locationsData);
+      
+      // Calculate stats
+      const statsData = getDashboardStats(itemsData);
       setStats(statsData);
 
     } catch (error) {
@@ -118,24 +152,19 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     }
   };
 
-  // Filtered and sorted items using useMemo for performance
+  // Filtered and sorted items
   const filteredAndSortedItems = useMemo(() => {
     let filtered = foodItems.filter(item => {
-      // Search filter
       const matchesSearch = searchQuery === '' || 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.notes.toLowerCase().includes(searchQuery.toLowerCase());
+        (item.notes && item.notes.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Category filter
-      const matchesCategory = selectedCategory === '' || item.categoryId === selectedCategory;
-      
-      // Location filter
-      const matchesLocation = selectedLocation === '' || item.locationId === selectedLocation;
+      const matchesCategory = selectedCategory === '' || item.category_id === selectedCategory;
+      const matchesLocation = selectedLocation === '' || item.location_id === selectedLocation;
       
       return matchesSearch && matchesCategory && matchesLocation;
     });
 
-    // Sort items
     filtered.sort((a, b) => {
       let valueA: any, valueB: any;
       
@@ -144,27 +173,30 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
           valueA = a.name.toLowerCase();
           valueB = b.name.toLowerCase();
           break;
-        case 'expiryDate':
-          valueA = new Date(a.expiryDate);
-          valueB = new Date(b.expiryDate);
+        case 'expiry_date':
+          valueA = a.expiry_date ? new Date(a.expiry_date) : new Date('9999-12-31');
+          valueB = b.expiry_date ? new Date(b.expiry_date) : new Date('9999-12-31');
           break;
         case 'category':
-          valueA = getCategoryName(a.categoryId).toLowerCase();
-          valueB = getCategoryName(b.categoryId).toLowerCase();
+          const catA = categories.find(c => c.id === a.category_id);
+          const catB = categories.find(c => c.id === b.category_id);
+          valueA = catA?.name.toLowerCase() || '';
+          valueB = catB?.name.toLowerCase() || '';
           break;
         case 'location':
-          valueA = getLocationName(a.locationId).toLowerCase();
-          valueB = getLocationName(b.locationId).toLowerCase();
+          const locA = locations.find(l => l.id === a.location_id);
+          const locB = locations.find(l => l.id === b.location_id);
+          valueA = locA?.name.toLowerCase() || '';
+          valueB = locB?.name.toLowerCase() || '';
           break;
-        case 'addedDate':
-          valueA = new Date(a.addedDate);
-          valueB = new Date(b.addedDate);
+        case 'created_at':
+          valueA = new Date(a.created_at || 0);
+          valueB = new Date(b.created_at || 0);
           break;
         default:
-          valueA = a.name.toLowerCase();
-          valueB = b.name.toLowerCase();
+          return 0;
       }
-
+      
       if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
       if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
@@ -173,288 +205,83 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     return filtered;
   }, [foodItems, searchQuery, selectedCategory, selectedLocation, sortBy, sortDirection, categories, locations]);
 
-  const handleCardClick = (itemId: string) => {
-    navigate(`/item/${itemId}`);
-  };
-
-  const handleDeleteItem = async (e: React.MouseEvent, itemId: string, itemName: string) => {
-    e.stopPropagation();
+  const handleDeleteItem = async (id: string) => {
+    if (!window.confirm(t('dashboard.confirmDelete'))) return;
     
-    if (window.confirm(`${t('alert.deleteMessage')} "${itemName}"?`)) {
-      try {
-        await FoodItemsService.deleteItem(itemId);
-        // Reload data to refresh the list
-        await loadData();
-        toast.success(`"${itemName}" ${t('action.delete')}`);
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        toast.error(`${t('alert.deleteFailed')}: ${itemName}`);
-      }
-    }
-  };
-
-  // Bulk operations
-  const handleSelectItem = (itemId: string, isSelected: boolean) => {
-    const newSelected = new Set(selectedItems);
-    if (isSelected) {
-      newSelected.add(itemId);
-    } else {
-      newSelected.delete(itemId);
-    }
-    setSelectedItems(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedItems.size === filteredAndSortedItems.length) {
-      setSelectedItems(new Set());
-    } else {
-      setSelectedItems(new Set(filteredAndSortedItems.map(item => item.id!)));
+    try {
+      await deleteFoodItem(id);
+      toast.success(t('dashboard.itemDeleted'));
+      loadData();
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast.error('Failed to delete item');
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
-    
-    if (window.confirm(`Delete ${selectedItems.size} selected items?`)) {
-      const loadingToast = toast.loading('Deleting items...');
-      try {
-        await Promise.all(
-          Array.from(selectedItems).map(itemId => FoodItemsService.deleteItem(itemId))
-        );
-        setSelectedItems(new Set());
-        await loadData();
-        toast.success(`Successfully deleted ${selectedItems.size} items`, { id: loadingToast });
-      } catch (error) {
-        console.error('Error deleting items:', error);
-        toast.error('Failed to delete some items', { id: loadingToast });
-      }
-    }
-  };
-
-  const handleTestNotification = async () => {
-    try {
-      await notificationService.testNotification();
-      toast.success('Test notification sent!');
-    } catch (error) {
-      toast.error('Failed to send test notification');
-    }
-  };
-
-  const handleCleanupExpired = async () => {
-    if (!user) return;
-    
-    const confirmed = window.confirm(t('cleanup.confirmMessage'));
-    if (!confirmed) return;
-    
-    setIsCleaningUp(true);
-    const loadingToast = toast.loading('Cleaning up expired items...');
-    try {
-      const deletedCount = await FoodItemsService.cleanupExpiredItems(user.uid);
-      toast.success(`${t('cleanup.success')}: ${deletedCount} ${t('cleanup.itemsDeleted')}`, { id: loadingToast });
-      await loadData(); // Refresh the data
-    } catch (error) {
-      console.error('Error cleaning up expired items:', error);
-      toast.error(t('cleanup.failed'), { id: loadingToast });
-    } finally {
-      setIsCleaningUp(false);
-    }
-  };
-
-  const handleDataCleanup = async () => {
-    if (!user) return;
-    
-    const confirmed = window.confirm('Clean up duplicate items and fix data inconsistencies? This will also migrate any legacy data to the new ID-based system. This cannot be undone.');
-    if (!confirmed) return;
-    
-    setIsCleaningUp(true);
-    const loadingToast = toast.loading('Cleaning up data...');
-    try {
-      const result = await cleanupUserData(user.uid);
-      toast.success(`Data cleanup completed! Duplicates removed: ${result.duplicatesRemoved}, Orphaned references fixed: ${result.orphansFixed}, Locations migrated: ${result.locationsMigrated}, Categories migrated: ${result.categoriesMigrated}`, { id: loadingToast });
-      await loadData(); // Refresh the data
-    } catch (error) {
-      console.error('Error cleaning up data:', error);
-      toast.error('Failed to clean up data', { id: loadingToast });
-    } finally {
-      setIsCleaningUp(false);
-    }
-  };
-
-  const handleUseItem = async (e: React.MouseEvent, item: FoodItem) => {
-    e.stopPropagation();
-    if (!user) return;
-
-    try {
-      // Record the action
-      await ItemActionService.recordAction({
-        itemId: item.id!,
-        itemName: item.name,
-        categoryId: item.categoryId,
-        locationId: item.locationId,
-        action: 'used',
-        actionDate: new Date().toISOString().split('T')[0],
-        quantity: item.quantity,
-        notes: 'Item used successfully',
-        userId: user.uid
-      }, user.uid);
-
-      // Record purchase if not already recorded
-      await PurchaseService.addPurchase({
-        itemId: item.id!,
-        itemName: item.name,
-        categoryId: item.categoryId,
-        locationId: item.locationId,
-        quantity: item.quantity,
-        purchaseDate: item.addedDate,
-        expiryDate: item.expiryDate,
-        notes: item.notes,
-        userId: user.uid
-      }, user.uid);
-
-      // Delete the item
-      await FoodItemsService.deleteItem(item.id!);
-      
-      toast.success(`✅ "${item.name}" marked as used!`);
-      await loadData(); // Refresh the data
-    } catch (error) {
-      console.error('Error marking item as used:', error);
-      toast.error('Failed to mark item as used');
-    }
-  };
-
-  const handleThrowAwayItem = async (e: React.MouseEvent, item: FoodItem) => {
-    e.stopPropagation();
-    if (!user) return;
-
-    const reason = window.prompt('Why are you throwing this away? (optional)');
+    if (!window.confirm(`Delete ${selectedItems.size} items?`)) return;
     
     try {
-      // Record the action
-      await ItemActionService.recordAction({
-        itemId: item.id!,
-        itemName: item.name,
-        categoryId: item.categoryId,
-        locationId: item.locationId,
-        action: 'thrown-away',
-        actionDate: new Date().toISOString().split('T')[0],
-        quantity: item.quantity,
-        reason: reason || 'User disposed of item',
-        notes: reason || 'Item thrown away by user',
-        userId: user.uid
-      }, user.uid);
-
-      // Record purchase if not already recorded
-      await PurchaseService.addPurchase({
-        itemId: item.id!,
-        itemName: item.name,
-        categoryId: item.categoryId,
-        locationId: item.locationId,
-        quantity: item.quantity,
-        purchaseDate: item.addedDate,
-        expiryDate: item.expiryDate,
-        notes: item.notes,
-        userId: user.uid
-      }, user.uid);
-
-      // Delete the item
-      await FoodItemsService.deleteItem(item.id!);
-      
-      toast.success(`🗑️ "${item.name}" marked as thrown away`);
-      await loadData(); // Refresh the data
+      await Promise.all(Array.from(selectedItems).map(id => deleteFoodItem(id)));
+      toast.success(`${selectedItems.size} items deleted`);
+      setSelectedItems(new Set());
+      loadData();
     } catch (error) {
-      console.error('Error marking item as thrown away:', error);
-      toast.error('Failed to mark item as thrown away');
+      console.error('Error bulk deleting:', error);
+      toast.error('Failed to delete items');
     }
   };
 
-  const getCategoryIcon = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    if (category?.icon) return category.icon;
-    
-    // Fallback icons for unknown categories
-    return '🍎';
-  };
-
-  const getCategoryName = (categoryId: string) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.name || 'Unknown Category';
-  };
-
-  const getLocationIcon = (locationId: string) => {
-    const location = locations.find(loc => loc.id === locationId);
-    if (location) {
-      // Simple icon mapping based on location name
-      const icons: { [key: string]: string } = {
-        'Fridge': '❄️',
-        'Freezer': '🧊',
-        'Pantry': '🏠',
-        'Cabinet': '🗄️',
-        'Counter': '🍽️',
-        'Kitchen': '🍳',
-        'Storage': '📦',
-        // Multilingual support
-        '冰箱': '❄️',
-        '冷冻室': '🧊',
-        '食品储藏室': '🏠',
-        '台面': '🍽️',
-        '橱柜': '🗄️',
-        '冷蔵庫': '❄️',
-        '冷凍庫': '🧊',
-        'パントリー': '🏠',
-        'カウンター': '🍽️',
-        'キャビネット': '🗄️'
-      };
-      
-      const lowerName = location.name.toLowerCase();
-      
-      // Direct match
-      if (icons[location.name]) return icons[location.name];
-      
-      // Partial matches
-      if (lowerName.includes('fridge') || lowerName.includes('refrigerat')) {
-        return '❄️';
-      } else if (lowerName.includes('freezer') || lowerName.includes('冷冻') || lowerName.includes('冷凍')) {
-        return '🧊';
-      } else if (lowerName.includes('pantry') || lowerName.includes('储藏') || lowerName.includes('パントリー')) {
-        return '🏠';
-      } else if (lowerName.includes('cabinet') || lowerName.includes('橱柜') || lowerName.includes('キャビネット')) {
-        return '🗄️';
-      } else if (lowerName.includes('counter') || lowerName.includes('台面') || lowerName.includes('カウンター')) {
-        return '🍽️';
-      }
+  const toggleItemSelection = (id: string) => {
+    const newSelection = new Set(selectedItems);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
     }
-    
-    return '📍'; // Default location icon
+    setSelectedItems(newSelection);
   };
 
-  const getLocationName = (locationId: string) => {
-    const location = locations.find(loc => loc.id === locationId);
-    return location?.name || 'Unknown Location';
+  const getCategoryName = (categoryId: string | undefined) => {
+    if (!categoryId) return 'Uncategorized';
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || 'Unknown';
   };
 
-  const getDaysText = (days: number) => {
-    if (days === 0) return t('item.expirestoday');
-    if (days === 1) return `1 ${t('item.dayLeft')}`;
-    if (days > 0) return `${days} ${t('item.daysLeft')}`;
-    if (days === -1) return `1 ${t('item.dayAgo')}`;
-    return `${Math.abs(days)} ${t('item.daysAgo')}`;
+  const getLocationName = (locationId: string | undefined) => {
+    if (!locationId) return 'No location';
+    const location = locations.find(l => l.id === locationId);
+    return location?.name || 'Unknown';
   };
 
-  const getStatusText = (status: string) => {
+  const getCategoryIcon = (categoryId: string | undefined) => {
+    if (!categoryId) return '📦';
+    const category = categories.find(c => c.id === categoryId);
+    return category?.icon || '📦';
+  };
+
+  const getLocationIcon = (locationId: string | undefined) => {
+    if (!locationId) return '📍';
+    const location = locations.find(l => l.id === locationId);
+    return location?.icon || '📍';
+  };
+
+  const getStatusBadgeClass = (status?: string) => {
     switch (status) {
-      case 'in-date': return t('status.indate');
-      case 'expiring-soon': return t('status.expiring');
-      case 'expired': return t('status.expired');
-      default: return status;
+      case 'fresh': return 'status-badge' + ' ' + 'in-date';
+      case 'expiring-soon': return 'status-badge' + ' ' + 'expiring';
+      case 'expired': return 'status-badge' + ' ' + 'expired';
+      default: return 'status-badge';
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'in-date': return '#4CAF50';
+      case 'fresh': return '#4CAF50';
       case 'expiring-soon': return '#FF9800';
       case 'expired': return '#F44336';
-      default: return '#757575';
+      default: return '#9E9E9E';
     }
   };
 
@@ -472,287 +299,136 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   if (error) {
     return (
       <div className="error-message">
-        <h2>{t('status.error')}</h2>
+        <h2>⚠️ {t('status.error')}</h2>
         <p>{error}</p>
         <button onClick={loadData} className="btn btn-primary">
-          {t('status.retry')}
+          {t('actions.retry')}
         </button>
       </div>
     );
   }
 
-  // Filter view
-  if (filter) {
-    const filteredItems = foodItems.filter(item => item.status === filter);
-    const pageTitle = filter === 'in-date' ? t('status.indate') : 
-                     filter === 'expiring-soon' ? t('status.expiring') :
-                     t('status.expired');
-
-    return (
-      <div className="dashboard filtered-view">
-        <div className="dashboard-header">
-          <div className="header-content">
-            <h1>{pageTitle} {t('status.items')}</h1>
-            <p>{filteredItems.length} {t('status.items').toLowerCase()}</p>
-          </div>
-          <div className="header-actions">
-            <Link to="/dashboard" className="btn btn-secondary">
-              ← {t('status.viewAll')}
-            </Link>
-            <button onClick={loadData} className="btn btn-secondary">
-              🔄 {t('status.refresh')}
-            </button>
-          </div>
-        </div>
-
-        {filteredItems.length === 0 ? (
-          <div className="empty-state">
-            <h3>{t('status.noItems').replace('{status}', pageTitle.toLowerCase())}</h3>
-            <Link to="/add-item" className="btn btn-primary">
-              ➕ {t('action.add')} {t('form.itemName')}
-            </Link>
-          </div>
-        ) : (
-          <div className="items-grid">
-            {filteredItems.map((item) => (
-              <div 
-                key={item.id} 
-                className={`item-card ${item.status}`}
-                onClick={() => handleCardClick(item.id!)}
-              >
-                <div className="item-header">
-                  <div className="item-title">
-                    {item.imageUrl ? (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name}
-                        className="item-image"
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
-                          objectFit: 'cover',
-                          flexShrink: 0
-                        }}
-                      />
-                    ) : (
-                      <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
-                    )}
-                    <h3>{item.name}</h3>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    <button 
-                      className="btn btn-small btn-success"
-                      onClick={(e) => handleUseItem(e, item)}
-                      title="Mark as used"
-                      style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        fontSize: '0.75rem',
-                        minWidth: 'auto',
-                        backgroundColor: '#4CAF50',
-                        color: 'white',
-                        border: 'none'
-                      }}
-                    >
-                      ✅
-                    </button>
-                    <button 
-                      className="btn btn-small btn-warning"
-                      onClick={(e) => handleThrowAwayItem(e, item)}
-                      title="Throw away"
-                      style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        fontSize: '0.75rem',
-                        minWidth: 'auto',
-                        backgroundColor: '#FF9800',
-                        color: 'white',
-                        border: 'none'
-                      }}
-                    >
-                      🗑️
-                    </button>
-                    <Link 
-                      to={`/edit-item/${item.id}`}
-                      className="btn btn-small btn-secondary"
-                      onClick={(e) => e.stopPropagation()}
-                      title={t('action.edit')}
-                      style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        fontSize: '0.75rem',
-                        minWidth: 'auto',
-                        textDecoration: 'none'
-                      }}
-                    >
-                      ✏️
-                    </Link>
-                  </div>
-                </div>
-                
-                <div className="item-details">
-                  <div className="detail-row">
-                    <span>{t('item.quantity')}: {item.quantity}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
-                    <span>{getCategoryName(item.categoryId)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="location-icon">{getLocationIcon(item.locationId)}</span>
-                    <span>{getLocationName(item.locationId)}</span>
-                  </div>
-                </div>
-                
-                <div className="item-status">
-                  <span 
-                    className="status-badge" 
-                    style={{ backgroundColor: getStatusColor(item.status!) }}
-                  >
-                    {getStatusText(item.status!)}
-                  </span>
-                  <span className="days-text">
-                    {getDaysText(item.daysUntilExpiry!)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Main dashboard view
   return (
     <div className="dashboard">
+      {/* Header */}
       <div className="dashboard-header">
         <div className="header-content">
-          <h1>{t('home.welcome')}</h1>
-          <p>{t('nav.dashboard')}</p>
+          <h1>{filter ? `${filter.charAt(0).toUpperCase() + filter.slice(1)} Items` : t('nav.dashboard')}</h1>
+          <p>{t('dashboard.welcome')}</p>
         </div>
         <div className="header-actions">
           <Link to="/add-item" className="btn btn-primary">
             ➕ {t('nav.addItem')}
           </Link>
           <button onClick={loadData} className="btn btn-secondary">
-            🔄 {t('status.refresh')}
+            🔄 {t('actions.refresh')}
           </button>
-          {stats.expired > 0 && (
-            <button 
-              onClick={handleCleanupExpired} 
-              className="btn btn-danger"
-              disabled={isCleaningUp}
-            >
-              🧹 {isCleaningUp ? t('cleanup.inProgress') : t('cleanup.cleanupExpired')}
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="stats-grid">
-        <Link to="/items/in-date" className="stat-card in-date">
-          <div className="stat-header">
-            <h3>{t('status.indate')}</h3>
-            <span className="stat-icon">✅</span>
-          </div>
-          <div className="stat-number">{stats.inDate}</div>
-          <div className="stat-label">{t('status.items')}</div>
-        </Link>
+      {/* Stats Grid */}
+      {!filter && (
+        <div className="stats-grid">
+          <Link to="/items/in-date" className="stat-card total">
+            <div className="stat-header">
+              <h3>{t('dashboard.fresh')}</h3>
+              <span className="stat-icon">✅</span>
+            </div>
+            <div className="stat-number">{stats.fresh}</div>
+            <div className="stat-label">{t('dashboard.items')}</div>
+          </Link>
 
-        <Link to="/items/expiring" className="stat-card expiring">
-          <div className="stat-header">
-            <h3>{t('status.expiring')}</h3>
-            <span className="stat-icon">⚠️</span>
-          </div>
-          <div className="stat-number">{stats.expiringSoon}</div>
-          <div className="stat-label">{t('status.items')}</div>
-        </Link>
+          <Link to="/items/expiring" className="stat-card expiring">
+            <div className="stat-header">
+              <h3>{t('dashboard.expiringSoon')}</h3>
+              <span className="stat-icon">⚠️</span>
+            </div>
+            <div className="stat-number">{stats.expiringSoon}</div>
+            <div className="stat-label">{t('dashboard.items')}</div>
+          </Link>
 
-        <Link to="/items/expired" className="stat-card expired">
-          <div className="stat-header">
-            <h3>{t('status.expired')}</h3>
-            <span className="stat-icon">❌</span>
-          </div>
-          <div className="stat-number">{stats.expired}</div>
-          <div className="stat-label">{t('status.items')}</div>
-        </Link>
+          <Link to="/items/expired" className="stat-card expired">
+            <div className="stat-header">
+              <h3>{t('dashboard.expired')}</h3>
+              <span className="stat-icon">❌</span>
+            </div>
+            <div className="stat-number">{stats.expired}</div>
+            <div className="stat-label">{t('dashboard.items')}</div>
+          </Link>
 
-        <div className="stat-card total">
-          <div className="stat-header">
-            <h3>{t('nav.dashboard')}</h3>
-            <span className="stat-icon">📊</span>
+          <div className="stat-card total">
+            <div className="stat-header">
+              <h3>{t('dashboard.total')}</h3>
+              <span className="stat-icon">📊</span>
+            </div>
+            <div className="stat-number">{stats.total}</div>
+            <div className="stat-label">{t('dashboard.items')}</div>
           </div>
-          <div className="stat-number">{stats.total}</div>
-          <div className="stat-label">{t('status.items')}</div>
         </div>
-      </div>
+      )}
 
-      {/* Search and Filter Controls */}
+      {/* Search and Filters */}
       <div className="controls-section">
         <div className="search-filter-bar">
           <div className="search-control">
             <input
               type="text"
-              placeholder="🔍 Search items..."
+              className="search-input"
+              placeholder={t('dashboard.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
             />
           </div>
           
           <div className="filter-controls">
             <select
+              className="filter-select"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="filter-select"
             >
               <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.icon} {category.name}
-                </option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
               ))}
             </select>
 
             <select
+              className="filter-select"
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
-              className="filter-select"
             >
               <option value="">All Locations</option>
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  📍 {location.name}
-                </option>
+              {locations.map(loc => (
+                <option key={loc.id} value={loc.id}>{loc.icon} {loc.name}</option>
               ))}
             </select>
 
             <select
+              className="filter-select"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="filter-select"
             >
-              <option value="expiryDate">Sort by Expiry Date</option>
+              <option value="expiry_date">Sort by Expiry</option>
               <option value="name">Sort by Name</option>
               <option value="category">Sort by Category</option>
               <option value="location">Sort by Location</option>
-              <option value="addedDate">Sort by Date Added</option>
+              <option value="created_at">Sort by Date Added</option>
             </select>
 
             <button
-              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
               className="sort-direction-btn"
-              title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}
+              onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
             >
               {sortDirection === 'asc' ? '↑' : '↓'}
             </button>
 
             <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
               className="view-mode-btn"
-              title={`Switch to ${viewMode === 'grid' ? 'List' : 'Grid'} View`}
+              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+              title={viewMode === 'grid' ? 'Grid View' : 'List View'}
             >
-              {viewMode === 'grid' ? '☰' : '⊞'}
+              {viewMode === 'grid' ? '⊞' : '☰'}
             </button>
           </div>
         </div>
@@ -761,7 +437,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
         {selectedItems.size > 0 && (
           <div className="bulk-actions">
             <span className="selection-count">
-              {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+              {selectedItems.size} item(s) selected
             </span>
             <button onClick={handleBulkDelete} className="btn btn-danger btn-small">
               🗑️ Delete Selected
@@ -771,214 +447,92 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
             </button>
           </div>
         )}
-
-        {/* Notification Actions */}
-        <div className="notification-actions">
-          <button onClick={handleTestNotification} className="btn btn-secondary btn-small">
-            🔔 Test Notification
-          </button>
-        </div>
       </div>
 
-      {/* Items Display */}
-      {filteredAndSortedItems.length > 0 && (
-        <div className="items-section">
-          <div className="section-header">
-            <h2>Your Items ({filteredAndSortedItems.length})</h2>
-            <div className="bulk-select">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={selectedItems.size === filteredAndSortedItems.length && filteredAndSortedItems.length > 0}
-                  onChange={handleSelectAll}
-                />
-                Select All
-              </label>
-            </div>
-          </div>
-          
-          <div className={`items-${viewMode}`}>
-            {filteredAndSortedItems.map((item) => (
-              <div 
-                key={item.id} 
-                className={`item-card ${item.status} ${viewMode}`}
-                onClick={() => handleCardClick(item.id!)}
-              >
-                <div className="item-select" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={selectedItems.has(item.id!)}
-                    onChange={(e) => handleSelectItem(item.id!, e.target.checked)}
-                  />
-                </div>
-                
-                <div className="item-header">
-                  <div className="item-title">
-                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
-                    <h3>{item.name}</h3>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    <Link 
-                      to={`/edit-item/${item.id}`}
-                      className="btn btn-small btn-secondary"
-                      onClick={(e) => e.stopPropagation()}
-                      title={t('action.edit')}
-                      style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        fontSize: '0.75rem',
-                        minWidth: 'auto',
-                        textDecoration: 'none'
-                      }}
-                    >
-                      ✏️
-                    </Link>
-                    <button 
-                      className="delete-btn"
-                      onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
-                      title={t('action.delete')}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="item-details">
-                  <div className="detail-row">
-                    <span>{t('item.quantity')}: {item.quantity}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
-                    <span>{getCategoryName(item.categoryId)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="location-icon">{getLocationIcon(item.locationId)}</span>
-                    <span>{getLocationName(item.locationId)}</span>
-                  </div>
-                </div>
-                
-                <div className="item-status">
-                  <span 
-                    className="status-badge" 
-                    style={{ backgroundColor: getStatusColor(item.status!) }}
-                  >
-                    {getStatusText(item.status!)}
-                  </span>
-                  <span className="days-text">
-                    {getDaysText(item.daysUntilExpiry!)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <h2>{t('home.categories')}</h2>
-        <div className="actions-grid">
-          <Link to="/categories" className="action-card">
-            <span className="action-icon">🏷️</span>
-            <h3>{t('nav.categories')}</h3>
-            <p>{categories.length} {t('home.categories').toLowerCase()}</p>
-          </Link>
-          
-          <Link to="/locations" className="action-card">
-            <span className="action-icon">📍</span>
-            <h3>{t('nav.locations')}</h3>
-            <p>{locations.length} {t('nav.locations').toLowerCase()}</p>
-          </Link>
-        </div>
-      </div>
-
-      {/* Recent Items */}
-      {foodItems.length > 0 && (
-        <div className="recent-items">
-          <h2>{t('dashboard.recentItems')}</h2>
-          <div className="items-grid">
-            {foodItems.slice(0, 6).map((item) => (
-              <div 
-                key={item.id} 
-                className={`item-card ${item.status}`}
-                onClick={() => handleCardClick(item.id!)}
-              >
-                <div className="item-header">
-                  <div className="item-title">
-                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
-                    <h3>{item.name}</h3>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    <Link 
-                      to={`/edit-item/${item.id}`}
-                      className="btn btn-small btn-secondary"
-                      onClick={(e) => e.stopPropagation()}
-                      title={t('action.edit')}
-                      style={{ 
-                        padding: '0.25rem 0.5rem', 
-                        fontSize: '0.75rem',
-                        minWidth: 'auto',
-                        textDecoration: 'none'
-                      }}
-                    >
-                      ✏️
-                    </Link>
-                    <button 
-                      className="delete-btn"
-                      onClick={(e) => handleDeleteItem(e, item.id!, item.name)}
-                      title={t('action.delete')}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="item-details">
-                  <div className="detail-row">
-                    <span>{t('item.quantity')}: {item.quantity}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="category-icon">{getCategoryIcon(item.categoryId)}</span>
-                    <span>{getCategoryName(item.categoryId)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="location-icon">{getLocationIcon(item.locationId)}</span>
-                    <span>{getLocationName(item.locationId)}</span>
-                  </div>
-                </div>
-                
-                <div className="item-status">
-                  <span 
-                    className="status-badge" 
-                    style={{ backgroundColor: getStatusColor(item.status!) }}
-                  >
-                    {getStatusText(item.status!)}
-                  </span>
-                  <span className="days-text">
-                    {getDaysText(item.daysUntilExpiry!)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {foodItems.length > 6 && (
-            <div className="view-all">
-              <Link to="/items/all" className="btn btn-secondary">
-                {t('status.viewAll')} ({foodItems.length} {t('status.items')})
-              </Link>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {foodItems.length === 0 && (
+      {/* Items Grid/List */}
+      {filteredAndSortedItems.length === 0 ? (
         <div className="empty-state">
-          <h3>{t('list.noItems')}</h3>
-          <p>{t('dashboard.getStarted')}</p>
-          <Link to="/add-item" className="btn btn-primary">
+          <h3>📦 {t('dashboard.noItems')}</h3>
+          <p>{t('dashboard.addFirstItem')}</p>
+          <Link to="/add-item" className="btn btn-primary btn-large">
             ➕ {t('nav.addItem')}
           </Link>
+        </div>
+      ) : (
+        <div className={viewMode === 'grid' ? 'items-grid' : 'items-list'}>
+          {filteredAndSortedItems.map(item => (
+            <div
+              key={item.id}
+              className={`item-card ${item.status || 'fresh'} ${viewMode}`}
+              onClick={() => navigate(`/item/${item.id}`)}
+            >
+              {/* Selection Checkbox */}
+              <div className="item-select" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selectedItems.has(item.id!)}
+                  onChange={() => toggleItemSelection(item.id!)}
+                />
+              </div>
+
+              <div className="item-header">
+                <div className="item-title">
+                  <span className="category-icon">{getCategoryIcon(item.category_id)}</span>
+                  <h3>{item.name}</h3>
+                </div>
+                <button
+                  className="delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteItem(item.id!);
+                  }}
+                >
+                  🗑️
+                </button>
+              </div>
+
+              <div className="item-details">
+                <div className="detail-row">
+                  <span className="location-icon">{getLocationIcon(item.location_id)}</span>
+                  <span>{getLocationName(item.location_id)}</span>
+                </div>
+                <div className="detail-row">
+                  <span>📦</span>
+                  <span>{getCategoryName(item.category_id)}</span>
+                </div>
+                {item.expiry_date && (
+                  <div className="detail-row">
+                    <span>📅</span>
+                    <span>{new Date(item.expiry_date).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {item.quantity && (
+                  <div className="detail-row">
+                    <span>🔢</span>
+                    <span>{item.quantity} {item.unit || ''}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="item-status">
+                <span
+                  className={getStatusBadgeClass(item.status)}
+                  style={{ backgroundColor: getStatusColor(item.status) }}
+                >
+                  {item.status === 'fresh' ? 'Fresh' : 
+                   item.status === 'expiring-soon' ? 'Expiring Soon' : 
+                   'Expired'}
+                </span>
+                {item.daysUntilExpiry !== undefined && (
+                  <span className="days-text">
+                    {item.daysUntilExpiry < 0 
+                      ? `${Math.abs(item.daysUntilExpiry)} days ago`
+                      : `${item.daysUntilExpiry} days left`}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

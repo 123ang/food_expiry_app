@@ -30,6 +30,7 @@ export default {
   'status.items': 'Item',
   'status.indate': 'Item Belum Luput',
   'status.indateItems': 'Item Belum Luput',
+  'status.fresh': 'Segar',
   'status.expiring': 'Hampir Luput',
   'status.expired': 'Sudah Luput',
   'status.expiringSoon': 'Hampir Luput',

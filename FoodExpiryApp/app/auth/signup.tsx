@@ -12,9 +12,8 @@ import {
   ScrollView
 } from 'react-native'
 import { router } from 'expo-router'
-import { useSupabase } from '../../context/SupabaseContext'
 import { useTheme } from '../../context/ThemeContext'
-import { supabase } from '../../lib/supabase'
+import authService from '../../services/AuthService'
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState('')
@@ -23,25 +22,6 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
-  const { signUp } = useSupabase()
-
-  // Test function to verify Supabase connection
-  const testSupabaseConnection = async () => {
-    try {
-      console.log('Testing Supabase connection...')
-      const { data, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error('Supabase connection test failed:', error)
-        Alert.alert('Connection Test Failed', error.message)
-      } else {
-        console.log('Supabase connection test successful')
-        Alert.alert('Connection Test', 'Supabase connection is working!')
-      }
-    } catch (error) {
-      console.error('Supabase connection test error:', error)
-      Alert.alert('Connection Test Error', 'Failed to test Supabase connection')
-    }
-  }
 
   const handleSignUp = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
@@ -65,10 +45,16 @@ export default function SignUpScreen() {
       console.log('Email:', email.trim().toLowerCase())
       console.log('Full name:', fullName.trim())
       
-      // Use the context's signUp function instead of direct supabase call
-      await signUp(email.trim().toLowerCase(), password, {
-        full_name: fullName.trim(),
-      })
+      // Use AuthService to register with PostgreSQL backend
+      const result = await authService.register(
+        email.trim().toLowerCase(), 
+        password, 
+        fullName.trim()
+      )
+
+      if (!result.success) {
+        throw new Error(result.error || 'Registration failed')
+      }
 
       console.log('Signup successful')
       Alert.alert(
@@ -94,7 +80,7 @@ export default function SignUpScreen() {
       let errorMessage = 'An unexpected error occurred during signup'
       
       if (error?.message) {
-        if (error.message.includes('already registered')) {
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
           errorMessage = 'An account with this email already exists. Please try signing in instead.'
         } else if (error.message.includes('invalid email')) {
           errorMessage = 'Please enter a valid email address.'
@@ -236,16 +222,6 @@ export default function SignUpScreen() {
                 Already have an account? Sign In
               </Text>
             </TouchableOpacity>
-
-            {/* Debug Button - Remove this in production */}
-            <TouchableOpacity 
-              style={[styles.debugButton, { backgroundColor: theme.cardBackground }]} 
-              onPress={testSupabaseConnection}
-            >
-              <Text style={[styles.debugButtonText, { color: theme.textColor }]}>
-                Test Connection
-              </Text>
-            </TouchableOpacity>
           </View>
 
 
@@ -323,17 +299,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textDecorationLine: 'underline',
   },
-  debugButton: {
-    alignItems: 'center',
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  debugButtonText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-
 }) 

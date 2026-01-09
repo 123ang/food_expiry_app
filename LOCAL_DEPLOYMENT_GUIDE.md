@@ -98,7 +98,7 @@ psql -U postgres
 
 # Inside PostgreSQL prompt:
 CREATE DATABASE expiry_alert;
-CREATE USER expiry_user WITH ENCRYPTED PASSWORD 'your_local_password';
+CREATE USER expiry_user WITH ENCRYPTED PASSWORD '920214';
 GRANT ALL PRIVILEGES ON DATABASE expiry_alert TO expiry_user;
 ALTER DATABASE expiry_alert OWNER TO expiry_user;
 \q

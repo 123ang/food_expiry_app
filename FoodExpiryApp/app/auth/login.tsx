@@ -14,14 +14,13 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { useTheme } from '../../context/ThemeContext'
-import { useSupabase } from '../../context/SupabaseContext'
+import authService from '../../services/AuthService'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
-  const { signIn } = useSupabase()
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -33,7 +32,11 @@ export default function LoginScreen() {
     setLoading(true)
     
     try {
-      await signIn(email.trim().toLowerCase(), password)
+      const result = await authService.login(email.trim().toLowerCase(), password)
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Login failed')
+      }
       
       console.log('LoginScreen: Sign in successful, navigating to home...')
       // Login successful, navigate to main app

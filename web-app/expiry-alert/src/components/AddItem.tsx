@@ -4,13 +4,16 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  FoodItemsService, 
-  CategoriesService, 
-  LocationsService,
-  FoodItem,
+  getFoodItemById,
+  addFoodItem,
+  updateFoodItem,
+  getCategories,
+  getLocations,
+  getGroups,
   Category,
-  Location 
-} from '../services/firestoreService';
+  Location,
+  FoodItem
+} from '../services/postgresApiService';
 import FirebaseImageUpload from './FirebaseImageUpload';
 
 const AddItem: React.FC = () => {
@@ -20,6 +23,7 @@ const AddItem: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     categoryId: '',
@@ -40,26 +44,46 @@ const AddItem: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  // Load group on mount
   useEffect(() => {
-    if (user) {
-      loadData();
-    }
+    const loadGroup = async () => {
+      if (!user) return;
+      
+      try {
+        const groups = await getGroups();
+        if (groups.length > 0) {
+          setCurrentGroupId(groups[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading group:', error);
+      }
+    };
+    
+    loadGroup();
   }, [user]);
 
+  // Load categories and locations when group is available
   useEffect(() => {
-    if (isEditing && id && user) {
+    if (currentGroupId && user) {
+      loadData();
+    }
+  }, [currentGroupId, user]);
+
+  // Load item data when editing
+  useEffect(() => {
+    if (isEditing && id && currentGroupId) {
       loadItem();
     }
-  }, [isEditing, id, user]);
+  }, [isEditing, id, currentGroupId]);
 
   const loadData = async () => {
-    if (!user) return;
+    if (!currentGroupId) return;
     
     setIsLoadingData(true);
     try {
       const [categoriesData, locationsData] = await Promise.all([
-        CategoriesService.getUserCategories(user.uid),
-        LocationsService.getUserLocations(user.uid)
+        getCategories(currentGroupId),
+        getLocations(currentGroupId)
       ]);
       
       setCategories(categoriesData);
@@ -73,25 +97,25 @@ const AddItem: React.FC = () => {
   };
 
   const loadItem = async () => {
-    if (!id || !user) return;
+    if (!id || !currentGroupId) return;
     
     setIsLoading(true);
     try {
-      const item = await FoodItemsService.getItem(id);
+      const item = await getFoodItemById(id);
       if (item) {
         setFormData({
           name: item.name,
-          categoryId: item.categoryId,
-          locationId: item.locationId,
-          expiryDate: item.expiryDate,
-          quantity: item.quantity,
-          notes: item.notes,
-          reminderDays: item.reminderDays?.toString() || '3'
+          categoryId: item.category_id || '',
+          locationId: item.location_id || '',
+          expiryDate: item.expiry_date || '',
+          quantity: item.quantity.toString(),
+          notes: item.notes || '',
+          reminderDays: '3' // PostgreSQL doesn't store reminderDays, use default
         });
         setImageData({
-          imageId: item.imageId || '',
-          imageUrl: item.imageUrl || '',
-          imageThumbnail: item.imageThumbnail || ''
+          imageId: '',
+          imageUrl: item.image_url || '',
+          imageThumbnail: item.image_url || ''
         });
       } else {
         setError('Item not found');
@@ -120,23 +144,23 @@ const AddItem: React.FC = () => {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      setError(t('validation.nameRequired'));
+      setError(t('validation.nameRequired') || 'Name is required');
       return false;
     }
     if (!formData.categoryId) {
-      setError(t('validation.categoryRequired'));
+      setError(t('validation.categoryRequired') || 'Category is required');
       return false;
     }
     if (!formData.locationId) {
-      setError(t('validation.locationRequired'));
+      setError(t('validation.locationRequired') || 'Location is required');
       return false;
     }
     if (!formData.expiryDate) {
-      setError(t('validation.dateRequired'));
+      setError(t('validation.dateRequired') || 'Expiry date is required');
       return false;
     }
     if (!formData.quantity.trim()) {
-      setError(t('validation.quantityRequired'));
+      setError(t('validation.quantityRequired') || 'Quantity is required');
       return false;
     }
     return true;
@@ -145,30 +169,45 @@ const AddItem: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user || !validateForm()) return;
+    if (!user || !currentGroupId || !validateForm()) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const itemData = {
-        ...formData,
-        ...imageData,
-        reminderDays: parseInt(formData.reminderDays) || 3,
-        userId: user.uid
+      const quantity = parseFloat(formData.quantity) || 1;
+      
+      const itemData: Partial<FoodItem> = {
+        name: formData.name.trim(),
+        group_id: currentGroupId,
+        category_id: formData.categoryId || undefined,
+        location_id: formData.locationId || undefined,
+        expiry_date: formData.expiryDate || undefined,
+        quantity: quantity,
+        unit: 'unit', // Default unit
+        notes: formData.notes.trim() || undefined,
+        image_url: imageData.imageUrl || undefined,
+        original_quantity: quantity,
+        remaining_quantity: quantity,
+        is_consumed: false,
+        usage_frequency: 0,
+        version: 0,
+        sync_status: 'pending'
       };
       
       if (isEditing && id) {
-        await FoodItemsService.updateItem(id, itemData);
-        toast.success(`${t('alert.success')}: ${t('foodItems.edit')}`);
+        await updateFoodItem(id, itemData);
+        toast.success(`${t('alert.success') || 'Success'}: ${t('foodItems.edit') || 'Item updated'}`);
       } else {
-        await FoodItemsService.addItem(itemData, user.uid);
-        toast.success(`${t('alert.success')}: ${t('foodItems.save')}`);
+        await addFoodItem(itemData);
+        toast.success(`${t('alert.success') || 'Success'}: ${t('foodItems.save') || 'Item saved'}`);
       }
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving item:', error);
-      setError(isEditing ? 'Failed to update item' : 'Failed to create item');
+      const errorMessage = error?.message || (isEditing ? 'Failed to update item' : 'Failed to create item');
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -183,8 +222,20 @@ const AddItem: React.FC = () => {
       <div className="loading">
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <p>{t('status.loading')}</p>
+          <p>{t('status.loading') || 'Loading...'}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!currentGroupId) {
+    return (
+      <div className="error-message">
+        <h2>⚠️ {t('status.error') || 'Error'}</h2>
+        <p>Unable to load your group. Please try refreshing the page.</p>
+        <button onClick={() => window.location.reload()} className="btn btn-primary">
+          {t('actions.retry') || 'Retry'}
+        </button>
       </div>
     );
   }
@@ -192,14 +243,14 @@ const AddItem: React.FC = () => {
   return (
     <div className="container">
       <div className="dashboard-header">
-        <h2>{isEditing ? t('foodItems.edit') : t('foodItems.addNew')}</h2>
-        <Link to="/dashboard" className="btn btn-secondary">← {t('common.cancel')}</Link>
+        <h2>{isEditing ? t('foodItems.edit') || 'Edit Item' : t('foodItems.addNew') || 'Add New Item'}</h2>
+        <Link to="/dashboard" className="btn btn-secondary">← {t('common.cancel') || 'Cancel'}</Link>
       </div>
 
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">{t('foodItems.name')} *</label>
+            <label htmlFor="name">{t('foodItems.name') || 'Name'} *</label>
             <input
               type="text"
               id="name"
@@ -208,12 +259,12 @@ const AddItem: React.FC = () => {
               value={formData.name}
               onChange={handleInputChange}
               required
-              placeholder={t('foodItems.name')}
+              placeholder={t('foodItems.name') || 'Item name'}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="expiryDate">{t('foodItems.expiryDate')} *</label>
+            <label htmlFor="expiryDate">{t('foodItems.expiryDate') || 'Expiry Date'} *</label>
             <input
               type="date"
               id="expiryDate"
@@ -226,7 +277,7 @@ const AddItem: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="category">{t('foodItems.category')} *</label>
+            <label htmlFor="category">{t('foodItems.category') || 'Category'} *</label>
             <select
               id="category"
               name="categoryId"
@@ -235,7 +286,7 @@ const AddItem: React.FC = () => {
               onChange={handleInputChange}
               required
             >
-              <option value="">{t('foodItems.category')}</option>
+              <option value="">{t('foodItems.selectCategory') || 'Select category'}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
@@ -243,12 +294,12 @@ const AddItem: React.FC = () => {
               ))}
             </select>
             <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              Don't see your category? <Link to="/add-category" style={{ color: '#22c55e' }}>{t('categories.addNew')}</Link>
+              Don't see your category? <Link to="/add-category" style={{ color: '#22c55e' }}>{t('categories.addNew') || 'Add New'}</Link>
             </small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="location">{t('foodItems.location')} *</label>
+            <label htmlFor="location">{t('foodItems.location') || 'Location'} *</label>
             <select
               id="location"
               name="locationId"
@@ -257,34 +308,36 @@ const AddItem: React.FC = () => {
               onChange={handleInputChange}
               required
             >
-              <option value="">{t('foodItems.location')}</option>
+              <option value="">{t('foodItems.selectLocation') || 'Select location'}</option>
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
-                  {loc.name}
+                  {loc.icon} {loc.name}
                 </option>
               ))}
             </select>
             <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              Need a new location? <Link to="/add-location" style={{ color: '#22c55e' }}>{t('locations.addNew')}</Link>
+              Need a new location? <Link to="/add-location" style={{ color: '#22c55e' }}>{t('locations.addNew') || 'Add New'}</Link>
             </small>
           </div>
 
           <div className="form-group">
-            <label htmlFor="quantity">{t('foodItems.quantity')} *</label>
+            <label htmlFor="quantity">{t('foodItems.quantity') || 'Quantity'} *</label>
             <input
-              type="text"
+              type="number"
               id="quantity"
               name="quantity"
               className="form-control"
               value={formData.quantity}
               onChange={handleInputChange}
               required
-              placeholder={t('foodItems.quantity')}
+              min="0.1"
+              step="0.1"
+              placeholder={t('foodItems.quantity') || '1'}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="reminderDays">{t('foodItems.reminderDays')}</label>
+            <label htmlFor="reminderDays">{t('foodItems.reminderDays') || 'Reminder Days'}</label>
             <input
               type="number"
               id="reminderDays"
@@ -302,7 +355,7 @@ const AddItem: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="notes">{t('foodItems.notes')}</label>
+            <label htmlFor="notes">{t('foodItems.notes') || 'Notes'}</label>
             <textarea
               id="notes"
               name="notes"
@@ -310,27 +363,27 @@ const AddItem: React.FC = () => {
               value={formData.notes}
               onChange={handleInputChange}
               rows={3}
-              placeholder={t('foodItems.notes')}
+              placeholder={t('foodItems.notes') || 'Additional notes...'}
               style={{ resize: 'vertical', minHeight: '80px' }}
             />
           </div>
 
-                                      <FirebaseImageUpload
-                onImageUploaded={handleImageUploaded}
-                itemName={formData.name}
-              currentImageId={imageData.imageId}
-              currentImageUrl={imageData.imageUrl}
-              disabled={isLoading}
-              />
+          <FirebaseImageUpload
+            onImageUploaded={handleImageUploaded}
+            itemName={formData.name}
+            currentImageId={imageData.imageId}
+            currentImageUrl={imageData.imageUrl}
+            disabled={isLoading}
+          />
 
           {error && <div className="error-message">{error}</div>}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={isLoading}>
-              {isLoading ? t('status.loading') : (isEditing ? t('foodItems.save') : t('foodItems.save'))}
+              {isLoading ? t('status.loading') || 'Loading...' : (isEditing ? t('foodItems.save') || 'Save' : t('foodItems.save') || 'Save')}
             </button>
             <button type="button" onClick={handleCancel} className="btn btn-secondary" style={{ flex: 1 }}>
-              {t('foodItems.cancel')}
+              {t('foodItems.cancel') || 'Cancel'}
             </button>
           </div>
         </form>
@@ -349,4 +402,4 @@ const AddItem: React.FC = () => {
   );
 };
 
-export default AddItem; 
+export default AddItem;

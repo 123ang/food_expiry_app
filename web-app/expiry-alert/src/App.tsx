@@ -5,7 +5,6 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
-import { initializeUserData } from './services/firestoreService';
 import { notificationService } from './services/notificationService';
 import './App.css';
 
@@ -30,19 +29,15 @@ const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
   const { t, language } = useLanguage();
 
-  // Initialize user data and notifications when user first signs in
+  // Initialize notifications when user signs in
   useEffect(() => {
     if (user) {
-      initializeUserData(user.uid, language).catch(error => {
-        console.error('Failed to initialize user data:', error);
-      });
-      
       // Initialize notification service
       notificationService.initialize().catch(error => {
         console.error('Failed to initialize notifications:', error);
       });
     }
-  }, [user, language]);
+  }, [user]);
 
   if (loading) {
     return (
@@ -283,7 +278,7 @@ const AppContent: React.FC = () => {
               {renderAppHeader()}
               <main>
                 <div className="container">
-                  {user ? <Dashboard filter="in-date" /> : <Navigate to="/login" />}
+                  {user ? <Dashboard filter="fresh" /> : <Navigate to="/login" />}
                 </div>
               </main>
             </div>

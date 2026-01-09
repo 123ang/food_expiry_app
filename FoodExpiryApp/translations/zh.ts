@@ -30,6 +30,7 @@ export default {
   'status.items': '物品',
   'status.indate': '未过期物品',
   'status.indateItems': '未过期物品',
+  'status.fresh': '新鲜',
   'status.expiring': '即将过期',
   'status.expired': '已过期',
   'status.expiringSoon': '即将过期',

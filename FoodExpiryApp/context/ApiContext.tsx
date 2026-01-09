@@ -5,8 +5,8 @@ import { saveUserToLocal, getLocalUser, getActiveLocalUser, deactivateUser, upda
 import { User as LocalUser } from '../database/models';
 import { useDatabase } from './DatabaseContext';
 import NetInfo from '@react-native-community/netinfo';
-import { supabase } from '../lib/supabase';
-import { supabaseSyncService } from '../services/SupabaseSyncService';
+import authService from '../services/AuthService';
+import apiClient from '../services/ApiClient';
 
 // Define types
 interface ApiContextType {
@@ -126,7 +126,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('ApiContext: Found active local user:', activeUser.email);
         setUser(activeUser);
         
-        // Auto-load user data
+        // Auto-load user data (supabase_id contains PostgreSQL user ID)
         await loadUserData(activeUser.supabase_id);
       }
       setLoading(false);
@@ -185,31 +185,42 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       console.log('ApiContext: Loading user data for userId:', userId);
       
-      // Get groups from Supabase where the user is a member
-      const { data: memberships, error: membershipError } = await supabase
-        .from('group_memberships')
-        .select(`
-          id,
-          group_id,
-          user_id,
-          role,
-          joined_at,
-          groups:group_id(*)
-        `)
-        .eq('user_id', userId);
+      // Get groups from PostgreSQL backend where the user is a member
+      // Backend returns: { groups: (Group & { role: string; member_count: number })[] }
+      const response = await apiClient.get<{ groups: (Group & { role: string; member_count: number })[] }>('/groups');
       
-      if (membershipError) {
-        console.error('ApiContext: Error fetching group memberships:', membershipError);
-        throw membershipError;
+      if (response.error) {
+        console.error('ApiContext: Error fetching groups:', response.error);
+        throw new Error(response.error);
       }
       
-      console.log(`ApiContext: Found ${memberships?.length || 0} groups for user`);
+      const backendGroups = response.data?.groups || [];
+      console.log(`ApiContext: Found ${backendGroups.length} groups for user`);
       
-      // Set user groups from Supabase data
-      setUserGroups(memberships || []);
+      // Map backend groups to GroupMembership format for compatibility
+      const memberships: GroupMembership[] = backendGroups.map(group => ({
+        id: `${group.id}-${userId}`, // Create membership ID
+        group_id: group.id,
+        user_id: userId,
+        role: group.role as 'owner' | 'admin' | 'member',
+        joined_at: group.created_at,
+        groups: {
+          id: group.id,
+          name: group.name,
+          description: group.description,
+          created_by: group.created_by,
+          invite_code: null,
+          max_members: 4,
+          created_at: group.created_at,
+          updated_at: group.updated_at
+        }
+      }));
+      
+      // Set user groups from PostgreSQL data
+      setUserGroups(memberships);
       
       // Set current group to the first group (usually Personal)
-      if (memberships && memberships.length > 0) {
+      if (memberships.length > 0) {
         setCurrentGroup(memberships[0].groups);
         console.log('ApiContext: Set current group to:', memberships[0].groups.name);
       } else {
@@ -218,9 +229,9 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await createGroup('Personal', 'Your personal food management group');
       }
       
-      console.log('ApiContext: User data loaded successfully from Supabase');
+      console.log('ApiContext: User data loaded successfully from PostgreSQL');
     } catch (error) {
-      console.error('ApiContext: Error loading user data from Supabase:', error);
+      console.error('ApiContext: Error loading user data from PostgreSQL:', error);
       
       // As a fallback, create a Personal group
       try {
@@ -238,33 +249,25 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log('ApiContext: Starting signup for email:', email);
     
     try {
-      // Sign up with Supabase auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
+      // Sign up with PostgreSQL backend via AuthService
+      const result = await authService.register(
+        email.trim().toLowerCase(),
         password,
-        options: {
-          data: {
-            full_name: userData.full_name || email
-          }
-        }
-      });
+        userData.full_name || email
+      );
       
-      if (error) throw error;
-      if (!data.user) throw new Error('User was not created');
-      
-      console.log('ApiContext: Signup successful, user:', data.user.id);
-      
-      // Store token if provided
-      if (data.session?.access_token) {
-        setToken(data.session.access_token);
+      if (!result.success || !result.user) {
+        throw new Error(result.error || 'Registration failed');
       }
       
-      // Save to local database
+      console.log('ApiContext: Signup successful, user:', result.user.id);
+      
+      // Save to local database (store PostgreSQL user ID in supabase_id field for compatibility)
       const localUser = {
-        supabase_id: data.user.id,
-        email: data.user.email!,
-        full_name: userData.full_name || email,
-        subscription_type: 'free'
+        supabase_id: result.user.id, // PostgreSQL user ID (UUID string)
+        email: result.user.email,
+        full_name: result.user.full_name || email,
+        subscription_type: 'free' as const
       };
       
       await saveUserToLocal(localUser);
@@ -272,59 +275,40 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Set user state
       setUser(localUser);
       
-      // Create user metadata in Supabase
-      await supabase.from('users').insert({
-        id: data.user.id,
-        email: data.user.email!,
-        full_name: userData.full_name || email,
-        language_preference: 'en'
-      });
-      
-      // Load user data
-      await loadUserData(data.user.id);
-    } catch (error) {
+      // Load user data (groups, etc.)
+      await loadUserData(result.user.id);
+    } catch (error: any) {
       console.error('ApiContext: Signup error:', error);
+      // Re-throw with a clearer error message
+      if (error?.message?.includes('already') || error?.message?.includes('exists')) {
+        throw new Error('An account with this email already exists. Please try signing in instead.');
+      }
       throw error;
     }
   };
 
   const signIn = async (email: string, password: string): Promise<void> => {
-    console.log('ApiContext: Starting sign in with Supabase...');
+    console.log('ApiContext: Starting sign in with PostgreSQL...');
     
     try {
-      // Sign in with Supabase auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      // Sign in with PostgreSQL backend via AuthService
+      const result = await authService.login(
+        email.trim().toLowerCase(),
         password
-      });
+      );
       
-      if (error) throw error;
-      if (!data.user) throw new Error('Failed to retrieve user details');
-      
-      console.log('ApiContext: Sign in successful');
-      
-      // Store token if provided
-      if (data.session?.access_token) {
-        setToken(data.session.access_token);
+      if (!result.success || !result.user) {
+        throw new Error(result.error || 'Login failed');
       }
       
-      // Get user profile from Supabase
-      const { data: userData, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
+      console.log('ApiContext: Sign in successful, user:', result.user.id);
       
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.warn('Could not fetch user profile:', profileError);
-      }
-      
-      // Save to local database
+      // Save to local database (store PostgreSQL user ID in supabase_id field for compatibility)
       const localUser = {
-        supabase_id: data.user.id,
-        email: data.user.email!,
-        full_name: userData?.full_name || data.user.email!,
-        subscription_type: userData?.subscription_type || 'free'
+        supabase_id: result.user.id, // PostgreSQL user ID (UUID string)
+        email: result.user.email,
+        full_name: result.user.full_name || email,
+        subscription_type: 'free' as const
       };
       
       await saveUserToLocal(localUser);
@@ -332,21 +316,27 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Set user state
       setUser(localUser);
       
-      // Load user data
-      await loadUserData(data.user.id);
-    } catch (error) {
+      // Load user data (groups, etc.)
+      await loadUserData(result.user.id);
+    } catch (error: any) {
       console.error('ApiContext: Sign in error:', error);
+      // Re-throw with a clearer error message
+      if (error?.message?.includes('invalid') || error?.message?.includes('incorrect')) {
+        throw new Error('Invalid email or password. Please try again.');
+      }
       throw error;
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('ApiContext: Starting sign out from Supabase...');
+      console.log('ApiContext: Starting sign out from PostgreSQL...');
       
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Sign out from PostgreSQL backend via AuthService
+      const result = await authService.logout();
+      if (!result.success) {
+        console.warn('ApiContext: Logout API call failed, but continuing with local sign out');
+      }
       
       // Clear local user data
       if (user) {
@@ -368,6 +358,11 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.log('ApiContext: Sign out completed successfully');
     } catch (error) {
       console.error('ApiContext: Sign out error:', error);
+      // Even if logout API fails, clear local state
+      setUser(null);
+      setToken(null);
+      setCurrentGroup(null);
+      setUserGroups([]);
       throw error;
     }
   };
@@ -375,50 +370,38 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const createGroup = async (name: string, description?: string): Promise<Group> => {
     console.log('ApiContext: Creating group:', name);
     
-    const currentUserId = user?.supabase_id;
+    const currentUserId = user?.supabase_id; // PostgreSQL user ID stored here
     if (!currentUserId) {
       throw new Error('Must have a user to create a group');
     }
 
     try {
-      // Create the group in Supabase first
-      const { data: groupData, error: createError } = await supabase
-        .from('groups')
-        .insert({
-          name,
-          description: description || null,
-          created_by: currentUserId
-        })
-        .select()
-        .single();
+      // Create the group in PostgreSQL backend
+      const response = await apiClient.post<{ message: string; group: Group }>('/groups', {
+        name,
+        description: description || null
+      });
 
-      if (createError) throw createError;
-      if (!groupData) throw new Error('Failed to create group');
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (!response.data?.group) {
+        throw new Error('Failed to create group');
+      }
       
-      console.log('ApiContext: Group created in Supabase with ID:', groupData.id);
-      
-      // Add the creator as an owner in group_memberships
-      const { error: memberError } = await supabase
-        .from('group_memberships')
-        .insert({
-          group_id: groupData.id,
-          user_id: currentUserId,
-          role: 'owner'
-        });
-        
-      if (memberError) throw memberError;
-      
-      // Create the group object
       const newGroup: Group = {
-        id: groupData.id,
-        name: groupData.name,
-        description: groupData.description,
+        id: response.data.group.id,
+        name: response.data.group.name,
+        description: response.data.group.description,
         created_by: currentUserId,
-        invite_code: groupData.invite_code,
-        max_members: groupData.max_members || 4,
-        created_at: groupData.created_at,
-        updated_at: groupData.updated_at
+        invite_code: response.data.group.invite_code || null,
+        max_members: response.data.group.max_members || 4,
+        created_at: response.data.group.created_at,
+        updated_at: response.data.group.updated_at
       };
+      
+      console.log('ApiContext: Group created in PostgreSQL with ID:', newGroup.id);
 
       // Reload user data to update the groups
       await loadUserData(currentUserId);
@@ -443,46 +426,18 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     setSyncStatus('syncing');
     try {
-      console.log('ApiContext: Starting sync with Supabase...');
+      console.log('ApiContext: Starting sync with PostgreSQL...');
       
-      // Perform bidirectional sync using SupabaseSyncService
-      const result = await supabaseSyncService.syncDatabase(user.supabase_id, currentGroup.id);
+      // Note: For now, sync functionality needs to be implemented via the PostgreSQL API
+      // This is a placeholder - you'll need to implement the sync endpoint in your backend
+      Alert.alert(
+        'Sync', 
+        'Sync functionality is being migrated to PostgreSQL. Please refresh manually for now.'
+      );
       
-      if (result.success) {
-        console.log('ApiContext: Supabase sync completed successfully');
-        console.log('ApiContext: Sync results:', result.stats);
-        
-        // Update last sync time
-        setLastSyncTime(result.syncedAt);
-        
-        // Refresh local data
-        await database.refreshAll();
-        
-        // Calculate sync stats for the alert
-        const uploadStats = result.stats?.uploaded;
-        const downloadStats = result.stats?.downloaded;
-        
-        const totalUploaded = (
-          (uploadStats?.categories || 0) + 
-          (uploadStats?.locations || 0) + 
-          (uploadStats?.foodItems || 0)
-        );
-        
-        const totalDownloaded = (
-          (downloadStats?.categories || 0) + 
-          (downloadStats?.locations || 0) + 
-          (downloadStats?.foodItems || 0)
-        );
-        
-        Alert.alert(
-          'Sync Complete', 
-          `Your data has been synchronized with Supabase.\n\n` +
-          `Uploaded: ${totalUploaded} items, ${uploadStats?.images || 0} images\n` +
-          `Downloaded: ${totalDownloaded} items, ${downloadStats?.images || 0} images`
-        );
-      } else {
-        Alert.alert('Sync Failed', result.error || 'An unknown error occurred during sync');
-      }
+      // Refresh local data from the backend
+      await database.refreshAll();
+      setLastSyncTime(new Date());
       
       setSyncStatus('idle');
     } catch (error) {
@@ -495,9 +450,9 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Function to clear sync data (for debugging)
   const clearSyncData = async (): Promise<void> => {
     try {
-      await supabaseSyncService.clearSyncLog();
+      // Clear sync data - this would need to be implemented via the PostgreSQL API
       setLastSyncTime(null);
-      Alert.alert('Sync Data Cleared', 'All sync history has been cleared.');
+      Alert.alert('Sync Data Cleared', 'Sync history cleared.');
     } catch (error) {
       console.error('Error clearing sync data:', error);
       Alert.alert('Error', 'Failed to clear sync data');

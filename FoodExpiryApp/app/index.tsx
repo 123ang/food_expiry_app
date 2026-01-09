@@ -1507,7 +1507,7 @@ export default function DashboardScreen() {
               onPress={() => router.push('/items/fresh')}
             >
               <Text style={{ fontSize: 24, color: theme.successColor, marginBottom: 8 }}>✅</Text>
-              <Text style={styles.statLabel}>{t('home.indate')}</Text>
+              <Text style={styles.statLabel}>{t('status.fresh')}</Text>
               <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
             </TouchableOpacity>
             <TouchableOpacity 

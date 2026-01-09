@@ -30,6 +30,7 @@ export default {
   'status.items': 'รายการ',
   'status.indate': 'รายการที่ยังไม่หมดอายุ',
   'status.indateItems': 'รายการที่ยังไม่หมดอายุ',
+  'status.fresh': 'สด',
   'status.expiring': 'ใกล้หมดอายุ',
   'status.expired': 'หมดอายุแล้ว',
   'status.expiringSoon': 'ใกล้หมดอายุ',

@@ -31,6 +31,7 @@ export default {
   'status.items': 'Items',
   'status.indate': 'In-date Items',
   'status.indateItems': 'In-date Items',
+  'status.fresh': 'Fresh',
   'status.expiring': 'Expiring',
   'status.expired': 'Expired',
   'status.expiringSoon': 'Expiring Soon',

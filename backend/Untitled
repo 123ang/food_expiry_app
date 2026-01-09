@@ -1,0 +1,32 @@
+# Server
+NODE_ENV=development
+PORT=3000
+API_URL=http://localhost:3000
+
+# Database
+# Format: postgresql://username:password@localhost:5432/database_name
+DATABASE_URL=postgresql://expiry_user:your_local_password@localhost:5432/expiry_alert
+
+# JWT Secrets (generate with: openssl rand -base64 64)
+# Or use any random string for local development
+JWT_ACCESS_SECRET=local-dev-access-secret-change-in-production
+JWT_REFRESH_SECRET=local-dev-refresh-secret-change-in-production
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=30d
+
+# Email (Gmail SMTP) - Optional for local development
+# You can skip email setup if you don't need email features
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+EMAIL_FROM="Expiry Alert <your-email@gmail.com>"
+
+# App URLs
+WEB_APP_URL=http://localhost:3001
+MOBILE_DEEP_LINK_SCHEME=expiryalert
+
+# Image Upload
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=5242880

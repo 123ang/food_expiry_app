@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { LocationsService, FoodItemsService, Location } from '../services/firestoreService';
+import { 
+  getLocations,
+  deleteLocation,
+  getFoodItems,
+  getGroups,
+  Location
+} from '../services/postgresApiService';
 
 const LocationList: React.FC = () => {
   const [locations, setLocations] = useState<Location[]>([]);
   const [itemCounts, setItemCounts] = useState<{ [locationId: string]: number }>({});
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -14,20 +22,41 @@ const LocationList: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
+  // Load group on mount
   useEffect(() => {
-    loadLocations();
+    const loadGroup = async () => {
+      if (!user) return;
+      
+      try {
+        const groups = await getGroups();
+        if (groups.length > 0) {
+          setCurrentGroupId(groups[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading group:', error);
+      }
+    };
+    
+    loadGroup();
   }, [user]);
 
+  // Load locations when group is available
+  useEffect(() => {
+    if (currentGroupId && user) {
+      loadLocations();
+    }
+  }, [currentGroupId, user]);
+
   const loadLocations = async () => {
-    if (!user) return;
+    if (!currentGroupId) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
       const [locationsData, itemsData] = await Promise.all([
-        LocationsService.getUserLocations(user.uid),
-        FoodItemsService.getUserItems(user.uid)
+        getLocations(currentGroupId),
+        getFoodItems(currentGroupId)
       ]);
       
       setLocations(locationsData);
@@ -36,7 +65,7 @@ const LocationList: React.FC = () => {
       const counts: { [locationId: string]: number } = {};
       
       itemsData.forEach(item => {
-        const locationId = item.locationId;
+        const locationId = item.location_id;
         if (locationId) {
           counts[locationId] = (counts[locationId] || 0) + 1;
         }
@@ -53,14 +82,14 @@ const LocationList: React.FC = () => {
   };
 
   const handleDeleteLocation = async (locationId: string, locationName: string) => {
-    if (window.confirm(`${t('locations.deleteConfirm')} "${locationName}"?`)) {
+    if (window.confirm(`${t('locations.deleteConfirm') || 'Delete'} "${locationName}"?`)) {
       try {
-        await LocationsService.deleteLocation(locationId);
+        await deleteLocation(locationId);
+        toast.success(`${t('alert.success') || 'Success'}: "${locationName}" ${t('action.delete') || 'deleted'}`);
         await loadLocations(); // Refresh the list
-        alert(`${t('alert.success')}: "${locationName}" ${t('action.delete')}`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting location:', error);
-        alert(`${t('alert.deleteFailed')}: ${locationName}`);
+        toast.error(`${t('alert.deleteFailed') || 'Failed to delete'}: ${locationName}`);
       }
     }
   };
@@ -118,7 +147,7 @@ const LocationList: React.FC = () => {
       <div className="loading">
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <p>{t('status.loading')}</p>
+          <p>{t('status.loading') || 'Loading...'}</p>
         </div>
       </div>
     );
@@ -128,17 +157,29 @@ const LocationList: React.FC = () => {
     return (
       <div className="container">
         <div className="error-message">
-          <h2>{t('status.error')}</h2>
+          <h2>{t('status.error') || 'Error'}</h2>
           <p>{error}</p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
             <button onClick={loadLocations} className="btn btn-primary">
-              {t('status.retry')}
+              {t('status.retry') || 'Retry'}
             </button>
             <Link to="/dashboard" className="btn btn-secondary">
-              ← {t('nav.dashboard')}
+              ← {t('nav.dashboard') || 'Dashboard'}
             </Link>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!currentGroupId) {
+    return (
+      <div className="error-message">
+        <h2>{t('status.error') || 'Error'}</h2>
+        <p>Unable to load your group. Please try refreshing the page.</p>
+        <button onClick={() => window.location.reload()} className="btn btn-primary">
+          {t('status.retry') || 'Retry'}
+        </button>
       </div>
     );
   }
@@ -149,18 +190,18 @@ const LocationList: React.FC = () => {
     <div className="container">
       <div className="dashboard-header">
         <div className="header-content">
-          <h2>{t('locations.title')}</h2>
-          <p>{locations.length} {t('locations.title').toLowerCase()}</p>
+          <h2>{t('locations.title') || 'Locations'}</h2>
+          <p>{locations.length} {t('locations.title')?.toLowerCase() || 'locations'}</p>
         </div>
         <div className="header-actions">
           <Link to="/add-location" className="btn btn-primary">
-            ➕ {t('locations.addNew')}
+            ➕ {t('locations.addNew') || 'Add New'}
           </Link>
           <button onClick={loadLocations} className="btn btn-secondary">
-            🔄 {t('status.refresh')}
+            🔄 {t('status.refresh') || 'Refresh'}
           </button>
           <Link to="/dashboard" className="btn btn-secondary">
-            ← {t('nav.dashboard')}
+            ← {t('nav.dashboard') || 'Dashboard'}
           </Link>
         </div>
       </div>
@@ -169,30 +210,28 @@ const LocationList: React.FC = () => {
       <div className="stats-grid" style={{ marginBottom: '2rem' }}>
         <div className="stat-card">
           <div className="stat-header">
-            <h3>{t('status.total')}</h3>
+            <h3>{t('status.total') || 'Total'}</h3>
             <span className="stat-icon">📍</span>
           </div>
           <div className="stat-number">{locations.length}</div>
-          <div className="stat-label">{t('locations.title')}</div>
+          <div className="stat-label">{t('locations.title') || 'Locations'}</div>
         </div>
         
         <div className="stat-card">
           <div className="stat-header">
-            <h3>{t('status.items')}</h3>
+            <h3>{t('status.items') || 'Items'}</h3>
             <span className="stat-icon">📦</span>
           </div>
           <div className="stat-number">{totalItems}</div>
-          <div className="stat-label">{t('status.itemsStored')}</div>
+          <div className="stat-label">{t('status.itemsStored') || 'Items stored'}</div>
         </div>
-        
-        
       </div>
 
       {locations.length === 0 ? (
         <div className="empty-state">
-          <h3>{t('locations.noLocations')}</h3>
+          <h3>{t('locations.noLocations') || 'No Locations'}</h3>
           <Link to="/add-location" className="btn btn-primary">
-            ➕ {t('locations.addNew')}
+            ➕ {t('locations.addNew') || 'Add New Location'}
           </Link>
         </div>
       ) : (
@@ -213,15 +252,22 @@ const LocationList: React.FC = () => {
                     fontSize: '1.5rem',
                     marginRight: '1rem'
                   }}>
-                    {getLocationIcon(location.name)}
+                    {location.icon || getLocationIcon(location.name)}
                   </div>
                   <div>
                     <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
                       {location.name}
                     </h3>
-                    <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
-                      {location.description}
-                    </p>
+                    {location.temperature_zone && (
+                      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                        {location.temperature_zone}
+                      </p>
+                    )}
+                    {location.is_default && (
+                      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                        Default location
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="location-actions" style={{ display: 'flex', gap: '0.25rem' }}>
@@ -229,7 +275,7 @@ const LocationList: React.FC = () => {
                     to={`/edit-location/${location.id}`}
                     className="btn btn-small btn-secondary"
                     onClick={(e) => e.stopPropagation()}
-                    title={t('action.edit')}
+                    title={t('action.edit') || 'Edit'}
                     style={{ 
                       padding: '0.25rem 0.5rem', 
                       fontSize: '0.75rem',
@@ -245,7 +291,8 @@ const LocationList: React.FC = () => {
                       handleDeleteLocation(location.id!, location.name);
                     }}
                     className="delete-btn"
-                    title={t('action.delete')}
+                    title={t('action.delete') || 'Delete'}
+                    disabled={location.is_default}
                   >
                     🗑️
                   </button>
@@ -258,7 +305,7 @@ const LocationList: React.FC = () => {
                     📦 Items stored:
                   </span>
                   <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>
-                    {itemCounts[location.id!] || 0} {t('status.items').toLowerCase()}
+                    {itemCounts[location.id!] || 0} {t('status.items')?.toLowerCase() || 'items'}
                   </span>
                 </div>
               </div>
@@ -271,14 +318,14 @@ const LocationList: React.FC = () => {
                 borderTop: '1px solid #f3f4f6'
               }}>
                 <small style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                  {t('common.created')}: {new Date(location.createdAt).toLocaleDateString()}
+                  {t('common.created') || 'Created'}: {location.created_at ? new Date(location.created_at).toLocaleDateString() : 'N/A'}
                 </small>
                 <span style={{ 
                   fontSize: '0.75rem', 
                   color: '#6366f1',
                   fontWeight: '600'
                 }}>
-                  {getLocationIcon(location.name)} {location.name}
+                  {location.icon || getLocationIcon(location.name)} {location.name}
                 </span>
               </div>
             </div>
@@ -289,4 +336,4 @@ const LocationList: React.FC = () => {
   );
 };
 
-export default LocationList; 
+export default LocationList;

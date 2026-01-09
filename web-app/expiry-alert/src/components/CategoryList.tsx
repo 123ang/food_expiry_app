@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { CategoriesService, Category } from '../services/firestoreService';
+import { 
+  getCategories,
+  deleteCategory,
+  getGroups,
+  Category
+} from '../services/postgresApiService';
 
 const CategoryList: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -13,18 +20,39 @@ const CategoryList: React.FC = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
 
+  // Load group on mount
   useEffect(() => {
-    loadCategories();
+    const loadGroup = async () => {
+      if (!user) return;
+      
+      try {
+        const groups = await getGroups();
+        if (groups.length > 0) {
+          setCurrentGroupId(groups[0].id);
+        }
+      } catch (error) {
+        console.error('Error loading group:', error);
+      }
+    };
+    
+    loadGroup();
   }, [user]);
 
+  // Load categories when group is available
+  useEffect(() => {
+    if (currentGroupId && user) {
+      loadCategories();
+    }
+  }, [currentGroupId, user]);
+
   const loadCategories = async () => {
-    if (!user) return;
+    if (!currentGroupId) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const categoriesData = await CategoriesService.getUserCategories(user.uid);
+      const categoriesData = await getCategories(currentGroupId);
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -35,14 +63,14 @@ const CategoryList: React.FC = () => {
   };
 
   const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (window.confirm(`${t('categories.deleteConfirm')} "${categoryName}"?`)) {
+    if (window.confirm(`${t('categories.deleteConfirm') || 'Delete'} "${categoryName}"?`)) {
       try {
-        await CategoriesService.deleteCategory(categoryId);
+        await deleteCategory(categoryId);
+        toast.success(`${t('alert.success') || 'Success'}: "${categoryName}" ${t('action.delete') || 'deleted'}`);
         await loadCategories(); // Refresh the list
-        alert(`${t('alert.success')}: "${categoryName}" ${t('action.delete')}`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting category:', error);
-        alert(`${t('alert.deleteFailed')}: ${categoryName}`);
+        toast.error(`${t('alert.deleteFailed') || 'Failed to delete'}: ${categoryName}`);
       }
     }
   };
@@ -56,7 +84,7 @@ const CategoryList: React.FC = () => {
       <div className="loading">
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <p>{t('status.loading')}</p>
+          <p>{t('status.loading') || 'Loading...'}</p>
         </div>
       </div>
     );
@@ -65,10 +93,22 @@ const CategoryList: React.FC = () => {
   if (error) {
     return (
       <div className="error-message">
-        <h2>{t('status.error')}</h2>
+        <h2>{t('status.error') || 'Error'}</h2>
         <p>{error}</p>
         <button onClick={loadCategories} className="btn btn-primary">
-          {t('status.retry')}
+          {t('status.retry') || 'Retry'}
+        </button>
+      </div>
+    );
+  }
+
+  if (!currentGroupId) {
+    return (
+      <div className="error-message">
+        <h2>{t('status.error') || 'Error'}</h2>
+        <p>Unable to load your group. Please try refreshing the page.</p>
+        <button onClick={() => window.location.reload()} className="btn btn-primary">
+          {t('status.retry') || 'Retry'}
         </button>
       </div>
     );
@@ -78,27 +118,27 @@ const CategoryList: React.FC = () => {
     <div className="container">
       <div className="dashboard-header">
         <div className="header-content">
-          <h2>{t('categories.title')}</h2>
-          <p>{categories.length} {t('categories.title').toLowerCase()}</p>
+          <h2>{t('categories.title') || 'Categories'}</h2>
+          <p>{categories.length} {t('categories.title')?.toLowerCase() || 'categories'}</p>
         </div>
         <div className="header-actions">
           <Link to="/add-category" className="btn btn-primary">
-            ➕ {t('categories.addNew')}
+            ➕ {t('categories.addNew') || 'Add New'}
           </Link>
           <button onClick={loadCategories} className="btn btn-secondary">
-            🔄 {t('status.refresh')}
+            🔄 {t('status.refresh') || 'Refresh'}
           </button>
           <Link to="/dashboard" className="btn btn-secondary">
-            ← {t('nav.dashboard')}
+            ← {t('nav.dashboard') || 'Dashboard'}
           </Link>
         </div>
       </div>
 
       {categories.length === 0 ? (
         <div className="empty-state">
-          <h3>{t('categories.noCategories')}</h3>
+          <h3>{t('categories.noCategories') || 'No Categories'}</h3>
           <Link to="/add-category" className="btn btn-primary">
-            ➕ {t('categories.addNew')}
+            ➕ {t('categories.addNew') || 'Add New Category'}
           </Link>
         </div>
       ) : (
@@ -108,7 +148,7 @@ const CategoryList: React.FC = () => {
               <div className="item-header" style={{ marginBottom: '1rem' }}>
                 <div className="item-title">
                   <div className="category-icon" style={{ 
-                    backgroundColor: category.color,
+                    backgroundColor: category.color || '#6366f1',
                     color: 'white',
                     width: '50px',
                     height: '50px',
@@ -120,15 +160,17 @@ const CategoryList: React.FC = () => {
                     marginRight: '1rem',
                     textShadow: '1px 1px 2px rgba(0,0,0,0.3)'
                   }}>
-                    {category.icon}
+                    {category.icon || '📦'}
                   </div>
                   <div>
                     <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
                       {category.name}
                     </h3>
-                    <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
-                      {category.description}
-                    </p>
+                    {category.is_default && (
+                      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                        Default category
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="category-actions" style={{ display: 'flex', gap: '0.25rem' }}>
@@ -136,7 +178,7 @@ const CategoryList: React.FC = () => {
                     to={`/edit-category/${category.id}`}
                     className="btn btn-small btn-secondary"
                     onClick={(e) => e.stopPropagation()}
-                    title={t('action.edit')}
+                    title={t('action.edit') || 'Edit'}
                     style={{ 
                       padding: '0.25rem 0.5rem', 
                       fontSize: '0.75rem',
@@ -152,7 +194,8 @@ const CategoryList: React.FC = () => {
                       handleDeleteCategory(category.id!, category.name);
                     }}
                     className="delete-btn"
-                    title={t('action.delete')}
+                    title={t('action.delete') || 'Delete'}
+                    disabled={category.is_default}
                   >
                     🗑️
                   </button>
@@ -167,17 +210,17 @@ const CategoryList: React.FC = () => {
                   <div style={{ 
                     width: '20px', 
                     height: '20px', 
-                    backgroundColor: category.color, 
+                    backgroundColor: category.color || '#6366f1', 
                     borderRadius: '4px',
                     border: '1px solid #e5e7eb'
                   }}></div>
                   <span style={{ fontSize: '0.75rem', color: '#6b7280', fontFamily: 'monospace' }}>
-                    {category.color}
+                    {category.color || '#6366f1'}
                   </span>
                 </div>
                 <div className="detail-row" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                    {category.icon} Icon used
+                    {category.icon || '📦'} Icon used
                   </span>
                 </div>
               </div>
@@ -190,14 +233,14 @@ const CategoryList: React.FC = () => {
                 borderTop: '1px solid #f3f4f6'
               }}>
                 <small style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                  {t('common.created')}: {new Date(category.createdAt).toLocaleDateString()}
+                  {t('common.created') || 'Created'}: {category.created_at ? new Date(category.created_at).toLocaleDateString() : 'N/A'}
                 </small>
                 <span style={{ 
                   fontSize: '0.75rem', 
-                  color: category.color,
+                  color: category.color || '#6366f1',
                   fontWeight: '600'
                 }}>
-                  {category.icon} {category.name}
+                  {category.icon || '📦'} {category.name}
                 </span>
               </div>
             </div>
@@ -208,4 +251,4 @@ const CategoryList: React.FC = () => {
   );
 };
 
-export default CategoryList; 
+export default CategoryList;
