@@ -2,13 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 
 // API Configuration
-// For Expo: __DEV__ is true in development mode
-// For physical device testing, use your computer's IP address instead of localhost
-// Update this IP address if your network changes
-// Current IP: 10.203.80.141 (check with: ipconfig on Windows, ifconfig on Mac/Linux)
-export const API_URL = __DEV__ 
-  ? 'http://192.168.100.3:3000/api'  // Development - Use your IP for physical device, localhost for simulator
-  : 'https://api.expiry-alert.link/api';  // Production
+// Production API URL - always use the production server
+export const API_URL = 'https://expiry-alert.link/api';
 
 // Storage keys
 const ACCESS_TOKEN_KEY = 'access_token';
