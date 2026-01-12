@@ -5,10 +5,8 @@ import { getDatabase } from './database';
  */
 export const addSyncColumnsToDatabase = async (): Promise<boolean> => {
   try {
-    console.log('Adding sync columns to database for Supabase integration...');
     const db = await getDatabase();
     if (!db) {
-      console.error('Database not available');
       return false;
     }
     
@@ -65,10 +63,8 @@ export const addSyncColumnsToDatabase = async (): Promise<boolean> => {
       )
     `);
     
-    console.log('Successfully added sync columns to database for Supabase integration');
     return true;
   } catch (error) {
-    console.error('Error adding sync columns to database:', error);
     return false;
   }
 };
@@ -78,10 +74,8 @@ export const addSyncColumnsToDatabase = async (): Promise<boolean> => {
  */
 export const createSyncIndexes = async (): Promise<boolean> => {
   try {
-    console.log('Creating sync indexes for Supabase...');
     const db = await getDatabase();
     if (!db) {
-      console.error('Database not available');
       return false;
     }
     
@@ -117,27 +111,24 @@ export const createSyncIndexes = async (): Promise<boolean> => {
     try { await db.execAsync('CREATE INDEX IF NOT EXISTS idx_deleted_items_table ON deleted_items(table_name)'); } catch (e) {}
     try { await db.execAsync('CREATE INDEX IF NOT EXISTS idx_deleted_items_deleted_at ON deleted_items(deleted_at)'); } catch (e) {}
     
-    console.log('Successfully created sync indexes for Supabase');
     return true;
   } catch (error) {
-    console.error('Error creating sync indexes:', error);
     return false;
   }
 };
 
 /**
- * Prepare database for Supabase UUID-based synchronization
+ * Prepare database for UUID-based synchronization (PostgreSQL)
+ * This is now used for PostgreSQL sync, not Supabase
  */
 export const prepareForSupabaseSync = async (): Promise<boolean> => {
   try {
-    console.log('Preparing database for Supabase UUID-based sync...');
     const db = await getDatabase();
     if (!db) {
-      console.error('Database not available');
       return false;
     }
     
-    // Ensure all items have a cloud_id (UUID format)
+    // Ensure all items have a cloud_id (UUID format) for PostgreSQL sync
     const tables = ['food_items', 'categories', 'locations', 'shopping_items', 'wish_items'];
     for (const table of tables) {
       try {
@@ -148,7 +139,6 @@ export const prepareForSupabaseSync = async (): Promise<boolean> => {
         );
         
         if (!tableExists) {
-          console.log(`Table ${table} doesn't exist yet, skipping UUID generation`);
           continue;
         }
         
@@ -156,8 +146,6 @@ export const prepareForSupabaseSync = async (): Promise<boolean> => {
         const items = await db.getAllAsync(
           `SELECT id FROM ${table} WHERE cloud_id IS NULL OR cloud_id = ''`
         );
-        
-        console.log(`Found ${items.length} items in ${table} that need cloud_ids`);
         
         // Update items in batches to prevent possible locking issues
         const batchSize = 50;
@@ -174,15 +162,12 @@ export const prepareForSupabaseSync = async (): Promise<boolean> => {
           });
         }
       } catch (e) {
-        console.error(`Error updating ${table} with UUIDs:`, e);
         // Continue with other tables
       }
     }
     
-    console.log('Successfully prepared database for Supabase sync');
     return true;
   } catch (error) {
-    console.error('Error preparing for Supabase sync:', error);
     return false;
   }
 };
@@ -207,7 +192,6 @@ export const runSyncMigrations = async (): Promise<boolean> => {
     const supbasePrepared = await prepareForSupabaseSync();
     return columnsAdded && indexesCreated && supbasePrepared;
   } catch (error) {
-    console.error('Error running sync migrations:', error);
     return false;
   }
 };

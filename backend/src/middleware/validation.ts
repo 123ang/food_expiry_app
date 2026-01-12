@@ -5,6 +5,12 @@ import { Request, Response, NextFunction } from 'express';
 export const validate = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.error('[VALIDATION ERROR]', {
+      path: req.path,
+      method: req.method,
+      body: req.body,
+      errors: errors.array()
+    });
     res.status(400).json({ 
       error: 'Validation failed', 
       details: errors.array() 
@@ -53,11 +59,28 @@ export const foodItemValidation = {
   create: [
     body('name').trim().isLength({ min: 1, max: 255 }).withMessage('Item name required'),
     body('group_id').isUUID().withMessage('Valid group ID required'),
-    body('quantity').optional().isInt({ min: 1 }).withMessage('Quantity must be positive'),
-    body('category_id').optional().isUUID(),
-    body('location_id').optional().isUUID(),
-    body('expiry_date').optional().isISO8601().withMessage('Valid date required'),
-    body('purchase_date').optional().isISO8601(),
+    body('quantity').optional({ nullable: true, checkFalsy: true }).isInt({ min: 1 }).withMessage('Quantity must be positive'),
+    body('category_id').optional({ nullable: true, checkFalsy: true }).custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+    }).withMessage('category_id must be a valid UUID or null'),
+    body('location_id').optional({ nullable: true, checkFalsy: true }).custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+    }).withMessage('location_id must be a valid UUID or null'),
+    body('expiry_date').optional({ nullable: true, checkFalsy: true }).custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      // Accept both date-only (YYYY-MM-DD) and full ISO8601 formats
+      const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/;
+      return dateOnlyRegex.test(value) || iso8601Regex.test(value) || !isNaN(Date.parse(value));
+    }).withMessage('expiry_date must be a valid date (YYYY-MM-DD or ISO8601)'),
+    body('purchase_date').optional({ nullable: true, checkFalsy: true }).custom((value) => {
+      if (value === null || value === undefined || value === '') return true;
+      const dateOnlyRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})$/;
+      return dateOnlyRegex.test(value) || iso8601Regex.test(value) || !isNaN(Date.parse(value));
+    }).withMessage('purchase_date must be a valid date (YYYY-MM-DD or ISO8601)'),
   ],
   update: [
     param('id').isUUID().withMessage('Valid item ID required'),

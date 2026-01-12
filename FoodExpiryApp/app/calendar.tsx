@@ -32,22 +32,37 @@ interface OptimizedFoodImageProps {
 
 const OptimizedFoodImage = ({ imageUri, style }: OptimizedFoodImageProps) => {
   const [optimizedUri, setOptimizedUri] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const { theme } = useTheme();
   
   // Load optimized image when component mounts
   useEffect(() => {
     const loadOptimizedImage = async () => {
       if (imageUri) {
-        // Use LIST_ITEM context to get appropriate sizing
-        const uri = await getOptimizedImageUri(imageUri, ImageDisplayContext.LIST_ITEM);
-        setOptimizedUri(uri);
+        try {
+          // Fix localhost URLs to use correct IP address
+          let fixedUri = imageUri;
+          if (imageUri.includes('localhost') || imageUri.includes('127.0.0.1')) {
+            const { API_URL } = require('../services/ApiClient');
+            const baseUrl = API_URL.replace('/api', '');
+            fixedUri = imageUri.replace(/http:\/\/localhost:\d+/, baseUrl);
+            fixedUri = fixedUri.replace(/http:\/\/127\.0\.0\.1:\d+/, baseUrl);
+          }
+          
+          // Use LIST_ITEM context to get appropriate sizing
+          const uri = await getOptimizedImageUri(fixedUri, ImageDisplayContext.LIST_ITEM);
+          setOptimizedUri(uri);
+          setImageError(false);
+        } catch (error) {
+          setImageError(true);
+        }
       }
     };
     
     loadOptimizedImage();
   }, [imageUri]);
   
-  if (!imageUri) {
+  if (!imageUri || imageError) {
     return (
       <View style={[style, { backgroundColor: `${theme.primaryColor}20`, justifyContent: 'center', alignItems: 'center' }]}>
         <CategoryIcon iconName="cutlery" size={24} />
@@ -63,7 +78,26 @@ const OptimizedFoodImage = ({ imageUri, style }: OptimizedFoodImageProps) => {
     );
   }
   
-  return <Image source={{ uri: optimizedUri || imageUri }} style={style} />;
+  // Use fixed URI if we have one, otherwise use original
+  const finalUri = optimizedUri || imageUri;
+  // Fix localhost in final URI as well (in case it wasn't fixed earlier)
+  let displayUri = finalUri;
+  if (displayUri && (displayUri.includes('localhost') || displayUri.includes('127.0.0.1'))) {
+    const { API_URL } = require('../services/ApiClient');
+    const baseUrl = API_URL.replace('/api', '');
+    displayUri = displayUri.replace(/http:\/\/localhost:\d+/, baseUrl);
+    displayUri = displayUri.replace(/http:\/\/127\.0\.0\.1:\d+/, baseUrl);
+  }
+  
+  return (
+    <Image 
+      source={{ uri: displayUri }} 
+      style={style}
+      onError={() => {
+        setImageError(true);
+      }}
+    />
+  );
 };
 
 export default function CalendarScreen() {
@@ -84,13 +118,41 @@ export default function CalendarScreen() {
   
   // Helper functions to get translated names
   const getItemCategoryName = (item: FoodItemWithDetails) => {
-    const category = categories.find(cat => cat.id === item.category_id);
-    return category ? getCategoryName(category) : item.category_name;
+    // First try to find category by ID
+    if (item.category_id) {
+      const category = categories.find(cat => cat.id === item.category_id);
+      if (category) {
+        return getCategoryName(category);
+      }
+    }
+    // Fallback: try to translate the category_name if it looks like a translation key
+    if (item.category_name) {
+      if (item.category_name.startsWith('category.')) {
+        const translated = t(item.category_name);
+        return translated !== item.category_name ? translated : item.category_name;
+      }
+      return item.category_name;
+    }
+    return t('foodStatus.noCategory') || 'Unknown';
   };
   
   const getItemLocationName = (item: FoodItemWithDetails) => {
-    const location = locations.find(loc => loc.id === item.location_id);
-    return location ? getLocationName(location) : item.location_name;
+    // First try to find location by ID
+    if (item.location_id) {
+      const location = locations.find(loc => loc.id === item.location_id);
+      if (location) {
+        return getLocationName(location);
+      }
+    }
+    // Fallback: try to translate the location_name if it looks like a translation key
+    if (item.location_name) {
+      if (item.location_name.startsWith('defaultLocation.') || item.location_name.startsWith('category.')) {
+        const translated = t(item.location_name);
+        return translated !== item.location_name ? translated : item.location_name;
+      }
+      return item.location_name;
+    }
+    return t('foodStatus.noLocation') || 'Unknown';
   };
 
   const months = [
@@ -103,6 +165,73 @@ export default function CalendarScreen() {
     t('weekday.sun'), t('weekday.mon'), t('weekday.tue'), t('weekday.wed'),
     t('weekday.thu'), t('weekday.fri'), t('weekday.sat')
   ];
+
+  // Helper function to deduplicate items
+  // Prefers items with cloud_id, and removes duplicates based on name + expiry_date + group_id OR cloud_id
+  const deduplicateItems = (items: FoodItemWithDetails[]): FoodItemWithDetails[] => {
+    const seenByName = new Map<string, FoodItemWithDetails>();
+    const seenByCloudId = new Map<string, FoodItemWithDetails>();
+    const duplicates: Array<{ item: FoodItemWithDetails; reason: string }> = [];
+    
+    for (const item of items) {
+      // First check: if item has cloud_id, check for duplicates by cloud_id
+      if (item.cloud_id) {
+        const existingByCloudId = seenByCloudId.get(item.cloud_id);
+        if (existingByCloudId) {
+          // Found duplicate by cloud_id - prefer the one with more complete data
+          duplicates.push({ item, reason: `duplicate cloud_id: ${item.cloud_id}` });
+          if ((item.category_id || item.location_id) && !(existingByCloudId.category_id || existingByCloudId.location_id)) {
+            // Current item has more data, replace
+            seenByCloudId.set(item.cloud_id, item);
+            // Also update in name map if it exists there
+            const nameKey = `${existingByCloudId.name.toLowerCase().trim()}_${existingByCloudId.expiry_date}_${existingByCloudId.group_id || 'null'}`;
+            if (seenByName.has(nameKey)) {
+              seenByName.set(nameKey, item);
+            }
+          }
+          continue; // Skip adding to name map since we already have this cloud_id
+        } else {
+          // First time seeing this cloud_id
+          seenByCloudId.set(item.cloud_id, item);
+        }
+      }
+      
+      // Second check: check for duplicates by name + expiry_date + group_id
+      const nameKey = `${item.name.toLowerCase().trim()}_${item.expiry_date}_${item.group_id || 'null'}`;
+      const existingByName = seenByName.get(nameKey);
+      
+      if (!existingByName) {
+        // First time seeing this item
+        seenByName.set(nameKey, item);
+      } else {
+        // Duplicate found by name/date/group - prefer the one with cloud_id
+        duplicates.push({ item, reason: `duplicate name/date/group: ${nameKey}` });
+        if (item.cloud_id && !existingByName.cloud_id) {
+          // Current item has cloud_id, existing doesn't - replace
+          seenByName.set(nameKey, item);
+        } else if (!item.cloud_id && existingByName.cloud_id) {
+          // Existing has cloud_id, current doesn't - keep existing
+          // Do nothing
+        } else if (item.cloud_id && existingByName.cloud_id) {
+          // Both have cloud_id - should have been caught by cloud_id check above
+          // Keep the one with more complete data
+          if ((item.category_id || item.location_id) && !(existingByName.category_id || existingByName.location_id)) {
+            seenByName.set(nameKey, item);
+          }
+        } else {
+          // Neither has cloud_id - prefer the one with more complete data
+          if ((item.category_id || item.location_id) && !(existingByName.category_id || existingByName.location_id)) {
+            seenByName.set(nameKey, item);
+          }
+        }
+      }
+    }
+    
+    // Deduplicate items
+    
+    // Return unique items from name map (which should include all unique items)
+    return Array.from(seenByName.values());
+  };
 
   // Load data when component mounts or when data version changes
   useEffect(() => {
@@ -117,7 +246,9 @@ export default function CalendarScreen() {
           await refreshAll();
           // Load all food items for calendar (across all groups)
           const allItems = await getFoodItemsByGroup();
-          setAllFoodItems(allItems);
+          // Deduplicate items before setting state
+          const deduplicatedItems = deduplicateItems(allItems);
+          setAllFoodItems(deduplicatedItems);
         } catch (error) {
           // Error refreshing calendar data
         }
@@ -132,7 +263,9 @@ export default function CalendarScreen() {
         const loadAllItems = async () => {
           try {
             const allItems = await getFoodItemsByGroup();
-            setAllFoodItems(allItems);
+            // Deduplicate items before setting state
+            const deduplicatedItems = deduplicateItems(allItems);
+            setAllFoodItems(deduplicatedItems);
           } catch (error) {
             // Error loading all items
           }
@@ -350,6 +483,7 @@ export default function CalendarScreen() {
     },
     dayContent: {
       flex: 1,
+      flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
       borderRadius: responsive.getResponsiveValue({
@@ -379,7 +513,8 @@ export default function CalendarScreen() {
           default: 40,
         }),
       }),
-      overflow: 'hidden',
+      // Change overflow to 'visible' when selected to ensure text is visible
+      // overflow: 'hidden', // Commented out - might be hiding text
       ...(isWeb && {
         cursor: 'pointer' as any,
       }),
@@ -390,6 +525,7 @@ export default function CalendarScreen() {
     dayContentHasItems: {
       borderWidth: 1,
       borderColor: theme.primaryColor,
+      backgroundColor: theme.cardBackground, // Use card background for better contrast
     },
     dayText: {
       fontSize: responsive.getResponsiveValue({
@@ -398,7 +534,7 @@ export default function CalendarScreen() {
         small: 10,
         default: 12,
       }),
-      color: theme.textColor,
+      color: theme.textColor, // Default color, will be overridden when selected
       fontWeight: '500',
       textAlign: 'center',
       lineHeight: responsive.getResponsiveValue({
@@ -407,6 +543,10 @@ export default function CalendarScreen() {
         small: 12,
         default: 14,
       }),
+    },
+    dayTextHasItems: {
+      color: theme.textColor, // Ensure text color is visible
+      fontWeight: '600', // Make it bolder for better visibility
     },
     dayTextSelected: {
       color: '#FFFFFF',
@@ -444,6 +584,22 @@ export default function CalendarScreen() {
         largeTablet: 3,
         small: 1,
         default: 1,
+      }),
+    },
+    itemsDotSelected: {
+      backgroundColor: '#FFFFFF',
+      // Make dot slightly larger when selected for better visibility
+      width: responsive.getResponsiveValue({
+        tablet: 5,
+        largeTablet: 6,
+        small: 3,
+        default: 4,
+      }),
+      height: responsive.getResponsiveValue({
+        tablet: 5,
+        largeTablet: 6,
+        small: 3,
+        default: 4,
       }),
     },
     listSection: {
@@ -579,7 +735,7 @@ export default function CalendarScreen() {
       alignItems: 'center',
     },
     metaText: {
-      color: theme.textSecondary,
+      color: theme.textColor,
       fontSize: 14,
       marginLeft: 4,
     },
@@ -695,7 +851,12 @@ export default function CalendarScreen() {
   const getItemsForDate = (date: Date) => {
     if (!allFoodItems) return [];
     
-    const dateStr = date.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD using local timezone to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     return allFoodItems.filter(item => item.expiry_date === dateStr);
   };
 
@@ -707,26 +868,73 @@ export default function CalendarScreen() {
     const isSelected = dayInfo.date.toDateString() === selectedDate.toDateString();
     const hasItems = hasItemsOnDate(dayInfo.date);
     
+    // Create computed text style for selected dates
+    const computedTextStyle = isSelected 
+      ? StyleSheet.flatten([
+          styles.dayText,
+          !dayInfo.isCurrentMonth && styles.dayTextOtherMonth,
+          {
+            color: '#FFFFFF',
+            fontWeight: '600',
+            opacity: 1,
+            textShadowColor: 'rgba(0, 0, 0, 0.5)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 3,
+          }
+        ])
+      : StyleSheet.flatten([
+          styles.dayText,
+          !dayInfo.isCurrentMonth && styles.dayTextOtherMonth,
+          hasItems && styles.dayTextHasItems,
+        ]);
+    
+    
     return (
       <TouchableOpacity
         key={dayInfo.date.toISOString()}
         style={styles.dayCell}
         onPress={() => setSelectedDate(dayInfo.date)}
       >
-        <View style={[
-          styles.dayContent,
-          isSelected && styles.dayContentSelected,
-          hasItems && !isSelected && styles.dayContentHasItems,
-          !dayInfo.isCurrentMonth && styles.dayContentOtherMonth
-        ]}>
-          <Text style={[
-            styles.dayText,
-            !dayInfo.isCurrentMonth && styles.dayTextOtherMonth,
-            isSelected && styles.dayTextSelected
-          ]}>
+        <View 
+          style={StyleSheet.flatten([
+            styles.dayContent,
+            // Apply hasItems style only when NOT selected
+            hasItems && !isSelected && styles.dayContentHasItems,
+            // Apply selected style last to override hasItems
+            isSelected && styles.dayContentSelected,
+            !dayInfo.isCurrentMonth && styles.dayContentOtherMonth,
+            // When selected, ensure overflow is visible so text isn't clipped
+            isSelected && { overflow: 'visible' as any }
+          ])}
+          // Debug: Check if View is hiding text
+          {...(isSelected && hasItems && {
+            onLayout: (event) => {
+              const { width, height, x, y } = event.nativeEvent.layout;
+              const computedStyle = StyleSheet.flatten([
+                styles.dayContent,
+                isSelected && styles.dayContentSelected,
+              ]);
+            }
+          })}
+        >
+          <Text 
+            style={computedTextStyle}
+            // Debug: Check if Text is rendering
+            {...(isSelected && hasItems && {
+              onLayout: (event) => {
+                const { width, height, x, y } = event.nativeEvent.layout;
+              }
+            })}
+          >
             {dayInfo.date.getDate()}
           </Text>
-          {hasItems && !isSelected && <View style={styles.itemsDot} />}
+          {hasItems && (
+            <View style={[
+              styles.itemsDot,
+              // When selected, make dot white and larger for better visibility
+              isSelected && styles.itemsDotSelected
+            ]} />
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -773,7 +981,7 @@ export default function CalendarScreen() {
       >
       <OptimizedFoodImage imageUri={item.image_uri} style={styles.foodImage} />
       <View style={styles.foodInfo}>
-        <Text style={styles.foodName}>{item.name}</Text>
+        <Text style={[styles.foodName, { color: theme.textColor }]}>{item.name}</Text>
         <View style={styles.foodMeta}>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 14 }}>⏰</Text>
@@ -793,11 +1001,21 @@ export default function CalendarScreen() {
           </View>
           <View style={styles.metaItem}>
             <LocationIcon iconName={item.location_icon} size={14} />
-            <Text style={styles.metaText}>{getItemLocationName(item)}</Text>
+            <Text style={[styles.metaText, { color: theme.textColor }]}>
+              {(() => {
+                const locationName = getItemLocationName(item);
+                return locationName;
+              })()}
+            </Text>
           </View>
           <View style={styles.metaItem}>
             <CategoryIcon iconName={item.category_icon} size={14} />
-            <Text style={styles.metaText}>{getItemCategoryName(item)}</Text>
+            <Text style={[styles.metaText, { color: theme.textColor }]}>
+              {(() => {
+                const categoryName = getItemCategoryName(item);
+                return categoryName;
+              })()}
+            </Text>
           </View>
           <View style={styles.metaItem}>
             <Text style={{ fontSize: 14 }}>📦</Text>

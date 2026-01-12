@@ -4,8 +4,9 @@ import { Alert } from 'react-native';
 // API Configuration
 // For Expo: __DEV__ is true in development mode
 // For physical device testing, use your computer's IP address instead of localhost
-// Your IP: 192.168.100.3
-const API_URL = __DEV__ 
+// Update this IP address if your network changes
+// Current IP: 10.203.80.141 (check with: ipconfig on Windows, ifconfig on Mac/Linux)
+export const API_URL = __DEV__ 
   ? 'http://192.168.100.3:3000/api'  // Development - Use your IP for physical device, localhost for simulator
   : 'https://api.expiry-alert.link/api';  // Production
 
@@ -39,7 +40,7 @@ class ApiClient {
       this.accessToken = access;
       this.refreshToken = refresh;
     } catch (error) {
-      console.error('Error loading tokens:', error);
+      console.log('[API CLIENT] Error loading tokens:', error);
     }
   }
 
@@ -53,7 +54,7 @@ class ApiClient {
         AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken),
       ]);
     } catch (error) {
-      console.error('Error saving tokens:', error);
+      console.log('[API CLIENT] Error saving tokens:', error);
     }
   }
 
@@ -67,7 +68,7 @@ class ApiClient {
         AsyncStorage.removeItem(REFRESH_TOKEN_KEY),
       ]);
     } catch (error) {
-      console.error('Error clearing tokens:', error);
+      console.log('[API CLIENT] Error clearing tokens:', error);
     }
   }
 
@@ -103,7 +104,7 @@ class ApiClient {
       await this.setTokens(accessToken, refreshToken);
       return accessToken;
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      console.log('[API CLIENT] Error refreshing token:', error);
       await this.clearTokens();
       return null;
     }
@@ -126,9 +127,9 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const url = `${API_URL}${endpoint}`;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
 
     // Add access token if available
@@ -137,6 +138,7 @@ class ApiClient {
     }
 
     try {
+   
       let response = await fetch(url, {
         ...options,
         headers,
@@ -189,7 +191,16 @@ class ApiClient {
 
       return { data };
     } catch (error) {
-      console.error('API request error:', error);
+      console.log(`[API DEBUG] Request failed for: ${url}`);
+      console.log('[API DEBUG] Error details:', error);
+      if (error instanceof TypeError && error.message === 'Network request failed') {
+        console.log(`[API DEBUG] Network error - Backend might not be reachable at ${API_URL}`);
+        console.log('[API DEBUG] Check if:');
+        console.log('  1. Backend server is running');
+        console.log('  2. IP address is correct (current:', API_URL, ')');
+        console.log('  3. Device/emulator can reach the backend IP');
+        console.log('  4. Firewall is not blocking the connection');
+      }
       return {
         error: error instanceof Error ? error.message : 'Network error',
       };
@@ -220,15 +231,14 @@ class ApiClient {
   }
 
   // Upload file (for images)
-  async uploadFile(endpoint: string, file: any): Promise<ApiResponse> {
+  async uploadFile(endpoint: string, formData: FormData): Promise<ApiResponse> {
     const url = `${API_URL}${endpoint}`;
-    const formData = new FormData();
-    formData.append('file', file);
 
     const headers: HeadersInit = {};
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
+    // Don't set Content-Type for FormData - let React Native set it with boundary
 
     try {
       const response = await fetch(url, {
@@ -236,18 +246,27 @@ class ApiClient {
         headers,
         body: formData,
       });
-
-      const data = await response.json();
+      let data;
+      try {
+        const text = await response.text();
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.log(`[API CLIENT] Failed to parse upload response:`, parseError);
+        return {
+          error: 'Failed to parse server response',
+        };
+      }
 
       if (!response.ok) {
+        console.log(`[API CLIENT] Upload failed with status ${response.status}:`, data);
         return {
-          error: data.error || 'Upload failed',
+          error: data.error || `Upload failed with status ${response.status}`,
         };
       }
 
       return { data };
     } catch (error) {
-      console.error('Upload error:', error);
+      console.log(`[API CLIENT] ❌ Upload exception:`, error);
       return {
         error: error instanceof Error ? error.message : 'Upload failed',
       };

@@ -113,6 +113,12 @@
   color: #9CA3AF;
 }
 
+.auth-form .form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #F5F5F5;
+}
+
 /* Error message */
 .auth-error {
   display: flex;
@@ -130,6 +136,30 @@
 
 .auth-error .error-icon {
   flex-shrink: 0;
+}
+
+/* Loading indicator */
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: rgba(46, 125, 50, 0.1);
+  border-radius: 12px;
+  color: var(--theme-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.auth-loading .spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(46, 125, 50, 0.3);
+  border-top-color: var(--theme-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 /* Submit button */

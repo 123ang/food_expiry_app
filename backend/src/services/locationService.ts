@@ -6,24 +6,35 @@ import { GroupService } from './groupService';
 export class LocationService {
   // Get all locations (default + group-specific)
   static async getLocations(userId: string, groupId?: string): Promise<Location[]> {
-    let whereClause = 'WHERE l.deleted_at IS NULL AND (l.is_default = true';
+    let whereClause: string;
     const params: any[] = [];
 
     if (groupId) {
       // Check if user is member of the group
-      const isMember = await GroupService.checkGroupPermission(groupId, userId);
-      if (!isMember) {
-        throw new AppError('Access denied to this group', 403);
+      try {
+        const isMember = await GroupService.checkGroupPermission(groupId, userId);
+        if (!isMember) {
+          throw new AppError('Access denied to this group', 403);
+        }
+      } catch (err: any) {
+        // If checkGroupPermission throws an error (e.g., database error), wrap it
+        if (err instanceof AppError) {
+          throw err;
+        }
+        throw new AppError('Failed to verify group membership', 500);
       }
 
-      whereClause += ' OR l.group_id = $1)';
+      // When group_id is provided, ONLY return locations for that specific group
+      // Don't include defaults from other groups
+      whereClause = 'WHERE l.deleted_at IS NULL AND l.group_id = $1';
       params.push(groupId);
     } else {
-      whereClause += ')';
+      // When no group_id, return default locations (is_default = true OR group_id IS NULL)
+      whereClause = 'WHERE l.deleted_at IS NULL AND (l.is_default = true OR l.group_id IS NULL)';
     }
 
     const result = await query(
-      `SELECT * FROM locations ${whereClause} ORDER BY l.is_default DESC, l.name ASC`,
+      `SELECT l.* FROM locations l ${whereClause} ORDER BY l.is_default DESC NULLS LAST, l.group_id NULLS FIRST, l.name ASC`,
       params
     );
 
@@ -56,7 +67,7 @@ export class LocationService {
 
   // Create custom location
   static async createLocation(userId: string, groupId: string, locationData: Partial<Location>): Promise<Location> {
-    const { name, icon, temperature_zone } = locationData;
+    const { name, icon } = locationData;
 
     if (!name) {
       throw new AppError('Location name is required', 400);
@@ -79,10 +90,10 @@ export class LocationService {
     }
 
     const result = await query(
-      `INSERT INTO locations (name, icon, temperature_zone, group_id, created_by, is_default)
+      `INSERT INTO locations (name, icon, translation_key, group_id, created_by, is_default)
        VALUES ($1, $2, $3, $4, $5, false)
        RETURNING *`,
-      [name, icon, temperature_zone, groupId, userId]
+      [name, icon, null, groupId, userId]
     );
 
     return result.rows[0];
@@ -105,7 +116,7 @@ export class LocationService {
       }
     }
 
-    const allowedFields = ['name', 'icon', 'temperature_zone'];
+    const allowedFields = ['name', 'icon', 'translation_key'];
     const fields = Object.keys(updates).filter(key => allowedFields.includes(key));
 
     if (fields.length === 0) {

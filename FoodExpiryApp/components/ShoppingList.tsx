@@ -126,7 +126,6 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({ items, onItemsChange
       setNewItemImage(null);
       onItemsChange();
     } catch (error) {
-      console.error('Error adding shopping item:', error);
       Alert.alert('Error', `Failed to add item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };

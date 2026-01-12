@@ -77,8 +77,6 @@ export class InvitationService {
       );
 
       await sendEmail(invitedEmail, template.subject, template.html, template.text);
-      
-      console.log(`✅ Invitation email sent to ${invitedEmail}`);
     } catch (error) {
       console.error('❌ Failed to send invitation email:', error);
       // Don't fail the invitation if email fails

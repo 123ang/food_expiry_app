@@ -37,12 +37,12 @@ export class AuthService {
       [user.id]
     );
 
-    // Create default "Personal" group
+    // Create default "Personal" group with max_members = 1 (personal only)
     const groupResult = await query(
-      `INSERT INTO groups (name, description, created_by)
-       VALUES ($1, $2, $3)
+      `INSERT INTO groups (name, description, created_by, max_members)
+       VALUES ($1, $2, $3, $4)
        RETURNING id`,
-      ['Personal', 'Your personal food management group', user.id]
+      ['Personal', 'Your personal food management group', user.id, 1]
     );
 
     // Add user as owner of the group
@@ -51,6 +51,9 @@ export class AuthService {
        VALUES ($1, $2, $3)`,
       [groupResult.rows[0].id, user.id, 'owner']
     );
+
+    // Note: Default categories and locations are no longer created here
+    // They will be pushed from the mobile app's local database when the group is created
 
     // Register device if provided
     let device: Device | null = null;

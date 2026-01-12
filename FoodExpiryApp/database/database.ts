@@ -3,8 +3,9 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language } from '../context/LanguageContext';
 import { Category, Location, User } from './models';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
+import { getCurrentDateTimeISO, toGMT8ISO } from '../utils/dateUtils';
 
 // --- DEBUG LOGGING ADDED ---
 // To ensure the database is initialized, call `await initDatabase()` at the very start of your app (e.g., in App.tsx or your main entry point, before any database usage).
@@ -14,7 +15,7 @@ import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../cons
 // --- END DEBUG LOGGING INSTRUCTIONS ---
 
 // Database configuration
-const DATABASE_VERSION = 12;
+const DATABASE_VERSION = 15;
 const DATABASE_NAME = 'expiry_alert.db';
 const VERSION_KEY = 'database_version';
 
@@ -179,49 +180,30 @@ const getCurrentDatabaseVersion = async (): Promise<number> => {
 export const logDatabaseStatus = async (): Promise<void> => {
   try {
     const currentVersion = await getCurrentDatabaseVersion();
-    console.log('=== DATABASE STATUS ===');
-    console.log(`Current Database Version: ${currentVersion}`);
-    console.log(`Target Database Version: ${DATABASE_VERSION}`);
-    console.log(`Migration Needed: ${currentVersion < DATABASE_VERSION}`);
-    
     const database = await getDatabase();
     if (database) {
       try {
         // Check if wish_items table exists and has data
         const wishItemsCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM wish_items') as any;
-        console.log(`wish_items table exists: ${wishItemsCount !== null}`);
-        console.log(`wish_items count: ${wishItemsCount?.count || 0}`);
-        
         // Check if shopping_items table exists and has data
         const shoppingItemsCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM shopping_items') as any;
-        console.log(`shopping_items table exists: ${shoppingItemsCount !== null}`);
-        console.log(`shopping_items count: ${shoppingItemsCount?.count || 0}`);
-        
         // Check table schema for wish_items
         try {
           const wishItemsSchema = await database.getAllAsync("PRAGMA table_info(wish_items)");
-          console.log('wish_items schema:', wishItemsSchema);
         } catch (error) {
-          console.log('wish_items table does not exist or error reading schema');
         }
         
         // Check table schema for shopping_items
         try {
           const shoppingItemsSchema = await database.getAllAsync("PRAGMA table_info(shopping_items)");
-          console.log('shopping_items schema:', shoppingItemsSchema);
         } catch (error) {
-          console.log('shopping_items table does not exist or error reading schema');
         }
         
       } catch (error) {
-        console.log('Error checking table status:', error);
       }
     } else {
-      console.log('Database not available - using fallback storage');
     }
-    console.log('=== END DATABASE STATUS ===');
   } catch (error) {
-    console.log('Error logging database status:', error);
   }
 };
 
@@ -278,13 +260,11 @@ export const checkTableResetStatus = async (): Promise<{
           // Table doesn't exist
         }
       } catch (error) {
-        console.log('Error checking table status:', error);
       }
     }
     
     return result;
   } catch (error) {
-    console.log('Error checking table reset status:', error);
     throw error;
   }
 };
@@ -325,7 +305,7 @@ const backupUserData = async (database: SQLite.SQLiteDatabase): Promise<any> => 
         isUserCreated: loc.id > 4 // Locations with ID > 4 are user-created
       })),
       foodItems,
-      timestamp: new Date().toISOString(),
+      timestamp: getCurrentDateTimeISO(),
       language: await getStoredLanguage()
     };
     
@@ -408,6 +388,22 @@ const restoreUserDataFromBackup = async (database: SQLite.SQLiteDatabase): Promi
 // New function to preserve existing categories and locations during updates
 const preserveExistingCategoriesAndLocations = async (database: SQLite.SQLiteDatabase, language: Language): Promise<void> => {
   try {
+    // For authenticated users: Skip local creation - defaults will be pulled from PostgreSQL
+    // Only create defaults locally for offline users
+    try {
+      const activeUser = await getActiveLocalUser();
+      if (activeUser && activeUser.is_active) {
+        // Check if user has any categories/locations with group_id (synced from PostgreSQL)
+        const syncedCategories = await database.getFirstAsync('SELECT COUNT(*) as count FROM categories WHERE group_id IS NOT NULL') as any;
+        if (syncedCategories && (syncedCategories.count || 0) > 0) {
+          // User has synced data - skip local creation
+          return;
+        }
+      }
+    } catch (error) {
+      // If check fails, proceed with local creation (offline mode)
+    }
+
     const defaultCategories = getDefaultCategories(language);
     const defaultLocations = getDefaultLocations(language);
     
@@ -497,59 +493,42 @@ const ensureFallbackStorage = async (): Promise<void> => {
 
 export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
   if (useFallbackStorage) {
-    console.log('[DB] Fallback storage in use, returning null database');
     return null;
   }
 
   if (!db) {
     try {
-      console.log('[DB] Attempting to open database:', DATABASE_NAME);
       db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-      console.log('[DB] Database opened, testing connection...');
       await db.getAllAsync('SELECT 1');
-      console.log('[DB] Database connection test succeeded');
     } catch (openError) {
-      console.log('[DB] Error opening database (first attempt):', openError);
       try {
         if (db) {
           try {
             await db.closeAsync();
-            console.log('[DB] Closed partial connection after open error');
           } catch (closeError) {
-            console.log('[DB] Error closing partial connection:', closeError);
           }
           db = null;
         }
-        console.log('[DB] Retrying to open database after error...');
         db = await SQLite.openDatabaseAsync(DATABASE_NAME);
         await db.getAllAsync('SELECT 1');
-        console.log('[DB] Database opened and tested on second attempt');
       } catch (secondAttemptError) {
-        console.log('[DB] Error opening database (second attempt):', secondAttemptError);
         try {
           if (db) {
             try {
               await backupUserData(db);
-              console.log('[DB] Backed up user data before recreation');
             } catch (backupError) {
-              console.log('[DB] Could not backup data before recreation:', backupError);
             }
           }
         } catch (backupOuterError) {
-          console.log('[DB] Outer backup error:', backupOuterError);
         }
         try {
           if (db) {
             await db.closeAsync();
             db = null;
-            console.log('[DB] Closed DB before deleting for recreation');
           }
           await SQLite.deleteDatabaseAsync(DATABASE_NAME);
-          console.log('[DB] Deleted database, recreating...');
           db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-          console.log('[DB] Recreated database');
         } catch (recreateError) {
-          console.log('[DB] Could not recreate database, switching to fallback:', recreateError);
           await ensureFallbackStorage();
           return null;
         }
@@ -558,14 +537,13 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase | null> => {
     // Final verification
     try {
       await db.getAllAsync('SELECT 1');
-      console.log('[DB] Final verification succeeded');
     } catch (verifyError) {
-      console.log('[DB] Final verification failed, switching to fallback:', verifyError);
       await ensureFallbackStorage();
       return null;
     }
   }
-  console.log('[DB] Returning database instance');
+  // Removed verbose logging - only log if database is null (error case)
+  // 
   return db;
 };
 
@@ -807,6 +785,7 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       quantity INTEGER NOT NULL DEFAULT 1,
+      unit TEXT DEFAULT 'unit',
       category_id INTEGER,
       location_id INTEGER,
       group_id TEXT,
@@ -824,9 +803,15 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
     CREATE TABLE IF NOT EXISTS shopping_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      unit TEXT,
       image_uri TEXT,
       done BOOLEAN NOT NULL DEFAULT 0,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      cloud_id TEXT,
+      group_id TEXT,
+      sync_status TEXT DEFAULT 'pending'
     );
   `);
   await database.execAsync(`
@@ -888,18 +873,65 @@ const createTables = async (database: SQLite.SQLiteDatabase): Promise<void> => {
     // Column already exists or other error, continue
   }
 
-  // Add group_id column to shopping_items if it doesn't exist
+  // Add unit column to food_items if it doesn't exist
   try {
-    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN group_id TEXT');
+    await database.execAsync('ALTER TABLE food_items ADD COLUMN unit TEXT DEFAULT \'unit\'');
   } catch (error) {
     // Column already exists or other error, continue
   }
 
-  // Add group_id column to wish_items if it doesn't exist
+  // Add new columns to shopping_items if they don't exist
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN group_id TEXT');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN quantity INTEGER DEFAULT 1');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN unit TEXT');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN updated_at TEXT');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN cloud_id TEXT');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE shopping_items ADD COLUMN sync_status TEXT DEFAULT \'pending\'');
+  } catch (error) {
+    // Column already exists, continue
+  }
+
+  // Add new columns to wish_items if they don't exist
   try {
     await database.execAsync('ALTER TABLE wish_items ADD COLUMN group_id TEXT');
   } catch (error) {
-    // Column already exists or other error, continue
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE wish_items ADD COLUMN updated_at TEXT');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE wish_items ADD COLUMN cloud_id TEXT');
+  } catch (error) {
+    // Column already exists, continue
+  }
+  try {
+    await database.execAsync('ALTER TABLE wish_items ADD COLUMN sync_status TEXT DEFAULT \'pending\'');
+  } catch (error) {
+    // Column already exists, continue
   }
 
   // Create groups table if it doesn't exist (for local group management)
@@ -1054,6 +1086,18 @@ const insertDefaultData = async (database: SQLite.SQLiteDatabase, language: Lang
   
   if ((categoryCount as any)?.count > 0 && (locationCount as any)?.count > 0) {
     return;
+  }
+
+  // For fresh authenticated users: Skip local creation - defaults will be pulled from PostgreSQL
+  // Only create defaults locally for offline users
+  try {
+    const activeUser = await getActiveLocalUser();
+    if (activeUser && activeUser.is_active) {
+      // User is authenticated - skip local creation, will pull from PostgreSQL
+      return;
+    }
+  } catch (error) {
+    // If check fails, proceed with local creation (offline mode)
   }
 
   const defaultCategories = getDefaultCategories(language);
@@ -1218,33 +1262,10 @@ const migrateToVersion7 = async (database: SQLite.SQLiteDatabase): Promise<void>
     
     if (imageUris.length > 0) {
       // Import necessary functions from fileStorage
-      const { initializeImageStorage, restoreImagesFromBackup, initializeImageSystemForIOS, validateDatabaseImageLinks } = require('../utils/fileStorage');
+      const { initializeImageStorage } = require('../utils/fileStorage');
       
       // Initialize image storage system
       await initializeImageStorage();
-      
-      // Try to restore images from backup
-      await restoreImagesFromBackup();
-      
-      // Run iOS-specific image recovery if on iOS
-      if (Platform.OS === 'ios') {
-        const iosImageResult = await initializeImageSystemForIOS();
-        
-        // Validate database image links and attempt recovery
-        if (imageUris.length > 0) {
-          const validation = await validateDatabaseImageLinks(imageUris);
-          
-          // If any images were repaired, update the database
-          if (validation.repaired.length > 0) {
-            for (const repair of validation.repaired) {
-              await database.runAsync(
-                'UPDATE food_items SET image_uri = ? WHERE image_uri = ?',
-                [repair.newUri, repair.oldUri]
-              );
-            }
-          }
-        }
-      }
     }
     
     // Mark migration as completed
@@ -1258,25 +1279,127 @@ const migrateToVersion7 = async (database: SQLite.SQLiteDatabase): Promise<void>
   }
 };
 
+// Migration to version 15: Add group_id and cloud_id to categories and locations tables
+const migrateToVersion15 = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  try {
+    const migrationKey = 'categories_locations_group_id_cloud_id_v15';
+    const migrationCompleted = await AsyncStorage.getItem(migrationKey);
+    
+    if (migrationCompleted === 'true') {
+      return;
+    }
+    // Add group_id and cloud_id columns to categories table
+    try {
+      await database.execAsync(`
+        ALTER TABLE categories ADD COLUMN group_id TEXT;
+        ALTER TABLE categories ADD COLUMN cloud_id TEXT UNIQUE;
+      `);
+    } catch (error: any) {
+      // Column might already exist, check error
+      if (error.message && error.message.includes('duplicate column')) {
+      } else {
+        throw error;
+      }
+    }
+
+    // Add group_id and cloud_id columns to locations table
+    try {
+      await database.execAsync(`
+        ALTER TABLE locations ADD COLUMN group_id TEXT;
+        ALTER TABLE locations ADD COLUMN cloud_id TEXT UNIQUE;
+      `);
+    } catch (error: any) {
+      // Column might already exist, check error
+      if (error.message && error.message.includes('duplicate column')) {
+      } else {
+        throw error;
+      }
+    }
+
+    // Mark migration as completed
+    await AsyncStorage.setItem(migrationKey, 'true');
+  } catch (error) {
+    // Don't throw - allow app to continue
+  }
+};
+
+// Migration to version 13: Set null group_id to Personal group ID for food_items, shopping_items, and wish_items
+const migrateToVersion13 = async (database: SQLite.SQLiteDatabase): Promise<void> => {
+  try {
+    const migrationKey = 'null_group_id_migration_v13';
+    const migrationCompleted = await AsyncStorage.getItem(migrationKey);
+    
+    if (migrationCompleted === 'true') {
+      return;
+    }
+    // Get Personal group ID from AsyncStorage (set by ApiContext when groups are loaded)
+    let personalGroupId = await AsyncStorage.getItem('personal_group_id');
+    
+    // If not in AsyncStorage, try to get from stored groups
+    if (!personalGroupId) {
+      const storedGroups = await AsyncStorage.getItem('user_groups');
+      if (storedGroups) {
+        try {
+          const groups = JSON.parse(storedGroups);
+          const personalGroup = Array.isArray(groups) 
+            ? groups.find((g: any) => {
+                const name = g.name?.toLowerCase() || g.groups?.name?.toLowerCase();
+                return name === 'personal';
+              })
+            : null;
+          
+          if (personalGroup?.id) {
+            personalGroupId = personalGroup.id;
+          } else if (personalGroup?.groups?.id) {
+            personalGroupId = personalGroup.groups.id;
+          }
+        } catch (parseError) {
+        }
+      }
+    }
+    
+    if (personalGroupId) {
+      // Update food_items with null group_id
+      const foodItemsUpdated = await database.runAsync(
+        'UPDATE food_items SET group_id = ? WHERE group_id IS NULL',
+        [personalGroupId]
+      );
+      // Update shopping_items with null group_id
+      const shoppingItemsUpdated = await database.runAsync(
+        'UPDATE shopping_items SET group_id = ? WHERE group_id IS NULL',
+        [personalGroupId]
+      );
+      // Update wish_items with null group_id
+      const wishItemsUpdated = await database.runAsync(
+        'UPDATE wish_items SET group_id = ? WHERE group_id IS NULL',
+        [personalGroupId]
+      );
+    } else {
+      // Don't mark as completed, so it will retry next time
+      return;
+    }
+    
+    // Mark migration as completed
+    await AsyncStorage.setItem(migrationKey, 'true');
+  } catch (error) {
+    // Don't mark as completed if there was an error, so it can retry
+  }
+};
+
 export const initDatabase = async (): Promise<void> => {
-  console.log('[DB] initDatabase called');
   return queuedDatabaseOperation(async () => {
     try {
       const database = await getDatabase();
       if (!database) {
         const currentLanguage = await getStoredLanguage();
-        console.log('[DB] Using fallback storage - no SQLite database available');
         return;
       }
-      console.log('[DB] Creating/updating tables...');
       await createTables(database);
       const currentVersion = await getCurrentDatabaseVersion();
       const needsMigration = currentVersion < DATABASE_VERSION;
-      console.log('[DB] Database Version Check:', { currentVersion, DATABASE_VERSION, needsMigration });
       if (needsMigration) {
-        console.log(`[DB] Will migrate from v${currentVersion} to v${DATABASE_VERSION}`);
       } else {
-        console.log(`[DB] Database is up to date (v${currentVersion})`);
+        
       }
       if (currentVersion === 0 && database) {
         try {
@@ -1284,33 +1407,25 @@ export const initDatabase = async (): Promise<void> => {
           const locationCount = await database.getFirstAsync('SELECT COUNT(*) as count FROM locations');
           if ((categoryCount as any)?.count > 0 && (locationCount as any)?.count > 0) {
             await setDatabaseVersion(DATABASE_VERSION);
-            console.log('[DB] Set database version after reset');
             return;
           }
         } catch (error) {
-          console.log('[DB] Error checking category/location count:', error);
         }
       }
       if (needsMigration && currentVersion > 0) {
-        console.log('[DB] Backing up user data before migration...');
         await backupUserData(database);
       }
       if (currentVersion < 9) {
-        console.log('[DB] Starting version 9 migration (reset wish_items and shopping_items tables)');
         await resetShoppingItemsTable(database);
         await resetWishItemsTable(database);
-        console.log('[DB] Version 9 migration completed');
       }
       const currentLanguage = await getStoredLanguage();
       if (currentVersion === 0) {
-        console.log('[DB] Fresh installation - inserting default data');
         await insertDefaultData(database, currentLanguage);
       } else if (needsMigration) {
-        console.log('[DB] Migration needed - preserving user data');
         await insertDefaultData(database, currentLanguage);
         await restoreUserDataFromBackup(database);
       } else {
-        console.log('[DB] Existing installation - skipping default data insertion');
       }
       await updateExistingDefaultItemsWithTranslationKeys(database);
       if (currentVersion < 6) {
@@ -1319,26 +1434,31 @@ export const initDatabase = async (): Promise<void> => {
       if (currentVersion < 7) {
         await migrateToVersion7(database);
       }
+      if (currentVersion < 13) {
+        await migrateToVersion13(database);
+      }
+      if (currentVersion < 14) {
+        // Migration v14: String group_id fix will be handled by sync process after groups are loaded
+        // This ensures we have group UUIDs available for mapping string values like "personal" to UUIDs
+      }
+      if (currentVersion < 15) {
+        await migrateToVersion15(database);
+      }
       if (currentVersion > 0 && currentVersion < DATABASE_VERSION) {
         await migrateToNewCategories(database, currentLanguage);
       }
       await setDatabaseVersion(DATABASE_VERSION);
       const finalVersion = await getCurrentDatabaseVersion();
-      console.log('[DB] Database Initialization Complete:', { finalVersion, expected: DATABASE_VERSION, status: finalVersion === DATABASE_VERSION ? 'SUCCESS' : 'FAILED' });
     } catch (error) {
-      console.log('[DB] initDatabase error:', error);
       try {
         const recovered = await restoreFromFullBackup();
         if (recovered) {
-          console.log('[DB] Database recovered from full backup');
           return;
         }
       } catch (recoveryError) {
-        console.log('[DB] Error during recovery from full backup:', recoveryError);
       }
       useFallbackStorage = true;
       await ensureFallbackStorage();
-      console.log('[DB] Switched to fallback storage after initDatabase failure');
     }
   }, 'initDatabase');
 };
@@ -1382,7 +1502,6 @@ const migrateToNewCategories = async (database: SQLite.SQLiteDatabase, language:
 
 // Add this function to drop and recreate wish_items table
 export const resetWishItemsTable = async (database: SQLite.SQLiteDatabase): Promise<void> => {
-  console.log('🔄 MIGRATION: Resetting wish_items table');
   await database.execAsync('DROP TABLE IF EXISTS wish_items');
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS wish_items (
@@ -1396,49 +1515,39 @@ export const resetWishItemsTable = async (database: SQLite.SQLiteDatabase): Prom
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
-  console.log('✅ MIGRATION: wish_items table reset completed');
 };
 
 // Add this function to drop and recreate shopping_items table
 export const resetShoppingItemsTable = async (database: SQLite.SQLiteDatabase): Promise<void> => {
-  console.log('🔄 MIGRATION: Resetting shopping_items table');
   await database.execAsync('DROP TABLE IF EXISTS shopping_items');
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS shopping_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      unit TEXT,
       image_uri TEXT,
       done BOOLEAN NOT NULL DEFAULT 0,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      cloud_id TEXT,
+      group_id TEXT,
+      sync_status TEXT DEFAULT 'pending'
     );
   `);
-  console.log('✅ MIGRATION: shopping_items table reset completed');
 };
 
-// Utility functions
-export const getCurrentDate = (): string => {
-  return new Date().toISOString().split('T')[0];
-};
-
-export const addDaysToDate = (date: string, days: number): string => {
-  const newDate = new Date(date);
-  newDate.setDate(newDate.getDate() + days);
-  return newDate.toISOString().split('T')[0];
-};
-
-export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString();
-};
-
-export const calculateDaysUntilExpiry = (expiryDate: string): number => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryDate);
-  expiry.setHours(0, 0, 0, 0);
-  const diffTime = expiry.getTime() - today.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
+// Utility functions - Re-export from dateUtils for backward compatibility
+export {
+  getCurrentDate,
+  addDaysToDate,
+  formatDate,
+  calculateDaysUntilExpiry,
+  getCurrentDateTimeISO,
+  toGMT8ISO,
+  toGMT8DateString,
+  getCurrentDateGMT8
+} from '../utils/dateUtils';
 
 // Regular data backup for iOS stability
 export const performRegularBackup = async (): Promise<void> => {
@@ -1830,8 +1939,6 @@ export const forceUpdateTranslationKeys = async (): Promise<void> => {
     
     // Reset the migration flag so it can run again if needed
     await AsyncStorage.removeItem('translation_keys_migration_completed');
-    
-    console.log('Translation keys update completed');
   }, 'forceUpdateTranslationKeys');
 };
 
@@ -1849,7 +1956,7 @@ export const saveUserToLocal = async (userData: {
       throw new Error('Database not available');
     }
 
-    const now = new Date().toISOString();
+    const now = getCurrentDateTimeISO();
     
     // Check if user already exists
     const existingUser = await database.getFirstAsync(
@@ -1943,7 +2050,7 @@ export const deactivateUser = async (supabase_id: string): Promise<void> => {
 
     await database.runAsync(
       'UPDATE users SET is_active = 0, updated_at = ? WHERE supabase_id = ?',
-      [new Date().toISOString(), supabase_id]
+      [getCurrentDateTimeISO(), supabase_id]
     );
   }, 'deactivateUser');
 };
@@ -1961,7 +2068,156 @@ export const updateUserSubscription = async (
 
     await database.runAsync(
       'UPDATE users SET subscription_type = ?, subscription_expires_at = ?, updated_at = ? WHERE supabase_id = ?',
-      [subscription_type, subscription_expires_at || null, new Date().toISOString(), supabase_id]
+      [subscription_type, subscription_expires_at || null, getCurrentDateTimeISO(), supabase_id]
     );
   }, 'updateUserSubscription');
+};
+
+// Clean up duplicate categories and locations from local SQLite database
+// This removes entries where the name is a translation key (e.g., "category.bread", "defaultLocation.counter")
+// Also removes duplicates where there's both a proper item and one with translation key as name
+export const cleanupDuplicateCategoriesAndLocations = async (): Promise<{ categoriesDeleted: number; locationsDeleted: number }> => {
+  return queuedDatabaseOperation(async () => {
+    const database = await getDatabase();
+    if (!database) {
+      throw new Error('Database not available');
+    }
+
+    let categoriesDeleted = 0;
+    let locationsDeleted = 0;
+
+    // Delete categories where name starts with "category." (translation keys used as names)
+    const categoryResult = await database.runAsync(
+      "DELETE FROM categories WHERE name LIKE 'category.%'"
+    );
+    categoriesDeleted = categoryResult.changes || 0;
+
+    // Delete locations where name starts with "defaultLocation." (translation keys used as names)
+    const locationResult = await database.runAsync(
+      "DELETE FROM locations WHERE name LIKE 'defaultLocation.%'"
+    );
+    locationsDeleted = locationResult.changes || 0;
+
+    // Also delete locations with NULL group_id that have the same name as locations with a proper group_id
+    // This handles cases where default locations (NULL group_id) duplicate synced locations
+    const nullGroupDuplicates = await database.getAllAsync(`
+      SELECT l1.id, l1.name, l1.group_id
+      FROM locations l1
+      INNER JOIN locations l2 ON LOWER(TRIM(l1.name)) = LOWER(TRIM(l2.name))
+        AND l1.id != l2.id
+      WHERE l1.group_id IS NULL AND l2.group_id IS NOT NULL
+    `) as any[];
+    
+    for (const dup of nullGroupDuplicates) {
+      await database.runAsync('DELETE FROM locations WHERE id = ?', [dup.id]);
+      locationsDeleted++;
+    }
+
+    // Same for categories
+    const nullGroupCategoryDuplicates = await database.getAllAsync(`
+      SELECT c1.id, c1.name, c1.group_id
+      FROM categories c1
+      INNER JOIN categories c2 ON LOWER(TRIM(c1.name)) = LOWER(TRIM(c2.name))
+        AND c1.id != c2.id
+      WHERE c1.group_id IS NULL AND c2.group_id IS NOT NULL
+    `) as any[];
+    
+    for (const dup of nullGroupCategoryDuplicates) {
+      await database.runAsync('DELETE FROM categories WHERE id = ?', [dup.id]);
+      categoriesDeleted++;
+    }
+
+    // Also delete duplicate locations/categories by name matching within the same group
+    // If there are multiple items with the same name in the same group, keep the one with cloud_id (synced from server)
+    // Delete duplicates where:
+    // 1. Same name (case-insensitive)
+    // 2. Same group_id (or both NULL)
+    // 3. Keep the one with cloud_id, delete the one without (or the one with translation key as name)
+    
+    // Find duplicate locations: same name, same group_id, different IDs
+    // Keep the one with cloud_id, delete others
+    const duplicateLocations = await database.getAllAsync(`
+      SELECT l1.id, l1.name, l1.group_id, l1.cloud_id, l2.id as other_id, l2.cloud_id as other_cloud_id
+      FROM locations l1
+      INNER JOIN locations l2 ON LOWER(TRIM(l1.name)) = LOWER(TRIM(l2.name)) 
+        AND (l1.group_id = l2.group_id OR (l1.group_id IS NULL AND l2.group_id IS NULL))
+        AND l1.id != l2.id
+      WHERE l1.name NOT LIKE 'defaultLocation.%'
+        AND l2.name NOT LIKE 'defaultLocation.%'
+    `) as any[];
+    
+    // Create a set of IDs to keep (those with cloud_id)
+    const locationsToKeep = new Set<number>();
+    const locationsToDelete = new Set<number>();
+    
+    for (const dup of duplicateLocations) {
+      // If l1 has cloud_id and l2 doesn't, keep l1, delete l2
+      if (dup.cloud_id && !dup.other_cloud_id) {
+        locationsToKeep.add(dup.id);
+        locationsToDelete.add(dup.other_id);
+      }
+      // If l2 has cloud_id and l1 doesn't, keep l2, delete l1
+      else if (dup.other_cloud_id && !dup.cloud_id) {
+        locationsToKeep.add(dup.other_id);
+        locationsToDelete.add(dup.id);
+      }
+      // If both have cloud_id or both don't, keep the one with lower ID (arbitrary but consistent)
+      else {
+        const keepId = dup.id < dup.other_id ? dup.id : dup.other_id;
+        const deleteId = dup.id < dup.other_id ? dup.other_id : dup.id;
+        locationsToKeep.add(keepId);
+        locationsToDelete.add(deleteId);
+      }
+    }
+    
+    // Delete duplicate locations
+    for (const id of locationsToDelete) {
+      if (!locationsToKeep.has(id)) {
+        await database.runAsync('DELETE FROM locations WHERE id = ?', [id]);
+        locationsDeleted++;
+      }
+    }
+
+    // Same logic for categories
+    const duplicateCategories = await database.getAllAsync(`
+      SELECT c1.id, c1.name, c1.group_id, c1.cloud_id, c2.id as other_id, c2.cloud_id as other_cloud_id
+      FROM categories c1
+      INNER JOIN categories c2 ON LOWER(TRIM(c1.name)) = LOWER(TRIM(c2.name)) 
+        AND (c1.group_id = c2.group_id OR (c1.group_id IS NULL AND c2.group_id IS NULL))
+        AND c1.id != c2.id
+      WHERE c1.name NOT LIKE 'category.%'
+        AND c2.name NOT LIKE 'category.%'
+    `) as any[];
+    
+    const categoriesToKeep = new Set<number>();
+    const categoriesToDelete = new Set<number>();
+    
+    for (const dup of duplicateCategories) {
+      if (dup.cloud_id && !dup.other_cloud_id) {
+        categoriesToKeep.add(dup.id);
+        categoriesToDelete.add(dup.other_id);
+      }
+      else if (dup.other_cloud_id && !dup.cloud_id) {
+        categoriesToKeep.add(dup.other_id);
+        categoriesToDelete.add(dup.id);
+      }
+      else {
+        const keepId = dup.id < dup.other_id ? dup.id : dup.other_id;
+        const deleteId = dup.id < dup.other_id ? dup.other_id : dup.id;
+        categoriesToKeep.add(keepId);
+        categoriesToDelete.add(deleteId);
+      }
+    }
+    
+    for (const id of categoriesToDelete) {
+      if (!categoriesToKeep.has(id)) {
+        await database.runAsync('DELETE FROM categories WHERE id = ?', [id]);
+        categoriesDeleted++;
+      }
+    }
+
+    console.log(`[CLEANUP] Deleted ${categoriesDeleted} duplicate categories and ${locationsDeleted} duplicate locations from local DB`);
+
+    return { categoriesDeleted, locationsDeleted };
+  }, 'cleanupDuplicateCategoriesAndLocations');
 };

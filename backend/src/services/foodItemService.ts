@@ -18,6 +18,22 @@ export class FoodItemService {
       throw new AppError('Access denied to this group', 403);
     }
 
+    // Check for duplicate items (same name, expiry_date, group_id) to prevent duplicates during sync
+    if (expiry_date) {
+      const existingItem = await query(
+        `SELECT id FROM food_items 
+         WHERE group_id = $1 AND LOWER(TRIM(name)) = LOWER(TRIM($2)) AND expiry_date = $3 
+         AND deleted_at IS NULL AND is_consumed = false`,
+        [group_id, name, expiry_date]
+      );
+      
+      if (existingItem.rows.length > 0) {
+        // Return existing item instead of creating duplicate
+        const existing = await query(`SELECT * FROM food_items WHERE id = $1`, [existingItem.rows[0].id]);
+        return existing.rows[0];
+      }
+    }
+
     const result = await query(
       `INSERT INTO food_items (
         group_id, created_by, name, brand, quantity, unit, 
@@ -26,7 +42,7 @@ export class FoodItemService {
         original_quantity, remaining_quantity
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $5, $5)
       RETURNING *`,
-      [group_id, userId, name, brand, quantity || 1, unit, category_id, location_id, purchase_date, expiry_date, notes, image_url, barcode, purchase_price]
+      [group_id, userId, name, brand, quantity || 1, unit || 'unit', category_id, location_id, purchase_date, expiry_date, notes, image_url, barcode, purchase_price]
     );
 
     return result.rows[0];
@@ -39,8 +55,7 @@ export class FoodItemService {
     if (!isMember) {
       throw new AppError('Access denied to this group', 403);
     }
-
-    let whereClause = 'WHERE fi.group_id = $1 AND fi.deleted_at IS NULL';
+    let whereClause = 'WHERE fi.group_id = $1 AND fi.deleted_at IS NULL AND fi.is_consumed = false';
     const params: any[] = [groupId];
     let paramIndex = 2;
 
@@ -71,10 +86,36 @@ export class FoodItemService {
     } else if (filters?.status === 'fresh') {
       whereClause += ` AND fi.expiry_date > CURRENT_DATE + INTERVAL '7 days'`;
     }
-
     const result = await query(
       `SELECT 
-        fi.*,
+        fi.id,
+        fi.group_id,
+        fi.created_by,
+        fi.name,
+        fi.brand,
+        fi.quantity,
+        fi.unit,
+        fi.category_id,
+        fi.location_id,
+        fi.purchase_date,
+        fi.expiry_date,
+        fi.notes,
+        fi.image_url,
+        fi.barcode,
+        fi.purchase_price,
+        fi.estimated_value,
+        fi.original_quantity,
+        fi.remaining_quantity,
+        fi.is_consumed,
+        fi.consumed_at,
+        fi.consumed_by,
+        fi.last_used_at,
+        fi.usage_frequency,
+        fi.created_at,
+        fi.updated_at,
+        fi.deleted_at,
+        fi.version,
+        fi.sync_status,
         c.name as category_name,
         c.icon as category_icon,
         c.color as category_color,
@@ -92,10 +133,9 @@ export class FoodItemService {
        LEFT JOIN locations l ON fi.location_id = l.id
        LEFT JOIN users u ON fi.created_by = u.id
        ${whereClause}
-       ORDER BY fi.expiry_date ASC, fi.created_at DESC`,
+       ORDER BY fi.expiry_date ASC NULLS LAST, fi.created_at DESC`,
       params
     );
-
     return result.rows;
   }
 

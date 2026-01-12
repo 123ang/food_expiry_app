@@ -7,7 +7,6 @@
     "icon": "./assets/food_expiry_logo.png",
     "userInterfaceStyle": "automatic",
     "scheme": "expiryalert",
-    "sdkVersion": "53.0.0",
     "description": "Never let food go to waste again! Track expiration dates, organize your pantry, and reduce food waste with our intuitive food management app.",
     "splash": {
       "image": "./assets/food_expiry_logo_adaptive.png",
@@ -90,7 +89,10 @@
         }
       ],
       "expo-sqlite",
-      "expo-router"
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-system-ui"
     ],
     "extra": {
       "eas": {

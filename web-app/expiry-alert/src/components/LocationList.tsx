@@ -3,49 +3,35 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 import { 
   getLocations,
   deleteLocation,
   getFoodItems,
-  getGroups,
   Location
 } from '../services/postgresApiService';
 
 const LocationList: React.FC = () => {
   const [locations, setLocations] = useState<Location[]>([]);
   const [itemCounts, setItemCounts] = useState<{ [locationId: string]: number }>({});
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
-
-  // Load group on mount
-  useEffect(() => {
-    const loadGroup = async () => {
-      if (!user) return;
-      
-      try {
-        const groups = await getGroups();
-        if (groups.length > 0) {
-          setCurrentGroupId(groups[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading group:', error);
-      }
-    };
-    
-    loadGroup();
-  }, [user]);
+  const { currentGroup, loading: groupLoading } = useGroup();
+  const currentGroupId = currentGroup?.id || null;
 
   // Load locations when group is available
   useEffect(() => {
-    if (currentGroupId && user) {
+    if (!groupLoading && currentGroupId && user) {
       loadLocations();
+    } else if (!groupLoading && !currentGroupId) {
+      setIsLoading(false);
     }
-  }, [currentGroupId, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentGroupId, user, groupLoading]);
 
   const loadLocations = async () => {
     if (!currentGroupId) return;
@@ -94,9 +80,10 @@ const LocationList: React.FC = () => {
     }
   };
 
-  const handleEditLocation = (locationId: string) => {
-    navigate(`/edit-location/${locationId}`);
-  };
+  // Edit location handler - kept for potential future use
+  // const handleEditLocation = (locationId: string) => {
+  //   navigate(`/edit-location/${locationId}`);
+  // };
 
   const getLocationIcon = (locationName: string) => {
     // Simple icon mapping based on location name
@@ -258,11 +245,6 @@ const LocationList: React.FC = () => {
                     <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: '600', color: '#1f2937' }}>
                       {location.name}
                     </h3>
-                    {location.temperature_zone && (
-                      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
-                        {location.temperature_zone}
-                      </p>
-                    )}
                     {location.is_default && (
                       <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
                         Default location

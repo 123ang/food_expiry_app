@@ -5,12 +5,12 @@ import { AppError } from '../middleware/errorHandler';
 export class GroupService {
   // Create new group
   static async createGroup(userId: string, name: string, description?: string): Promise<Group> {
-    // Create the group
+    // Create the group with default max_members = 100 (for regular groups)
     const groupResult = await query(
-      `INSERT INTO groups (name, description, created_by)
-       VALUES ($1, $2, $3)
+      `INSERT INTO groups (name, description, created_by, max_members)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [name, description || null, userId]
+      [name, description || null, userId, 100]
     );
 
     const group = groupResult.rows[0];
@@ -21,6 +21,9 @@ export class GroupService {
        VALUES ($1, $2, $3)`,
       [group.id, userId, 'owner']
     );
+
+    // Note: Default categories and locations are no longer created here
+    // They will be pushed from the mobile app's local database when the group is created
 
     return group;
   }
@@ -92,7 +95,7 @@ export class GroupService {
     return result.rows[0];
   }
 
-  // Delete group (soft delete)
+  // Delete group and all related data (hard delete)
   static async deleteGroup(groupId: string, userId: string): Promise<void> {
     // Only owner can delete
     const membership = await this.checkGroupPermission(groupId, userId, ['owner']);
@@ -100,8 +103,46 @@ export class GroupService {
       throw new AppError('Only the group owner can delete the group', 403);
     }
 
+    // Delete all related data in order (respecting foreign key constraints)
+    // 1. Delete food items
     await query(
-      `UPDATE groups SET deleted_at = NOW() WHERE id = $1`,
+      `DELETE FROM food_items WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 2. Delete shopping items
+    await query(
+      `DELETE FROM shopping_items WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 3. Delete wish items
+    await query(
+      `DELETE FROM wish_items WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 4. Delete categories
+    await query(
+      `DELETE FROM categories WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 5. Delete locations
+    await query(
+      `DELETE FROM locations WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 6. Delete group memberships
+    await query(
+      `DELETE FROM group_memberships WHERE group_id = $1`,
+      [groupId]
+    );
+
+    // 7. Finally, delete the group itself
+    await query(
+      `DELETE FROM groups WHERE id = $1`,
       [groupId]
     );
   }
@@ -204,22 +245,29 @@ export class GroupService {
 
   // Check if user has permission in group
   static async checkGroupPermission(groupId: string, userId: string, allowedRoles?: string[]): Promise<GroupMembership | null> {
-    const result = await query(
-      `SELECT * FROM group_memberships WHERE group_id = $1 AND user_id = $2`,
-      [groupId, userId]
-    );
+    try {
+      const result = await query(
+        `SELECT * FROM group_memberships WHERE group_id = $1 AND user_id = $2`,
+        [groupId, userId]
+      );
 
-    if (result.rows.length === 0) {
-      return null;
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const membership = result.rows[0];
+
+      if (allowedRoles && !allowedRoles.includes(membership.role)) {
+        return null;
+      }
+
+      return membership;
+    } catch (err: any) {
+      // Log the error for debugging
+      console.error('Error checking group permission:', err);
+      // Re-throw as AppError to be handled by the caller
+      throw new AppError('Failed to check group permission', 500);
     }
-
-    const membership = result.rows[0];
-
-    if (allowedRoles && !allowedRoles.includes(membership.role)) {
-      return null;
-    }
-
-    return membership;
   }
 
   // Get group by invite code
@@ -254,7 +302,10 @@ export class GroupService {
     }
 
     const { max_members, current_members } = result.rows[0];
-    return parseInt(current_members) >= max_members;
+    // Default to 100 if null (for regular groups), Personal groups have max_members = 1
+    const max = max_members ? parseInt(max_members.toString()) : 100;
+    const current = parseInt(current_members.toString()) || 0;
+    return current >= max;
   }
 }
 

@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 import { 
   getFoodItems,
   getCategories,
   getLocations,
-  getGroups,
   deleteFoodItem,
   getDashboardStats,
   calculateItemStatus,
@@ -29,7 +29,6 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
     fresh: 0,
@@ -38,6 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   
   // Enhanced functionality state
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,31 +51,18 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { currentGroup, loading: groupLoading } = useGroup();
+  const currentGroupId = currentGroup?.id || null;
 
-  // Load current group
+  // Load data when group is available (wait for group loading to complete)
   useEffect(() => {
-    const loadGroup = async () => {
-      if (!user) return;
-      
-      try {
-        const groups = await getGroups();
-        if (groups.length > 0) {
-          setCurrentGroupId(groups[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading group:', error);
-      }
-    };
-    
-    loadGroup();
-  }, [user]);
-
-  // Load data when group is available
-  useEffect(() => {
-    if (currentGroupId) {
+    if (!groupLoading && currentGroupId) {
       loadData();
+    } else if (!groupLoading && !currentGroupId) {
+      setIsLoading(false);
     }
-  }, [currentGroupId, filter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentGroupId, filter, groupLoading]);
 
   // Check for notifications when items are loaded
   useEffect(() => {
@@ -107,6 +94,13 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
       try {
         itemsData = await getFoodItems(currentGroupId);
         
+        // Filter out consumed items
+        itemsData = itemsData.filter(item => !item.is_consumed);
+        
+        // Log for debugging
+        console.log(`Dashboard: Loaded ${itemsData.length} items for group ${currentGroupId}`);
+        console.log('Dashboard: Items:', itemsData.map(i => ({ id: i.id, name: i.name, expiry_date: i.expiry_date, is_consumed: i.is_consumed })));
+        
         // Calculate status for each item
         itemsData = itemsData.map(item => {
           if (item.expiry_date) {
@@ -126,14 +120,16 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
       try {
         categoriesData = await getCategories(currentGroupId);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading categories:', err);
+        setError(err.message || t('dashboard.loadCategoriesFailed'));
       }
 
       try {
         locationsData = await getLocations(currentGroupId);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error loading locations:', err);
+        setError(err.message || t('dashboard.loadLocationsFailed'));
       }
 
       setFoodItems(itemsData);
@@ -146,7 +142,8 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      setError(`Failed to load data: ${error instanceof Error ? error.message : 'Unknown error'}. Please check your internet connection and try again.`);
+      const errorMessage = error instanceof Error ? error.message : t('dashboard.unknownError');
+      setError(`${t('dashboard.loadDataFailed')}: ${errorMessage}. ${t('dashboard.checkConnection')}`);
     } finally {
       setIsLoading(false);
     }
@@ -214,22 +211,24 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
       loadData();
     } catch (error) {
       console.error('Error deleting item:', error);
-      toast.error('Failed to delete item');
+      toast.error(t('dashboard.deleteFailed'));
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedItems.size === 0) return;
-    if (!window.confirm(`Delete ${selectedItems.size} items?`)) return;
+    const confirmMessage = t('dashboard.deleteMultiple', { count: selectedItems.size });
+    if (!window.confirm(confirmMessage)) return;
     
     try {
       await Promise.all(Array.from(selectedItems).map(id => deleteFoodItem(id)));
-      toast.success(`${selectedItems.size} items deleted`);
+      const successMessage = t('dashboard.itemsDeleted', { count: selectedItems.size });
+      toast.success(successMessage);
       setSelectedItems(new Set());
       loadData();
     } catch (error) {
       console.error('Error bulk deleting:', error);
-      toast.error('Failed to delete items');
+      toast.error(t('dashboard.deleteFailedMultiple'));
     }
   };
 
@@ -244,15 +243,15 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
   };
 
   const getCategoryName = (categoryId: string | undefined) => {
-    if (!categoryId) return 'Uncategorized';
+    if (!categoryId) return t('dashboard.uncategorized');
     const category = categories.find(c => c.id === categoryId);
-    return category?.name || 'Unknown';
+    return category?.name || t('dashboard.unknown');
   };
 
   const getLocationName = (locationId: string | undefined) => {
-    if (!locationId) return 'No location';
+    if (!locationId) return t('dashboard.noLocation');
     const location = locations.find(l => l.id === locationId);
-    return location?.name || 'Unknown';
+    return location?.name || t('dashboard.unknown');
   };
 
   const getCategoryIcon = (categoryId: string | undefined) => {
@@ -269,9 +268,9 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
   const getStatusBadgeClass = (status?: string) => {
     switch (status) {
-      case 'fresh': return 'status-badge' + ' ' + 'in-date';
-      case 'expiring-soon': return 'status-badge' + ' ' + 'expiring';
-      case 'expired': return 'status-badge' + ' ' + 'expired';
+      case 'fresh': return 'status-badge in-date';
+      case 'expiring-soon': return 'status-badge expiring';
+      case 'expired': return 'status-badge expired';
       default: return 'status-badge';
     }
   };
@@ -285,12 +284,30 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
     }
   };
 
-  if (isLoading) {
+  if (groupLoading || isLoading) {
     return (
       <div className="loading">
         <div className="loading-spinner">
           <div className="spinner"></div>
           <p>{t('status.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentGroup) {
+    return (
+      <div className="dashboard">
+        <div className="dashboard-header">
+          <div className="header-content">
+            <h1>{t('nav.dashboard')}</h1>
+            <p>{t('groups.noGroup') || 'No group selected. Please create or join a group.'}</p>
+          </div>
+          <div className="header-actions">
+            <Link to="/groups" className="btn btn-primary">
+              👥 {t('groups.createGroup') || 'Create Group'}
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -313,7 +330,12 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
       {/* Header */}
       <div className="dashboard-header">
         <div className="header-content">
-          <h1>{filter ? `${filter.charAt(0).toUpperCase() + filter.slice(1)} Items` : t('nav.dashboard')}</h1>
+          <h1>
+            {filter === 'fresh' ? t('dashboard.freshItems') :
+             filter === 'expiring-soon' ? t('dashboard.expiringItems') :
+             filter === 'expired' ? t('dashboard.expiredItems') :
+             t('nav.dashboard')}
+          </h1>
           <p>{t('dashboard.welcome')}</p>
         </div>
         <div className="header-actions">
@@ -386,7 +408,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
-              <option value="">All Categories</option>
+              <option value="">{t('dashboard.allCategories')}</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
               ))}
@@ -397,7 +419,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
             >
-              <option value="">All Locations</option>
+              <option value="">{t('dashboard.allLocations')}</option>
               {locations.map(loc => (
                 <option key={loc.id} value={loc.id}>{loc.icon} {loc.name}</option>
               ))}
@@ -408,17 +430,17 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
             >
-              <option value="expiry_date">Sort by Expiry</option>
-              <option value="name">Sort by Name</option>
-              <option value="category">Sort by Category</option>
-              <option value="location">Sort by Location</option>
-              <option value="created_at">Sort by Date Added</option>
+              <option value="expiry_date">{t('dashboard.sortByExpiry')}</option>
+              <option value="name">{t('dashboard.sortByName')}</option>
+              <option value="category">{t('dashboard.sortByCategory')}</option>
+              <option value="location">{t('dashboard.sortByLocation')}</option>
+              <option value="created_at">{t('dashboard.sortByDateAdded')}</option>
             </select>
 
             <button
               className="sort-direction-btn"
               onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+              title={sortDirection === 'asc' ? t('dashboard.ascending') : t('dashboard.descending')}
             >
               {sortDirection === 'asc' ? '↑' : '↓'}
             </button>
@@ -426,7 +448,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
             <button
               className="view-mode-btn"
               onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              title={viewMode === 'grid' ? 'Grid View' : 'List View'}
+              title={viewMode === 'grid' ? t('dashboard.gridView') : t('dashboard.listView')}
             >
               {viewMode === 'grid' ? '⊞' : '☰'}
             </button>
@@ -437,13 +459,13 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
         {selectedItems.size > 0 && (
           <div className="bulk-actions">
             <span className="selection-count">
-              {selectedItems.size} item(s) selected
+              {t('dashboard.itemsSelected', { count: selectedItems.size })}
             </span>
             <button onClick={handleBulkDelete} className="btn btn-danger btn-small">
-              🗑️ Delete Selected
+              🗑️ {t('dashboard.deleteSelected')}
             </button>
             <button onClick={() => setSelectedItems(new Set())} className="btn btn-secondary btn-small">
-              Clear Selection
+              {t('dashboard.clearSelection')}
             </button>
           </div>
         )}
@@ -477,7 +499,24 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
 
               <div className="item-header">
                 <div className="item-title">
-                  <span className="category-icon">{getCategoryIcon(item.category_id)}</span>
+                  {/* Item Image Thumbnail or Category Icon Placeholder */}
+                  {item.image_url && !imageErrors.has(item.id || '') ? (
+                    <img 
+                      src={item.image_url} 
+                      alt={item.name}
+                      className="item-thumbnail"
+                      onError={() => {
+                        // Mark this image as failed to load
+                        if (item.id) {
+                          setImageErrors(prev => new Set(prev).add(item.id!));
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="category-icon">
+                      {getCategoryIcon(item.category_id)}
+                    </span>
+                  )}
                   <h3>{item.name}</h3>
                 </div>
                 <button
@@ -497,7 +536,7 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
                   <span>{getLocationName(item.location_id)}</span>
                 </div>
                 <div className="detail-row">
-                  <span>📦</span>
+                  <span className="category-icon-small">{getCategoryIcon(item.category_id)}</span>
                   <span>{getCategoryName(item.category_id)}</span>
                 </div>
                 {item.expiry_date && (
@@ -519,15 +558,15 @@ const Dashboard: React.FC<DashboardProps> = ({ filter }) => {
                   className={getStatusBadgeClass(item.status)}
                   style={{ backgroundColor: getStatusColor(item.status) }}
                 >
-                  {item.status === 'fresh' ? 'Fresh' : 
-                   item.status === 'expiring-soon' ? 'Expiring Soon' : 
-                   'Expired'}
+                  {item.status === 'fresh' ? t('dashboard.statusFresh') : 
+                   item.status === 'expiring-soon' ? t('dashboard.statusExpiringSoon') : 
+                   t('dashboard.statusExpired')}
                 </span>
                 {item.daysUntilExpiry !== undefined && (
                   <span className="days-text">
                     {item.daysUntilExpiry < 0 
-                      ? `${Math.abs(item.daysUntilExpiry)} days ago`
-                      : `${item.daysUntilExpiry} days left`}
+                      ? t('dashboard.daysAgo', { count: Math.abs(item.daysUntilExpiry) })
+                      : t('dashboard.daysLeft', { count: item.daysUntilExpiry })}
                   </span>
                 )}
               </div>

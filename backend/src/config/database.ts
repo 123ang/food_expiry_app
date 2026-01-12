@@ -30,7 +30,6 @@ const pool = new Pool({
 
 // Test connection on startup
 pool.on('connect', () => {
-  console.log('✅ Database connected successfully');
 });
 
 pool.on('error', (err: Error) => {
@@ -40,11 +39,8 @@ pool.on('error', (err: Error) => {
 
 // Helper function to execute queries
 export const query = async (text: string, params?: any[]) => {
-  const start = Date.now();
   try {
     const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
     return res;
   } catch (error) {
     console.error('Database query error:', error);

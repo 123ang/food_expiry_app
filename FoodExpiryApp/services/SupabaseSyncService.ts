@@ -3,9 +3,10 @@ import { FoodItemRepository, CategoryRepository, LocationRepository } from '../d
 import { getDatabase, getCurrentDate } from '../database/database';
 import { runSyncMigrations } from '../database/migrations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { v4 as uuidv4 } from 'uuid';
 import { Platform } from 'react-native';
+import { getCurrentDateTimeISO } from '../utils/dateUtils';
 
 // Types for sync operations
 interface SyncResult {
@@ -87,16 +88,12 @@ export class SupabaseSyncService {
    * Updates all repository schemas to add necessary sync columns
    */
   async updateDatabaseForSync(): Promise<void> {
-    console.log('Updating database schema for Supabase sync...');
-    
     try {
       const success = await runSyncMigrations();
       
       if (!success) {
         throw new Error('Failed to run sync migrations');
       }
-      
-      console.log('Database schema updated for Supabase sync');
     } catch (error) {
       console.error('Error updating database for sync:', error);
       throw new Error(`Failed to update database for sync: ${error.message}`);
@@ -114,8 +111,6 @@ export class SupabaseSyncService {
     this.syncInProgress = true;
     
     try {
-      console.log('Starting Supabase database sync...');
-      
       // Ensure we have the necessary sync columns and indexes
       await this.updateDatabaseForSync();
       
@@ -181,7 +176,6 @@ export class SupabaseSyncService {
    * Collect local changes that need to be synced to Supabase
    */
   private async collectLocalChanges(groupId: string): Promise<LocalSyncData> {
-    console.log('Collecting local changes for Supabase sync...');
     const lastSyncTimeStr = this.lastSyncTime?.toISOString() || '1970-01-01T00:00:00Z';
     
     // Collect items to sync from each table
@@ -284,7 +278,6 @@ export class SupabaseSyncService {
    * Collect local images that need to be synced to Supabase
    */
   private async collectLocalImages(foodItems: any[]): Promise<Record<string, string>> {
-    console.log('Collecting local images for Supabase sync...');
     const imageData: Record<string, string> = {};
     
     // Get unique image URIs from food items
@@ -315,7 +308,7 @@ export class SupabaseSyncService {
       }
     }
     
-    console.log(`Collected ${Object.keys(imageData).length} local images for sync`);
+    
     return imageData;
   }
   
@@ -357,8 +350,6 @@ export class SupabaseSyncService {
     shoppingItems: number;
     images: number;
   }> {
-    console.log('Uploading local changes to Supabase...');
-    
     // Initialize counters
     const result = {
       categories: 0,
@@ -501,7 +492,7 @@ export class SupabaseSyncService {
     userId: string,
     groupId: string
   ): Promise<Record<string, string>> {
-    console.log(`Uploading ${Object.keys(images).length} images to Supabase Storage...`);
+    
     const result: Record<string, string> = {};
     
     for (const [localUri, base64Data] of Object.entries(images)) {
@@ -543,8 +534,6 @@ export class SupabaseSyncService {
    * Process deleted items in Supabase
    */
   private async processDeletes(deletedItems: LocalSyncData['deletedItems']): Promise<void> {
-    console.log('Processing deleted items in Supabase...');
-    
     // Delete food items
     if (deletedItems.foodItems.length > 0) {
       const { error } = await supabase
@@ -620,8 +609,6 @@ export class SupabaseSyncService {
     shoppingItems: number;
     images: number;
   }> {
-    console.log('Downloading changes from Supabase...');
-    
     // Initialize counters
     const result = {
       categories: 0,
@@ -871,7 +858,7 @@ export class SupabaseSyncService {
         [
           userId,
           groupId,
-          new Date().toISOString(),
+          getCurrentDateTimeISO(),
           'success',
           totalUploaded,
           totalDownloaded,
@@ -906,7 +893,7 @@ export class SupabaseSyncService {
       // Track the deletion
       await db.runAsync(
         'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
-        [tableName, itemId, cloudId, groupId, new Date().toISOString()]
+        [tableName, itemId, cloudId, groupId, getCurrentDateTimeISO()]
       );
     } catch (error) {
       // Create the table if it doesn't exist yet
@@ -925,7 +912,7 @@ export class SupabaseSyncService {
         // Try insert again
         await db.runAsync(
           'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
-          [tableName, itemId, null, groupId, new Date().toISOString()]
+          [tableName, itemId, null, groupId, getCurrentDateTimeISO()]
         );
       } catch (e) {
         console.error('Error tracking deleted item:', e);
@@ -945,7 +932,6 @@ export class SupabaseSyncService {
       await db.runAsync('DELETE FROM deleted_items');
       await AsyncStorage.removeItem('last_sync_time');
       this.lastSyncTime = null;
-      console.log('Sync log cleared');
     } catch (error) {
       console.error('Error clearing sync log:', error);
     }

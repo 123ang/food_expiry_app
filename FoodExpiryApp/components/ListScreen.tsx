@@ -16,20 +16,23 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useApi } from '../context/ApiContext';
 import { ShoppingItem, WishItem } from '../database/models';
 import {
   addShoppingItem,
   updateShoppingItem,
   deleteShoppingItem,
-  getShoppingItems,
+  getShoppingItemsByGroup,
   toggleShoppingItemDone,
   clearCompletedShoppingItems,
   addWishItem,
   updateWishItem,
   deleteWishItem,
-  getWishItems,
+  getWishItemsByGroup,
   toggleWishItemDone,
   clearCompletedWishItems,
+  syncPendingShoppingItems,
+  syncPendingWishItems,
 } from '../database/shoppingRepository';
 
 type Tab = 'shopping' | 'wish';
@@ -89,11 +92,12 @@ const ListItem: React.FC<ListItemProps> = ({ item, onToggle, onDelete, onEdit, o
 export const ListScreen: React.FC = () => {
   const { colors } = useTheme();
   const { t } = useLanguage();
+  const { currentGroup } = useApi();
   const [activeTab, setActiveTab] = useState<Tab>('shopping');
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [wishItems, setWishItems] = useState<WishItem[]>([]);
   const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('1'); // Default quantity is 1
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newItemImage, setNewItemImage] = useState<string | null>(null);
   const [showImagePicker, setShowImagePicker] = useState(false);
@@ -101,22 +105,25 @@ export const ListScreen: React.FC = () => {
   const [editingItem, setEditingItem] = useState<ShoppingItem | WishItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const groupId = currentGroup?.id || null;
+
   const loadItems = useCallback(async () => {
     try {
+      // Load items for the current group if available
       const [shopping, wish] = await Promise.all([
-        getShoppingItems(),
-        getWishItems(),
+        groupId ? getShoppingItemsByGroup(groupId) : Promise.resolve([]),
+        groupId ? getWishItemsByGroup(groupId) : Promise.resolve([]),
       ]);
       setShoppingItems(shopping);
       setWishItems(wish);
     } catch (error) {
       Alert.alert('Error', 'Failed to load items');
     }
-  }, []);
+  }, [groupId]);
 
   useEffect(() => {
     loadItems();
-  }, [loadItems]);
+  }, [loadItems, groupId]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -164,22 +171,21 @@ export const ListScreen: React.FC = () => {
       if (activeTab === 'shopping') {
         await addShoppingItem({
           name: newItemName.trim(),
-          quantity: newItemQuantity ? parseInt(newItemQuantity, 10) : undefined,
+          quantity: newItemQuantity ? parseInt(newItemQuantity, 10) : 1, // Default to 1
           image_uri: newItemImage,
           done: false,
-        });
+        }, groupId);
       } else {
         await addWishItem({
           name: newItemName.trim(),
-          quantity: newItemQuantity ? parseInt(newItemQuantity, 10) : undefined,
           price: newItemPrice.trim() || undefined,
           image_uri: newItemImage,
           done: false,
-        });
+        }, groupId);
       }
 
       setNewItemName('');
-      setNewItemQuantity('');
+      setNewItemQuantity('1'); // Reset to default 1
       setNewItemPrice('');
       setNewItemImage(null);
       await loadItems();
@@ -311,13 +317,41 @@ export const ListScreen: React.FC = () => {
           value={newItemName}
           onChangeText={setNewItemName}
         />
-        <TextInput
-          style={styles.quantityInput}
-          placeholder={t('Qty')}
-          value={newItemQuantity}
-          onChangeText={setNewItemQuantity}
-          keyboardType="numeric"
-        />
+        <View style={styles.quantityContainer}>
+          <TouchableOpacity
+            style={styles.quantityButton}
+            onPress={() => {
+              const qty = parseInt(newItemQuantity || '1', 10);
+              if (qty > 1) setNewItemQuantity((qty - 1).toString());
+            }}
+          >
+            <Text style={styles.quantityButtonText}>−</Text>
+          </TouchableOpacity>
+          <TextInput
+            style={styles.quantityInput}
+            placeholder={t('Qty')}
+            value={newItemQuantity}
+            onChangeText={(text) => {
+              // Only allow positive integers
+              const num = parseInt(text, 10);
+              if (!text || text === '') {
+                setNewItemQuantity('1');
+              } else if (!isNaN(num) && num > 0) {
+                setNewItemQuantity(num.toString());
+              }
+            }}
+            keyboardType="numeric"
+          />
+          <TouchableOpacity
+            style={styles.quantityButton}
+            onPress={() => {
+              const qty = parseInt(newItemQuantity || '1', 10);
+              setNewItemQuantity((qty + 1).toString());
+            }}
+          >
+            <Text style={styles.quantityButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
         {activeTab === 'wish' && (
           <TextInput
             style={styles.priceInput}
@@ -524,14 +558,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginRight: 8,
   },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    backgroundColor: '#2196F3',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   quantityInput: {
-    width: 60,
-    height: 40,
+    width: 50,
+    height: 32,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    marginHorizontal: 4,
     textAlign: 'center',
   },
   priceInput: {

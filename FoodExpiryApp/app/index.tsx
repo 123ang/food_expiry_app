@@ -33,9 +33,9 @@ import LocationIcon from '../components/LocationIcon';
 import { useTypography } from '../hooks/useTypography';
 import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
+import { getCurrentDate, toGMT8DateString } from '../utils/dateUtils';
 import { EditModal } from '../components/ManagementModals';
 import { ThemeSelector } from '../components/ThemeSelector';
-import SyncDebugger from '../components/SyncDebugger';
 import { GroupSelector } from '../components/GroupSelector';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
@@ -167,7 +167,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
             Select {isCategory ? 'Category' : 'Location'} Icon ({emojis.length} options)
           </Text>
           <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={true}>
-            {categories.map((category) => (
+            {filteredCategories.map((category) => (
               <View key={category.title}>
                 <TouchableOpacity 
                   style={styles.categoryHeader}
@@ -215,10 +215,24 @@ export default function DashboardScreen() {
   const { t, language, getCategoryName, getLocationName } = useLanguage();
   const typography = useTypography(undefined, language);
   const responsive = useResponsive();
+  const router = useRouter();
+  
+  // Group and authentication functionality
+  const { 
+    user, 
+    isAuthenticated, 
+    currentGroup, 
+    userGroups, 
+    createGroup,
+    setCurrentGroup,
+    syncToServer,
+    loading: authLoading
+  } = useApi();
+  
   const {
     foodItems,
     categories,
-    locations,
+    locations: allLocations,
     createFoodItem,
     updateFoodItem,
     deleteFoodItem,
@@ -233,21 +247,17 @@ export default function DashboardScreen() {
     refreshCategories,
     refreshLocations,
     dashboardCounts,
+    invalidateCache,
     error,
     getFoodItemsByGroup,
   } = useDatabase();
 
-  // Group and authentication functionality
-  const { 
-    user, 
-    isAuthenticated, 
-    currentGroup, 
-    userGroups, 
-    createGroup,
-    syncToServer 
-  } = useApi();
-
-  const router = useRouter();
+  // Redirect to login if not authenticated (after loading is complete)
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.replace('/auth/login');
+    }
+  }, [authLoading, isAuthenticated, user, router]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [itemName, setItemName] = useState('');
@@ -264,13 +274,54 @@ export default function DashboardScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<Category | Location | null>(null);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
-  const [showSyncDebugger, setShowSyncDebugger] = useState(false);
   const lastLanguage = React.useRef(language);
 
   // Group-related state
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [filteredFoodItems, setFilteredFoodItems] = useState<FoodItemWithDetails[]>([]);
-
+  const [isSwitchingGroup, setIsSwitchingGroup] = useState(false);
+  
+  // Filter locations and categories by current group, and deduplicate by name
+  const locations = React.useMemo(() => {
+    if (!currentGroup?.id) return allLocations;
+    const filtered = allLocations.filter(loc => loc.group_id === currentGroup.id);
+    // Deduplicate by name - keep the one with cloud_id if available
+    const seen = new Map<string, Location>();
+    for (const loc of filtered) {
+      const key = loc.name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.set(key, loc);
+      } else {
+        const existing = seen.get(key)!;
+        // Prefer the one with cloud_id (synced from server)
+        if (loc.cloud_id && !existing.cloud_id) {
+          seen.set(key, loc);
+        }
+      }
+    }
+    return Array.from(seen.values());
+  }, [allLocations, currentGroup?.id]);
+  
+  const filteredCategories = React.useMemo(() => {
+    if (!currentGroup?.id) return categories;
+    const filtered = categories.filter(cat => cat.group_id === currentGroup.id);
+    // Deduplicate by name - keep the one with cloud_id if available
+    const seen = new Map<string, Category>();
+    for (const cat of filtered) {
+      const key = cat.name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.set(key, cat);
+      } else {
+        const existing = seen.get(key)!;
+        // Prefer the one with cloud_id (synced from server)
+        if (cat.cloud_id && !existing.cloud_id) {
+          seen.set(key, cat);
+        }
+      }
+    }
+    return Array.from(seen.values());
+  }, [categories, currentGroup?.id]);
+  
   // Determine subscription plan
   const subscriptionPlan = user?.subscription_type || 'free';
 
@@ -286,17 +337,6 @@ export default function DashboardScreen() {
     updated_at: group.updated_at
   });
   const groups = userGroups.map(membership => adaptGroup(membership.groups));
-  
-  // Debug: Print groups in the main component
-  console.log('DashboardScreen: userGroups count:', userGroups.length)
-  console.log('DashboardScreen: groups count:', groups.length)
-  groups.forEach((group, index) => {
-    console.log(`DashboardScreen: Group ${index + 1}:`, {
-      id: group.id,
-      name: group.name,
-      description: group.description
-    })
-  })
 
   // Load food items for the selected group
   useEffect(() => {
@@ -306,7 +346,6 @@ export default function DashboardScreen() {
           const items = await getFoodItemsByGroup(activeGroupId);
           setFilteredFoodItems(items);
         } catch (error) {
-          console.error('Error loading group food items:', error);
           setFilteredFoodItems([]);
         }
       } else {
@@ -318,21 +357,51 @@ export default function DashboardScreen() {
     loadGroupFoodItems();
   }, [activeGroupId, foodItems, getFoodItemsByGroup]);
 
-  // Set active group when groups change
+  // Note: Categories and locations are loaded from local database
+  // They are NOT auto-synced when group changes - only when user clicks sync button
+  // This ensures local database is the source of truth for UI display
+
+  // Set active group when groups change - use currentGroup from ApiContext (which prioritizes groups with items)
   useEffect(() => {
-    if (groups.length > 0 && !activeGroupId) {
-      setActiveGroupId(groups[0].id);
+    // Use currentGroup from ApiContext instead of manually selecting
+    // This ensures we use the group that has items (if any), or Personal as default
+    if (currentGroup && currentGroup.id !== activeGroupId) {
+      setActiveGroupId(currentGroup.id);
+    } else if (groups.length > 0 && !activeGroupId && !currentGroup) {
+      // Fallback: if no currentGroup set yet, find Personal group or use first group
+      const personalGroup = groups.find(g => g.name.toLowerCase() === 'personal');
+      const selectedGroupId = personalGroup ? personalGroup.id : groups[0].id;
+      
+      setActiveGroupId(selectedGroupId);
     } else if (groups.length === 0 && isAuthenticated) {
       // If authenticated but no groups, the GroupSelector will show "Creating Personal Group..."
     }
-  }, [groups, activeGroupId, isAuthenticated]);
+  }, [groups, activeGroupId, isAuthenticated, currentGroup]);
 
-  const setActiveGroup = (group: any) => {
-    setActiveGroupId(group.id);
+  const setActiveGroup = async (group: any) => {
+    // Show loading state when switching groups
+    setIsSwitchingGroup(true);
+    try {
+      // Invalidate cache first to ensure fresh data
+      invalidateCache();
+      
+      // Update both local state and ApiContext's currentGroup
+      setActiveGroupId(group.id);
+      if (setCurrentGroup) {
+        await setCurrentGroup(group);
+      }
+      // Refresh data for the new group
+      await refreshAll();
+    } finally {
+      // Small delay to prevent flickering
+      setTimeout(() => {
+        setIsSwitchingGroup(false);
+      }, 300);
+    }
   };
 
   useEffect(() => {
-    const hasCategories = categories.length > 0;
+    const hasCategories = filteredCategories.length > 0;
     const hasLocations = locations.length > 0;
     
     if (hasCategories && hasLocations) {
@@ -342,7 +411,7 @@ export default function DashboardScreen() {
       const timer = setTimeout(() => {}, 3000);
       return () => clearTimeout(timer);
     }
-  }, [categories.length, locations.length]);
+  }, [filteredCategories.length, locations.length]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -387,6 +456,27 @@ export default function DashboardScreen() {
     return counts;
   };
 
+  // Calculate dashboard counts based on filteredFoodItems (current group only)
+  // Exclude consumed items if they exist in the data
+  // Use useMemo to avoid recalculating on every render
+  const groupDashboardCounts = React.useMemo(() => {
+    // Filter out consumed items if is_consumed field exists
+    const activeItems = filteredFoodItems.filter(item => {
+      // Check if item has is_consumed field (from PostgreSQL sync)
+      if ('is_consumed' in item && (item as any).is_consumed === true) {
+        return false;
+      }
+      return true;
+    });
+    
+    const total = activeItems.length;
+    const expiring_soon = activeItems.filter(item => item.status === 'expiring_soon').length;
+    const expired = activeItems.filter(item => item.status === 'expired').length;
+    const fresh = activeItems.filter(item => item.status === 'fresh').length;
+    
+    return { total, expiring_soon, expired, fresh };
+  }, [filteredFoodItems, activeGroupId]);
+
   const handleSave = async () => {
     if (isSaving) return;
     
@@ -405,19 +495,39 @@ export default function DashboardScreen() {
       return;
     }
 
+    // Ensure we have a group selected - use currentGroup from ApiContext (most reliable)
+    // If currentGroup is not set, try activeGroupId, but prioritize currentGroup
+    // Also fallback to first available group if user is authenticated
+    let selectedGroupId = currentGroup?.id || activeGroupId;
+    
+    if (!selectedGroupId && isAuthenticated && groups.length > 0) {
+      // Auto-select first group if none selected but user is authenticated and has groups
+      selectedGroupId = groups[0].id;
+      setActiveGroupId(selectedGroupId);
+    }
+    
+    if (!selectedGroupId) {
+      Alert.alert(
+        t('alert.error'), 
+        'No group available. Please ensure you are signed in and have at least one group. If you just signed up, please wait a moment for your Personal group to be created.'
+      );
+      setIsSaving(false);
+      return;
+    }
     setIsSaving(true);
     try {
       const item: FoodItem = {
         name: itemName.trim(),
         category_id: categoryId,
         location_id: locationId,
-        expiry_date: expiryDate.toISOString().split('T')[0],
+        expiry_date: toGMT8DateString(expiryDate),
         reminder_days: parseInt(reminderDays, 10),
-        notes: notes.trim(),
+        notes: notes.trim() || null,
         quantity: parseInt(quantity) || 1,
+        unit: 'unit', // Default unit
         image_uri: null,
-        created_at: new Date().toISOString().split('T')[0],
-        group_id: activeGroupId || null,
+        created_at: getCurrentDate(),
+        group_id: selectedGroupId, // Use selectedGroupId which is guaranteed to be non-null after validation
         cloud_id: null, // New items start with no cloud_id
       };
 
@@ -425,6 +535,15 @@ export default function DashboardScreen() {
         await updateFoodItem({ ...item, id: editingItem.id });
       } else {
         const newId = await createFoodItem(item);
+      }
+
+      // If authenticated and online, sync the new/updated item to PostgreSQL
+      if (isAuthenticated && syncToServer) {
+        try {
+          await syncToServer();
+        } catch (syncError) {
+          // Don't block the UI if sync fails - item is saved locally
+        }
       }
 
       setModalVisible(false);
@@ -450,20 +569,12 @@ export default function DashboardScreen() {
   };
 
   const handleRefresh = async () => {
-    console.log('===== SYNC DEBUG: Starting refresh and sync =====');
     setIsRefreshing(true);
     try {
       // If authenticated, check for internet and sync with cloud
       if (isAuthenticated) {
-        console.log('SYNC DEBUG: User is authenticated, checking internet connection...');
-        
         // Check internet connectivity
         const netInfoState = await NetInfo.fetch();
-        console.log('SYNC DEBUG: Network state:', {
-          isConnected: netInfoState.isConnected,
-          isInternetReachable: netInfoState.isInternetReachable,
-          type: netInfoState.type
-        });
         
         if (!netInfoState.isConnected || !netInfoState.isInternetReachable) {
           Alert.alert(
@@ -471,29 +582,15 @@ export default function DashboardScreen() {
             'Please connect to the internet to sync your data with the cloud.',
             [{ text: 'OK' }]
           );
-          console.log('SYNC DEBUG: No internet connection, skipping cloud sync');
           
           // Still refresh local data even without internet
-          console.log('SYNC DEBUG: Refreshing local data only...');
           await refreshAll();
-          console.log('SYNC DEBUG: Local data refresh completed');
           return;
         }
         
-        console.log('SYNC DEBUG: Internet connection available, proceeding with sync...');
-        console.log('SYNC DEBUG: Current group ID:', activeGroupId);
-        console.log('SYNC DEBUG: Current user ID:', user?.id);
-        console.log('SYNC DEBUG: User groups count:', userGroups.length);
-        
         // Check if user has groups - if not, explain the issue
         if (userGroups.length === 0) {
-          console.log('SYNC DEBUG: No groups found for user');
-          console.log('SYNC DEBUG: Authentication status:');
-          console.log('- isAuthenticated:', isAuthenticated);
-          console.log('- hasApiUser:', !!user);
-          
           if (!isAuthenticated) {
-            console.log('SYNC DEBUG: User is in offline mode - no Supabase session');
             Alert.alert(
               'Sign In Required for Cloud Sync',
               'You are currently in offline mode. To sync with the cloud, please:\n\n1. Go to Settings\n2. Sign in to your account\n3. This will create your Personal group and enable cloud sync',
@@ -502,12 +599,9 @@ export default function DashboardScreen() {
             return;
           }
           
-          console.log('SYNC DEBUG: User has Supabase session, attempting to create Personal group...');
           try {
             await createGroup('Personal', 'Your personal food management group');
-            console.log('SYNC DEBUG: Personal group created successfully');
           } catch (groupError) {
-            console.error('SYNC DEBUG: Error creating Personal group:', groupError);
             const errorMessage = groupError instanceof Error ? groupError.message : String(groupError);
             Alert.alert(
               'Group Creation Failed',
@@ -518,77 +612,22 @@ export default function DashboardScreen() {
           }
         }
 
-        // Import SyncService for database synchronization
+        // Use PostgreSQL sync from ApiContext
         try {
-          const { syncService } = await import('../services/SyncService');
-          
-          // Make sure database has required sync columns
-          console.log('SYNC DEBUG: Preparing database for sync...');
-          await syncService.updateDatabaseForSync();
-          
-          // Log local data before sync
-          console.log('SYNC DEBUG: Local data before sync:');
-          console.log('- Categories:', categories.length, 'items');
-          console.log('- Locations:', locations.length, 'items');
-          console.log('- Food Items:', foodItems.length, 'items');
-          
-          // Convert user.id to string if needed (SyncService expects string)
-          const userId = user?.id ? String(user.id) : '';
-          const groupId = activeGroupId || '';
-          
-          if (!userId || !groupId) {
-            Alert.alert(
-              'Sync Error',
-              'User ID or Group ID is missing. Please try signing out and back in.',
-              [{ text: 'OK' }]
-            );
-            return;
-          }
-          
-          console.log('===SYNC DEBUG=== Starting sync process with SyncService...');
-          
-          // Perform the sync using our SyncService
-          const syncResult = await syncService.syncDatabase(userId, groupId);
-          
-          if (syncResult.success) {
-            console.log('SYNC DEBUG: Sync completed successfully');
-            console.log('SYNC DEBUG: Sync stats:', syncResult.stats);
-            
-            // Show success message with stats
-            const uploadStats = syncResult.stats?.uploaded;
-            const downloadStats = syncResult.stats?.downloaded;
-            
-            Alert.alert(
-              'Sync Successful',
-              `Your data has been synchronized with the cloud.\n\n` +
-              `Uploaded: ${uploadStats?.foodItems || 0} items, ${uploadStats?.images || 0} images\n` +
-              `Downloaded: ${downloadStats?.foodItems || 0} items, ${downloadStats?.images || 0} images`,
-              [{ text: 'OK' }]
-            );
-          } else {
-            console.error('SYNC DEBUG: Sync failed with error:', syncResult.error);
-            
-            Alert.alert(
-              'Sync Failed',
-              syncResult.error || 'An unknown error occurred during sync.',
-              [{ text: 'OK' }]
-            );
-          }
-        } catch (syncError) {
-          console.error('SYNC DEBUG: Error importing or using SyncService:', syncError);
-          
-          // Fall back to old sync method
-          console.log('SYNC DEBUG: Falling back to legacy sync method...');
           await syncToServer();
-          
           Alert.alert(
             'Sync Completed',
-            'Sync operation completed using legacy method.',
+            'Data synchronization completed successfully.',
+            [{ text: 'OK' }]
+          );
+        } catch (syncError) {
+          Alert.alert(
+            'Sync Failed',
+            syncError instanceof Error ? syncError.message : 'An unknown error occurred during sync.',
             [{ text: 'OK' }]
           );
         }
       } else {
-        console.log('SYNC DEBUG: User not authenticated, skipping cloud sync');
         Alert.alert(
           'Sign In Required',
           'Please sign in to your account to sync data with the cloud.',
@@ -597,27 +636,14 @@ export default function DashboardScreen() {
       }
       
       // Then refresh local data
-      console.log('SYNC DEBUG: Refreshing local data...');
       await refreshAll();
-      console.log('SYNC DEBUG: Local data refresh completed');
       
       // Reload group-specific food items
       if (activeGroupId) {
-        console.log('SYNC DEBUG: Loading group-specific food items for group:', activeGroupId);
         const items = await getFoodItemsByGroup(activeGroupId);
         setFilteredFoodItems(items);
-        console.log('SYNC DEBUG: Loaded', items.length, 'food items for current group');
       }
-      
-      // Log final counts
-      console.log('SYNC DEBUG: Final data counts:');
-      console.log('- Categories:', categories.length);
-      console.log('- Locations:', locations.length);
-      console.log('- Food Items:', foodItems.length);
-      console.log('- Filtered Food Items:', filteredFoodItems.length);
-      console.log('===== SYNC DEBUG: Refresh and sync completed =====');
     } catch (error) {
-      console.error('SYNC DEBUG: Error during refresh/sync:', error);
       Alert.alert(
         'Sync Error',
         'An error occurred while syncing. Please try again later.',
@@ -1426,6 +1452,33 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Loading overlay when switching groups */}
+      {isSwitchingGroup && (
+        <View style={[StyleSheet.absoluteFill, {
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 9999,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }]}>
+          <View style={{
+            backgroundColor: theme.cardBackground,
+            borderRadius: 16,
+            padding: 24,
+            alignItems: 'center',
+          }}>
+            <ActivityIndicator size="large" color={theme.primaryColor} />
+            <Text style={{
+              marginTop: 16,
+              fontSize: 16,
+              color: theme.textColor,
+              fontWeight: '600',
+            }}>
+              {t('home.loading') || 'Loading...'}
+            </Text>
+          </View>
+        </View>
+      )}
+      
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Image 
@@ -1508,7 +1561,7 @@ export default function DashboardScreen() {
             >
               <Text style={{ fontSize: 24, color: theme.successColor, marginBottom: 8 }}>✅</Text>
               <Text style={styles.statLabel}>{t('status.fresh')}</Text>
-              <Text style={styles.statValue}>{dashboardCounts.fresh}</Text>
+              <Text style={styles.statValue}>{groupDashboardCounts.fresh}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.statCard}
@@ -1516,7 +1569,7 @@ export default function DashboardScreen() {
             >
               <Text style={{ fontSize: 24, color: theme.warningColor, marginBottom: 8 }}>⏰</Text>
               <Text style={styles.statLabel}>{t('list.expiring')}</Text>
-              <Text style={styles.statValue}>{dashboardCounts.expiring_soon}</Text>
+              <Text style={styles.statValue}>{groupDashboardCounts.expiring_soon}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.statCard}
@@ -1524,7 +1577,7 @@ export default function DashboardScreen() {
             >
               <Text style={{ fontSize: 24, color: theme.dangerColor, marginBottom: 8 }}>⚠️</Text>
               <Text style={styles.statLabel}>{t('home.expired')}</Text>
-              <Text style={styles.statValue}>{dashboardCounts.expired}</Text>
+              <Text style={styles.statValue}>{groupDashboardCounts.expired}</Text>
             </TouchableOpacity>
           </View>
 
@@ -1572,7 +1625,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.categoryList}>
             <View style={styles.categoriesGrid}>
-              {categories.map((category) => (
+              {filteredCategories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={styles.categoryCard}
@@ -1735,7 +1788,7 @@ export default function DashboardScreen() {
               <View style={styles.pickerContainer}>
                 <Text style={styles.pickerLabel}>{t('form.category')}</Text>
                 <View style={styles.pickerOptions}>
-                  {categories.map((category) => (
+                  {filteredCategories.map((category) => (
                     <TouchableOpacity
                       key={category.id}
                       style={[
@@ -1834,28 +1887,6 @@ export default function DashboardScreen() {
         </View>
       </Modal>
 
-      {/* Sync Debugger Modal */}
-      <Modal
-        visible={showSyncDebugger}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSyncDebugger(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { height: '80%' }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={styles.modalTitle}>Sync Debugger</Text>
-              <TouchableOpacity onPress={() => setShowSyncDebugger(false)}>
-                <FontAwesome name="close" size={24} color={theme.textColor} />
-              </TouchableOpacity>
-            </View>
-            <SyncDebugger 
-              userId={user?.id ? String(user.id) : null}
-              groupId={activeGroupId}
-            />
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 } 

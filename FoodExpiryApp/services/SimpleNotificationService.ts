@@ -1,7 +1,19 @@
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DeviceEventEmitter } from 'react-native';
+import { DeviceEventEmitter, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { FoodItemWithDetails } from '../database/models';
+
+// Lazy import expo-notifications to avoid issues in Expo Go
+let Notifications: any = null;
+
+try {
+  // Only import if not in Expo Go (which doesn't support push notifications)
+  if (Constants.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+  }
+} catch (error) {
+  // Silently fail if expo-notifications is not available
+}
 
 export interface NotificationSettings {
   enabled: boolean;
@@ -19,16 +31,22 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   notificationTime: '09:00',
 };
 
-// Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Configure notification behavior only if Notifications is available
+if (Notifications) {
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch (error) {
+    // Silently fail if configuration fails
+  }
+}
 
 class SimpleNotificationService {
   private settings: NotificationSettings = DEFAULT_SETTINGS;
@@ -63,6 +81,9 @@ class SimpleNotificationService {
   }
 
   async requestPermissions(): Promise<boolean> {
+    if (!Notifications) {
+      return false;
+    }
     try {
       const { status } = await Notifications.requestPermissionsAsync();
       const granted = status === 'granted';
@@ -344,7 +365,7 @@ class SimpleNotificationService {
       };
     }
 
-    if (!shouldNotify) return;
+    if (!shouldNotify || !Notifications) return;
 
     try {
       const title = await this.getTranslatedText(titleKey);
@@ -430,6 +451,9 @@ class SimpleNotificationService {
   }
 
   async sendTestNotification(): Promise<void> {
+    if (!Notifications) {
+      return;
+    }
     try {
       await this.initialize();
       
@@ -450,6 +474,9 @@ class SimpleNotificationService {
   }
 
   async cancelAllNotifications(): Promise<void> {
+    if (!Notifications) {
+      return;
+    }
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
       await Notifications.dismissAllNotificationsAsync();
@@ -466,9 +493,11 @@ class SimpleNotificationService {
       this.settings.enabled = false;
       await this.saveSettings({ enabled: false });
       
-      // Cancel all existing notifications
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      await Notifications.dismissAllNotificationsAsync();
+      if (Notifications) {
+        // Cancel all existing notifications
+        await Notifications.cancelAllScheduledNotificationsAsync();
+        await Notifications.dismissAllNotificationsAsync();
+      }
       
       // Clear tracking
       this.notifiedItems.clear();
@@ -479,6 +508,9 @@ class SimpleNotificationService {
   }
 
   async getPermissionStatus(): Promise<boolean> {
+    if (!Notifications) {
+      return false;
+    }
     try {
       const { status } = await Notifications.getPermissionsAsync();
       return status === 'granted';

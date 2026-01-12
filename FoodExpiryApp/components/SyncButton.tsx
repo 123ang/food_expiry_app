@@ -28,7 +28,7 @@ export const SyncButton: React.FC<SyncButtonProps> = ({
           setLastSyncTime(new Date(timestamp));
         }
       } catch (error) {
-        console.error('Error loading last sync time:', error);
+        // Error loading last sync time
       }
     };
     
@@ -95,7 +95,6 @@ export const SyncButton: React.FC<SyncButtonProps> = ({
         );
       }
     } catch (error) {
-      console.error('Supabase sync error:', error);
       Alert.alert(
         'Sync Error',
         error instanceof Error ? error.message : 'An unknown error occurred'

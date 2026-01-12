@@ -1,10 +1,15 @@
-// Firebase configuration
+// Firebase configuration - LEGACY FILE (NOT USED)
+// This file is kept for reference only. The app now uses PostgreSQL backend.
+// All Firebase functionality has been migrated to PostgreSQL.
+
+// If you need to re-enable Firebase, install the required packages:
+// npm install firebase
+
+/*
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// Your web app's Firebase configuration
-// Replace with your own Firebase config
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
@@ -14,10 +19,10 @@ const firebaseConfig = {
   appId: "YOUR_APP_ID"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+*/
 
 // Collection names - matching MySQL table names for easier migration
 export const COLLECTIONS = {

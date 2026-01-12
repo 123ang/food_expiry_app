@@ -13,6 +13,9 @@ import foodItemRoutes from './routes/foodItems';
 import analyticsRoutes from './routes/analytics';
 import categoryRoutes from './routes/categories';
 import locationRoutes from './routes/locations';
+import shoppingRoutes from './routes/shopping';
+import wishRoutes from './routes/wish';
+import uploadRoutes from './routes/upload';
 
 // Load environment variables
 dotenv.config();
@@ -42,8 +45,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request logging (development)
 if (process.env.NODE_ENV === 'development') {
-  app.use((req, _res, next) => {
-    console.log(`${req.method} ${req.path}`);
+  app.use((_req, _res, next) => {
     next();
   });
 }
@@ -70,6 +72,9 @@ app.use('/api/food-items', foodItemRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/shopping-items', shoppingRoutes);
+app.use('/api/wish-items', wishRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // =====================================================
 // ERROR HANDLING
@@ -86,17 +91,8 @@ app.use(errorHandler);
 // =====================================================
 
 app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║   🍎 Expiry Alert API Server          ║
-║                                        ║
-║   Environment: ${process.env.NODE_ENV?.padEnd(24) || 'development'.padEnd(24)}║
-║   Port: ${PORT.toString().padEnd(31)}║
-║   URL: http://localhost:${PORT.toString().padEnd(18)}║
-║                                        ║
-║   Status: ✅ Running                   ║
-╚════════════════════════════════════════╝
-  `);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Handle unhandled promise rejections

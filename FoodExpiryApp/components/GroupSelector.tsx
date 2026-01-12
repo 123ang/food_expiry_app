@@ -12,6 +12,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useApi } from '../context/ApiContext';
+import { useRouter } from 'expo-router';
 
 type IconName = keyof typeof FontAwesome.glyphMap;
 
@@ -42,19 +43,10 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { createGroup } = useApi();
+  const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
-  // Debug: Print groups received by GroupSelector
-  console.log('GroupSelector: Received groups count:', groups.length)
-  console.log('GroupSelector: selectedGroupId:', selectedGroupId)
-  groups.forEach((group, index) => {
-    console.log(`GroupSelector: Group ${index + 1}:`, {
-      id: group.id,
-      name: group.name,
-      description: group.description
-    })
-  })
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId) || groups[0];
 
@@ -293,29 +285,18 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
               ))}
             </ScrollView>
 
-            {groups.length === 0 && (
-              <TouchableOpacity
-                style={styles.createButton}
-                onPress={handleCreateGroup}
-                disabled={isCreatingGroup}
-              >
-                <Text style={styles.createButtonText}>
-                  {isCreatingGroup ? 'Creating...' : 'Create Personal Group'}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {groups.length > 0 && (
-              <TouchableOpacity
-                style={styles.createButton}
-                onPress={handleCreateGroup}
-                disabled={isCreatingGroup}
-              >
-                <Text style={styles.createButtonText}>
-                  {isCreatingGroup ? 'Creating...' : 'Create Family Group'}
-                </Text>
-              </TouchableOpacity>
-            )}
+            {/* Navigate to Settings → Manage Groups */}
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => {
+                setShowModal(false);
+                router.push('/settings');
+              }}
+            >
+              <Text style={styles.createButtonText}>
+                {t('groups.manageGroups') || 'Manage Groups'}
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.closeButton}

@@ -54,7 +54,7 @@ const FirebaseImageUpload: React.FC<FirebaseImageUploadProps> = ({
       setPreviewUrl(previewUrl);
 
       // Show upload progress
-      const uploadToast = toast.loading('📤 Uploading image to Firebase Storage...');
+      const uploadToast = toast.loading('📤 Uploading image...');
       
       // Upload to Firebase Storage
       const result = await storageService.uploadImage(file, itemName);
@@ -181,7 +181,7 @@ const FirebaseImageUpload: React.FC<FirebaseImageUploadProps> = ({
               {isUploading ? (
                 <>
                   <div className="upload-spinner"></div>
-                  <p>Uploading to Firebase Storage...</p>
+                  <p>Uploading image...</p>
                 </>
               ) : (
                 <>
@@ -203,12 +203,6 @@ const FirebaseImageUpload: React.FC<FirebaseImageUploadProps> = ({
         style={{ display: 'none' }}
         disabled={disabled || isUploading}
       />
-      
-      <div className="storage-info">
-        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
-          🔥 Images stored securely in Firebase Storage
-        </p>
-      </div>
     </div>
   );
 };

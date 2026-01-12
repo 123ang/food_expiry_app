@@ -39,14 +39,14 @@ router.post(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
-    const { group_id, name, icon, temperature_zone } = req.body;
+    const { group_id, name, icon } = req.body;
 
     if (!group_id || !name) {
       res.status(400).json({ error: 'group_id and name are required' });
       return;
     }
 
-    const location = await LocationService.createLocation(userId, group_id, { name, icon, temperature_zone });
+    const location = await LocationService.createLocation(userId, group_id, { name, icon });
 
     res.status(201).json({
       message: 'Location created successfully',

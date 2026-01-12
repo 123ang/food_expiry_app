@@ -8,10 +8,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useApi } from '../context/ApiContext';
 import { ShoppingItem, WishItem } from '../database/models';
 import {
-  getShoppingItems,
-  getWishItems,
+  getShoppingItemsByGroup,
+  getWishItemsByGroup,
 } from '../database/shoppingRepository';
 import { BottomNav } from '../components/BottomNav';
 import { ShoppingList } from '../components/ShoppingList';
@@ -23,26 +24,33 @@ export const ListScreen: React.FC = () => {
   const { theme } = useTheme();
   const colors = theme;
   const { t } = useLanguage();
+  const { currentGroup } = useApi();
   const [activeTab, setActiveTab] = useState<Tab>('shopping');
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([]);
   const [wishItems, setWishItems] = useState<WishItem[]>([]);
 
-  // Debug logs to trace data
-  console.log('ListScreen shoppingItems:', shoppingItems);
-  console.log('ListScreen wishItems:', wishItems);
-
+  // Load items filtered by current group
   const loadItems = useCallback(async () => {
     try {
+      if (!currentGroup?.id) {
+        // If no group selected, show empty lists
+        setShoppingItems([]);
+        setWishItems([]);
+        return;
+      }
+
       const [shopping, wish] = await Promise.all([
-        getShoppingItems(true), // Include completed items
-        getWishItems(true), // Include completed items
+        getShoppingItemsByGroup(currentGroup.id, true), // Include completed items
+        getWishItemsByGroup(currentGroup.id, true), // Include completed items
       ]);
       setShoppingItems(shopping);
       setWishItems(wish);
     } catch (error) {
       console.error('Failed to load items:', error);
+      setShoppingItems([]);
+      setWishItems([]);
     }
-  }, []);
+  }, [currentGroup?.id]);
 
   useEffect(() => {
     loadItems();

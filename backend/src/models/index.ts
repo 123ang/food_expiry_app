@@ -76,6 +76,7 @@ export interface Category {
   name: string;
   icon?: string;
   color?: string;
+  translation_key?: string;
   is_default: boolean;
   created_by?: string;
   created_at: Date;
@@ -89,7 +90,7 @@ export interface Location {
   group_id?: string;
   name: string;
   icon?: string;
-  temperature_zone?: string;
+  translation_key?: string;
   is_default: boolean;
   created_by?: string;
   created_at: Date;
@@ -186,6 +187,9 @@ export interface WishItem {
   created_by: string;
   name: string;
   notes?: string;
+  price?: number;
+  rating?: number;
+  image_url?: string;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;

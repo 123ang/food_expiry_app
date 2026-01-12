@@ -4,7 +4,6 @@ export interface Location {
   id: string;
   name: string;
   icon?: string;
-  temperature_zone?: string;
   is_default: boolean;
   group_id?: string;
   created_by?: string;
@@ -36,7 +35,7 @@ class LocationService {
   }
 
   // Create custom location
-  async createLocation(groupId: string, locationData: { name: string; icon?: string; temperature_zone?: string }): Promise<{ success: boolean; location?: Location; error?: string }> {
+  async createLocation(groupId: string, locationData: { name: string; icon?: string }): Promise<{ success: boolean; location?: Location; error?: string }> {
     const response = await apiClient.post<{ location: Location }>('/locations', {
       group_id: groupId,
       ...locationData,
@@ -50,7 +49,7 @@ class LocationService {
   }
 
   // Update location
-  async updateLocation(locationId: string, updates: { name?: string; icon?: string; temperature_zone?: string }): Promise<{ success: boolean; location?: Location; error?: string }> {
+  async updateLocation(locationId: string, updates: { name?: string; icon?: string }): Promise<{ success: boolean; location?: Location; error?: string }> {
     const response = await apiClient.patch<{ location: Location }>(`/locations/${locationId}`, updates);
 
     if (response.error) {

@@ -17,7 +17,7 @@ CREATE TABLE users (
     full_name VARCHAR(255),
     avatar_url TEXT,
     language_preference VARCHAR(10) DEFAULT 'en',
-    timezone VARCHAR(50) DEFAULT 'UTC',
+    timezone VARCHAR(50) DEFAULT 'Asia/Singapore',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL
@@ -61,7 +61,7 @@ CREATE TABLE groups (
     description TEXT,
     created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     invite_code VARCHAR(12) UNIQUE,
-    max_members INTEGER DEFAULT 4,
+    max_members INTEGER DEFAULT 100,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL
@@ -103,6 +103,7 @@ CREATE TABLE categories (
     name VARCHAR(255) NOT NULL,
     icon VARCHAR(100),
     color VARCHAR(20),
+    translation_key VARCHAR(100),
     is_default BOOLEAN DEFAULT false,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -117,7 +118,7 @@ CREATE TABLE locations (
     group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     icon VARCHAR(100),
-    temperature_zone VARCHAR(20), -- 'room', 'cold', 'frozen'
+    translation_key VARCHAR(100),
     is_default BOOLEAN DEFAULT false,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -134,7 +135,7 @@ CREATE TABLE food_items (
     name VARCHAR(255) NOT NULL,
     brand VARCHAR(255),
     quantity INTEGER DEFAULT 1,
-    unit VARCHAR(50),
+    unit VARCHAR(50) DEFAULT 'unit',
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     location_id UUID REFERENCES locations(id) ON DELETE SET NULL,
     purchase_date DATE,
@@ -217,7 +218,7 @@ CREATE TABLE shopping_items (
     created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     quantity INTEGER DEFAULT 1,
-    unit VARCHAR(50),
+    unit VARCHAR(50) DEFAULT 'unit',
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     is_purchased BOOLEAN DEFAULT false,
     purchased_at TIMESTAMPTZ,
@@ -236,6 +237,9 @@ CREATE TABLE wish_items (
     created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     notes TEXT,
+    price DECIMAL(10, 2),
+    rating INTEGER DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
+    image_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     deleted_at TIMESTAMPTZ NULL,
@@ -395,28 +399,29 @@ CREATE TRIGGER group_generate_invite_code
 -- =====================================================
 
 -- Insert default categories (no group_id = available to all)
-INSERT INTO categories (name, icon, color, is_default) VALUES
-('Fruits', '🍎', '#FF6B6B', true),
-('Vegetables', '🥕', '#4ECDC4', true),
-('Dairy', '🥛', '#45B7D1', true),
-('Meat & Poultry', '🍖', '#96CEB4', true),
-('Beverages', '🥤', '#FFEAA7', true),
-('Snacks', '🍪', '#DDA0DD', true),
-('Canned Goods', '🥫', '#98D8C8', true),
-('Frozen Foods', '❄️', '#74B9FF', true),
-('Bread & Bakery', '🍞', '#FDCB6E', true),
-('Other', '📦', '#A29BFE', true);
+-- Use translation keys so the app can automatically translate them
+INSERT INTO categories (name, icon, color, translation_key, is_default) VALUES
+('category.fruits', '🍎', '#FF6B6B', 'category.fruits', true),
+('category.vegetables', '🥕', '#4ECDC4', 'category.vegetables', true),
+('category.dairy', '🥛', '#45B7D1', 'category.dairy', true),
+('category.meat', '🍖', '#96CEB4', 'category.meat', true),
+('category.beverages', '🥤', '#FFEAA7', 'category.beverages', true),
+('category.snacks', '🍪', '#DDA0DD', 'category.snacks', true),
+('category.canned', '🥫', '#98D8C8', 'category.canned', true),
+('category.frozen', '❄️', '#74B9FF', 'category.frozen', true),
+('category.bread', '🍞', '#FDCB6E', 'category.bread', true),
+('category.other', '📦', '#A29BFE', 'category.other', true);
 
 -- Insert default locations (no group_id = available to all)
-INSERT INTO locations (name, icon, temperature_zone, is_default) VALUES
-('Refrigerator', '🧊', 'cold', true),
-('Freezer', '❄️', 'frozen', true),
-('Pantry', '🗄️', 'room', true),
-('Counter', '🏠', 'room', true),
-('Cabinet', '🚪', 'room', true),
-('Basement', '🏚️', 'room', true),
-('Garage', '🚗', 'room', true),
-('Office', '💼', 'room', true);
+INSERT INTO locations (name, icon, translation_key, is_default) VALUES
+('defaultLocation.fridge', '🧊', 'defaultLocation.fridge', true),
+('defaultLocation.freezer', '❄️', 'defaultLocation.freezer', true),
+('defaultLocation.pantry', '🗄️', 'defaultLocation.pantry', true),
+('defaultLocation.counter', '🏠', 'defaultLocation.counter', true),
+('defaultLocation.cabinet', '🚪', 'defaultLocation.cabinet', true),
+('defaultLocation.basement', '🏚️', 'defaultLocation.basement', true),
+('defaultLocation.garage', '🚗', 'defaultLocation.garage', true),
+('defaultLocation.office', '💼', 'defaultLocation.office', true);
 
 -- =====================================================
 -- ANALYTICS VIEWS

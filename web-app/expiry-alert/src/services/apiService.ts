@@ -88,7 +88,6 @@ export interface Location {
   id: string;
   name: string;
   icon?: string;
-  temperature_zone?: string;
   is_default: boolean;
   group_id?: string;
   created_by?: string;
@@ -421,13 +420,27 @@ export class FoodItemService {
   }
 
   async uploadImage(itemId: string, file: File) {
-    const response = await apiClient.uploadFile(`/food-items/${itemId}/image`, file);
+    // Upload image to backend
+    const uploadResponse = await apiClient.uploadImage(file);
 
-    if (response.error) {
-      return { success: false, error: response.error };
+    if (uploadResponse.error) {
+      return { success: false, error: uploadResponse.error };
     }
 
-    return { success: true, imageUrl: response.data!.image_url };
+    // Get the uploaded image URL
+    const imageUrl = uploadResponse.data?.file?.url;
+    if (!imageUrl) {
+      return { success: false, error: 'Failed to get image URL from upload response' };
+    }
+
+    // Update the food item with the image URL
+    const updateResponse = await this.updateItem(itemId, { image_url: imageUrl });
+
+    if (!updateResponse.success) {
+      return { success: false, error: updateResponse.error || 'Failed to update food item with image URL' };
+    }
+
+    return { success: true, imageUrl };
   }
 }
 
@@ -537,7 +550,7 @@ export class LocationService {
     return { success: true, locations: response.data!.locations };
   }
 
-  async createLocation(groupId: string, locationData: { name: string; icon?: string; temperature_zone?: string }) {
+  async createLocation(groupId: string, locationData: { name: string; icon?: string }) {
     const response = await apiClient.post<{ location: Location }>('/locations', {
       group_id: groupId,
       ...locationData,
@@ -550,7 +563,7 @@ export class LocationService {
     return { success: true, location: response.data!.location };
   }
 
-  async updateLocation(locationId: string, updates: { name?: string; icon?: string; temperature_zone?: string }) {
+  async updateLocation(locationId: string, updates: { name?: string; icon?: string }) {
     const response = await apiClient.patch<{ location: Location }>(`/locations/${locationId}`, updates);
 
     if (response.error) {

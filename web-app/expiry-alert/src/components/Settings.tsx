@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeType } from '../theme';
 import { notificationService, NotificationSettings } from '../services/notificationService';
-import CentralizedStorageSetup from './CentralizedStorageSetup';
 
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState<NotificationSettings>({
@@ -16,9 +17,11 @@ const Settings: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [showThemeModal, setShowThemeModal] = useState(false);
   
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { theme, currentThemeType, setTheme } = useTheme();
 
   useEffect(() => {
     loadSettings();
@@ -99,6 +102,81 @@ const Settings: React.FC = () => {
 
   const permissionInfo = getPermissionText();
 
+  const getThemeDisplayName = (themeType: ThemeType) => {
+    switch (themeType) {
+      case 'original':
+        return t('settings.themeOriginal') || 'Original (White & Green)';
+      case 'recycled':
+        return t('settings.themeRecycled') || 'Recycled (Warm & Eco)';
+      case 'darkBrown':
+        return t('settings.themeDarkBrown') || 'Dark Brown Theme';
+      case 'black':
+        return t('settings.themeBlack') || 'Black Theme';
+      case 'blue':
+        return t('settings.themeBlue') || 'Blue Theme';
+      case 'green':
+        return t('settings.themeGreen') || 'Green Theme';
+      case 'softPink':
+        return t('settings.themeSoftPink') || 'Soft Pink Theme';
+      case 'brightPink':
+        return t('settings.themeBrightPink') || 'Bright Pink Theme';
+      case 'naturalGreen':
+        return t('settings.themeYellow') || 'Yellow Theme';
+      case 'mintRed':
+        return t('settings.themeMintRed') || 'Mint-Red Theme';
+      case 'darkGold':
+        return t('settings.themeDarkGold') || 'Dark Gold Theme';
+      default:
+        return themeType;
+    }
+  };
+
+  const getThemeDescription = (themeType: ThemeType) => {
+    switch (themeType) {
+      case 'original':
+        return t('settings.themeOriginalDesc') || 'Improved contrast white theme with better visibility';
+      case 'recycled':
+        return t('settings.themeRecycledDesc') || 'Warm eco-friendly peach and cream tones';
+      case 'darkBrown':
+        return t('settings.themeDarkBrownDesc') || 'Dark warm brown with green accents';
+      case 'black':
+        return t('settings.themeBlackDesc') || 'Pure black background with high contrast';
+      case 'blue':
+        return t('settings.themeBlueDesc') || 'Cool blue tones with light backgrounds';
+      case 'green':
+        return t('settings.themeGreenDesc') || 'Natural earth tones with green accents';
+      case 'softPink':
+        return t('settings.themeSoftPinkDesc') || 'Warm and cozy pink tones';
+      case 'brightPink':
+        return t('settings.themeBrightPinkDesc') || 'Vibrant and energetic pink theme';
+      case 'naturalGreen':
+        return t('settings.themeYellowDesc') || 'Warm and bright yellow tones';
+      case 'mintRed':
+        return t('settings.themeMintRedDesc') || 'Fresh mint with vibrant red accents';
+      case 'darkGold':
+        return t('settings.themeDarkGoldDesc') || 'Elegant dark theme with gold accents';
+      default:
+        return '';
+    }
+  };
+
+  const getThemePreviewColors = (themeType: ThemeType): string[] => {
+    const themeColors: Record<ThemeType, string[]> = {
+      original: ['#F8F9FA', '#2E7D32', '#FFFFFF'],
+      recycled: ['#F3C88B', '#4CAF50', '#FDF0C0'],
+      darkBrown: ['#2C2417', '#4CAF50', '#3D3426'],
+      black: ['#000000', '#4CAF50', '#1A1A1A'],
+      blue: ['#c1d9e3', '#5b88a8', '#edf4f7'],
+      green: ['#dbe1c0', '#3d6a28', '#fafaf0'],
+      softPink: ['#fce7dd', '#a37d6c', '#f5d3d3'],
+      brightPink: ['#fdd0d4', '#ad5b62', '#ffe5e5'],
+      naturalGreen: ['#fbfcee', '#3971b8', '#f6e6a5'],
+      mintRed: ['#d8f2c9', '#ef5f5f', '#8cd1b8'],
+      darkGold: ['#2c2c2c', '#b6862e', '#494949'],
+    };
+    return themeColors[themeType] || ['#F8F9FA', '#2E7D32', '#FFFFFF'];
+  };
+
   return (
     <div className="container">
       <div className="dashboard-header">
@@ -114,6 +192,29 @@ const Settings: React.FC = () => {
       </div>
 
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        {/* Theme Selection */}
+        <div className="card" style={{ marginBottom: '2rem' }}>
+          <div className="card-header">
+            <h3>🎨 Theme</h3>
+          </div>
+          <div className="card-body">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <p><strong>Current Theme:</strong> {getThemeDisplayName(currentThemeType)}</p>
+                <p style={{ fontSize: '0.9rem', color: '#666', margin: '0.5rem 0' }}>
+                  {getThemeDescription(currentThemeType)}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowThemeModal(true)}
+                className="btn btn-primary"
+              >
+                Change Theme
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Notification Permissions */}
         <div className="card" style={{ marginBottom: '2rem' }}>
           <div className="card-header">
@@ -245,16 +346,6 @@ const Settings: React.FC = () => {
           </div>
         </div>
 
-        {/* Centralized Image Storage */}
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <div className="card-header">
-            <h3>📸 Image Storage (Admin)</h3>
-          </div>
-          <div className="card-body">
-            <CentralizedStorageSetup />
-          </div>
-        </div>
-
         {/* App Information */}
         <div className="card">
           <div className="card-header">
@@ -289,6 +380,143 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Theme Selection Modal */}
+      {showThemeModal && (
+        <div 
+          className="modal-overlay"
+          onClick={() => setShowThemeModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div 
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: theme.cardBackground,
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ color: theme.textColor, margin: 0 }}>{t('settings.theme') || 'Choose Theme'}</h3>
+              <button
+                onClick={() => setShowThemeModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  color: theme.textSecondary,
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {(['original', 'recycled', 'darkBrown', 'black', 'blue', 'green', 'softPink', 'brightPink', 'naturalGreen', 'mintRed', 'darkGold'] as ThemeType[]).map((themeType) => {
+                const previewColors = getThemePreviewColors(themeType);
+                const isSelected = currentThemeType === themeType;
+                
+                return (
+                  <button
+                    key={themeType}
+                    onClick={() => {
+                      setTheme(themeType);
+                      setShowThemeModal(false);
+                      toast.success(`Theme changed to ${getThemeDisplayName(themeType)}`);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      border: `2px solid ${isSelected ? theme.primaryColor : theme.borderColor}`,
+                      backgroundColor: isSelected ? `${theme.primaryColor}10` : theme.backgroundColor,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      textAlign: 'left',
+                      width: '100%',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = theme.cardBackground;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = theme.backgroundColor;
+                      }
+                    }}
+                  >
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '2px', 
+                      marginRight: '1rem',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      width: '60px',
+                      height: '20px',
+                    }}>
+                      {previewColors.map((color, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            flex: 1,
+                            backgroundColor: color,
+                            border: idx < previewColors.length - 1 ? `1px solid ${theme.borderColor}` : 'none',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ 
+                        fontWeight: isSelected ? 600 : 500,
+                        color: isSelected ? theme.primaryColor : theme.textColor,
+                        marginBottom: '0.25rem',
+                      }}>
+                        {getThemeDisplayName(themeType)}
+                      </div>
+                      <div style={{ 
+                        fontSize: '0.875rem',
+                        color: theme.textSecondary,
+                      }}>
+                        {getThemeDescription(themeType)}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div style={{ 
+                        color: theme.primaryColor,
+                        fontSize: '1.25rem',
+                        marginLeft: '0.5rem',
+                      }}>
+                        ✓
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

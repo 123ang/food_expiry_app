@@ -4,7 +4,7 @@ import { initDatabase, getDatabase, resetDatabase, getCurrentDate, performRegula
 import { CategoryRepository, LocationRepository, FoodItemRepository } from '../database/repository';
 import { Category, Location, FoodItem, FoodItemWithDetails } from '../database/models';
 import { simpleNotificationService } from '../services/SimpleNotificationService';
-import { restoreImagesFromBackup, initializeImageStorage, validateDatabaseImageLinks, cleanupOrphanedImages, initializeImageSystemForIOS } from '../utils/fileStorage';
+import { initializeImageStorage, validateDatabaseImageLinks, cleanupOrphanedImages } from '../utils/fileStorage';
 import { autoFixCorruptedData } from '../utils/categoryRecovery';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
@@ -315,20 +315,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (isFirstTime) {
           // First-time initialization detected
           
-          // Initialize image storage and restore if needed (only on first run)
+          // Initialize image storage (only on first run)
           await initializeImageStorage();
-          await restoreImagesFromBackup();
-          
-          // iOS App Store: Initialize enhanced image system (only on first run)
-          if (Platform.OS === 'ios') {
-            
-            const iosImageResult = await initializeImageSystemForIOS();
-            if (!iosImageResult.success) {
-              
-            } else if (iosImageResult.recoveredImages > 0) {
-              
-            }
-          }
           
           // Check and restore categories/locations if they were lost (only on first run)
           await validateAndRestoreCategoriesAndLocations();

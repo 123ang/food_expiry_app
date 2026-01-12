@@ -74,16 +74,36 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Utility function to get translated category name
   const getCategoryName = (category: { name: string; translationKey?: string }): string => {
+    // First check if translationKey is explicitly set
     if (category.translationKey) {
       return t(category.translationKey);
+    }
+    // If name itself looks like a translation key (starts with "category.")
+    // use it for translation
+    if (category.name && category.name.startsWith('category.')) {
+      const translated = t(category.name);
+      // If translation exists (not the same as the key), return it
+      if (translated !== category.name) {
+        return translated;
+      }
     }
     return category.name;
   };
 
   // Utility function to get translated location name
   const getLocationName = (location: { name: string; translationKey?: string }): string => {
+    // First check if translationKey is explicitly set
     if (location.translationKey) {
       return t(location.translationKey);
+    }
+    // If name itself looks like a translation key (starts with "defaultLocation." or "category.")
+    // use it for translation
+    if (location.name && (location.name.startsWith('defaultLocation.') || location.name.startsWith('category.'))) {
+      const translated = t(location.name);
+      // If translation exists (not the same as the key), return it
+      if (translated !== location.name) {
+        return translated;
+      }
     }
     return location.name;
   };

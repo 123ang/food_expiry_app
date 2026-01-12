@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,13 @@ import {
   TextInput,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDatabase } from '../context/DatabaseContext';
-import { useSupabase } from '../context/SupabaseContext';
+import { useApi } from '../context/ApiContext';
+import { apiClient } from '../services/ApiClient';
 import { FontAwesome } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { BottomNav } from '../components/BottomNav';
@@ -226,353 +228,6 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   );
 };
 
-// Family Package Modal Component
-const FamilyPackageModal: React.FC<{
-  visible: boolean;
-  onClose: () => void;
-  onPurchase?: () => Promise<void>;
-  isAuthenticated?: boolean;
-  router?: any;
-}> = ({ visible, onClose, onPurchase, isAuthenticated, router }) => {
-  const { theme } = useTheme();
-  const { t } = useLanguage();
-  
-  // Calculate time remaining until January 1, 2026 00:00
-  const getTimeRemaining = () => {
-    const targetDate = new Date('2026-01-01T00:00:00Z');
-    const now = new Date();
-    const difference = targetDate.getTime() - now.getTime();
-    
-    if (difference <= 0) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    }
-    
-    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-    
-    return { days, hours, minutes, seconds, expired: false };
-  };
-
-  const [timeRemaining, setTimeRemaining] = React.useState(getTimeRemaining());
-
-  React.useEffect(() => {
-    if (!visible) return;
-    
-    const timer = setInterval(() => {
-      setTimeRemaining(getTimeRemaining());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [visible]);
-
-  const handlePurchase = async () => {
-    const currentPrice = timeRemaining.expired ? '$579.2' : '$57.92';
-    const yearlyPrice = timeRemaining.expired ? '$579.2' : '$57.92';
-    
-    // Check if user is logged in
-    if (!isAuthenticated) {
-      Alert.alert(
-        'Login Required',
-        'Please log in to your account before purchasing the premium package. This ensures your subscription is properly linked to your account.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Login Now', onPress: () => {
-            onClose();
-            // Navigate to login screen
-            router.push('/auth/login');
-          }}
-        ]
-      );
-      return;
-    }
-    
-    Alert.alert(
-      'Purchase Premium Package',
-      `You will be charged ${currentPrice} per year. If you purchase now, this price is locked in forever. You can cancel anytime.\n\nThis will unlock:\n• Cloud synchronization\n• Family member invites\n• Shared shopping lists\n• Premium features\n\nProceed to payment?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Continue', onPress: async () => {
-          try {
-            if (onPurchase) {
-              await onPurchase();
-            }
-            Alert.alert('Success', `Premium package activated! You are locked in at ${yearlyPrice}/year and can cancel anytime.`);
-            onClose();
-          } catch (error) {
-            Alert.alert('Error', 'Failed to process purchase. Please try again.');
-            console.error('Purchase error:', error);
-          }
-        }}
-      ]
-    );
-  };
-
-  const modalStyles = StyleSheet.create({
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.7)',
-    },
-    modalContent: {
-      width: '90%',
-      maxWidth: 400,
-      backgroundColor: theme.cardBackground,
-      borderRadius: 20,
-      padding: 24,
-      maxHeight: '85%',
-    },
-    modalHeader: {
-      alignItems: 'center',
-      marginBottom: 24,
-    },
-    packageTitle: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: theme.textColor,
-      textAlign: 'center',
-      marginBottom: 8,
-    },
-    packageSubtitle: {
-      fontSize: 16,
-      color: theme.textSecondary,
-      textAlign: 'center',
-      marginBottom: 20,
-    },
-    pricingContainer: {
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    originalPrice: {
-      fontSize: 24,
-      color: theme.textSecondary,
-      textDecorationLine: 'line-through',
-      marginBottom: 4,
-    },
-    currentPrice: {
-      fontSize: 36,
-      fontWeight: 'bold',
-      color: theme.primaryColor,
-      marginBottom: 8,
-    },
-    priceNote: {
-      fontSize: 14,
-      color: theme.textSecondary,
-      textAlign: 'center',
-    },
-    countdownContainer: {
-      backgroundColor: theme.backgroundColor,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 24,
-      borderWidth: 2,
-      borderColor: theme.primaryColor,
-    },
-    countdownTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.textColor,
-      textAlign: 'center',
-      marginBottom: 12,
-    },
-    countdownTimer: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-    },
-    timerUnit: {
-      alignItems: 'center',
-    },
-    timerValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: theme.primaryColor,
-    },
-    timerLabel: {
-      fontSize: 12,
-      color: theme.textSecondary,
-      marginTop: 4,
-    },
-    benefitsContainer: {
-      marginBottom: 24,
-    },
-    benefitsTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: theme.textColor,
-      marginBottom: 16,
-      textAlign: 'center',
-    },
-    benefitItem: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: 12,
-      paddingHorizontal: 8,
-    },
-    benefitIcon: {
-      marginRight: 12,
-      marginTop: 2,
-    },
-    benefitText: {
-      flex: 1,
-      fontSize: 15,
-      color: theme.textColor,
-      lineHeight: 22,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    purchaseButton: {
-      flex: 2,
-      backgroundColor: theme.primaryColor,
-      paddingVertical: 16,
-      borderRadius: 12,
-      alignItems: 'center',
-    },
-    purchaseButtonText: {
-      color: '#FFFFFF',
-      fontSize: 18,
-      fontWeight: 'bold',
-    },
-    closeButton: {
-      flex: 1,
-      backgroundColor: theme.backgroundColor,
-      paddingVertical: 16,
-      borderRadius: 12,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: theme.borderColor,
-    },
-    closeButtonText: {
-      color: theme.textColor,
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    expiredText: {
-      fontSize: 18,
-      color: theme.dangerColor,
-      textAlign: 'center',
-      fontWeight: '600',
-    },
-  });
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={modalStyles.modalOverlay}>
-        <View style={modalStyles.modalContent}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={modalStyles.modalHeader}>
-              <Text style={modalStyles.packageTitle}>👑 Premium Package</Text>
-              <Text style={modalStyles.packageSubtitle}>Unlock all premium features and cloud sync</Text>
-              
-              <View style={modalStyles.pricingContainer}>
-                <Text style={modalStyles.originalPrice}>USD $579.2</Text>
-                <Text style={modalStyles.currentPrice}>USD $57.92</Text>
-                <Text style={modalStyles.priceNote}>
-                  {timeRemaining.expired ? 'Annual Subscription' : 'Special Early Bird Price - Annual'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={modalStyles.countdownContainer}>
-              <Text style={modalStyles.countdownTitle}>
-                {timeRemaining.expired ? '⏰ Offer Expired' : '⏰ Limited Time Offer'}
-              </Text>
-              {timeRemaining.expired ? (
-                <Text style={modalStyles.expiredText}>
-                  Price is now USD $579.2
-                </Text>
-              ) : (
-                <View style={modalStyles.countdownTimer}>
-                  <View style={modalStyles.timerUnit}>
-                    <Text style={modalStyles.timerValue}>{timeRemaining.days}</Text>
-                    <Text style={modalStyles.timerLabel}>Days</Text>
-                  </View>
-                  <View style={modalStyles.timerUnit}>
-                    <Text style={modalStyles.timerValue}>{timeRemaining.hours}</Text>
-                    <Text style={modalStyles.timerLabel}>Hours</Text>
-                  </View>
-                  <View style={modalStyles.timerUnit}>
-                    <Text style={modalStyles.timerValue}>{timeRemaining.minutes}</Text>
-                    <Text style={modalStyles.timerLabel}>Minutes</Text>
-                  </View>
-                  <View style={modalStyles.timerUnit}>
-                    <Text style={modalStyles.timerValue}>{timeRemaining.seconds}</Text>
-                    <Text style={modalStyles.timerLabel}>Seconds</Text>
-                  </View>
-                </View>
-              )}
-            </View>
-
-            {!isAuthenticated && (
-              <View style={[modalStyles.countdownContainer, { marginBottom: 16, backgroundColor: theme.warningColor + '20', borderColor: theme.warningColor }]}>
-                <Text style={[modalStyles.countdownTitle, { color: theme.warningColor }]}>
-                  ⚠️ Login Required
-                </Text>
-                <Text style={[modalStyles.priceNote, { textAlign: 'center', marginTop: 8 }]}>
-                  Please log in to your account to purchase the premium package
-                </Text>
-              </View>
-            )}
-            
-            <View style={modalStyles.benefitsContainer}>
-              <Text style={modalStyles.benefitsTitle}>✨ Premium Package Benefits</Text>
-              
-              <View style={modalStyles.benefitItem}>
-                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>👥</Text>
-                <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Invite family members</Text> to your group and share food management responsibilities together
-                </Text>
-              </View>
-              
-              <View style={modalStyles.benefitItem}>
-                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>☁️</Text>
-                <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Cloud synchronization</Text> across all devices - never lose your data and access it anywhere, anytime
-                </Text>
-              </View>
-              
-              <View style={modalStyles.benefitItem}>
-                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>📋</Text>
-                <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Share shopping lists</Text> with family members and coordinate grocery shopping efficiently
-                </Text>
-              </View>
-              
-              <View style={modalStyles.benefitItem}>
-                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>🔒</Text>
-                <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Lock in this price forever</Text> - pay now and your subscription rate will never increase
-                </Text>
-              </View>
-              
-              <View style={modalStyles.benefitItem}>
-                <Text style={[modalStyles.benefitIcon, { color: theme.primaryColor }]}>❌</Text>
-                <Text style={modalStyles.benefitText}>
-                  <Text style={{ fontWeight: '600' }}>Cancel anytime</Text> - no long-term commitment, cancel your subscription whenever you want
-                </Text>
-              </View>
-            </View>
-          </ScrollView>
-
-          <View style={modalStyles.buttonContainer}>
-            <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
-              <Text style={modalStyles.closeButtonText}>Later</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={modalStyles.purchaseButton} onPress={handlePurchase}>
-              <Text style={modalStyles.purchaseButtonText}>
-                {timeRemaining.expired ? 'Buy $579.2' : 'Buy $57.92'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
 // Group Management Modal Component
 const GroupManagementModal: React.FC<{
   visible: boolean;
@@ -580,35 +235,80 @@ const GroupManagementModal: React.FC<{
 }> = ({ visible, onClose }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { localUser } = useSupabase();
+  const { user: localUser, userGroups, createGroup, deleteGroup, currentGroup } = useApi();
   
-  const [groupName, setGroupName] = useState('My Family Group');
+  const [selectedGroup, setSelectedGroup] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupDescription, setNewGroupDescription] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [groupMembers, setGroupMembers] = useState([
-    { id: '1', name: localUser?.full_name || 'You', email: localUser?.email || '', role: 'admin', isYou: true },
-    // Mock data - in real implementation, fetch from your backend
-    { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', role: 'member', isYou: false },
-    { id: '3', name: 'Mike Wilson', email: 'mike@example.com', role: 'member', isYou: false },
-  ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<any[]>([]);
 
-  const handleInviteUser = async () => {
-    if (!inviteEmail.trim()) {
-      Alert.alert('Error', 'Please enter an email address');
-      return;
-    }
+  // Extract groups from userGroups
+  const groups = userGroups.map(membership => ({
+    ...membership.groups,
+    role: membership.role,
+  }));
 
-    if (groupMembers.length >= 4) { // Admin + 3 members
-      Alert.alert('Group Full', 'Family groups can have a maximum of 4 members (including you)');
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) {
+      Alert.alert('Error', 'Please enter a group name');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Here you would integrate with your backend to send invitation
+      await createGroup(newGroupName.trim(), newGroupDescription.trim() || undefined);
+      setNewGroupName('');
+      setNewGroupDescription('');
+      setShowCreateModal(false);
+      Alert.alert('Success', 'Group created successfully!');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create group');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewMembers = async (group: any) => {
+    setSelectedGroup(group);
+    setIsLoading(true);
+    try {
+      // Fetch group members from backend
+      const response = await apiClient.get<{ members: any[] }>(`/groups/${group.id}/members`);
+      if (response.data?.members) {
+        setGroupMembers(response.data.members);
+      }
+    } catch (error) {
+      // Show current user as the only member if fetch fails
+      setGroupMembers([{
+        id: localUser?.supabase_id,
+        email: localUser?.email,
+        full_name: localUser?.full_name || 'You',
+        role: group.role || 'owner',
+      }]);
+    } finally {
+      setIsLoading(false);
+      setShowMembersModal(true);
+    }
+  };
+
+  const handleInviteUser = async () => {
+    if (!inviteEmail.trim() || !selectedGroup) {
+      Alert.alert('Error', 'Please enter an email address');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiClient.post(`/groups/${selectedGroup.id}/invite`, {
+        email: inviteEmail.trim(),
+      });
       Alert.alert(
         'Invitation Sent',
-        `Invitation sent to ${inviteEmail}. They will receive an email to join your family group.`,
+        `Invitation sent to ${inviteEmail}.`,
         [{ text: 'OK', onPress: () => setInviteEmail('') }]
       );
     } catch (error) {
@@ -619,39 +319,60 @@ const GroupManagementModal: React.FC<{
   };
 
   const handleRemoveMember = (memberId: string, memberName: string) => {
+    if (!selectedGroup) return;
+    
     Alert.alert(
       'Remove Member',
-      `Are you sure you want to remove ${memberName} from your family group?`,
+      `Are you sure you want to remove ${memberName} from this group?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => {
-            // Here you would integrate with your backend to remove member
-            setGroupMembers(prev => prev.filter(member => member.id !== memberId));
-            Alert.alert('Success', `${memberName} has been removed from the group.`);
+          onPress: async () => {
+            try {
+              await apiClient.delete(`/groups/${selectedGroup.id}/members/${memberId}`);
+              setGroupMembers(prev => prev.filter(member => member.id !== memberId));
+              Alert.alert('Success', `${memberName} has been removed from the group.`);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to remove member.');
+            }
           }
         }
       ]
     );
   };
 
-  const handleSaveGroupName = async () => {
-    if (!groupName.trim()) {
-      Alert.alert('Error', 'Please enter a group name');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Here you would integrate with your backend to update group name
-      Alert.alert('Success', 'Group name updated successfully!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update group name. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleDeleteGroup = (group: any) => {
+    Alert.alert(
+      'Delete Group',
+      `Are you sure you want to delete "${group.name}"?\n\nThis will permanently delete:\n• All food items\n• All shopping items\n• All wish items\n• All categories\n• All locations\n• The group itself\n\nThis action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              await deleteGroup(group.id);
+              setIsLoading(false);
+              Alert.alert(
+                'Success',
+                `"${group.name}" and all related data have been deleted successfully.`,
+                [{ text: 'OK' }]
+              );
+            } catch (error) {
+              setIsLoading(false);
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to delete group. Please try again.'
+              );
+            }
+          }
+        }
+      ]
+    );
   };
 
   const modalStyles = StyleSheet.create({
@@ -685,13 +406,13 @@ const GroupManagementModal: React.FC<{
       textAlign: 'center',
     },
     section: {
-      marginBottom: 24,
+      marginBottom: 20,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: '600',
       color: theme.textColor,
-      marginBottom: 12,
+      marginBottom: 10,
     },
     groupNameContainer: {
       flexDirection: 'row',
@@ -699,20 +420,22 @@ const GroupManagementModal: React.FC<{
       gap: 12,
     },
     input: {
-      flex: 1,
       backgroundColor: theme.backgroundColor,
-      padding: 12,
+      padding: 14,
       borderRadius: 8,
       color: theme.textColor,
       borderWidth: 1,
       borderColor: theme.borderColor,
       fontSize: 16,
+      width: '100%',
     },
     saveButton: {
       backgroundColor: theme.primaryColor,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 16,
       borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     saveButtonText: {
       color: '#FFFFFF',
@@ -811,11 +534,11 @@ const GroupManagementModal: React.FC<{
     closeButton: {
       backgroundColor: theme.backgroundColor,
       paddingVertical: 16,
-      borderRadius: 12,
+      borderRadius: 8,
       alignItems: 'center',
+      justifyContent: 'center',
       borderWidth: 1,
       borderColor: theme.borderColor,
-      marginTop: 16,
     },
     closeButtonText: {
       color: theme.textColor,
@@ -846,136 +569,250 @@ const GroupManagementModal: React.FC<{
   });
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={modalStyles.modalOverlay}>
-        <View style={modalStyles.modalContent}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={modalStyles.modalHeader}>
-              <Text style={modalStyles.modalTitle}>👨‍👩‍👧‍👦 Manage Family Group</Text>
-              <Text style={modalStyles.modalSubtitle}>Organize your family's food management</Text>
-            </View>
-
-            {/* Group Statistics */}
-            <View style={modalStyles.section}>
-              <Text style={modalStyles.sectionTitle}>📊 Group Overview</Text>
-              <View style={modalStyles.groupStats}>
-                <View style={modalStyles.statsRow}>
-                  <Text style={modalStyles.statsLabel}>Total Members:</Text>
-                  <Text style={modalStyles.statsValue}>{groupMembers.length}/4</Text>
-                </View>
-                <View style={modalStyles.statsRow}>
-                  <Text style={modalStyles.statsLabel}>Available Invites:</Text>
-                  <Text style={modalStyles.statsValue}>{4 - groupMembers.length}</Text>
-                </View>
-                <View style={modalStyles.statsRow}>
-                  <Text style={modalStyles.statsLabel}>Group Admin:</Text>
-                  <Text style={modalStyles.statsValue}>You</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Group Name Section */}
-            <View style={modalStyles.section}>
-              <Text style={modalStyles.sectionTitle}>✏️ Group Name</Text>
-              <View style={modalStyles.groupNameContainer}>
-                <TextInput
-                  style={modalStyles.input}
-                  value={groupName}
-                  onChangeText={setGroupName}
-                  placeholder="Enter group name"
-                  placeholderTextColor={theme.textSecondary}
-                />
-                <TouchableOpacity 
-                  style={modalStyles.saveButton} 
-                  onPress={handleSaveGroupName}
-                  disabled={isLoading}
-                >
-                  <Text style={modalStyles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Invite Members Section */}
-            <View style={modalStyles.section}>
-              <Text style={modalStyles.sectionTitle}>📧 Invite New Member</Text>
-              <View style={modalStyles.inviteContainer}>
-                <View style={modalStyles.inviteInputContainer}>
-                  <TextInput
-                    style={modalStyles.input}
-                    value={inviteEmail}
-                    onChangeText={setInviteEmail}
-                    placeholder="Enter email address"
-                    placeholderTextColor={theme.textSecondary}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity 
-                    style={[
-                      modalStyles.inviteButton,
-                      (isLoading || groupMembers.length >= 4) && modalStyles.inviteButtonDisabled
-                    ]}
-                    onPress={handleInviteUser}
-                    disabled={isLoading || groupMembers.length >= 4}
-                  >
-                    <Text style={modalStyles.inviteButtonText}>
-                      {isLoading ? 'Sending...' : 'Invite'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={modalStyles.inviteNote}>
-                  {groupMembers.length >= 4 
-                    ? 'Group is full (maximum 4 members)'
-                    : `${4 - groupMembers.length} invite${4 - groupMembers.length === 1 ? '' : 's'} remaining`
-                  }
+    <>
+      {/* Main Groups Modal */}
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <View style={modalStyles.modalOverlay}>
+          <View style={modalStyles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={modalStyles.modalHeader}>
+                <Text style={modalStyles.modalTitle}>👥 {t('settings.groups') || 'Manage Groups'}</Text>
+                <Text style={modalStyles.modalSubtitle}>
+                  {t('settings.groupsDescription') || 'Create and manage your groups'}
                 </Text>
               </View>
-            </View>
 
-            {/* Current Members Section */}
-            <View style={modalStyles.section}>
-              <Text style={modalStyles.sectionTitle}>👥 Current Members ({groupMembers.length})</Text>
-              <ScrollView style={modalStyles.membersList} nestedScrollEnabled>
-                {groupMembers.map((member) => (
-                  <View key={member.id} style={modalStyles.memberItem}>
-                    <View style={modalStyles.memberAvatar}>
-                      <Text style={modalStyles.memberAvatarText}>
-                        {member.name.charAt(0).toUpperCase()}
-                      </Text>
-                    </View>
-                    <View style={modalStyles.memberInfo}>
-                      <Text style={modalStyles.memberName}>
-                        {member.name} {member.isYou && '(You)'}
-                      </Text>
-                      <Text style={modalStyles.memberEmail}>{member.email}</Text>
-                    </View>
-                    <View style={[
-                      modalStyles.memberRole, 
-                      member.role === 'admin' && modalStyles.adminRole
-                    ]}>
-                      <Text style={modalStyles.memberRoleText}>
-                        {member.role === 'admin' ? 'Admin' : 'Member'}
-                      </Text>
-                    </View>
-                    {!member.isYou && (
-                      <TouchableOpacity
-                        style={modalStyles.removeButton}
-                        onPress={() => handleRemoveMember(member.id, member.name)}
-                      >
-                        <FontAwesome name="times" size={14} color="#FFFFFF" />
-                      </TouchableOpacity>
-                    )}
+              {/* Groups List */}
+              <View style={modalStyles.section}>
+                <Text style={modalStyles.sectionTitle}>📋 Your Groups ({groups.length})</Text>
+                {groups.length === 0 ? (
+                  <View style={modalStyles.groupStats}>
+                    <Text style={[modalStyles.statsLabel, { textAlign: 'center' }]}>
+                      No groups yet. Create your first group!
+                    </Text>
                   </View>
-                ))}
-              </ScrollView>
-            </View>
-          </ScrollView>
+                ) : (
+                  <ScrollView style={modalStyles.membersList} nestedScrollEnabled>
+                    {groups.map((group) => (
+                      <View key={group.id} style={modalStyles.memberItem}>
+                        <View style={modalStyles.memberAvatar}>
+                          <Text style={modalStyles.memberAvatarText}>
+                            {group.name.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={modalStyles.memberInfo}>
+                          <Text style={modalStyles.memberName}>{group.name}</Text>
+                          <Text style={modalStyles.memberEmail}>
+                            {group.description || 'No description'}
+                          </Text>
+                        </View>
+                        <View style={[
+                          modalStyles.memberRole,
+                          group.role === 'owner' && modalStyles.adminRole
+                        ]}>
+                          <Text style={modalStyles.memberRoleText}>
+                            {group.role === 'owner' ? 'Owner' : group.role === 'admin' ? 'Admin' : 'Member'}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={[modalStyles.saveButton, { marginLeft: 8 }]}
+                          onPress={() => handleViewMembers(group)}
+                        >
+                          <FontAwesome name="users" size={14} color="#FFFFFF" />
+                        </TouchableOpacity>
+                        {group.role === 'owner' && group.name !== 'Personal' && (
+                          <TouchableOpacity
+                            style={[modalStyles.removeButton, { marginLeft: 8 }]}
+                            onPress={() => handleDeleteGroup(group)}
+                          >
+                            <FontAwesome name="trash" size={14} color="#FFFFFF" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
 
-          <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
-            <Text style={modalStyles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+              {/* Create Group Button */}
+              <TouchableOpacity
+                style={[modalStyles.saveButton, { marginTop: 16, paddingVertical: 14 }]}
+                onPress={() => setShowCreateModal(true)}
+              >
+                <Text style={modalStyles.saveButtonText}>➕ Create New Group</Text>
+              </TouchableOpacity>
+            </ScrollView>
+
+            <TouchableOpacity style={modalStyles.closeButton} onPress={onClose}>
+              <Text style={modalStyles.closeButtonText}>{t('common.close') || 'Close'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      {/* Create Group Modal */}
+      <Modal visible={showCreateModal} transparent animationType="fade" onRequestClose={() => setShowCreateModal(false)}>
+        <View style={modalStyles.modalOverlay}>
+          <View style={[modalStyles.modalContent, { maxHeight: '80%' }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={modalStyles.modalHeader}>
+                <Text style={modalStyles.modalTitle}>➕ Create New Group</Text>
+              </View>
+              
+              <View style={[modalStyles.section, { marginBottom: 20 }]}>
+                <Text style={modalStyles.sectionTitle}>Group Name</Text>
+                <TextInput
+                  style={modalStyles.input}
+                  value={newGroupName}
+                  onChangeText={setNewGroupName}
+                  placeholder="e.g., Family, Roommates, Office"
+                  placeholderTextColor={theme.textSecondary}
+                  autoFocus
+                />
+              </View>
+
+              <View style={[modalStyles.section, { marginBottom: 24 }]}>
+                <Text style={modalStyles.sectionTitle}>Description (optional)</Text>
+                <TextInput
+                  style={[modalStyles.input, { minHeight: 100, textAlignVertical: 'top', paddingTop: 12 }]}
+                  value={newGroupDescription}
+                  onChangeText={setNewGroupDescription}
+                  placeholder="What is this group for?"
+                  placeholderTextColor={theme.textSecondary}
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity
+                  style={[modalStyles.closeButton, { flex: 1 }]}
+                  onPress={() => {
+                    setShowCreateModal(false);
+                    setNewGroupName('');
+                    setNewGroupDescription('');
+                  }}
+                  disabled={isLoading}
+                >
+                  <Text style={modalStyles.closeButtonText}>{t('common.cancel') || 'Cancel'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[modalStyles.saveButton, { flex: 1, paddingVertical: 16 }]}
+                  onPress={handleCreateGroup}
+                  disabled={isLoading || !newGroupName.trim()}
+                >
+                  <Text style={modalStyles.saveButtonText}>
+                    {isLoading ? 'Creating...' : 'Create'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Members Modal */}
+      <Modal visible={showMembersModal} transparent animationType="fade" onRequestClose={() => setShowMembersModal(false)}>
+        <View style={modalStyles.modalOverlay}>
+          <View style={modalStyles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={modalStyles.modalHeader}>
+                <Text style={modalStyles.modalTitle}>
+                  👥 {selectedGroup?.name || 'Group'} Members
+                </Text>
+                <Text style={modalStyles.modalSubtitle}>
+                  {groupMembers.length} member{groupMembers.length !== 1 ? 's' : ''}
+                </Text>
+              </View>
+
+              {/* Invite Section - Only for owners/admins */}
+              {selectedGroup && (selectedGroup.role === 'owner' || selectedGroup.role === 'admin') && (
+                <View style={modalStyles.section}>
+                  <Text style={modalStyles.sectionTitle}>📧 Invite New Member</Text>
+                  <View style={modalStyles.inviteInputContainer}>
+                    <TextInput
+                      style={modalStyles.input}
+                      value={inviteEmail}
+                      onChangeText={setInviteEmail}
+                      placeholder="Enter email address"
+                      placeholderTextColor={theme.textSecondary}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={[modalStyles.inviteButton, isLoading && modalStyles.inviteButtonDisabled]}
+                      onPress={handleInviteUser}
+                      disabled={isLoading}
+                    >
+                      <Text style={modalStyles.inviteButtonText}>
+                        {isLoading ? '...' : 'Invite'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* Members List */}
+              <View style={modalStyles.section}>
+                <Text style={modalStyles.sectionTitle}>👥 Current Members</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color={theme.primaryColor} />
+                ) : (
+                  <ScrollView style={modalStyles.membersList} nestedScrollEnabled>
+                    {groupMembers.map((member) => {
+                      const isCurrentUser = member.id === localUser?.supabase_id;
+                      return (
+                        <View key={member.id} style={modalStyles.memberItem}>
+                          <View style={modalStyles.memberAvatar}>
+                            <Text style={modalStyles.memberAvatarText}>
+                              {(member.full_name || member.email || 'U').charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                          <View style={modalStyles.memberInfo}>
+                            <Text style={modalStyles.memberName}>
+                              {member.full_name || 'Unknown'} {isCurrentUser && '(You)'}
+                            </Text>
+                            <Text style={modalStyles.memberEmail}>{member.email}</Text>
+                          </View>
+                          <View style={[
+                            modalStyles.memberRole,
+                            member.role === 'owner' && modalStyles.adminRole
+                          ]}>
+                            <Text style={modalStyles.memberRoleText}>
+                              {member.role === 'owner' ? 'Owner' : member.role === 'admin' ? 'Admin' : 'Member'}
+                            </Text>
+                          </View>
+                          {!isCurrentUser && selectedGroup?.role === 'owner' && (
+                            <TouchableOpacity
+                              style={modalStyles.removeButton}
+                              onPress={() => handleRemoveMember(member.id, member.full_name || member.email)}
+                            >
+                              <FontAwesome name="times" size={14} color="#FFFFFF" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={modalStyles.closeButton}
+              onPress={() => {
+                setShowMembersModal(false);
+                setSelectedGroup(null);
+                setGroupMembers([]);
+                setInviteEmail('');
+              }}
+            >
+              <Text style={modalStyles.closeButtonText}>{t('common.close') || 'Close'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -1488,8 +1325,51 @@ const EditModal: React.FC<EditModalProps> = ({
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, resetDatabase, deleteAllExpired, foodItems } = useDatabase();
-  const { user, localUser, isAuthenticated, signOut, isOnlineMode, isOfflineMode, createFamilySubscription } = useSupabase();
+  const { categories: allCategories, locations: allLocations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, deleteAllExpired, foodItems } = useDatabase();
+  const { user, isAuthenticated, signOut, currentGroup } = useApi();
+  
+  // Filter categories and locations by current group (same as in home/dashboard)
+  const categories = useMemo(() => {
+    if (!currentGroup?.id) return allCategories;
+    const filtered = allCategories.filter(cat => cat.group_id === currentGroup.id);
+    // Deduplicate by name - keep the one with cloud_id if available
+    const seen = new Map<string, Category>();
+    for (const cat of filtered) {
+      const key = cat.name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.set(key, cat);
+      } else {
+        const existing = seen.get(key)!;
+        // Prefer the one with cloud_id (synced from server)
+        if (cat.cloud_id && !existing.cloud_id) {
+          seen.set(key, cat);
+        }
+      }
+    }
+    return Array.from(seen.values());
+  }, [allCategories, currentGroup?.id]);
+  
+  const locations = useMemo(() => {
+    if (!currentGroup?.id) return allLocations;
+    const filtered = allLocations.filter(loc => loc.group_id === currentGroup.id);
+    // Deduplicate by name - keep the one with cloud_id if available
+    const seen = new Map<string, Location>();
+    for (const loc of filtered) {
+      const key = loc.name.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.set(key, loc);
+      } else {
+        const existing = seen.get(key)!;
+        // Prefer the one with cloud_id (synced from server)
+        if (loc.cloud_id && !existing.cloud_id) {
+          seen.set(key, loc);
+        }
+      }
+    }
+    return Array.from(seen.values());
+  }, [allLocations, currentGroup?.id]);
+  const localUser = user; // ApiContext uses 'user' instead of 'localUser'
+  // Note: isOnlineMode and isOfflineMode are not in ApiContext, and createFamilySubscription is not needed for PostgreSQL
   const responsive = useResponsive();
   const router = useRouter();
 
@@ -1501,7 +1381,6 @@ export default function SettingsScreen() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [managementModalVisible, setManagementModalVisible] = useState(false);
   const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
-  const [showFamilyPackageModal, setShowFamilyPackageModal] = useState(false);
   const [showGroupManagementModal, setShowGroupManagementModal] = useState(false);
 
   const openManagementModal = (type: 'categories' | 'locations') => {
@@ -1552,7 +1431,7 @@ export default function SettingsScreen() {
       icon: 'user',
       title: isAuthenticated ? (t('settings.account') || 'Account') : 'Login',
       description: isAuthenticated 
-        ? `${user?.email || localUser?.email || 'N/A'}`
+        ? (user?.email || localUser?.email || 'Loading...')
         : 'Sign in to sync data and access premium features',
       type: 'navigation',
       onPress: () => {
@@ -1560,7 +1439,7 @@ export default function SettingsScreen() {
           // Show account info and sign out options
           Alert.alert(
             'Account',
-            `Email: ${user?.email || localUser?.email || 'N/A'}\nSubscription: ${localUser?.subscription_type || 'Free'}`,
+            `Email: ${user?.email || localUser?.email || 'Loading...'}\nSubscription: ${localUser?.subscription_type || 'Free'}`,
             [
               { text: 'Cancel', style: 'cancel' },
               { 
@@ -1573,7 +1452,6 @@ export default function SettingsScreen() {
                     router.push('/auth/login');
                   } catch (error) {
                     Alert.alert('Error', 'Failed to sign out. Please try again.');
-                    console.error('Sign out error:', error);
                   }
                 }
               }
@@ -1593,17 +1471,6 @@ export default function SettingsScreen() {
       type: 'navigation' as const,
       onPress: () => setShowGroupManagementModal(true),
     }] : []),
-    // Premium Package option - visible for all users
-    {
-      id: 'premium',
-      icon: 'dollar' as IconName,
-      title: 'Premium Package',
-      description: isAuthenticated 
-        ? 'Unlock cloud sync, family sharing, and premium features'
-        : 'Login to unlock cloud sync, family sharing, and premium features',
-      type: 'navigation' as const,
-      onPress: () => setShowFamilyPackageModal(true),
-    },
     {
       id: 'theme',
       icon: 'paint-brush',
@@ -1637,14 +1504,6 @@ export default function SettingsScreen() {
       onPress: () => router.push('/notifications'),
     },
     {
-      id: 'imageRecovery',
-      icon: 'image',
-      title: t('settings.imageRecovery') || 'Image Recovery',
-      description: t('settings.imageRecoveryDesc') || 'Fix missing images after iOS updates',
-      type: 'navigation',
-      onPress: () => router.push('/image-recovery' as any),
-    },
-    {
       id: 'clearExpired',
       icon: 'trash',
       title: t('settings.clearExpiredItems'),
@@ -1664,48 +1523,41 @@ export default function SettingsScreen() {
         handleClearUsedItems();
       },
     },
-    {
-      id: 'reset',
-      icon: 'refresh',
-      title: t('settings.resetDatabase') || 'Reset Database',
-      description: t('settings.resetDatabaseDescription') || 'Reset to original 8 categories and 4 locations',
-      type: 'navigation',
-      onPress: () => {
-        handleResetDatabase();
-      },
-    },
-    // Add logout button at the very bottom when authenticated
-    ...(isAuthenticated ? [{
-      id: 'logout',
-      icon: 'sign-out' as IconName,
-      title: 'Sign Out',
-      description: 'Sign out of your account',
-      type: 'navigation' as const,
-      onPress: () => {
-        Alert.alert(
-          'Sign Out',
-          'Are you sure you want to sign out?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Sign Out', 
-              style: 'destructive', 
-              onPress: async () => {
-                try {
-                  await signOut();
-                  // Navigate to login screen after successful sign out
-                  router.push('/auth/login');
-                } catch (error) {
-                  Alert.alert('Error', 'Failed to sign out. Please try again.');
-                  console.error('Sign out error:', error);
-                }
+  ];
+
+  // Logout button - separate from other settings for prominent display
+  const logoutButton: SettingItem = {
+    id: 'logout',
+    icon: 'sign-out' as IconName,
+    title: t('settings.signOut') || 'Sign Out',
+    description: t('settings.signOutDescription') || 'Sign out of your account and switch to another account',
+    type: 'navigation',
+    onPress: () => {
+      Alert.alert(
+        t('settings.signOut') || 'Sign Out',
+        t('settings.signOutConfirm') || 'Are you sure you want to sign out? You will need to sign in again to access your data.',
+        [
+          { text: t('common.cancel') || 'Cancel', style: 'cancel' },
+          { 
+            text: t('settings.signOut') || 'Sign Out', 
+            style: 'destructive', 
+            onPress: async () => {
+              try {
+                await signOut();
+                // Navigate to login screen after successful sign out
+                router.push('/auth/login');
+              } catch (error) {
+                Alert.alert(
+                  t('common.error') || 'Error', 
+                  t('settings.signOutError') || 'Failed to sign out. Please try again.'
+                );
               }
             }
-          ]
-        );
-      },
-    }] : []),
-  ];
+          }
+        ]
+      );
+    },
+  };
 
   const handleDeleteCategory = async (id: number) => {
     Alert.alert(
@@ -1743,36 +1595,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleResetDatabase = async () => {
-    Alert.alert(
-      t('settings.resetDatabase') || 'Reset Database',
-      t('settings.resetDatabaseConfirmation') || 'This will reset all categories and locations to the original 8 categories and 4 locations. Your food items will be preserved. This action cannot be undone.',
-      [
-        {
-          text: t('common.cancel') || 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: t('settings.reset') || 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-                    await resetDatabase();
-              Alert.alert(
-                t('common.success') || 'Success', 
-                t('settings.resetDatabaseSuccess') || 'Database has been reset to original defaults!'
-              );
-                    } catch (error) {
-          Alert.alert(
-                t('common.error') || 'Error', 
-                t('settings.resetDatabaseError') || 'Failed to reset database. Please try again.'
-              );
-            }
-          }
-        }
-      ]
-    );
-  };
 
   const handleClearExpired = async () => {
     Alert.alert(
@@ -1813,8 +1635,36 @@ export default function SettingsScreen() {
 
   const styles = createStyles(theme);
 
-  const renderSettingItem = (item: SettingItem, index: number, total: number) => {
+  const renderSettingItem = (item: SettingItem, index: number, total: number, isLogout: boolean = false) => {
     const isLast = index === total - 1;
+
+    // Special styling for logout button
+    if (isLogout) {
+      return (
+        <TouchableOpacity
+          key={item.id}
+          style={[
+            styles.settingItem, 
+            isLast && styles.settingItemLast,
+            {
+              backgroundColor: `${theme.dangerColor || '#FF3B30'}15`, // Light red background
+              borderLeftWidth: 3,
+              borderLeftColor: theme.dangerColor || '#FF3B30',
+            }
+          ]}
+          onPress={item.onPress}
+        >
+          <View style={[styles.settingIcon, { backgroundColor: `${theme.dangerColor || '#FF3B30'}30` }]}>
+            <FontAwesome name={item.icon} size={16} color={theme.dangerColor || '#FF3B30'} />
+          </View>
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingTitle, { color: theme.dangerColor || '#FF3B30' }]}>{item.title}</Text>
+            <Text style={styles.settingDescription}>{item.description}</Text>
+          </View>
+          <FontAwesome name="chevron-right" size={16} color={theme.dangerColor || '#FF3B30'} />
+        </TouchableOpacity>
+      );
+    }
 
     return (
       <TouchableOpacity
@@ -2446,6 +2296,7 @@ export default function SettingsScreen() {
     const { theme } = useTheme();
     const { t, language, getCategoryName, getLocationName } = useLanguage();
     const { categories, locations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation } = useDatabase();
+    const { currentGroup } = useApi();
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingItem, setEditingItem] = useState<Category | Location | null>(null);
   
@@ -2470,10 +2321,16 @@ export default function SettingsScreen() {
           await updateLocation({ ...editingItem as Location, name, icon });
         }
       } else {
+        // When creating new item, include current group_id
+        const newItem = {
+          name,
+          icon,
+          group_id: currentGroup?.id || undefined,
+        };
         if (type === 'categories') {
-          await createCategory({ name, icon } as Category);
+          await createCategory(newItem as Category);
         } else {
-          await createLocation({ name, icon } as Location);
+          await createLocation(newItem as Location);
         }
       }
       setEditingItem(null);
@@ -2573,6 +2430,24 @@ export default function SettingsScreen() {
           ]}>
             {settings.map((item, index) => renderSettingItem(item, index, settings.length))}
           </View>
+
+          {/* Logout Button Section - Separate section when authenticated */}
+          {isAuthenticated && (
+            <View style={[
+              styles.section,
+              {
+                width: responsive.getResponsiveValue({
+                  small: '95%',
+                  tablet: '80%',
+                  largeTablet: '70%',
+                  default: '90%'
+                }),
+                marginTop: 8, // Add some space between sections
+              }
+            ]}>
+              {renderSettingItem(logoutButton, 0, 1, true)}
+            </View>
+          )}
           
 
         </ScrollView>
@@ -2588,13 +2463,6 @@ export default function SettingsScreen() {
         {renderAboutModal()}
         <BottomNav />
       </View>
-      <FamilyPackageModal
-        visible={showFamilyPackageModal}
-        onClose={() => setShowFamilyPackageModal(false)}
-        onPurchase={createFamilySubscription}
-        isAuthenticated={isAuthenticated}
-        router={router}
-      />
       <GroupManagementModal
         visible={showGroupManagementModal}
         onClose={() => setShowGroupManagementModal(false)}

@@ -5,7 +5,7 @@ module.exports = function (api) {
     plugins: [
       '@babel/plugin-transform-runtime',
       '@babel/plugin-transform-export-namespace-from',
-      'react-native-reanimated/plugin',
+      'react-native-reanimated/plugin', // This must be last
     ],
   };
 }; 

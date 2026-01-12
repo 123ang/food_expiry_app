@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -14,31 +14,32 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { useTheme } from '../../context/ThemeContext'
-import authService from '../../services/AuthService'
+import { useApi } from '../../context/ApiContext'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
+  const { isAuthenticated, loading: authLoading, signIn } = useApi()
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace('/');
+    }
+  }, [authLoading, isAuthenticated]);
 
   const handleSignIn = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields')
       return
     }
-
-    console.log('LoginScreen: Starting sign in for:', email)
     setLoading(true)
     
     try {
-      const result = await authService.login(email.trim().toLowerCase(), password)
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Login failed')
-      }
-      
-      console.log('LoginScreen: Sign in successful, navigating to home...')
+      // Use signIn from ApiContext to properly set user state
+      await signIn(email.trim().toLowerCase(), password)
       // Login successful, navigate to main app
       router.replace('/')
     } catch (error) {
@@ -49,13 +50,28 @@ export default function LoginScreen() {
     }
   }
 
-  const handleSkip = () => {
-    // Continue with local mode only
-    router.replace('/')
-  }
-
   const goToSignUp = () => {
     router.push('/auth/signup' as any)
+  }
+
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <KeyboardAvoidingView 
+        style={[styles.container, { backgroundColor: theme.backgroundColor, justifyContent: 'center', alignItems: 'center' }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ActivityIndicator size="large" color={theme.primaryColor} />
+        <Text style={[styles.subtitle, { color: theme.textSecondary, marginTop: 20 }]}>
+          Loading...
+        </Text>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  // Don't render login form if already authenticated (will redirect)
+  if (isAuthenticated) {
+    return null;
   }
 
   return (
@@ -139,21 +155,6 @@ export default function LoginScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Skip Button */}
-          <View style={styles.skipSection}>
-            <Text style={[styles.skipText, { color: theme.textSecondary }]}>
-              Want to use the app offline only?
-            </Text>
-            <TouchableOpacity 
-              style={[styles.skipButton, { borderColor: theme.borderColor }]}
-              onPress={handleSkip}
-            >
-              <Text style={[styles.skipButtonText, { color: theme.textColor }]}>
-                Continue Locally
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -231,26 +232,5 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     textDecorationLine: 'underline',
-  },
-  skipSection: {
-    alignItems: 'center',
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-  },
-  skipText: {
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  skipButton: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  skipButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
   },
 }) 

@@ -3,47 +3,33 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 import { 
   getCategories,
   deleteCategory,
-  getGroups,
   Category
 } from '../services/postgresApiService';
 
 const CategoryList: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
-
-  // Load group on mount
-  useEffect(() => {
-    const loadGroup = async () => {
-      if (!user) return;
-      
-      try {
-        const groups = await getGroups();
-        if (groups.length > 0) {
-          setCurrentGroupId(groups[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading group:', error);
-      }
-    };
-    
-    loadGroup();
-  }, [user]);
+  const { currentGroup, loading: groupLoading } = useGroup();
+  const currentGroupId = currentGroup?.id || null;
 
   // Load categories when group is available
   useEffect(() => {
-    if (currentGroupId && user) {
+    if (!groupLoading && currentGroupId && user) {
       loadCategories();
+    } else if (!groupLoading && !currentGroupId) {
+      setIsLoading(false);
     }
-  }, [currentGroupId, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentGroupId, user, groupLoading]);
 
   const loadCategories = async () => {
     if (!currentGroupId) return;
@@ -75,9 +61,10 @@ const CategoryList: React.FC = () => {
     }
   };
 
-  const handleEditCategory = (categoryId: string) => {
-    navigate(`/edit-category/${categoryId}`);
-  };
+  // Edit category handler - kept for potential future use
+  // const handleEditCategory = (categoryId: string) => {
+  //   navigate(`/edit-category/${categoryId}`);
+  // };
 
   if (isLoading) {
     return (

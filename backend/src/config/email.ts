@@ -26,11 +26,9 @@ if (isEmailEnabled && emailTransporter) {
       console.error('❌ Email configuration error:', error);
       console.warn('⚠️  Email features will be disabled');
     } else {
-      console.log('✅ Email server is ready to send messages');
     }
   });
 } else {
-  console.log('ℹ️  Email is disabled (no SMTP credentials provided)');
 }
 
 // Email templates
@@ -177,7 +175,6 @@ export const sendEmail = async (to: string, subject: string, html: string, text:
       html,
       text,
     });
-    console.log('✅ Email sent:', info.messageId);
     return info;
   } catch (error) {
     console.error('❌ Email sending failed:', error);

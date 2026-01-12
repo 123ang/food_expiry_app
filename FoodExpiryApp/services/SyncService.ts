@@ -1,9 +1,10 @@
 import { getDatabase, getCurrentDate, calculateDaysUntilExpiry, isUsingFallbackStorage, getFallbackStorage, queuedDatabaseOperation } from '../database/database';
 import { Category, Location, FoodItem, ShoppingItem, WishItem } from '../database/models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Alert } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
+import { getCurrentDateTimeISO } from '../utils/dateUtils';
 
 // Types for sync operations
 interface LocalChanges {
@@ -76,7 +77,7 @@ export class SyncService {
       const timestamp = await AsyncStorage.getItem('last_sync_time');
       this.lastSyncTime = timestamp ? new Date(timestamp) : null;
     } catch (error) {
-      console.error('Error loading last sync time:', error);
+      // Silent error handling
     }
   }
   
@@ -86,7 +87,7 @@ export class SyncService {
       await AsyncStorage.setItem('last_sync_time', now.toISOString());
       this.lastSyncTime = now;
     } catch (error) {
-      console.error('Error saving last sync time:', error);
+      // Silent error handling
     }
   }
   
@@ -94,7 +95,7 @@ export class SyncService {
     try {
       this.apiToken = await AsyncStorage.getItem('user_api_token');
     } catch (error) {
-      console.error('Error loading API token:', error);
+      // Silent error handling
     }
   }
   
@@ -103,14 +104,27 @@ export class SyncService {
    */
   async syncDatabase(userId: string, groupId: string): Promise<SyncResult> {
     if (this.syncInProgress) {
-      throw new Error('Sync already in progress');
+      return {
+        success: false,
+        error: 'Sync already in progress',
+        syncedAt: null,
+        stats: null
+      };
+    }
+    
+    // Check if API token is available before attempting sync
+    if (!this.apiToken) {
+      return {
+        success: false,
+        error: 'API token not available. Please log in.',
+        syncedAt: null,
+        stats: null
+      };
     }
     
     this.syncInProgress = true;
     
     try {
-      console.log('Starting database sync...');
-      
       // 1. Gather local changes since last sync
       const localChanges = await this.collectLocalChanges();
       
@@ -151,11 +165,10 @@ export class SyncService {
         }
       };
     } catch (error) {
-      console.error('Sync failed:', error);
       this.syncInProgress = false;
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         syncedAt: null,
         stats: null
       };
@@ -166,7 +179,6 @@ export class SyncService {
    * Collect all local changes since last sync
    */
   private async collectLocalChanges(): Promise<LocalChanges> {
-    console.log('Collecting local changes...');
     const db = await getDatabase();
     const lastSync = this.lastSyncTime?.toISOString() || '1970-01-01T00:00:00Z';
     
@@ -203,7 +215,7 @@ export class SyncService {
           });
         } catch (err) {
           // Table might not exist yet, that's okay
-          console.log('Deleted items table not found, will be created later');
+          // Deleted items table will be created later
         }
         
         // Get modified categories
@@ -236,8 +248,7 @@ export class SyncService {
           [lastSync, lastSync]
         );
       } catch (error) {
-        console.error('Error collecting local changes:', error);
-        throw new Error(`Failed to collect local changes: ${error.message}`);
+        throw new Error(`Failed to collect local changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } else {
       // Fallback storage handling
@@ -248,8 +259,7 @@ export class SyncService {
         foodItems = await fallbackDb.getAllFoodItems();
         // Fallback doesn't support shopping and wish items yet
       } catch (error) {
-        console.error('Error collecting local changes from fallback:', error);
-        throw new Error(`Failed to collect local changes from fallback: ${error.message}`);
+        throw new Error(`Failed to collect local changes from fallback: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
     
@@ -269,7 +279,6 @@ export class SyncService {
    * Returns a map of image_uri to base64 encoded image data
    */
   private async collectLocalImages(foodItems: any[]): Promise<Record<string, string>> {
-    console.log('Collecting local images...');
     const imageData: Record<string, string> = {};
     
     // Get unique image URIs from food items that need syncing
@@ -294,11 +303,10 @@ export class SyncService {
           imageData[uri] = base64Data;
         }
       } catch (error) {
-        console.warn(`Could not read image at ${uri}:`, error);
+        // Silently skip images that can't be read
       }
     }
     
-    console.log(`Collected ${Object.keys(imageData).length} local images for sync`);
     return imageData;
   }
   
@@ -311,8 +319,6 @@ export class SyncService {
     userId: string,
     groupId: string
   ): Promise<CloudChanges> {
-    console.log('Exchanging data with cloud...');
-    
     if (!this.apiToken) {
       throw new Error('API token not available. Please log in.');
     }
@@ -362,8 +368,7 @@ export class SyncService {
         images: responseData.data.images || {}
       };
     } catch (error) {
-      console.error('Error exchanging data with cloud:', error);
-      throw new Error(`Failed to exchange data with cloud: ${error.message}`);
+      throw new Error(`Failed to exchange data with cloud: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -373,7 +378,6 @@ export class SyncService {
   private async applyCloudChanges(cloudChanges: CloudChanges): Promise<{
     imagesDownloaded: number;
   }> {
-    console.log('Applying cloud changes to local database...');
     const db = await getDatabase();
     if (!db) {
       throw new Error('Database not available');
@@ -456,8 +460,7 @@ export class SyncService {
       
       return { imagesDownloaded };
     } catch (error) {
-      console.error('Error applying cloud changes:', error);
-      throw new Error(`Failed to apply cloud changes: ${error.message}`);
+      throw new Error(`Failed to apply cloud changes: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -485,7 +488,6 @@ export class SyncService {
       
       return localUri;
     } catch (error) {
-      console.error('Error saving image locally:', error);
       return null;
     }
   }
@@ -494,21 +496,17 @@ export class SyncService {
    * Updates all repository schemas to add necessary sync columns
    */
   async updateDatabaseForSync(): Promise<void> {
-    console.log('Updating database schema for sync...');
-    
     try {
-      // Import and run migrations
-      const { runSyncMigrations } = await import('../database/migrations');
-      const success = await runSyncMigrations();
+      // Import and run migrations (only add sync columns, skip Supabase-specific setup)
+      const { addSyncColumnsToDatabase, createSyncIndexes } = await import('../database/migrations');
+      const columnsAdded = await addSyncColumnsToDatabase();
+      const indexesCreated = await createSyncIndexes();
       
-      if (!success) {
+      if (!columnsAdded || !indexesCreated) {
         throw new Error('Failed to run sync migrations');
       }
-      
-      console.log('Database schema updated for sync');
     } catch (error) {
-      console.error('Error updating database for sync:', error);
-      throw new Error(`Failed to update database for sync: ${error.message}`);
+      throw new Error(`Failed to update database for sync: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -522,7 +520,7 @@ export class SyncService {
     try {
       await db.runAsync(
         'INSERT INTO deleted_items (table_name, item_id, deleted_at) VALUES (?, ?, ?)',
-        [tableName, itemId, new Date().toISOString()]
+        [tableName, itemId, getCurrentDateTimeISO()]
       );
     } catch (error) {
       // Table might not exist yet
@@ -540,10 +538,10 @@ export class SyncService {
         // Try insert again
         await db.runAsync(
           'INSERT INTO deleted_items (table_name, item_id, deleted_at) VALUES (?, ?, ?)',
-          [tableName, itemId, new Date().toISOString()]
+          [tableName, itemId, getCurrentDateTimeISO()]
         );
       } catch (e) {
-        console.error('Error tracking deleted item:', e);
+        // Silent error handling
       }
     }
   }

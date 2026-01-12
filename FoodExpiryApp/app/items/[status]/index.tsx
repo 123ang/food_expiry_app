@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../../context/ThemeContext';
 import { useDatabase } from '../../../context/DatabaseContext';
-import { useSupabase } from '../../../context/SupabaseContext';
+import { useApi } from '../../../context/ApiContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { BottomNav } from '../../../components/BottomNav';
@@ -121,7 +121,7 @@ export default function ItemStatusScreen() {
   const { getByStatus, refreshAll, foodItems, deleteAllExpired, categories, locations, getFoodItemsByGroup } = useDatabase();
   
   // Group functionality
-  const { currentGroup, isAuthenticated } = useSupabase();
+  const { currentGroup, isAuthenticated } = useApi();
   
   const [currentItems, setCurrentItems] = useState<FoodItemWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -446,7 +446,10 @@ export default function ItemStatusScreen() {
         </TouchableOpacity>
       </View>
       
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         <View style={styles.statsCard}>
           <View style={[styles.statsIcon, dynamicStyles.statsIconBackground]}>
             <Text style={{ fontSize: 24, color: statusData.color }}>{statusData.icon}</Text>

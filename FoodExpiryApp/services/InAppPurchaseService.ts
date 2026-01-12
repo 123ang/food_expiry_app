@@ -26,7 +26,6 @@ class InAppPurchaseService {
     try {
       // Mock implementation - always succeed
       this.isInitialized = true;
-      console.log('InAppPurchaseService: Mock connected to store');
     } catch (error) {
       console.error('InAppPurchaseService: Failed to connect to store:', error);
       throw error;
@@ -54,8 +53,6 @@ class InAppPurchaseService {
 
     try {
       // Mock successful purchase
-      console.log('InAppPurchaseService: Mock purchase successful for', productId);
-      
       return {
         success: true,
         transactionId: `mock_transaction_${Date.now()}`
@@ -74,7 +71,6 @@ class InAppPurchaseService {
 
     try {
       // Mock restore - return empty array
-      console.log('InAppPurchaseService: Mock restore purchases');
       return [];
     } catch (error) {
       console.error('InAppPurchaseService: Error restoring purchases:', error);
@@ -86,7 +82,6 @@ class InAppPurchaseService {
     try {
       // Mock disconnect
       this.isInitialized = false;
-      console.log('InAppPurchaseService: Mock disconnected from store');
     } catch (error) {
       console.error('InAppPurchaseService: Error disconnecting from store:', error);
     }

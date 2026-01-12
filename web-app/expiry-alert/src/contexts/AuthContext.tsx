@@ -85,7 +85,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Try to get current user
           const response = await apiClient.get<{ user: AuthResponse['user'] }>('/users/me');
           
-          if (response.data?.user) {
+          if (response.error) {
+            // Token invalid or expired - silently clear it (this is expected when not logged in)
+            apiClient.clearTokens();
+          } else if (response.data?.user) {
             const backendUser = response.data.user;
             setUser({
               ...backendUser,
@@ -95,12 +98,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               isAnonymous: false,
             });
           } else {
-            // Token invalid, clear it
+            // No user data - clear tokens
             apiClient.clearTokens();
           }
         }
       } catch (err) {
-        console.error('Auth check error:', err);
+        // Silently handle auth check errors (expected when not logged in)
+        // Only log unexpected errors
+        if (err instanceof Error && !err.message.includes('Unauthorized') && !err.message.includes('401')) {
+          console.error('Auth check error:', err);
+        }
         apiClient.clearTokens();
       } finally {
         setLoading(false);
@@ -111,10 +118,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const signIn = async (email: string, password: string): Promise<void> => {
+    setError(null);
+    setLoading(true);
+    
     try {
-      setError(null);
-      setLoading(true);
-      
       const deviceInfo = getDeviceInfo();
       
       const response = await apiClient.post<AuthResponse>('/auth/login', {
@@ -124,11 +131,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response.error) {
-        throw new Error(response.error);
+        // Set error but don't throw - let Login component handle it
+        setError(response.error);
+        setLoading(false);
+        return;
       }
 
       if (!response.data?.user || !response.data?.tokens) {
-        throw new Error('Invalid response from server');
+        setError('Invalid response from server');
+        setLoading(false);
+        return;
       }
 
       const { user: backendUser, tokens } = response.data;
@@ -145,20 +157,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAnonymous: false,
       });
       
+      // Clear any errors on success
+      setError(null);
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to sign in';
+      // Network errors or unexpected errors
+      const errorMessage = err.message || 'Network error. Please check your connection.';
       setError(errorMessage);
-      throw err;
+      console.error('Sign in error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, displayName?: string): Promise<void> => {
+    setError(null);
+    setLoading(true);
+    
     try {
-      setError(null);
-      setLoading(true);
-      
       const deviceInfo = getDeviceInfo();
       
       const response = await apiClient.post<AuthResponse>('/auth/register', {
@@ -169,11 +184,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response.error) {
-        throw new Error(response.error);
+        // Set error but don't throw - let Login component handle it
+        setError(response.error);
+        setLoading(false);
+        return;
       }
 
       if (!response.data?.user || !response.data?.tokens) {
-        throw new Error('Invalid response from server');
+        setError('Invalid response from server');
+        setLoading(false);
+        return;
       }
 
       const { user: backendUser, tokens } = response.data;
@@ -190,10 +210,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAnonymous: false,
       });
       
+      // Clear any errors on success
+      setError(null);
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create account';
+      // Network errors or unexpected errors
+      const errorMessage = err.message || 'Network error. Please check your connection.';
       setError(errorMessage);
-      throw err;
+      console.error('Sign up error:', err);
     } finally {
       setLoading(false);
     }

@@ -156,7 +156,6 @@ export const WishList: React.FC<WishListProps> = ({ items, onItemsChange }) => {
       setNewItemRating(0);
       onItemsChange();
     } catch (error) {
-      console.error('Error adding wish item:', error);
       Alert.alert('Error', `Failed to add item: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
@@ -232,7 +231,6 @@ export const WishList: React.FC<WishListProps> = ({ items, onItemsChange }) => {
   };
 
   const renderItem = ({ item }: { item: WishItem }) => {
-    console.log('Wish item:', item);
     return (
       <WishItemComponent
         item={item}

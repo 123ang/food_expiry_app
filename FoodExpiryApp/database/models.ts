@@ -7,6 +7,7 @@ export interface BaseItem {
 
 export interface Category extends BaseItem {
   cloud_id?: string | null; // Unique identifier for cloud sync
+  group_id?: string | null; // Group ID for filtering
   created_at?: string;
   updated_at?: string;
   sync_status?: 'pending' | 'synced' | 'conflict';
@@ -14,6 +15,7 @@ export interface Category extends BaseItem {
 
 export interface Location extends BaseItem {
   cloud_id?: string | null; // Unique identifier for cloud sync
+  group_id?: string | null; // Group ID for filtering
   created_at?: string;
   updated_at?: string;
   sync_status?: 'pending' | 'synced' | 'conflict';
@@ -23,6 +25,7 @@ export interface FoodItem {
   id?: number;
   name: string;
   quantity: number;
+  unit?: string; // Unit of measurement (default: 'unit')
   category_id: number | null;
   location_id: number | null;
   group_id: string | null; // Add group_id for group-based filtering
@@ -65,6 +68,8 @@ export interface User {
 export interface ShoppingItem {
   id: number;
   name: string;
+  quantity?: number;
+  unit?: string;
   image_uri?: string | null;
   done: boolean;
   created_at: string;

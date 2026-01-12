@@ -2,9 +2,12 @@ import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import GroupSelector from './components/GroupSelector';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { GroupProvider } from './contexts/GroupContext';
 import { notificationService } from './services/notificationService';
 import './App.css';
 
@@ -22,12 +25,14 @@ const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
 const Settings = lazy(() => import('./components/Settings'));
 const GoogleDriveAuth = lazy(() => import('./components/GoogleDriveAuth'));
 const GoogleDriveOwnerAuth = lazy(() => import('./components/GoogleDriveOwnerAuth'));
-const PurchaseHistory = lazy(() => import('./components/PurchaseHistory'));
 const Analytics = lazy(() => import('./components/Analytics'));
+const ShoppingListPage = lazy(() => import('./components/ShoppingListPage'));
+const WishListPage = lazy(() => import('./components/WishListPage'));
+const Groups = lazy(() => import('./components/Groups'));
 
 const AppContent: React.FC = () => {
   const { user, loading, signOut } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   // Initialize notifications when user signs in
   useEffect(() => {
@@ -59,10 +64,13 @@ const AppContent: React.FC = () => {
         </Link>
         {showNav && user && (
           <nav>
+            <GroupSelector />
             <Link to="/dashboard" className="btn btn-secondary">🏠 {t('nav.dashboard')}</Link>
             <Link to="/add-item" className="btn btn-secondary">➕ {t('nav.addItem')}</Link>
-            <Link to="/purchase-history" className="btn btn-secondary">📊 Purchase History</Link>
-            <Link to="/analytics" className="btn btn-secondary">📈 Analytics</Link>
+            <Link to="/shopping-list" className="btn btn-secondary">🛒 {t('lists.shoppingList') || 'Shopping List'}</Link>
+            <Link to="/wish-list" className="btn btn-secondary">⭐ {t('lists.wishList') || 'Wish List'}</Link>
+            <Link to="/analytics" className="btn btn-secondary">📈 {t('nav.analytics') || 'Analytics'}</Link>
+            <Link to="/groups" className="btn btn-secondary">👥 Groups</Link>
             <Link to="/locations" className="btn btn-secondary">📍 {t('nav.locations')}</Link>
             <Link to="/categories" className="btn btn-secondary">🏷️ {t('nav.categories')}</Link>
             <Link to="/settings" className="btn btn-secondary">⚙️ Settings</Link>
@@ -250,16 +258,36 @@ const AppContent: React.FC = () => {
               </div>
             } />
 
-            <Route path="/purchase-history" element={
-              <div>
-                {renderAppHeader()}
-                <main>
-                  <div className="container">
-                    {user ? <PurchaseHistory /> : <Navigate to="/login" />}
-                  </div>
-                </main>
-              </div>
-            } />
+          <Route path="/shopping-list" element={
+            <div>
+              {renderAppHeader()}
+              <main>
+                <div className="container">
+                  {user ? <ShoppingListPage /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
+          <Route path="/wish-list" element={
+            <div>
+              {renderAppHeader()}
+              <main>
+                <div className="container">
+                  {user ? <WishListPage /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
+          <Route path="/groups" element={
+            <div>
+              {renderAppHeader()}
+              <main>
+                <div className="container">
+                  {user ? <Groups /> : <Navigate to="/login" />}
+                </div>
+              </main>
+            </div>
+          } />
 
             <Route path="/analytics" element={
               <div>
@@ -334,11 +362,15 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <LanguageProvider>
-          <AppContent />
-        </LanguageProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <GroupProvider>
+            <LanguageProvider>
+              <AppContent />
+            </LanguageProvider>
+          </GroupProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 };

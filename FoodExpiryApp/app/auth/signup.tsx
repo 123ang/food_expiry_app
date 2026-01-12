@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 import { useTheme } from '../../context/ThemeContext'
-import authService from '../../services/AuthService'
+import { useApi } from '../../context/ApiContext'
 
 export default function SignUpScreen() {
   const [fullName, setFullName] = useState('')
@@ -22,6 +22,7 @@ export default function SignUpScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
+  const { signUp } = useApi()
 
   const handleSignUp = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
@@ -41,29 +42,22 @@ export default function SignUpScreen() {
 
     setLoading(true)
     try {
-      console.log('Starting signup process...')
-      console.log('Email:', email.trim().toLowerCase())
-      console.log('Full name:', fullName.trim())
       
-      // Use AuthService to register with PostgreSQL backend
-      const result = await authService.register(
+      // Use signUp from ApiContext to properly set user state
+      await signUp(
         email.trim().toLowerCase(), 
-        password, 
-        fullName.trim()
+        password,
+        {
+          full_name: fullName.trim()
+        }
       )
-
-      if (!result.success) {
-        throw new Error(result.error || 'Registration failed')
-      }
-
-      console.log('Signup successful')
       Alert.alert(
         'Success!', 
-        'Your account has been created successfully. You can now sign in.',
+        'Your account has been created successfully. Redirecting to dashboard...',
         [
           {
             text: 'OK',
-            onPress: () => router.replace('/auth/login' as any)
+            onPress: () => router.replace('/')
           }
         ]
       )

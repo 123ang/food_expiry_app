@@ -10,22 +10,31 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { BottomNav } from '../components/BottomNav';
 import { simpleNotificationService } from '../services/SimpleNotificationService';
 
-// Configure how notifications are handled when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Lazy import expo-notifications to avoid issues in Expo Go
+let Notifications: any = null;
+try {
+  if (Constants.appOwnership !== 'expo') {
+    Notifications = require('expo-notifications');
+    // Configure how notifications are handled when app is in foreground
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  }
+} catch (error) {
+  // Silently fail if expo-notifications is not available
+}
 
 export default function NotificationsScreen() {
   const { theme } = useTheme();
@@ -54,10 +63,14 @@ export default function NotificationsScreen() {
       setExpiredAlerts(settings.expiredAlerts);
       setReminderDays(settings.reminderDays);
       
-      const { status } = await Notifications.getPermissionsAsync();
-      setPermissionStatus(status);
+      if (Notifications) {
+        const { status } = await Notifications.getPermissionsAsync();
+        setPermissionStatus(status);
+      } else {
+        setPermissionStatus('unavailable');
+      }
     } catch (error) {
-      
+      setPermissionStatus('unavailable');
     }
   };
 

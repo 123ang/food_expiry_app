@@ -22,18 +22,15 @@ export const hashToken = (token: string): string => {
   return crypto.createHash('sha256').update(token).digest('hex');
 };
 
-// Calculate days until date
-export const daysUntil = (date: Date): number => {
-  const now = new Date();
-  const target = new Date(date);
-  const diff = target.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-};
-
-// Format date to ISO string (YYYY-MM-DD)
-export const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
+// Re-export date utilities from dateUtils (GMT+8)
+export {
+  daysUntil,
+  formatDate,
+  getCurrentDateTimeISO,
+  getCurrentDate,
+  toGMT8ISO,
+  toGMT8DateString
+} from './dateUtils';
 
 // Parse pagination params
 export const parsePagination = (page?: string, limit?: string) => {

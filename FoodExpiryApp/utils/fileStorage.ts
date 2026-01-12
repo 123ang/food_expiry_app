@@ -1,6 +1,7 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, NativeModules } from 'react-native';
+import { getCurrentDateTimeISO } from './dateUtils';
 // Lazy-load ImageManipulator to avoid native module crash in environments where it's not included
 let ImageManipulator: any | null | undefined; // undefined = not loaded yet, null = unavailable
 
@@ -58,7 +59,7 @@ const addToImageRegistry = async (uri: string, fileName: string, linkedToDatabas
     const newEntry: ImageRegistryEntry = {
       uri,
       originalName: fileName,
-      createdAt: new Date().toISOString(),
+      createdAt: getCurrentDateTimeISO(),
       isBackedUp: true,
       linkedToDatabase
     };
@@ -97,7 +98,7 @@ const validateImageCache = async (): Promise<void> => {
   try {
     const cacheData = await AsyncStorage.getItem(IMAGE_VALIDATION_KEY);
     const cache: ImageValidationCache = cacheData ? JSON.parse(cacheData) : {};
-    const now = new Date().toISOString();
+    const now = getCurrentDateTimeISO();
     
     // Clean up old cache entries (older than 24 hours)
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -151,7 +152,7 @@ const backupImageRegistry = async (): Promise<void> => {
     const registry: ImageRegistryEntry[] = imageFiles.map(uri => ({
       uri,
       originalName: uri.split('/').pop() || 'unknown',
-      createdAt: new Date().toISOString(),
+      createdAt: getCurrentDateTimeISO(),
       isBackedUp: true,
       linkedToDatabase: true
     }));
@@ -336,7 +337,6 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
     try {
       const imageManip = await loadImageManipulator();
       if (imageManip) {
-        console.log('Resizing image with enhanced quality...');
         const resizedImage = await imageManip.manipulateAsync(
           sourceUri,
           [{ resize: {
@@ -396,8 +396,6 @@ export const saveImageToStorage = async (sourceUri: string): Promise<string | nu
       if (Platform.OS === 'ios') {
         await updateValidationCache(destinationUri, true, fileSize);
       }
-      
-      console.log('Image saved successfully to:', destinationUri);
       return destinationUri;
     } catch (error) {
       console.error('Error saving image:', error);
@@ -817,7 +815,7 @@ export const initializeImageSystemForIOS = async (): Promise<{
                 if (recovered) {
                   // Update registry with new location
                   entry.uri = recovered;
-                  entry.lastValidated = new Date().toISOString();
+                  entry.lastValidated = getCurrentDateTimeISO();
                   recoveredCount++;
                 }
               }
@@ -859,11 +857,16 @@ export const generateThumbnail = async (imageUri: string): Promise<string | null
     return imageUri;
   }
   
+  // Skip for HTTP/HTTPS URLs (they need to be downloaded first)
+  if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+    return null;
+  }
+  
   try {
     // Check if image exists
     const exists = await verifyImageExists(imageUri);
     if (!exists) {
-      console.error('Cannot generate thumbnail: Image does not exist');
+      // Don't log error for missing images - just return null silently
       return null;
     }
     

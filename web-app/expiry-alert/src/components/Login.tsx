@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,56 +10,97 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user, error: authError, loading: authLoading, clearError } = useAuth();
+  
+  // Navigate to dashboard when user is set (successful login/signup)
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+    e.stopPropagation(); // Prevent any form propagation
+    
+    // Don't submit if already loading
+    if (authLoading) {
+      return;
+    }
 
+    setLocalError(null);
+    clearError(); // Clear any previous auth errors
+
+    // Client-side validation
+    if (isSignUp) {
+      if (!fullName.trim()) {
+        setLocalError('Please enter your full name');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setLocalError('Passwords do not match');
+        return;
+      }
+      if (password.length < 6) {
+        setLocalError('Password must be at least 6 characters long');
+        return;
+      }
+    }
+
+    // Basic email validation
+    if (!email.trim()) {
+      setLocalError('Please enter your email');
+      return;
+    }
+
+    // Basic password validation
+    if (!password) {
+      setLocalError('Please enter your password');
+      return;
+    }
+
+    // Call signIn or signUp (they will set error in AuthContext if failed)
+    // Navigation will happen automatically via useEffect when user is set
     try {
       if (isSignUp) {
-        // Validation for signup
-        if (!fullName.trim()) {
-          throw new Error('Please enter your full name');
-        }
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
-        if (password.length < 6) {
-          throw new Error('Password must be at least 6 characters long');
-        }
-        
         await signUp(email, password, fullName.trim());
-        console.log('User signed up successfully!');
       } else {
         await signIn(email, password);
-        console.log('User logged in successfully!');
       }
-      navigate('/dashboard');
-    } catch (err: any) {
-      console.error('Error:', err);
-      
-      // Provide more specific error messages
-      let errorMessage = err.message || 'An unexpected error occurred';
-      
-      if (errorMessage.includes('already') || errorMessage.includes('exists')) {
-        errorMessage = 'An account with this email already exists. Please try signing in instead.';
-      } else if (errorMessage.includes('invalid') || errorMessage.includes('incorrect')) {
-        errorMessage = 'Invalid email or password. Please try again.';
-      } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      }
-      
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      // Errors are already handled in AuthContext, just ensure we don't throw
+      console.error('Login/Signup error:', err);
     }
   };
+
+  // Clear errors when user types
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    setLocalError(null);
+    clearError(); // Clear auth errors when user types
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    setLocalError(null);
+    clearError(); // Clear auth errors when user types
+  };
+
+  const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFullName(e.target.value);
+    setLocalError(null);
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    setLocalError(null);
+  };
+
+  // Display error from local validation or AuthContext
+  const displayError = localError || authError;
 
   return (
     <div className="auth-page">
@@ -79,7 +120,7 @@ const Login: React.FC = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
           {isSignUp && (
             <div className="form-group">
               <label htmlFor="fullName" className="form-label">Full Name</label>
@@ -88,10 +129,11 @@ const Login: React.FC = () => {
                 id="fullName"
                 className="form-input"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                onChange={handleFullNameChange}
                 placeholder="Enter your full name"
                 autoComplete="name"
                 autoCapitalize="words"
+                disabled={authLoading}
               />
             </div>
           )}
@@ -103,10 +145,10 @@ const Login: React.FC = () => {
               id="email"
               className="form-input"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              onChange={handleEmailChange}
               placeholder="Enter your email"
               autoComplete="email"
+              disabled={authLoading}
             />
           </div>
 
@@ -117,10 +159,10 @@ const Login: React.FC = () => {
               id="password"
               className="form-input"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              onChange={handlePasswordChange}
               placeholder={isSignUp ? 'Create a password (min 6 characters)' : 'Enter your password'}
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
+              disabled={authLoading}
             />
           </div>
 
@@ -132,27 +174,36 @@ const Login: React.FC = () => {
                 id="confirmPassword"
                 className="form-input"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                onChange={handleConfirmPasswordChange}
                 placeholder="Confirm your password"
                 autoComplete="new-password"
+                disabled={authLoading}
               />
             </div>
           )}
 
-          {error && (
+          {/* Loading indicator */}
+          {authLoading && (
+            <div className="auth-loading">
+              <span className="spinner"></span>
+              <span>Please wait...</span>
+            </div>
+          )}
+
+          {/* Error message */}
+          {displayError && !authLoading && (
             <div className="auth-error">
               <span className="error-icon">⚠️</span>
-              {error}
+              {displayError}
             </div>
           )}
 
           <button 
             type="submit" 
             className="auth-button primary"
-            disabled={isLoading}
+            disabled={authLoading}
           >
-            {isLoading ? (
+            {authLoading ? (
               <span className="button-loading">
                 <span className="spinner"></span>
                 Loading...
@@ -170,9 +221,10 @@ const Login: React.FC = () => {
             className="toggle-button"
             onClick={() => {
               setIsSignUp(!isSignUp);
-              setError(null);
+              setLocalError(null);
               setFullName('');
               setConfirmPassword('');
+              clearError(); // Clear auth errors when switching modes
             }}
           >
             {isSignUp 

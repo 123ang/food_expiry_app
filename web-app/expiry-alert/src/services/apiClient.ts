@@ -128,8 +128,11 @@ class ApiClient {
         headers,
       });
 
-      // Handle 401 (token expired)
-      if (response.status === 401 && this.refreshToken && !this.isRefreshing) {
+      // Handle 401 (token expired) - but NOT for auth endpoints (login/register)
+      // Auth endpoints return 401 for invalid credentials, not expired tokens
+      const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
+      
+      if (response.status === 401 && !isAuthEndpoint && this.refreshToken && !this.isRefreshing) {
         this.isRefreshing = true;
 
         const newToken = await this.refreshAccessToken();
@@ -150,7 +153,7 @@ class ApiClient {
             error: 'Session expired. Please login again.',
           };
         }
-      } else if (response.status === 401 && this.isRefreshing) {
+      } else if (response.status === 401 && !isAuthEndpoint && this.isRefreshing) {
         // Wait for token refresh to complete
         return new Promise((resolve) => {
           this.subscribeTokenRefresh(async (token) => {
@@ -168,6 +171,14 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        // For 401 errors that couldn't be refreshed, return error without logging
+        // (they're expected when tokens are invalid/expired)
+        if (response.status === 401 && !isAuthEndpoint) {
+          return {
+            error: data.error || 'Unauthorized',
+          };
+        }
+        
         return {
           error: data.error || 'An error occurred',
         };
@@ -175,7 +186,10 @@ class ApiClient {
 
       return { data };
     } catch (error) {
-      console.error('API request error:', error);
+      // Only log actual network errors, not expected 401s
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error('API request error:', error);
+      }
       return {
         error: error instanceof Error ? error.message : 'Network error',
       };
@@ -205,23 +219,46 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
-  // Upload file (for images)
-  async uploadFile(endpoint: string, file: File): Promise<ApiResponse> {
-    const url = `${API_URL}${endpoint}`;
+  // Upload image file
+  async uploadImage(file: File): Promise<ApiResponse<{ file: { id: string; filename: string; url: string; path: string } }>> {
+    const url = `${API_URL}/upload/image`;
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('image', file); // Backend expects 'image' field name
 
-    const headers: HeadersInit = {};
+    // Don't set Content-Type header - browser will set it with boundary for multipart/form-data
+    const headers: Record<string, string> = {};
     if (this.accessToken) {
       headers['Authorization'] = `Bearer ${this.accessToken}`;
     }
 
     try {
-      const response = await fetch(url, {
+      // Handle token refresh if needed
+      let response = await fetch(url, {
         method: 'POST',
         headers,
         body: formData,
       });
+
+      // Handle 401 (token expired)
+      if (response.status === 401 && this.refreshToken && !this.isRefreshing) {
+        this.isRefreshing = true;
+        const newToken = await this.refreshAccessToken();
+        
+        if (newToken) {
+          this.isRefreshing = false;
+          headers['Authorization'] = `Bearer ${newToken}`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: formData,
+          });
+        } else {
+          this.isRefreshing = false;
+          return {
+            error: 'Session expired. Please login again.',
+          };
+        }
+      }
 
       const data = await response.json();
 
@@ -238,6 +275,11 @@ class ApiClient {
         error: error instanceof Error ? error.message : 'Upload failed',
       };
     }
+  }
+
+  // Delete image
+  async deleteImage(filename: string): Promise<ApiResponse> {
+    return this.delete(`/upload/image/${filename}`);
   }
 
   // Check if user is authenticated

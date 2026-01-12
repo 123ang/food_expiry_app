@@ -6,24 +6,35 @@ import { GroupService } from './groupService';
 export class CategoryService {
   // Get all categories (default + group-specific)
   static async getCategories(userId: string, groupId?: string): Promise<Category[]> {
-    let whereClause = 'WHERE c.deleted_at IS NULL AND (c.is_default = true';
+    let whereClause: string;
     const params: any[] = [];
 
     if (groupId) {
       // Check if user is member of the group
-      const isMember = await GroupService.checkGroupPermission(groupId, userId);
-      if (!isMember) {
-        throw new AppError('Access denied to this group', 403);
+      try {
+        const isMember = await GroupService.checkGroupPermission(groupId, userId);
+        if (!isMember) {
+          throw new AppError('Access denied to this group', 403);
+        }
+      } catch (err: any) {
+        // If checkGroupPermission throws an error (e.g., database error), wrap it
+        if (err instanceof AppError) {
+          throw err;
+        }
+        throw new AppError('Failed to verify group membership', 500);
       }
 
-      whereClause += ' OR c.group_id = $1)';
+      // When group_id is provided, ONLY return categories for that specific group
+      // Don't include defaults from other groups
+      whereClause = 'WHERE c.deleted_at IS NULL AND c.group_id = $1';
       params.push(groupId);
     } else {
-      whereClause += ')';
+      // When no group_id, return default categories (is_default = true OR group_id IS NULL)
+      whereClause = 'WHERE c.deleted_at IS NULL AND (c.is_default = true OR c.group_id IS NULL)';
     }
 
     const result = await query(
-      `SELECT * FROM categories ${whereClause} ORDER BY c.is_default DESC, c.name ASC`,
+      `SELECT c.* FROM categories c ${whereClause} ORDER BY c.is_default DESC NULLS LAST, c.group_id NULLS FIRST, c.name ASC`,
       params
     );
 
@@ -79,10 +90,10 @@ export class CategoryService {
     }
 
     const result = await query(
-      `INSERT INTO categories (name, icon, color, group_id, created_by, is_default)
-       VALUES ($1, $2, $3, $4, $5, false)
+      `INSERT INTO categories (name, icon, color, translation_key, group_id, created_by, is_default)
+       VALUES ($1, $2, $3, $4, $5, $6, false)
        RETURNING *`,
-      [name, icon, color, groupId, userId]
+      [name, icon, color, null, groupId, userId]
     );
 
     return result.rows[0];
@@ -105,7 +116,7 @@ export class CategoryService {
       }
     }
 
-    const allowedFields = ['name', 'icon', 'color'];
+    const allowedFields = ['name', 'icon', 'color', 'translation_key'];
     const fields = Object.keys(updates).filter(key => allowedFields.includes(key));
 
     if (fields.length === 0) {

@@ -3,18 +3,18 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../contexts/GroupContext';
 import { 
   getFoodItemById,
   addFoodItem,
   updateFoodItem,
   getCategories,
   getLocations,
-  getGroups,
   Category,
   Location,
   FoodItem
 } from '../services/postgresApiService';
-import FirebaseImageUpload from './FirebaseImageUpload';
+import ImageUpload from './ImageUpload';
 
 const AddItem: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,8 +22,8 @@ const AddItem: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { user } = useAuth();
-  
-  const [currentGroupId, setCurrentGroupId] = useState<string | null>(null);
+  const { currentGroup, loading: groupLoading } = useGroup();
+  const currentGroupId = currentGroup?.id || null;
   const [formData, setFormData] = useState({
     name: '',
     categoryId: '',
@@ -44,36 +44,20 @@ const AddItem: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Load group on mount
-  useEffect(() => {
-    const loadGroup = async () => {
-      if (!user) return;
-      
-      try {
-        const groups = await getGroups();
-        if (groups.length > 0) {
-          setCurrentGroupId(groups[0].id);
-        }
-      } catch (error) {
-        console.error('Error loading group:', error);
-      }
-    };
-    
-    loadGroup();
-  }, [user]);
-
   // Load categories and locations when group is available
   useEffect(() => {
-    if (currentGroupId && user) {
+    if (!groupLoading && currentGroupId && user) {
       loadData();
     }
-  }, [currentGroupId, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentGroupId, user, groupLoading]);
 
   // Load item data when editing
   useEffect(() => {
     if (isEditing && id && currentGroupId) {
       loadItem();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing, id, currentGroupId]);
 
   const loadData = async () => {
@@ -90,7 +74,7 @@ const AddItem: React.FC = () => {
       setLocations(locationsData);
     } catch (error) {
       console.error('Error loading categories and locations:', error);
-      setError('Failed to load categories and locations');
+      setError(t('foodItems.loadCategoriesFailed'));
     } finally {
       setIsLoadingData(false);
     }
@@ -118,11 +102,11 @@ const AddItem: React.FC = () => {
           imageThumbnail: item.image_url || ''
         });
       } else {
-        setError('Item not found');
+        setError(t('foodItems.notFound'));
       }
     } catch (error) {
       console.error('Error loading item:', error);
-      setError('Failed to load item');
+      setError(t('foodItems.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -205,7 +189,7 @@ const AddItem: React.FC = () => {
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Error saving item:', error);
-      const errorMessage = error?.message || (isEditing ? 'Failed to update item' : 'Failed to create item');
+      const errorMessage = error?.message || (isEditing ? t('foodItems.updateFailed') : t('foodItems.createFailed'));
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -217,7 +201,7 @@ const AddItem: React.FC = () => {
     navigate('/dashboard');
   };
 
-  if (isLoadingData) {
+  if (groupLoading || isLoadingData) {
     return (
       <div className="loading">
         <div className="loading-spinner">
@@ -228,14 +212,21 @@ const AddItem: React.FC = () => {
     );
   }
 
-  if (!currentGroupId) {
+  if (!currentGroup) {
     return (
-      <div className="error-message">
-        <h2>⚠️ {t('status.error') || 'Error'}</h2>
-        <p>Unable to load your group. Please try refreshing the page.</p>
-        <button onClick={() => window.location.reload()} className="btn btn-primary">
-          {t('actions.retry') || 'Retry'}
-        </button>
+      <div className="dashboard">
+        <div className="dashboard-header">
+          <div className="header-content">
+            <h1>{isEditing ? t('foodItems.edit') : t('foodItems.addNew')}</h1>
+            <p>{t('groups.noGroup') || 'No group selected. Please select a group first.'}</p>
+          </div>
+          <div className="header-actions">
+            <Link to="/groups" className="btn btn-primary">
+              👥 {t('groups.manageGroups') || 'Manage Groups'}
+            </Link>
+            <Link to="/dashboard" className="btn btn-secondary">← {t('common.back') || 'Back'}</Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -286,7 +277,7 @@ const AddItem: React.FC = () => {
               onChange={handleInputChange}
               required
             >
-              <option value="">{t('foodItems.selectCategory') || 'Select category'}</option>
+              <option value="">{t('foodItems.selectCategory')}</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
@@ -294,7 +285,7 @@ const AddItem: React.FC = () => {
               ))}
             </select>
             <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              Don't see your category? <Link to="/add-category" style={{ color: '#22c55e' }}>{t('categories.addNew') || 'Add New'}</Link>
+              {t('foodItems.categoryNotFound')} <Link to="/add-category" style={{ color: '#22c55e' }}>{t('categories.addNew')}</Link>
             </small>
           </div>
 
@@ -308,7 +299,7 @@ const AddItem: React.FC = () => {
               onChange={handleInputChange}
               required
             >
-              <option value="">{t('foodItems.selectLocation') || 'Select location'}</option>
+              <option value="">{t('foodItems.selectLocation')}</option>
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
                   {loc.icon} {loc.name}
@@ -316,7 +307,7 @@ const AddItem: React.FC = () => {
               ))}
             </select>
             <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              Need a new location? <Link to="/add-location" style={{ color: '#22c55e' }}>{t('locations.addNew') || 'Add New'}</Link>
+              {t('foodItems.locationNotFound')} <Link to="/add-location" style={{ color: '#22c55e' }}>{t('locations.addNew')}</Link>
             </small>
           </div>
 
@@ -350,7 +341,7 @@ const AddItem: React.FC = () => {
               placeholder="3"
             />
             <small style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              Number of days before expiry to remind you (default: 3 days)
+              {t('foodItems.reminderDaysDesc')}
             </small>
           </div>
 
@@ -368,7 +359,7 @@ const AddItem: React.FC = () => {
             />
           </div>
 
-          <FirebaseImageUpload
+          <ImageUpload
             onImageUploaded={handleImageUploaded}
             itemName={formData.name}
             currentImageId={imageData.imageId}
@@ -389,12 +380,12 @@ const AddItem: React.FC = () => {
         </form>
 
         <div style={{ marginTop: '2rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px' }}>
-          <h4 style={{ marginBottom: '0.5rem', color: '#374151' }}>Tips:</h4>
+          <h4 style={{ marginBottom: '0.5rem', color: '#374151' }}>{t('foodItems.tips')}</h4>
           <ul style={{ color: '#6b7280', fontSize: '0.875rem', margin: 0, paddingLeft: '1rem' }}>
-            <li>Be specific with item names for easy identification</li>
-            <li>Double-check expiry dates to avoid mistakes</li>
-            <li>Use the notes field for special storage instructions</li>
-            <li>Set reminder days based on how quickly you use the item</li>
+            <li>{t('foodItems.tip1')}</li>
+            <li>{t('foodItems.tip2')}</li>
+            <li>{t('foodItems.tip3')}</li>
+            <li>{t('foodItems.tip4')}</li>
           </ul>
         </div>
       </div>

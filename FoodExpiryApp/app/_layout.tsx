@@ -185,12 +185,6 @@ function RootLayoutContent() {
           }}
         />
         <Stack.Screen
-          name="image-recovery"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
           name="notifications"
           options={{
             headerShown: false,

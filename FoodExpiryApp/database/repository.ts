@@ -1,10 +1,11 @@
 import { getDatabase, getCurrentDate, calculateDaysUntilExpiry, isUsingFallbackStorage, getFallbackStorage, queuedDatabaseOperation } from './database';
 import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCurrentDateTimeISO } from '../utils/dateUtils';
 
 // Generic Repository interface
 interface Repository<T> {
-  getAll: () => Promise<T[]>;
+  getAll: (group_id?: string) => Promise<T[]>;
   getById: (id: number) => Promise<T | null>;
   create: (item: Omit<T, 'id'>) => Promise<number>;
   update: (item: T) => Promise<void>;
@@ -34,14 +35,19 @@ const getDatabaseSafely = async (): Promise<any> => {
 
 // Category Repository
 export const CategoryRepository: SyncableRepository<Category> = {
-  // Get all categories
-  getAll: async (): Promise<Category[]> => {
+  // Get all categories (optionally filtered by group_id)
+  getAll: async (group_id?: string): Promise<Category[]> => {
     return queuedDatabaseOperation(async () => {
       try {
         // Check if we're using fallback storage first
         if (isUsingFallbackStorage()) {
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllCategories();
+          const allCategories = await fallbackDb.getAllCategories();
+          // Filter by group_id if provided
+          if (group_id) {
+            return allCategories.filter((cat: any) => cat.group_id === group_id || cat.group_id === null);
+          }
+          return allCategories;
         }
 
         // Try to get the SQLite database
@@ -50,7 +56,11 @@ export const CategoryRepository: SyncableRepository<Category> = {
         if (!db) {
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllCategories();
+          const allCategories = await fallbackDb.getAllCategories();
+          if (group_id) {
+            return allCategories.filter((cat: any) => cat.group_id === group_id || cat.group_id === null);
+          }
+          return allCategories;
         }
         
         // Validate database connection before use
@@ -59,7 +69,11 @@ export const CategoryRepository: SyncableRepository<Category> = {
         } catch (connectionError) {
           
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllCategories();
+          const allCategories = await fallbackDb.getAllCategories();
+          if (group_id) {
+            return allCategories.filter((cat: any) => cat.group_id === group_id || cat.group_id === null);
+          }
+          return allCategories;
         }
         
         // Regular SQLite operation with retry logic
@@ -68,12 +82,26 @@ export const CategoryRepository: SyncableRepository<Category> = {
         
         while (retryCount < maxRetries) {
           try {
-            const result = await db.getAllAsync('SELECT * FROM categories ORDER BY name') as any[];
+            // Build query with optional group_id filter
+            let query = 'SELECT * FROM categories';
+            const params: any[] = [];
+            
+            if (group_id) {
+              // Only include categories for this specific group (exclude NULL group_id to prevent duplicates)
+              query += ' WHERE group_id = ?';
+              params.push(group_id);
+            }
+            
+            query += ' ORDER BY name';
+            
+            const result = await db.getAllAsync(query, params) as any[];
             return result.map(row => ({
               id: row.id as number,
               name: row.name as string,
               icon: row.icon as string,
-              translationKey: row.translation_key as string | undefined
+              translationKey: row.translation_key as string | undefined,
+              group_id: row.group_id as string | undefined,
+              cloud_id: row.cloud_id as string | undefined
             }));
           } catch (statementError) {
             retryCount++;
@@ -81,7 +109,11 @@ export const CategoryRepository: SyncableRepository<Category> = {
               // If SQLite fails completely, fall back to storage
               
               const fallbackDb = getFallbackStorage();
-              return await fallbackDb.getAllCategories();
+              const allCategories = await fallbackDb.getAllCategories();
+              if (group_id) {
+                return allCategories.filter((cat: any) => cat.group_id === group_id || cat.group_id === null);
+              }
+              return allCategories;
             }
             // Small delay before retry
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -90,14 +122,22 @@ export const CategoryRepository: SyncableRepository<Category> = {
         
         // Should never reach here, but just in case
         const fallbackDb = getFallbackStorage();
-        return await fallbackDb.getAllCategories();
+        const allCategories = await fallbackDb.getAllCategories();
+        if (group_id) {
+          return allCategories.filter((cat: any) => cat.group_id === group_id || cat.group_id === null);
+        }
+        return allCategories;
         
       } catch (error) {
         
         // As last resort, try fallback storage
         try {
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllCategories();
+          const allCategories = await fallbackDb.getAllCategories();
+          if (group_id) {
+            return allCategories.filter((cat: any) => cat.group_id === group_id || cat.group_id === null);
+          }
+          return allCategories;
         } catch (fallbackError) {
           
           return []; // Return empty array rather than throwing
@@ -252,7 +292,7 @@ export const CategoryRepository: SyncableRepository<Category> = {
             // Track the deletion for sync
             await db.runAsync(
               'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
-              ['categories', id, item.cloud_id, item.group_id, new Date().toISOString()]
+              ['categories', id, item.cloud_id, item.group_id, getCurrentDateTimeISO()]
             );
           }
         } catch (e) {
@@ -281,7 +321,7 @@ export const CategoryRepository: SyncableRepository<Category> = {
         const items = await db.getAllAsync(
           `SELECT * FROM categories WHERE 
            (updated_at > ? OR sync_status = 'pending' OR sync_status = 'conflict') AND
-           (group_id = ? OR group_id IS NULL)`,
+           group_id = ?`,
           [lastSyncTime, groupId]
         );
         
@@ -343,9 +383,9 @@ export const CategoryRepository: SyncableRepository<Category> = {
           if (new Date(cloudItem.updated_at) >= new Date(existingItem.updated_at)) {
             await db.runAsync(
               `UPDATE categories SET 
-               name = ?, icon = ?, translation_key = ?, updated_at = ?, sync_status = 'synced' 
+               name = ?, icon = ?, translation_key = ?, group_id = ?, updated_at = ?, sync_status = 'synced' 
                WHERE id = ?`,
-              [cloudItem.name, cloudItem.icon, cloudItem.translation_key, cloudItem.updated_at, existingItem.id]
+              [cloudItem.name, cloudItem.icon, cloudItem.translation_key, cloudItem.group_id || null, cloudItem.updated_at, existingItem.id]
             );
           } else {
             // Local copy is newer, mark as conflict
@@ -359,10 +399,10 @@ export const CategoryRepository: SyncableRepository<Category> = {
           // Insert new item
           const result = await db.runAsync(
             `INSERT INTO categories 
-             (name, icon, translation_key, cloud_id, created_at, updated_at, sync_status) 
-             VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
+             (name, icon, translation_key, cloud_id, group_id, created_at, updated_at, sync_status) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'synced')`,
             [cloudItem.name, cloudItem.icon, cloudItem.translation_key, 
-             cloudItem.cloud_id, cloudItem.created_at, cloudItem.updated_at]
+             cloudItem.cloud_id, cloudItem.group_id || null, cloudItem.created_at, cloudItem.updated_at]
           );
           return result.lastInsertRowId;
         }
@@ -407,14 +447,19 @@ export const CategoryRepository: SyncableRepository<Category> = {
 
 // Location Repository
 export const LocationRepository: SyncableRepository<Location> = {
-  // Get all locations
-  getAll: async (): Promise<Location[]> => {
+  // Get all locations (optionally filtered by group_id)
+  getAll: async (group_id?: string): Promise<Location[]> => {
     return queuedDatabaseOperation(async () => {
       try {
         // Check if we're using fallback storage first
         if (isUsingFallbackStorage()) {
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllLocations();
+          const allLocations = await fallbackDb.getAllLocations();
+          // Filter by group_id if provided
+          if (group_id) {
+            return allLocations.filter((loc: any) => loc.group_id === group_id || loc.group_id === null);
+          }
+          return allLocations;
         }
 
         // Try to get the SQLite database
@@ -423,7 +468,11 @@ export const LocationRepository: SyncableRepository<Location> = {
         if (!db) {
           // If no database available, try fallback
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllLocations();
+          const allLocations = await fallbackDb.getAllLocations();
+          if (group_id) {
+            return allLocations.filter((loc: any) => loc.group_id === group_id || loc.group_id === null);
+          }
+          return allLocations;
         }
         
         // Validate database connection before use
@@ -432,7 +481,11 @@ export const LocationRepository: SyncableRepository<Location> = {
         } catch (connectionError) {
           
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllLocations();
+          const allLocations = await fallbackDb.getAllLocations();
+          if (group_id) {
+            return allLocations.filter((loc: any) => loc.group_id === group_id || loc.group_id === null);
+          }
+          return allLocations;
         }
         
         // Regular SQLite operation with retry logic
@@ -441,12 +494,26 @@ export const LocationRepository: SyncableRepository<Location> = {
         
         while (retryCount < maxRetries) {
           try {
-            const result = await db.getAllAsync('SELECT * FROM locations ORDER BY name') as any[];
+            // Build query with optional group_id filter
+            let query = 'SELECT * FROM locations';
+            const params: any[] = [];
+            
+            if (group_id) {
+              // Only include locations for this specific group (exclude NULL group_id to prevent duplicates)
+              query += ' WHERE group_id = ?';
+              params.push(group_id);
+            }
+            
+            query += ' ORDER BY name';
+            
+            const result = await db.getAllAsync(query, params) as any[];
             return result.map(row => ({
               id: row.id as number,
               name: row.name as string,
               icon: row.icon as string,
-              translationKey: row.translation_key as string | undefined
+              translationKey: row.translation_key as string | undefined,
+              group_id: row.group_id as string | undefined,
+              cloud_id: row.cloud_id as string | undefined
             }));
           } catch (statementError) {
             retryCount++;
@@ -454,7 +521,11 @@ export const LocationRepository: SyncableRepository<Location> = {
               // If SQLite fails completely, fall back to storage
               
               const fallbackDb = getFallbackStorage();
-              return await fallbackDb.getAllLocations();
+              const allLocations = await fallbackDb.getAllLocations();
+              if (group_id) {
+                return allLocations.filter((loc: any) => loc.group_id === group_id || loc.group_id === null);
+              }
+              return allLocations;
             }
             // Small delay before retry
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -463,14 +534,22 @@ export const LocationRepository: SyncableRepository<Location> = {
         
         // Should never reach here, but just in case
         const fallbackDb = getFallbackStorage();
-        return await fallbackDb.getAllLocations();
+        const allLocations = await fallbackDb.getAllLocations();
+        if (group_id) {
+          return allLocations.filter((loc: any) => loc.group_id === group_id || loc.group_id === null);
+        }
+        return allLocations;
         
       } catch (error) {
         
         // As last resort, try fallback storage
         try {
           const fallbackDb = getFallbackStorage();
-          return await fallbackDb.getAllLocations();
+          const allLocations = await fallbackDb.getAllLocations();
+          if (group_id) {
+            return allLocations.filter((loc: any) => loc.group_id === group_id || loc.group_id === null);
+          }
+          return allLocations;
         } catch (fallbackError) {
           
           return []; // Return empty array rather than throwing
@@ -600,7 +679,7 @@ export const LocationRepository: SyncableRepository<Location> = {
             // Track the deletion for sync
             await db.runAsync(
               'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
-              ['locations', id, item.cloud_id, item.group_id, new Date().toISOString()]
+              ['locations', id, item.cloud_id, item.group_id, getCurrentDateTimeISO()]
             );
           }
         } catch (e) {
@@ -629,7 +708,7 @@ export const LocationRepository: SyncableRepository<Location> = {
         const items = await db.getAllAsync(
           `SELECT * FROM locations WHERE 
            (updated_at > ? OR sync_status = 'pending' OR sync_status = 'conflict') AND
-           (group_id = ? OR group_id IS NULL)`,
+           group_id = ?`,
           [lastSyncTime, groupId]
         );
         
@@ -691,9 +770,9 @@ export const LocationRepository: SyncableRepository<Location> = {
           if (new Date(cloudItem.updated_at) >= new Date(existingItem.updated_at)) {
             await db.runAsync(
               `UPDATE locations SET 
-               name = ?, icon = ?, translation_key = ?, updated_at = ?, sync_status = 'synced' 
+               name = ?, icon = ?, translation_key = ?, group_id = ?, updated_at = ?, sync_status = 'synced' 
                WHERE id = ?`,
-              [cloudItem.name, cloudItem.icon, cloudItem.translation_key, cloudItem.updated_at, existingItem.id]
+              [cloudItem.name, cloudItem.icon, cloudItem.translation_key, cloudItem.group_id || null, cloudItem.updated_at, existingItem.id]
             );
           } else {
             // Local copy is newer, mark as conflict
@@ -707,10 +786,10 @@ export const LocationRepository: SyncableRepository<Location> = {
           // Insert new item
           const result = await db.runAsync(
             `INSERT INTO locations 
-             (name, icon, translation_key, cloud_id, created_at, updated_at, sync_status) 
-             VALUES (?, ?, ?, ?, ?, ?, 'synced')`,
+             (name, icon, translation_key, cloud_id, group_id, created_at, updated_at, sync_status) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'synced')`,
             [cloudItem.name, cloudItem.icon, cloudItem.translation_key, 
-             cloudItem.cloud_id, cloudItem.created_at, cloudItem.updated_at]
+             cloudItem.cloud_id, cloudItem.group_id || null, cloudItem.created_at, cloudItem.updated_at]
           );
           return result.lastInsertRowId;
         }
@@ -755,6 +834,49 @@ export const LocationRepository: SyncableRepository<Location> = {
 
 // Food Item Repository
 export const FoodItemRepository = {
+  // Helper function to get Personal group ID from AsyncStorage or local cache
+  // This is used to default null group_id values to Personal group
+  getPersonalGroupId: async (): Promise<string | null> => {
+    try {
+      // Try to get from AsyncStorage (stored by ApiContext when groups are loaded)
+      const personalGroupId = await AsyncStorage.getItem('personal_group_id');
+      if (personalGroupId) {
+        return personalGroupId;
+      }
+      
+      // Try to get from stored user groups (stored by ApiContext)
+      const storedGroups = await AsyncStorage.getItem('user_groups');
+      if (storedGroups) {
+        try {
+          const groups = JSON.parse(storedGroups);
+          const personalGroup = Array.isArray(groups) 
+            ? groups.find((g: any) => {
+                const name = g.name?.toLowerCase() || g.groups?.name?.toLowerCase();
+                return name === 'personal';
+              })
+            : null;
+          
+          if (personalGroup?.id) {
+            // Store it for future use
+            await AsyncStorage.setItem('personal_group_id', personalGroup.id);
+            return personalGroup.id;
+          }
+          if (personalGroup?.groups?.id) {
+            // Store it for future use
+            await AsyncStorage.setItem('personal_group_id', personalGroup.groups.id);
+            return personalGroup.groups.id;
+          }
+        } catch (parseError) {
+          // Invalid JSON, continue
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      return null;
+    }
+  },
+
   // Get all food items with details
   getAllWithDetails: async (group_id?: string): Promise<FoodItemWithDetails[]> => {
     // Starting getAllWithDetails operation
@@ -831,8 +953,6 @@ export const FoodItemRepository = {
         const items = await fallbackDb.getAllFoodItems();
         const categories = await fallbackDb.getAllCategories();
         const locations = await fallbackDb.getAllLocations();
-        
-        console.log('Using fallback database for getAllWithDetails');
         // Transform fallback data to match expected format
         const result = items.map((item: any) => {
           const category = categories.find((c: any) => c.id === item.category_id);
@@ -1000,15 +1120,29 @@ export const FoodItemRepository = {
 
   // Create a new food item
   create: async (item: FoodItem): Promise<number> => {
-    
     const startTime = Date.now();
-    const timestamp = new Date().toISOString();
+    const timestamp = getCurrentDateTimeISO();
+    
+    // If group_id is null, default to Personal group ID
+    let finalGroupId = item.group_id;
+    
+    if (!finalGroupId) {
+      // Try to get Personal group ID using the helper function
+      const personalGroupId = await FoodItemRepository.getPersonalGroupId();
+      if (personalGroupId) {
+        finalGroupId = personalGroupId;
+      } else {
+        // If still null, allow it - migration will fix existing items
+        // New items should always have group_id set from Dashboard, but this is a safety net
+      }
+    }
     
     // Generate a cloud_id for new items if not provided
     const itemWithCloudId = {
       ...item,
       cloud_id: item.cloud_id || `food_${timestamp}_${Math.random().toString(36).substring(2, 9)}`,
-      created_at: item.created_at || timestamp
+      created_at: item.created_at || timestamp,
+      group_id: finalGroupId || null // May still be null if Personal group not found yet
     };
     
     return queuedDatabaseOperation(async () => {
@@ -1123,7 +1257,7 @@ export const FoodItemRepository = {
 
     
     const startTime = Date.now();
-    const timestamp = new Date().toISOString();
+    const timestamp = getCurrentDateTimeISO();
 
     return queuedDatabaseOperation(async () => {
       const dbOpStart = Date.now();
@@ -1265,7 +1399,7 @@ export const FoodItemRepository = {
             // Track the deletion for sync
             await db.runAsync(
               'INSERT INTO deleted_items (table_name, item_id, cloud_id, group_id, deleted_at) VALUES (?, ?, ?, ?, ?)',
-              ['food_items', id, item.cloud_id, item.group_id, new Date().toISOString()]
+              ['food_items', id, item.cloud_id, item.group_id, getCurrentDateTimeISO()]
             );
           }
         } catch (e) {
