@@ -175,6 +175,8 @@ export default {
   'settings.groupManagementDescription': 'เชิญสมาชิกและจัดการกลุ่มครอบครัวของคุณ',
   'settings.groups': 'กลุ่ม',
   'settings.groupsDescription': 'จัดการกลุ่มส่วนตัวและครอบครัวของคุณ',
+  'settings.yourGroups': 'กลุ่มของคุณ',
+  'settings.createNewGroup': 'สร้างกลุ่มใหม่',
   'groups.manageGroups': 'จัดการกลุ่ม',
   'settings.signOut': 'ออกจากระบบ',
   'settings.signOutDescription': 'ออกจากระบบและเปลี่ยนไปใช้บัญชีอื่น',

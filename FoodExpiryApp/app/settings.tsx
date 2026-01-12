@@ -439,7 +439,9 @@ const GroupManagementModal: React.FC<{
     },
     saveButtonText: {
       color: '#FFFFFF',
+      fontSize: 16,
       fontWeight: '600',
+      textAlign: 'center',
     },
     inviteContainer: {
       marginBottom: 16,
@@ -584,7 +586,7 @@ const GroupManagementModal: React.FC<{
 
               {/* Groups List */}
               <View style={modalStyles.section}>
-                <Text style={modalStyles.sectionTitle}>📋 Your Groups ({groups.length})</Text>
+                <Text style={modalStyles.sectionTitle}>{t('settings.yourGroups') || 'Your Groups'} ({groups.length})</Text>
                 {groups.length === 0 ? (
                   <View style={modalStyles.groupStats}>
                     <Text style={[modalStyles.statsLabel, { textAlign: 'center' }]}>
@@ -639,7 +641,7 @@ const GroupManagementModal: React.FC<{
                 style={[modalStyles.saveButton, { marginTop: 16, paddingVertical: 14 }]}
                 onPress={() => setShowCreateModal(true)}
               >
-                <Text style={modalStyles.saveButtonText}>➕ Create New Group</Text>
+                <Text style={modalStyles.saveButtonText}>{t('settings.createNewGroup') || 'Create New Group'}</Text>
               </TouchableOpacity>
             </ScrollView>
 
@@ -656,7 +658,7 @@ const GroupManagementModal: React.FC<{
           <View style={[modalStyles.modalContent, { maxHeight: '80%' }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={modalStyles.modalHeader}>
-                <Text style={modalStyles.modalTitle}>➕ Create New Group</Text>
+                <Text style={modalStyles.modalTitle}>{t('settings.createNewGroup') || 'Create New Group'}</Text>
               </View>
               
               <View style={[modalStyles.section, { marginBottom: 20 }]}>

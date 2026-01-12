@@ -407,20 +407,20 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (potentialDuplicate && !existingLocal) {
               // Found a local item that matches server item - update it with cloud_id instead of creating duplicate
               // Map category UUID to local integer ID
-              let localCategoryId: number | null = potentialDuplicate.category_id;
+              let localCategoryId: number | null = potentialDuplicate.category_id ?? null;
               if (serverItem.category_id && !localCategoryId) {
                 const localCategory = await CategoryRepository.getByCloudId(serverItem.category_id);
                 if (localCategory) {
-                  localCategoryId = localCategory.id;
+                  localCategoryId = localCategory.id ?? null;
                 }
               }
               
               // Map location UUID to local integer ID
-              let localLocationId: number | null = potentialDuplicate.location_id;
+              let localLocationId: number | null = potentialDuplicate.location_id ?? null;
               if (serverItem.location_id && !localLocationId) {
                 const localLocation = await LocationRepository.getByCloudId(serverItem.location_id);
                 if (localLocation) {
-                  localLocationId = localLocation.id;
+                  localLocationId = localLocation.id ?? null;
                 }
               }
               
@@ -440,7 +440,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     const timestamp = Date.now();
                     const randomId = Math.random().toString(36).substring(2, 15);
                     const filename = `img_${timestamp}_${randomId}.jpg`;
-                    const imagesDir = `${FileSystem.documentDirectory}images/`;
+                    const imagesDir = `${(FileSystem as any).documentDirectory || ''}images/`;
                     
                     const dirInfo = await FileSystem.getInfoAsync(imagesDir);
                     if (!dirInfo.exists) {
@@ -478,16 +478,15 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (serverItem.category_id) {
                 const localCategory = await CategoryRepository.getByCloudId(serverItem.category_id);
                 if (localCategory) {
-                  localCategoryId = localCategory.id;
+                  localCategoryId = localCategory.id ?? null;
                 } else {
                   // Try to find by cloud_id in current group's categories
                   const allLocalCategories = await CategoryRepository.getAll(currentGroup.id);
                   const foundCategory = allLocalCategories.find(cat => cat.cloud_id === serverItem.category_id);
                   if (foundCategory) {
-                    localCategoryId = foundCategory.id;
+                    localCategoryId = foundCategory.id ?? null;
                   }
                 }
-              } else {
               }
               
               // Map location UUID to local integer ID
@@ -495,16 +494,15 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (serverItem.location_id) {
                 const localLocation = await LocationRepository.getByCloudId(serverItem.location_id);
                 if (localLocation) {
-                  localLocationId = localLocation.id;
+                  localLocationId = localLocation.id ?? null;
                 } else {
                   // Try to find by cloud_id in current group's locations
                   const allLocalLocations = await LocationRepository.getAll(currentGroup.id);
                   const foundLocation = allLocalLocations.find(loc => loc.cloud_id === serverItem.location_id);
                   if (foundLocation) {
-                    localLocationId = foundLocation.id;
+                    localLocationId = foundLocation.id ?? null;
                   }
                 }
-              } else {
               }
               
               // Download image if it's a URL
@@ -525,7 +523,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     const timestamp = Date.now();
                     const randomId = Math.random().toString(36).substring(2, 15);
                     const filename = `img_${timestamp}_${randomId}.jpg`;
-                    const imagesDir = `${FileSystem.documentDirectory}images/`;
+                    const imagesDir = `${(FileSystem as any).documentDirectory || ''}images/`;
                     
                     // Ensure images directory exists
                     const dirInfo = await FileSystem.getInfoAsync(imagesDir);
@@ -566,19 +564,19 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               
               
               // Map category and location IDs
-              let localCategoryId: number | null = existingLocal.category_id;
+              let localCategoryId: number | null = existingLocal.category_id ?? null;
               if (serverItem.category_id && !localCategoryId) {
                 const localCategory = await CategoryRepository.getByCloudId(serverItem.category_id);
                 if (localCategory) {
-                  localCategoryId = localCategory.id;
+                  localCategoryId = localCategory.id ?? null;
                 }
               }
               
-              let localLocationId: number | null = existingLocal.location_id;
+              let localLocationId: number | null = existingLocal.location_id ?? null;
               if (serverItem.location_id && !localLocationId) {
                 const localLocation = await LocationRepository.getByCloudId(serverItem.location_id);
                 if (localLocation) {
-                  localLocationId = localLocation.id;
+                  localLocationId = localLocation.id ?? null;
                 }
               }
               
@@ -598,7 +596,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     const timestamp = Date.now();
                     const randomId = Math.random().toString(36).substring(2, 15);
                     const filename = `img_${timestamp}_${randomId}.jpg`;
-                    const imagesDir = `${FileSystem.documentDirectory}images/`;
+                    const imagesDir = `${(FileSystem as any).documentDirectory || ''}images/`;
                     
                     const dirInfo = await FileSystem.getInfoAsync(imagesDir);
                     if (!dirInfo.exists) {
@@ -807,13 +805,13 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 let localCategoryId: number | null = null;
                 if (serverItem.category_id) {
                   const localCategory = await CategoryRepository.getByCloudId(serverItem.category_id);
-                  if (localCategory) localCategoryId = localCategory.id;
+                  if (localCategory) localCategoryId = localCategory.id ?? null;
                 }
                 
                 let localLocationId: number | null = null;
                 if (serverItem.location_id) {
                   const localLocation = await LocationRepository.getByCloudId(serverItem.location_id);
-                  if (localLocation) localLocationId = localLocation.id;
+                  if (localLocation) localLocationId = localLocation.id ?? null;
                 }
                 
                 await FoodItemRepository.updateFromCloud({
@@ -866,16 +864,16 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (matchingServerItem) {
                   // Found match - update local item with cloud_id
                   
-                  let localCategoryId: number | null = localItem.category_id;
+                  let localCategoryId: number | null = localItem.category_id ?? null;
                   if (matchingServerItem.category_id && !localCategoryId) {
                     const localCategory = await CategoryRepository.getByCloudId(matchingServerItem.category_id);
-                    if (localCategory) localCategoryId = localCategory.id;
+                    if (localCategory) localCategoryId = localCategory.id ?? null;
                   }
                   
-                  let localLocationId: number | null = localItem.location_id;
+                  let localLocationId: number | null = localItem.location_id ?? null;
                   if (matchingServerItem.location_id && !localLocationId) {
                     const localLocation = await LocationRepository.getByCloudId(matchingServerItem.location_id);
-                    if (localLocation) localLocationId = localLocation.id;
+                    if (localLocation) localLocationId = localLocation.id ?? null;
                   }
                   
                   await FoodItemRepository.update({
@@ -1263,15 +1261,17 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       
       // Save to local database (store PostgreSQL user ID in supabase_id field for compatibility)
-      const localUserData: Partial<LocalUser> = {
+      const localUserData: {
+        supabase_id: string;
+        email: string;
+        full_name: string;
+        subscription_type?: 'free' | 'family';
+        subscription_expires_at?: string;
+      } = {
         supabase_id: result.user.id, // PostgreSQL user ID (UUID string)
         email: result.user.email,
         full_name: result.user.full_name || email,
         subscription_type: 'free' as const,
-        is_active: true,
-        created_at: getCurrentDateTimeISO(),
-        updated_at: getCurrentDateTimeISO(),
-        last_login: getCurrentDateTimeISO()
       };
       
       await saveUserToLocal(localUserData);
@@ -1325,15 +1325,17 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       
       // Save to local database (store PostgreSQL user ID in supabase_id field for compatibility)
-      const localUserData: Partial<LocalUser> = {
+      const localUserData: {
+        supabase_id: string;
+        email: string;
+        full_name: string;
+        subscription_type?: 'free' | 'family';
+        subscription_expires_at?: string;
+      } = {
         supabase_id: result.user.id, // PostgreSQL user ID (UUID string)
         email: result.user.email,
         full_name: result.user.full_name || email,
         subscription_type: 'free' as const,
-        is_active: true,
-        created_at: getCurrentDateTimeISO(),
-        updated_at: getCurrentDateTimeISO(),
-        last_login: getCurrentDateTimeISO()
       };
       
       await saveUserToLocal(localUserData);
@@ -1537,6 +1539,57 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error) {
       // Still update the state even if storage fails
       setCurrentGroup(group);
+    }
+  };
+
+  // Delete group and all related data from both local and PostgreSQL
+  const deleteGroup = async (groupId: string): Promise<void> => {
+    const currentUserId = user?.supabase_id;
+    if (!currentUserId) {
+      throw new Error('Must be authenticated to delete a group');
+    }
+
+    try {
+      // First, delete from PostgreSQL (this will delete all related data on the server)
+      await apiClient.delete(`/groups/${groupId}`);
+
+      // Then, delete all related data from local database
+      const db = await getDatabase();
+      if (db) {
+        // Delete in order to respect foreign key constraints
+        // 1. Delete food items
+        await db.runAsync('DELETE FROM food_items WHERE group_id = ?', [groupId]);
+        
+        // 2. Delete shopping items
+        await db.runAsync('DELETE FROM shopping_items WHERE group_id = ?', [groupId]);
+        
+        // 3. Delete wish items
+        await db.runAsync('DELETE FROM wish_items WHERE group_id = ?', [groupId]);
+        
+        // 4. Delete categories
+        await db.runAsync('DELETE FROM categories WHERE group_id = ?', [groupId]);
+        
+        // 5. Delete locations
+        await db.runAsync('DELETE FROM locations WHERE group_id = ?', [groupId]);
+      }
+
+      // Refresh local database
+      await database.refreshAll();
+
+      // Reload user data to update the groups list
+      await loadUserData(currentUserId);
+
+      // If the deleted group was the current group, switch to another group
+      if (currentGroup?.id === groupId) {
+        const remainingGroups = userGroups.filter(m => m.groups.id !== groupId);
+        if (remainingGroups.length > 0) {
+          await updateCurrentGroup(remainingGroups[0].groups);
+        } else {
+          setCurrentGroup(null);
+        }
+      }
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -1887,7 +1940,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         
         // Find items with string group_id values (not UUIDs) and fix them
-        const itemsToFix = localItems.filter(item => {
+        const itemsToFix = localItems.filter((item: any) => {
           if (!item.group_id) return false;
           // Check if group_id is a string (not a UUID format)
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.group_id);
@@ -2261,7 +2314,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         
         // PULL: Get food items from PostgreSQL that don't exist locally - map UUID category_id and location_id to local integer IDs
         for (const serverItem of serverItems) {
-          const existingLocal = localItems.find(li => li.cloud_id === serverItem.id);
+          const existingLocal = localItems.find((li: any) => li.cloud_id === serverItem.id);
           if (!existingLocal) {
             // Import from server - map UUID category_id and location_id to local integer IDs
             try {
@@ -2270,10 +2323,8 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (serverItem.category_id) {
                 const localCategory = await CategoryRepository.getByCloudId(serverItem.category_id);
                 if (localCategory) {
-                  localCategoryId = localCategory.id;
-                } else {
+                  localCategoryId = localCategory.id ?? null;
                 }
-              } else {
               }
               
               // Map location UUID to local integer ID
@@ -2281,10 +2332,8 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               if (serverItem.location_id) {
                 const localLocation = await LocationRepository.getByCloudId(serverItem.location_id);
                 if (localLocation) {
-                  localLocationId = localLocation.id;
-                } else {
+                  localLocationId = localLocation.id ?? null;
                 }
-              } else {
               }
               
               // Download image if it's a URL
@@ -2305,7 +2354,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     const timestamp = Date.now();
                     const randomId = Math.random().toString(36).substring(2, 15);
                     const filename = `img_${timestamp}_${randomId}.jpg`;
-                    const imagesDir = `${FileSystem.documentDirectory}images/`;
+                    const imagesDir = `${(FileSystem as any).documentDirectory || ''}images/`;
                     
                     // Ensure images directory exists
                     const dirInfo = await FileSystem.getInfoAsync(imagesDir);

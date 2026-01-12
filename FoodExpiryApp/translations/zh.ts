@@ -175,6 +175,8 @@ export default {
   'settings.groupManagementDescription': '邀请成员并管理您的家庭群组',
   'settings.groups': '群组',
   'settings.groupsDescription': '管理您的个人和家庭群组',
+  'settings.yourGroups': '您的群组',
+  'settings.createNewGroup': '创建新群组',
   'groups.manageGroups': '管理群组',
   'settings.signOut': '登出',
   'settings.signOutDescription': '登出您的账户并切换到另一个账户',

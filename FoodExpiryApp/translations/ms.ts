@@ -175,6 +175,8 @@ export default {
   'settings.groupManagementDescription': 'Jemput ahli dan urus kumpulan keluarga anda',
   'settings.groups': 'Kumpulan',
   'settings.groupsDescription': 'Urus kumpulan peribadi dan keluarga anda',
+  'settings.yourGroups': 'Kumpulan Anda',
+  'settings.createNewGroup': 'Buat Kumpulan Baru',
   'groups.manageGroups': 'Urus Kumpulan',
   'settings.signOut': 'Log Keluar',
   'settings.signOutDescription': 'Log keluar dari akaun anda dan tukar ke akaun lain',

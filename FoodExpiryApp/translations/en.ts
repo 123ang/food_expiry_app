@@ -177,6 +177,8 @@ export default {
   'settings.groupManagementDescription': 'Invite members and manage your family group',
   'settings.groups': 'Groups',
   'settings.groupsDescription': 'Manage your personal and family groups',
+  'settings.yourGroups': 'Your Groups',
+  'settings.createNewGroup': 'Create New Group',
   'groups.manageGroups': 'Manage Groups',
   'settings.signOut': 'Sign Out',
   'settings.signOutDescription': 'Sign out of your account and switch to another account',
