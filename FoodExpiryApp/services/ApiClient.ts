@@ -176,7 +176,33 @@ class ApiClient {
         });
       }
 
-      const data = await response.json();
+      // Get response as text first to handle HTML error pages
+      const responseText = await response.text();
+      
+      // Check if response is HTML (server error page)
+      if (responseText.startsWith('<!DOCTYPE') || responseText.startsWith('<html') || responseText.startsWith('<')) {
+        console.log(`[API DEBUG] Server returned HTML instead of JSON for: ${url}`);
+        console.log('[API DEBUG] Response status:', response.status);
+        console.log('[API DEBUG] This usually means:');
+        console.log('  1. The API server is not running');
+        console.log('  2. A reverse proxy (nginx) is returning an error page');
+        console.log('  3. The API route does not exist');
+        return {
+          error: `Server error (${response.status}). Please try again later.`,
+        };
+      }
+      
+      // Parse JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.log(`[API DEBUG] Failed to parse JSON response for: ${url}`);
+        console.log('[API DEBUG] Response text:', responseText.substring(0, 200));
+        return {
+          error: 'Invalid server response. Please try again later.',
+        };
+      }
 
       if (!response.ok) {
         return {
@@ -195,6 +221,9 @@ class ApiClient {
         console.log('  2. IP address is correct (current:', API_URL, ')');
         console.log('  3. Device/emulator can reach the backend IP');
         console.log('  4. Firewall is not blocking the connection');
+        return {
+          error: 'Cannot connect to server. Please check your internet connection.',
+        };
       }
       return {
         error: error instanceof Error ? error.message : 'Network error',

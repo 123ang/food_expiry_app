@@ -29,10 +29,33 @@ const PORT = process.env.PORT || 3000;
 // =====================================================
 
 // CORS configuration
+// Allow mobile apps (React Native) which may not send origin header
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? [process.env.WEB_APP_URL || 'https://expiry-alert.link']
-    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:19006'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+      ? [
+          process.env.WEB_APP_URL || 'https://expiry-alert.link',
+          'https://expiry-alert.link',
+          'https://www.expiry-alert.link',
+        ]
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:19006'];
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Allow mobile app origins (React Native sends various origins)
+    if (origin.startsWith('exp://') || origin.startsWith('expiryalert://')) {
+      return callback(null, true);
+    }
+    
+    callback(null, true); // Allow all origins for API (mobile apps need this)
+  },
   credentials: true,
 }));
 
