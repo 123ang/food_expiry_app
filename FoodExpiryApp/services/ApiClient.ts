@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 
 // API Configuration
-// Production API URL - always use the production server
-export const API_URL = 'https://expiry-alert.link/api';
+// Production API URL - use the API subdomain (api.expiry-alert.link)
+export const API_URL = 'https://api.expiry-alert.link/api';
 
 // Storage keys
 const ACCESS_TOKEN_KEY = 'access_token';
