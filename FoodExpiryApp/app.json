@@ -93,7 +93,14 @@
       "expo-router",
       "@react-native-community/datetimepicker",
       "expo-font",
-      "expo-system-ui"
+      "expo-system-ui",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them as food item images.",
+          "cameraPermission": "The app accesses your camera to let you take photos of food items."
+        }
+      ]
     ],
     "extra": {
       "eas": {
