@@ -29,9 +29,6 @@
         "UIFileSharingEnabled": false,
         "LSSupportsOpeningDocumentsInPlace": false
       },
-      "entitlements": {
-        "com.apple.developer.shared-with-you.collaboration": false
-      },
       "requireFullScreen": false,
       "userInterfaceStyle": "automatic"
     },
