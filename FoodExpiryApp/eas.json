@@ -23,10 +23,11 @@
       }
     },
     "production": {
+      "distribution": "store",
       "ios": {
         "resourceClass": "m-medium",
         "buildConfiguration": "Release",
-        "autoIncrement": "buildNumber"
+        "simulator": false
       },
       "android": {
         "buildType": "app-bundle"
