@@ -34,7 +34,7 @@ export class CategoryService {
     }
 
     const result = await query(
-      `SELECT c.* FROM categories c ${whereClause} ORDER BY c.is_default DESC NULLS LAST, c.group_id NULLS FIRST, c.name ASC`,
+      `SELECT c.* FROM categories c ${whereClause} ORDER BY c.is_default DESC NULLS LAST, c.section NULLS LAST, c.sort_order NULLS LAST, c.name ASC`,
       params
     );
 

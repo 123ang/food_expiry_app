@@ -34,7 +34,7 @@ export class LocationService {
     }
 
     const result = await query(
-      `SELECT l.* FROM locations l ${whereClause} ORDER BY l.is_default DESC NULLS LAST, l.group_id NULLS FIRST, l.name ASC`,
+      `SELECT l.* FROM locations l ${whereClause} ORDER BY l.is_default DESC NULLS LAST, l.section NULLS LAST, l.sort_order NULLS LAST, l.name ASC`,
       params
     );
 

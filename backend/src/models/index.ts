@@ -78,6 +78,8 @@ export interface Category {
   color?: string;
   translation_key?: string;
   is_default: boolean;
+  section?: string;
+  sort_order?: number;
   created_by?: string;
   created_at: Date;
   updated_at: Date;
@@ -92,6 +94,8 @@ export interface Location {
   icon?: string;
   translation_key?: string;
   is_default: boolean;
+  section?: string;
+  sort_order?: number;
   created_by?: string;
   created_at: Date;
   updated_at: Date;
