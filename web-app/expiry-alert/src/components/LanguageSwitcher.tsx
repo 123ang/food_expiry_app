@@ -1,7 +1,11 @@
 import React from 'react';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 
-const LanguageSwitcher: React.FC = () => {
+interface LanguageSwitcherProps {
+  className?: string;
+}
+
+const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = '' }) => {
   const { language, setLanguage } = useLanguage();
 
   const languages: { code: Language; name: string; flag: string }[] = [
@@ -11,11 +15,12 @@ const LanguageSwitcher: React.FC = () => {
   ];
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div className={className || undefined} style={!className ? { position: 'relative', display: 'inline-block' } : undefined}>
       <select
         value={language}
         onChange={(e) => setLanguage(e.target.value as Language)}
-        style={{
+        aria-label="Select language"
+        style={!className ? {
           background: 'var(--bg-primary)',
           border: '1px solid var(--border-color)',
           borderRadius: 'var(--radius-md)',
@@ -24,7 +29,7 @@ const LanguageSwitcher: React.FC = () => {
           color: 'var(--text-primary)',
           cursor: 'pointer',
           minWidth: '100px'
-        }}
+        } : undefined}
       >
         {languages.map(lang => (
           <option key={lang.code} value={lang.code}>

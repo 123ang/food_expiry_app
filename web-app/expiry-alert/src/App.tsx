@@ -22,6 +22,7 @@ const CategoryList = lazy(() => import('./components/CategoryList'));
 const AddCategory = lazy(() => import('./components/AddCategory'));
 const ItemDetails = lazy(() => import('./components/ItemDetails'));
 const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
+const TermsAndConditions = lazy(() => import('./components/TermsAndConditions'));
 const Settings = lazy(() => import('./components/Settings'));
 const GoogleDriveAuth = lazy(() => import('./components/GoogleDriveAuth'));
 const GoogleDriveOwnerAuth = lazy(() => import('./components/GoogleDriveOwnerAuth'));
@@ -341,6 +342,16 @@ const AppContent: React.FC = () => {
               <main>
                 <div className="container">
                   <PrivacyPolicy />
+                </div>
+              </main>
+            </div>
+          } />
+          <Route path="/terms" element={
+            <div>
+              {renderAppHeader(false)}
+              <main>
+                <div className="container">
+                  <TermsAndConditions />
                 </div>
               </main>
             </div>

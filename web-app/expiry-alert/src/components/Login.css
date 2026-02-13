@@ -1,29 +1,12 @@
-/* Login Page - FoodExpiryApp Theme */
+/* Login Page – uses global theme (green + teal + neutrals) */
 
-/* Theme variables matching FoodExpiryApp's recycled theme */
-:root {
-  --theme-bg: #F3C88B;
-  --theme-card: #FDF0C0;
-  --theme-header: #FFF1D6;
-  --theme-text: #2E2E2E;
-  --theme-text-secondary: #4A4A4A;
-  --theme-primary: #2E7D32;
-  --theme-primary-dark: #1B5E20;
-  --theme-border: #E8DCC6;
-  --theme-success: #4CAF50;
-  --theme-warning: #F4A460;
-  --theme-danger: #CD5C5C;
-  --theme-shadow: rgba(0, 0, 0, 0.1);
-  --theme-radius: 16px;
-}
-
-/* Full page background */
+/* Full page background – warm neutral → pale green → pale teal */
 .auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--theme-bg) 0%, #E8B87A 100%);
+  background: linear-gradient(160deg, #f8faf9 0%, #f0fdf4 40%, #dcfce7 70%, #ecfeff 100%);
   padding: 2rem 1rem;
 }
 
@@ -106,7 +89,7 @@
 .auth-form .form-input:focus {
   outline: none;
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
 .auth-form .form-input::placeholder {
@@ -146,7 +129,7 @@
   gap: 0.75rem;
   padding: 1rem;
   margin-bottom: 1rem;
-  background: rgba(46, 125, 50, 0.1);
+  background: rgba(13, 148, 136, 0.08);
   border-radius: 12px;
   color: var(--theme-primary);
   font-size: 0.95rem;
@@ -156,7 +139,7 @@
 .auth-loading .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(46, 125, 50, 0.3);
+  border: 2px solid rgba(13, 148, 136, 0.25);
   border-top-color: var(--theme-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -178,14 +161,14 @@
 }
 
 .auth-button.primary {
-  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
+  background: linear-gradient(135deg, #22c55e 0%, #0d9488 100%);
   color: white;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
 }
 
 .auth-button.primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.3);
 }
 
 .auth-button.primary:active:not(:disabled) {

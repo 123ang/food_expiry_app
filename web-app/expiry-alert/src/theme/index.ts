@@ -27,23 +27,24 @@ export interface Theme {
 
 export type ThemeType = 'original' | 'recycled' | 'darkBrown' | 'black' | 'blue' | 'green' | 'softPink' | 'brightPink' | 'naturalGreen' | 'mintRed' | 'darkGold';
 
+/* Default theme – green + teal + warm neutrals (mixed, not only green) */
 export const originalTheme: Theme = {
-  backgroundColor: '#F8F9FA',
-  primaryColor: '#2E7D32',
-  secondaryColor: '#E9ECEF',
-  textColor: '#212529',
-  tertiaryColor: '#4CAF50',
-  cardBackground: '#FFFFFF',
-  borderColor: '#CED4DA',
-  shadowColor: 'rgba(0, 0, 0, 0.15)',
-  textSecondary: '#9CA3AF',
-  successColor: '#2E7D32',
-  warningColor: '#FF9800',
-  dangerColor: '#F44336',
-  headerBackground: '#FFFFFF',
-  gradientPrimary: ['#2E7D32', '#1B5E20'],
-  gradientSecondary: ['#F8F9FA', '#E9ECEF'],
-  borderRadius: 8,
+  backgroundColor: '#f8faf9',
+  primaryColor: '#22c55e',
+  secondaryColor: '#e0f2fe',
+  textColor: '#171717',
+  tertiaryColor: '#0d9488',
+  cardBackground: '#ffffff',
+  borderColor: '#e2e8f0',
+  shadowColor: 'rgba(0, 0, 0, 0.08)',
+  textSecondary: '#525252',
+  successColor: '#22c55e',
+  warningColor: '#f59e0b',
+  dangerColor: '#ef4444',
+  headerBackground: '#ffffff',
+  gradientPrimary: ['#22c55e', '#0d9488'],
+  gradientSecondary: ['#f8faf9', '#f0fdf4', '#ecfeff'],
+  borderRadius: 12,
 };
 
 export const recycledTheme: Theme = {

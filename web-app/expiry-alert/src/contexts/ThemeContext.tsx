@@ -23,7 +23,7 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_STORAGE_KEY = '@food_expiry_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentThemeType, setCurrentThemeType] = useState<ThemeType>('recycled'); // Default to recycled theme
+  const [currentThemeType, setCurrentThemeType] = useState<ThemeType>('original'); // Default: icon-matching green
   const [isLoading, setIsLoading] = useState(true);
 
   // Apply theme to CSS variables
@@ -69,12 +69,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } else if ((savedTheme as ThemeType) in themes) {
           setCurrentThemeType(savedTheme as ThemeType);
         } else {
-          // Default to recycled theme (matching mobile app default)
-          setCurrentThemeType('recycled');
+          // Default to original (icon-matching green)
+          setCurrentThemeType('original');
         }
       } else {
-        // Default to recycled theme (matching mobile app default)
-        setCurrentThemeType('recycled');
+        // Default to original (icon-matching green)
+        setCurrentThemeType('original');
       }
     } catch (error) {
       console.error('Error loading theme:', error);
