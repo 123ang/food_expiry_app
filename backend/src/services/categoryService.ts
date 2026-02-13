@@ -67,7 +67,7 @@ export class CategoryService {
 
   // Create custom category
   static async createCategory(userId: string, groupId: string, categoryData: Partial<Category>): Promise<Category> {
-    const { name, icon, color } = categoryData;
+    const { name, icon, color, translation_key } = categoryData;
 
     if (!name) {
       throw new AppError('Category name is required', 400);
@@ -93,7 +93,7 @@ export class CategoryService {
       `INSERT INTO categories (name, icon, color, translation_key, group_id, created_by, is_default)
        VALUES ($1, $2, $3, $4, $5, $6, false)
        RETURNING *`,
-      [name, icon, color, null, groupId, userId]
+      [name, icon || null, color || null, translation_key || null, groupId, userId]
     );
 
     return result.rows[0];

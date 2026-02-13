@@ -39,14 +39,14 @@ router.post(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
-    const { group_id, name, icon, color } = req.body;
+    const { group_id, name, icon, color, translation_key } = req.body;
 
     if (!group_id || !name) {
       res.status(400).json({ error: 'group_id and name are required' });
       return;
     }
 
-    const category = await CategoryService.createCategory(userId, group_id, { name, icon, color });
+    const category = await CategoryService.createCategory(userId, group_id, { name, icon, color, translation_key });
 
     res.status(201).json({
       message: 'Category created successfully',
