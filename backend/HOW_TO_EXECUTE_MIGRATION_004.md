@@ -10,6 +10,27 @@ From the **backend** folder, run the migration against your PostgreSQL database.
 
 ### Option A: Using `psql` (recommended)
 
+**Linux (avoid "Peer authentication failed"):** use `-h localhost` so the server uses password auth instead of peer:
+
+```bash
+cd ~/projects/food_expiry_app   # or your backend path
+psql -h localhost -U postgres -d expiry_alert -f migrations/004_backend_database_changes.sql
+```
+
+Or with password in env (no prompt):
+
+```bash
+PGPASSWORD=your_postgres_password psql -h localhost -U postgres -d expiry_alert -f migrations/004_backend_database_changes.sql
+```
+
+**If you must use peer auth**, run as the `postgres` system user:
+
+```bash
+sudo -u postgres psql -d expiry_alert -f migrations/004_backend_database_changes.sql
+```
+
+**Windows (PowerShell):**
+
 ```powershell
 cd C:\Users\User\Desktop\Website\foodexpiry\backend
 psql -U postgres -d expiry_alert -f migrations/004_backend_database_changes.sql
