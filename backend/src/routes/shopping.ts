@@ -53,7 +53,7 @@ router.post(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
-    const { group_id, name, quantity, unit, category_id, notes } = req.body;
+    const { group_id, name, quantity, unit, category_id, where_to_buy, notes } = req.body;
 
     if (!group_id) {
       res.status(400).json({ error: 'group_id is required' });
@@ -70,6 +70,7 @@ router.post(
       quantity,
       unit,
       category_id,
+      where_to_buy,
       notes,
     });
 
@@ -83,7 +84,7 @@ router.patch(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
-    const { name, quantity, unit, category_id, is_purchased, notes } = req.body;
+    const { name, quantity, unit, category_id, is_purchased, where_to_buy, moved_to_inventory, inventory_item_id, notes } = req.body;
 
     const item = await ShoppingService.updateShoppingItem(userId, id, {
       name,
@@ -91,6 +92,9 @@ router.patch(
       unit,
       category_id,
       is_purchased,
+      where_to_buy,
+      moved_to_inventory,
+      inventory_item_id,
       notes,
     });
 

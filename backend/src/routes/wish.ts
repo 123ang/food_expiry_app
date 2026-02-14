@@ -49,7 +49,7 @@ router.post(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
-    const { group_id, name, notes, price, rating, image_url } = req.body;
+    const { group_id, name, notes, price, currency_code, rating, image_url } = req.body;
 
     if (!group_id) {
       res.status(400).json({ error: 'group_id is required' });
@@ -65,6 +65,7 @@ router.post(
       name,
       notes,
       price,
+      currency_code,
       rating,
       image_url,
     });
@@ -79,12 +80,13 @@ router.patch(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const userId = req.user!.userId;
     const { id } = req.params;
-    const { name, notes, price, rating, image_url } = req.body;
+    const { name, notes, price, currency_code, rating, image_url } = req.body;
 
     const item = await WishService.updateWishItem(userId, id, {
       name,
       notes,
       price,
+      currency_code,
       rating,
       image_url,
     });

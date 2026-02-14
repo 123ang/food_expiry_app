@@ -3,6 +3,28 @@ import { AppError } from '../middleware/errorHandler';
 import { GroupService } from './groupService';
 import { ShoppingItem } from '../models';
 
+function mapShoppingRow(row: any): ShoppingItem {
+  return {
+    id: row.id,
+    group_id: row.group_id,
+    created_by: row.created_by,
+    name: row.name,
+    quantity: parseInt(row.quantity) || 1,
+    unit: row.unit || undefined,
+    where_to_buy: row.where_to_buy || undefined,
+    category_id: row.category_id || undefined,
+    is_purchased: Boolean(row.is_purchased),
+    purchased_at: row.purchased_at ? new Date(row.purchased_at) : undefined,
+    purchased_by: row.purchased_by || undefined,
+    moved_to_inventory: Boolean(row.moved_to_inventory),
+    inventory_item_id: row.inventory_item_id || undefined,
+    notes: row.notes || undefined,
+    created_at: new Date(row.created_at),
+    updated_at: new Date(row.updated_at),
+    version: parseInt(row.version) || 1,
+  };
+}
+
 export class ShoppingService {
   // Get shopping items for a group
   static async getShoppingItems(userId: string, groupId: string, includePurchased: boolean = false): Promise<ShoppingItem[]> {
@@ -20,10 +42,13 @@ export class ShoppingService {
         name,
         quantity,
         unit,
+        where_to_buy,
         category_id,
         is_purchased,
         purchased_at,
         purchased_by,
+        moved_to_inventory,
+        inventory_item_id,
         notes,
         created_at,
         updated_at,
@@ -43,42 +68,16 @@ export class ShoppingService {
 
     const result = await query(sql, params);
 
-    return result.rows.map((row: any) => ({
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      quantity: parseInt(row.quantity) || 1,
-      unit: row.unit || undefined,
-      category_id: row.category_id || undefined,
-      is_purchased: Boolean(row.is_purchased),
-      purchased_at: row.purchased_at ? new Date(row.purchased_at) : undefined,
-      purchased_by: row.purchased_by || undefined,
-      notes: row.notes || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    }));
+    return result.rows.map((row: any) => mapShoppingRow(row));
   }
 
   // Get shopping item by ID
   static async getShoppingItemById(userId: string, itemId: string): Promise<ShoppingItem | null> {
     const result = await query(
       `SELECT 
-        id,
-        group_id,
-        created_by,
-        name,
-        quantity,
-        unit,
-        category_id,
-        is_purchased,
-        purchased_at,
-        purchased_by,
-        notes,
-        created_at,
-        updated_at,
-        version
+        id, group_id, created_by, name, quantity, unit, where_to_buy, category_id,
+        is_purchased, purchased_at, purchased_by, moved_to_inventory, inventory_item_id, notes,
+        created_at, updated_at, version
       FROM shopping_items
       WHERE id = $1 AND deleted_at IS NULL`,
       [itemId]
@@ -89,29 +88,12 @@ export class ShoppingService {
     }
 
     const row = result.rows[0];
-
-    // Check if user is member of the group
     const isMember = await GroupService.checkGroupPermission(row.group_id, userId);
     if (!isMember) {
       throw new AppError('Access denied to this item', 403);
     }
 
-    return {
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      quantity: parseInt(row.quantity) || 1,
-      unit: row.unit || undefined,
-      category_id: row.category_id || undefined,
-      is_purchased: Boolean(row.is_purchased),
-      purchased_at: row.purchased_at ? new Date(row.purchased_at) : undefined,
-      purchased_by: row.purchased_by || undefined,
-      notes: row.notes || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    };
+    return mapShoppingRow(row);
   }
 
   // Create shopping item
@@ -128,58 +110,24 @@ export class ShoppingService {
 
     const result = await query(
       `INSERT INTO shopping_items (
-        group_id,
-        created_by,
-        name,
-        quantity,
-        unit,
-        category_id,
-        notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING 
-        id,
-        group_id,
-        created_by,
-        name,
-        quantity,
-        unit,
-        category_id,
-        is_purchased,
-        purchased_at,
-        purchased_by,
-        notes,
-        created_at,
-        updated_at,
-        version`,
+        group_id, created_by, name, quantity, unit, where_to_buy, category_id, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, group_id, created_by, name, quantity, unit, where_to_buy, category_id,
+        is_purchased, purchased_at, purchased_by, moved_to_inventory, inventory_item_id, notes,
+        created_at, updated_at, version`,
       [
         groupId,
         userId,
         item.name.trim(),
         item.quantity || 1,
         item.unit || null,
+        item.where_to_buy || null,
         item.category_id || null,
         item.notes || null,
       ]
     );
 
-    const row = result.rows[0];
-
-    return {
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      quantity: parseInt(row.quantity) || 1,
-      unit: row.unit || undefined,
-      category_id: row.category_id || undefined,
-      is_purchased: Boolean(row.is_purchased),
-      purchased_at: row.purchased_at ? new Date(row.purchased_at) : undefined,
-      purchased_by: row.purchased_by || undefined,
-      notes: row.notes || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    };
+    return mapShoppingRow(result.rows[0]);
   }
 
   // Update shopping item
@@ -224,7 +172,23 @@ export class ShoppingService {
         values.push(null);
         updateFields.push(`purchased_by = $${paramIndex++}`);
         values.push(null);
+        updateFields.push(`moved_to_inventory = $${paramIndex++}`);
+        values.push(false);
+        updateFields.push(`inventory_item_id = $${paramIndex++}`);
+        values.push(null);
       }
+    }
+    if (updates.where_to_buy !== undefined) {
+      updateFields.push(`where_to_buy = $${paramIndex++}`);
+      values.push(updates.where_to_buy || null);
+    }
+    if (updates.moved_to_inventory !== undefined) {
+      updateFields.push(`moved_to_inventory = $${paramIndex++}`);
+      values.push(updates.moved_to_inventory);
+    }
+    if (updates.inventory_item_id !== undefined) {
+      updateFields.push(`inventory_item_id = $${paramIndex++}`);
+      values.push(updates.inventory_item_id || null);
     }
     if (updates.notes !== undefined) {
       updateFields.push(`notes = $${paramIndex++}`);
@@ -243,42 +207,13 @@ export class ShoppingService {
       `UPDATE shopping_items 
       SET ${updateFields.join(', ')}
       WHERE id = $${paramIndex} AND deleted_at IS NULL
-      RETURNING 
-        id,
-        group_id,
-        created_by,
-        name,
-        quantity,
-        unit,
-        category_id,
-        is_purchased,
-        purchased_at,
-        purchased_by,
-        notes,
-        created_at,
-        updated_at,
-        version`,
+      RETURNING id, group_id, created_by, name, quantity, unit, where_to_buy, category_id,
+        is_purchased, purchased_at, purchased_by, moved_to_inventory, inventory_item_id, notes,
+        created_at, updated_at, version`,
       values
     );
 
-    const row = result.rows[0];
-
-    return {
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      quantity: parseInt(row.quantity) || 1,
-      unit: row.unit || undefined,
-      category_id: row.category_id || undefined,
-      is_purchased: Boolean(row.is_purchased),
-      purchased_at: row.purchased_at ? new Date(row.purchased_at) : undefined,
-      purchased_by: row.purchased_by || undefined,
-      notes: row.notes || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    };
+    return mapShoppingRow(result.rows[0]);
   }
 
   // Delete shopping item

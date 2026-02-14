@@ -67,7 +67,7 @@ export class LocationService {
 
   // Create custom location
   static async createLocation(userId: string, groupId: string, locationData: Partial<Location>): Promise<Location> {
-    const { name, icon } = locationData;
+    const { name, icon, translation_key } = locationData;
 
     if (!name) {
       throw new AppError('Location name is required', 400);
@@ -90,10 +90,10 @@ export class LocationService {
     }
 
     const result = await query(
-      `INSERT INTO locations (name, icon, translation_key, group_id, created_by, is_default)
-       VALUES ($1, $2, $3, $4, $5, false)
+      `INSERT INTO locations (name, icon, translation_key, group_id, created_by, is_default, is_customization)
+       VALUES ($1, $2, $3, $4, $5, false, true)
        RETURNING *`,
-      [name, icon, null, groupId, userId]
+      [name, icon || null, translation_key || null, groupId, userId]
     );
 
     return result.rows[0];
@@ -103,9 +103,9 @@ export class LocationService {
   static async updateLocation(userId: string, locationId: string, updates: Partial<Location>): Promise<Location> {
     const location = await this.getLocationById(userId, locationId);
 
-    // Cannot update default locations
-    if (location.is_default) {
-      throw new AppError('Cannot update default locations', 403);
+    // Only user-added (customization) locations can be updated
+    if (!location.is_customization) {
+      throw new AppError('Cannot update default or seed locations', 403);
     }
 
     // Check if user is member of the group
@@ -138,9 +138,9 @@ export class LocationService {
   static async deleteLocation(userId: string, locationId: string): Promise<void> {
     const location = await this.getLocationById(userId, locationId);
 
-    // Cannot delete default locations
-    if (location.is_default) {
-      throw new AppError('Cannot delete default locations', 403);
+    // Only user-added (customization) locations can be deleted
+    if (!location.is_customization) {
+      throw new AppError('Cannot delete default or seed locations', 403);
     }
 
     // Check if user is member of the group

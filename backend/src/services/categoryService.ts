@@ -90,8 +90,8 @@ export class CategoryService {
     }
 
     const result = await query(
-      `INSERT INTO categories (name, icon, color, translation_key, group_id, created_by, is_default)
-       VALUES ($1, $2, $3, $4, $5, $6, false)
+      `INSERT INTO categories (name, icon, color, translation_key, group_id, created_by, is_default, is_customization)
+       VALUES ($1, $2, $3, $4, $5, $6, false, true)
        RETURNING *`,
       [name, icon || null, color || null, translation_key || null, groupId, userId]
     );
@@ -103,9 +103,9 @@ export class CategoryService {
   static async updateCategory(userId: string, categoryId: string, updates: Partial<Category>): Promise<Category> {
     const category = await this.getCategoryById(userId, categoryId);
 
-    // Cannot update default categories
-    if (category.is_default) {
-      throw new AppError('Cannot update default categories', 403);
+    // Only user-added (customization) categories can be updated
+    if (!category.is_customization) {
+      throw new AppError('Cannot update default or seed categories', 403);
     }
 
     // Check if user is member of the group
@@ -138,9 +138,9 @@ export class CategoryService {
   static async deleteCategory(userId: string, categoryId: string): Promise<void> {
     const category = await this.getCategoryById(userId, categoryId);
 
-    // Cannot delete default categories
-    if (category.is_default) {
-      throw new AppError('Cannot delete default categories', 403);
+    // Only user-added (customization) categories can be deleted
+    if (!category.is_customization) {
+      throw new AppError('Cannot delete default or seed categories', 403);
     }
 
     // Check if user is member of the group

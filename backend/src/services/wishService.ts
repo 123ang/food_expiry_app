@@ -3,6 +3,35 @@ import { AppError } from '../middleware/errorHandler';
 import { GroupService } from './groupService';
 import { WishItem } from '../models';
 
+const RATING_MIN = 1;
+const RATING_MAX = 5;
+const RATING_DEFAULT = 3;
+
+function validateRating(rating: number | undefined): number {
+  const r = rating ?? RATING_DEFAULT;
+  if (r < RATING_MIN || r > RATING_MAX) {
+    throw new AppError(`Rating (desire level) must be between ${RATING_MIN} and ${RATING_MAX}`, 400);
+  }
+  return r;
+}
+
+function mapWishRow(row: any): WishItem {
+  return {
+    id: row.id,
+    group_id: row.group_id,
+    created_by: row.created_by,
+    name: row.name,
+    notes: row.notes || undefined,
+    price: row.price != null ? parseFloat(row.price) : undefined,
+    currency_code: row.currency_code || undefined,
+    rating: row.rating != null ? parseInt(row.rating, 10) : RATING_DEFAULT,
+    image_url: row.image_url || undefined,
+    created_at: new Date(row.created_at),
+    updated_at: new Date(row.updated_at),
+    version: parseInt(row.version, 10) || 1,
+  };
+}
+
 export class WishService {
   // Get wish items for a group
   static async getWishItems(userId: string, groupId: string): Promise<WishItem[]> {
@@ -14,17 +43,8 @@ export class WishService {
 
     let sql = `
       SELECT 
-        id,
-        group_id,
-        created_by,
-        name,
-        notes,
-        price,
-        rating,
-        image_url,
-        created_at,
-        updated_at,
-        version
+        id, group_id, created_by, name, notes, price, currency_code, rating, image_url,
+        created_at, updated_at, version
       FROM wish_items
       WHERE group_id = $1 
         AND deleted_at IS NULL
@@ -36,38 +56,15 @@ export class WishService {
 
     const result = await query(sql, params);
 
-    return result.rows.map((row: any) => ({
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      notes: row.notes || undefined,
-      price: row.price ? parseFloat(row.price) : undefined,
-      rating: row.rating ? parseInt(row.rating) : 0,
-      image_url: row.image_url || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    }));
+    return result.rows.map((row: any) => mapWishRow(row));
   }
 
   // Get wish item by ID
   static async getWishItemById(userId: string, itemId: string): Promise<WishItem | null> {
     const result = await query(
-      `SELECT 
-        id,
-        group_id,
-        created_by,
-        name,
-        notes,
-        price,
-        rating,
-        image_url,
-        created_at,
-        updated_at,
-        version
-      FROM wish_items
-      WHERE id = $1 AND deleted_at IS NULL`,
+      `SELECT id, group_id, created_by, name, notes, price, currency_code, rating, image_url,
+        created_at, updated_at, version
+      FROM wish_items WHERE id = $1 AND deleted_at IS NULL`,
       [itemId]
     );
 
@@ -76,26 +73,12 @@ export class WishService {
     }
 
     const row = result.rows[0];
-
-    // Check if user is member of the group
     const isMember = await GroupService.checkGroupPermission(row.group_id, userId);
     if (!isMember) {
       throw new AppError('Access denied to this item', 403);
     }
 
-    return {
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      notes: row.notes || undefined,
-      price: row.price ? parseFloat(row.price) : undefined,
-      rating: row.rating ? parseInt(row.rating) : 0,
-      image_url: row.image_url || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    };
+    return mapWishRow(row);
   }
 
   // Create wish item
@@ -110,54 +93,27 @@ export class WishService {
       throw new AppError('Item name is required', 400);
     }
 
+    const rating = validateRating(item.rating != null ? Number(item.rating) : undefined);
+
     const result = await query(
       `INSERT INTO wish_items (
-        group_id,
-        created_by,
-        name,
-        notes,
-        price,
-        rating,
-        image_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING 
-        id,
-        group_id,
-        created_by,
-        name,
-        notes,
-        price,
-        rating,
-        image_url,
-        created_at,
-        updated_at,
-        version`,
+        group_id, created_by, name, notes, price, currency_code, rating, image_url
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, group_id, created_by, name, notes, price, currency_code, rating, image_url,
+        created_at, updated_at, version`,
       [
         groupId,
         userId,
         item.name.trim(),
         item.notes || null,
-        item.price || null,
-        item.rating || 0,
+        item.price != null ? item.price : null,
+        item.currency_code || null,
+        rating,
         item.image_url || null,
       ]
     );
 
-    const row = result.rows[0];
-
-    return {
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      notes: row.notes || undefined,
-      price: row.price ? parseFloat(row.price) : undefined,
-      rating: row.rating ? parseInt(row.rating) : 0,
-      image_url: row.image_url || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    };
+    return mapWishRow(result.rows[0]);
   }
 
   // Update wish item
@@ -186,8 +142,13 @@ export class WishService {
       values.push(updates.price || null);
     }
     if (updates.rating !== undefined) {
+      const rating = validateRating(Number(updates.rating));
       updateFields.push(`rating = $${paramIndex++}`);
-      values.push(updates.rating || 0);
+      values.push(rating);
+    }
+    if (updates.currency_code !== undefined) {
+      updateFields.push(`currency_code = $${paramIndex++}`);
+      values.push(updates.currency_code || null);
     }
     if (updates.image_url !== undefined) {
       updateFields.push(`image_url = $${paramIndex++}`);
@@ -206,36 +167,12 @@ export class WishService {
       `UPDATE wish_items 
       SET ${updateFields.join(', ')}
       WHERE id = $${paramIndex} AND deleted_at IS NULL
-      RETURNING 
-        id,
-        group_id,
-        created_by,
-        name,
-        notes,
-        price,
-        rating,
-        image_url,
-        created_at,
-        updated_at,
-        version`,
+      RETURNING id, group_id, created_by, name, notes, price, currency_code, rating, image_url,
+        created_at, updated_at, version`,
       values
     );
 
-    const row = result.rows[0];
-
-    return {
-      id: row.id,
-      group_id: row.group_id,
-      created_by: row.created_by,
-      name: row.name,
-      notes: row.notes || undefined,
-      price: row.price ? parseFloat(row.price) : undefined,
-      rating: row.rating ? parseInt(row.rating) : 0,
-      image_url: row.image_url || undefined,
-      created_at: new Date(row.created_at),
-      updated_at: new Date(row.updated_at),
-      version: parseInt(row.version) || 1,
-    };
+    return mapWishRow(result.rows[0]);
   }
 
   // Delete wish item

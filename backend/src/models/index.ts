@@ -78,6 +78,7 @@ export interface Category {
   color?: string;
   translation_key?: string;
   is_default: boolean;
+  is_customization?: boolean;
   section?: string;
   sort_order?: number;
   created_by?: string;
@@ -94,6 +95,7 @@ export interface Location {
   icon?: string;
   translation_key?: string;
   is_default: boolean;
+  is_customization?: boolean;
   section?: string;
   sort_order?: number;
   created_by?: string;
@@ -174,10 +176,13 @@ export interface ShoppingItem {
   name: string;
   quantity: number;
   unit?: string;
+  where_to_buy?: string;
   category_id?: string;
   is_purchased: boolean;
   purchased_at?: Date;
   purchased_by?: string;
+  moved_to_inventory?: boolean;
+  inventory_item_id?: string;
   notes?: string;
   created_at: Date;
   updated_at: Date;
@@ -192,6 +197,7 @@ export interface WishItem {
   name: string;
   notes?: string;
   price?: number;
+  currency_code?: string;
   rating?: number;
   image_url?: string;
   created_at: Date;
