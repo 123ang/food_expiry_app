@@ -7,11 +7,13 @@ import './LandingPage.css';
 
 /** Carousel slides: titleKey, image, altKey, descKey (brief explanation). Add translations in LanguageContext. */
 const SCREENSHOT_SLIDES = [
-  { titleKey: 'landing.screenshotList', image: '/screenshot-list.png', altKey: 'landing.screenshotList', descKey: 'landing.screenshotListDesc' },
-  { titleKey: 'landing.screenshotCategories', image: '/screenshot-categories.png', altKey: 'landing.screenshotCategories', descKey: 'landing.screenshotCategoriesDesc' },
+  { titleKey: 'landing.screenshotAddItem', image: '/screenshot-add-item.png', altKey: 'landing.screenshotAddItem', descKey: 'landing.screenshotAddItemDesc' },
   { titleKey: 'landing.screenshotCalendar', image: '/screenshot-calendar.png', altKey: 'landing.screenshotCalendar', descKey: 'landing.screenshotCalendarDesc' },
-  { titleKey: 'landing.screenshotAddPhoto', image: '/screenshot-add-photo.png', altKey: 'landing.screenshotAddPhoto', descKey: 'landing.screenshotAddPhotoDesc' },
-  { titleKey: 'landing.screenshotSettingsTheme', image: '/screenshot-settings-theme.png', altKey: 'landing.screenshotSettingsTheme', descKey: 'landing.screenshotSettingsThemeDesc' },
+  { titleKey: 'landing.screenshotShoppingList', image: '/screenshot-shopping-list.png', altKey: 'landing.screenshotShoppingList', descKey: 'landing.screenshotShoppingListDesc' },
+  { titleKey: 'landing.screenshotWishlist', image: '/screenshot-wishlist.png', altKey: 'landing.screenshotWishlist', descKey: 'landing.screenshotWishlistDesc' },
+  { titleKey: 'landing.screenshotNotifications', image: '/screenshot-notifications.png', altKey: 'landing.screenshotNotifications', descKey: 'landing.screenshotNotificationsDesc' },
+  { titleKey: 'landing.screenshotTheme', image: '/screenshot-theme.png', altKey: 'landing.screenshotTheme', descKey: 'landing.screenshotThemeDesc' },
+  { titleKey: 'landing.screenshotGroups', image: '/screenshot-groups.png', altKey: 'landing.screenshotGroups', descKey: 'landing.screenshotGroupsDesc' },
 ] as const;
 
 const LandingPage: React.FC = () => {
@@ -20,15 +22,15 @@ const LandingPage: React.FC = () => {
   const [howVisible, setHowVisible] = useState(false);
   const [featuresVisible, setFeaturesVisible] = useState(false);
   const [screenshotIndex, setScreenshotIndex] = useState(0);
-  const [screenshotImageLoaded, setScreenshotImageLoaded] = useState(true);
+  const [displayedScreenshotIndex, setDisplayedScreenshotIndex] = useState(0);
+  const [screenshotImageLoaded, setScreenshotImageLoaded] = useState(false);
   const howRef = useRef<HTMLElement | null>(null);
   const featuresRef = useRef<HTMLElement | null>(null);
   const screenshotPanelRef = useRef<HTMLDivElement | null>(null);
   const touchStartX = useRef<number>(0);
 
-  useEffect(() => {
-    setScreenshotImageLoaded(false);
-  }, [screenshotIndex]);
+  /* Preload next image before swapping so the panel never goes blank (no glitch). */
+  const isPreloading = screenshotIndex !== displayedScreenshotIndex;
 
   useEffect(() => {
     const onScroll = () => setNavScrolled(window.scrollY > 24);
@@ -143,8 +145,8 @@ const LandingPage: React.FC = () => {
           <div className="lp-hero__visual">
             <div className="lp-hero__phone" aria-hidden="true">
               <img
-                src="/hero-app-preview.png"
-                alt="Expiry Alert app dashboard preview"
+                src="/hero-dashboard.png"
+                alt="Expiry Alert app dashboard (homepage)"
                 className="lp-hero__phone-screen"
               />
             </div>
@@ -259,11 +261,24 @@ const LandingPage: React.FC = () => {
             >
               <div className="lp-screenshot">
                 <img
-                  src={SCREENSHOT_SLIDES[screenshotIndex].image}
-                  alt={t(SCREENSHOT_SLIDES[screenshotIndex].altKey)}
+                  src={SCREENSHOT_SLIDES[displayedScreenshotIndex].image}
+                  alt={t(SCREENSHOT_SLIDES[displayedScreenshotIndex].altKey)}
                   className={`lp-screenshot__img ${screenshotImageLoaded ? 'lp-screenshot__img--loaded' : ''}`}
                   onLoad={() => setScreenshotImageLoaded(true)}
+                  onError={() => setScreenshotImageLoaded(true)}
                 />
+                {isPreloading && (
+                  <img
+                    src={SCREENSHOT_SLIDES[screenshotIndex].image}
+                    alt=""
+                    aria-hidden="true"
+                    className="lp-screenshot__preload"
+                    onLoad={() => {
+                      setDisplayedScreenshotIndex(screenshotIndex);
+                      setScreenshotImageLoaded(true);
+                    }}
+                  />
+                )}
               </div>
             </div>
             <div className="lp-screenshots-desc lp-screenshots-desc--transition" key={screenshotIndex} aria-live="polite">
@@ -279,8 +294,7 @@ const LandingPage: React.FC = () => {
         <div className="lp-container">
           <SectionHeader id="download-title" title={t('landing.downloadTitle')} subtitle={t('landing.downloadDesc')} />
           <div className="lp-download__stores">
-            {/* TODO: Replace with real App Store URL when app is published */}
-            <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" className="lp-download__store-link" aria-label="Download on the App Store">
+            <a href="https://apps.apple.com/jp/app/myexpiryalert/id6746734448?l=en-US" target="_blank" rel="noopener noreferrer" className="lp-download__store-link" aria-label="Download on the App Store">
               <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" />
             </a>
             {/* TODO: Replace with real Google Play URL when app is published */}

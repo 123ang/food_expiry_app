@@ -1044,6 +1044,7 @@
 }
 
 .lp-screenshot {
+  position: relative;
   border-radius: var(--lp-radius-lg);
   overflow: hidden;
   background: #f8fafc;
@@ -1066,6 +1067,17 @@
 
 .lp-screenshot__img--loaded {
   opacity: 1;
+}
+
+/* Preload image: hidden so next slide loads before we swap (avoids blank flash). */
+.lp-screenshot__preload {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
 
 @media (prefers-reduced-motion: reduce) {
