@@ -1,4 +1,4 @@
-import { query } from '../config/database';
+import { query, getClient } from '../config/database';
 import { User, Device, UserSettings, AuthTokens, JWTPayload } from '../models';
 import { hashPassword, verifyPassword, hashToken } from '../utils';
 import { generateAccessToken, generateRefreshToken } from '../middleware/auth';
@@ -289,6 +289,67 @@ export class AuthService {
     );
 
     return result.rows[0];
+  }
+
+  // Permanently delete the user account and all associated data
+  static async deleteAccount(userId: string): Promise<void> {
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+
+      // Find all groups where this user is an owner
+      const ownedGroupsResult = await client.query(
+        `SELECT g.id
+         FROM groups g
+         JOIN group_memberships gm ON gm.group_id = g.id
+         WHERE gm.user_id = $1 AND gm.role = 'owner' AND g.deleted_at IS NULL`,
+        [userId]
+      );
+
+      for (const group of ownedGroupsResult.rows) {
+        // Check for other members in this group
+        const otherMemberResult = await client.query(
+          `SELECT user_id FROM group_memberships
+           WHERE group_id = $1 AND user_id != $2
+           ORDER BY joined_at ASC
+           LIMIT 1`,
+          [group.id, userId]
+        );
+
+        if (otherMemberResult.rows.length > 0) {
+          // Transfer group ownership to the longest-standing other member
+          const newOwnerId = otherMemberResult.rows[0].user_id;
+          await client.query(
+            `UPDATE groups SET created_by = $1 WHERE id = $2`,
+            [newOwnerId, group.id]
+          );
+          await client.query(
+            `UPDATE group_memberships SET role = 'owner' WHERE group_id = $1 AND user_id = $2`,
+            [group.id, newOwnerId]
+          );
+        }
+        // Groups with no other members will cascade-delete when user is deleted
+        // (groups.created_by → users(id) ON DELETE CASCADE)
+      }
+
+      // Delete the user — FK cascades handle the rest:
+      //   devices → sync_log
+      //   user_settings
+      //   group_memberships (remaining)
+      //   invitations (invited_by / invited_user_id)
+      //   food_items (created_by) → food_item_events
+      //   shopping_items (created_by)
+      //   wish_items (created_by)
+      //   groups (created_by, solo-owner groups) → all group data
+      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 }
 

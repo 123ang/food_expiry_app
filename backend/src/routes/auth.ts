@@ -78,5 +78,18 @@ router.post(
   })
 );
 
+// DELETE /auth/me - Permanently delete the authenticated user's account
+router.delete(
+  '/me',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.userId;
+
+    await AuthService.deleteAccount(userId);
+
+    res.status(204).send();
+  })
+);
+
 export default router;
 
