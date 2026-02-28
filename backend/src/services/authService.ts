@@ -3,6 +3,7 @@ import { User, Device, UserSettings, AuthTokens, JWTPayload } from '../models';
 import { hashPassword, verifyPassword, hashToken } from '../utils';
 import { generateAccessToken, generateRefreshToken } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { sendEmail, emailTemplates, isEmailEnabled } from '../config/email';
 
 export class AuthService {
   // Register new user
@@ -289,6 +290,113 @@ export class AuthService {
     );
 
     return result.rows[0];
+  }
+
+  // Request a password reset — sends email with 6-digit code (user enters code in app)
+  static async requestPasswordReset(email: string): Promise<void> {
+    const userResult = await query(
+      'SELECT id, full_name FROM users WHERE email = $1 AND deleted_at IS NULL',
+      [email]
+    );
+
+    // Always return success to avoid leaking whether the email exists
+    if (userResult.rows.length === 0) return;
+
+    const user = userResult.rows[0];
+
+    // Invalidate any existing unused tokens for this user
+    await query(
+      `UPDATE password_reset_tokens SET used_at = NOW()
+       WHERE user_id = $1 AND used_at IS NULL`,
+      [user.id]
+    );
+
+    // Generate 6-digit code for in-app entry
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const tokenHash = hashToken(code);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await query(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, $3)`,
+      [user.id, tokenHash, expiresAt]
+    );
+
+    if (!isEmailEnabled) {
+      console.warn('Email is disabled — reset code generated but not sent');
+      return;
+    }
+
+    const template = emailTemplates.passwordResetCode(code, user.full_name);
+    await sendEmail(email, template.subject, template.html, template.text);
+  }
+
+  // Reset the password using either (email + code) or (token) from link
+  static async resetPasswordWithCode(email: string, code: string, newPassword: string): Promise<void> {
+    const userResult = await query(
+      'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
+      [email]
+    );
+    if (userResult.rows.length === 0) {
+      throw new AppError('Invalid or expired reset code', 400);
+    }
+    const userId = userResult.rows[0].id;
+    const tokenHash = hashToken(code);
+
+    const tokenResult = await query(
+      `SELECT id, user_id, expires_at, used_at
+       FROM password_reset_tokens
+       WHERE user_id = $1 AND token_hash = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [userId, tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      throw new AppError('Invalid or expired reset code', 400);
+    }
+
+    const resetToken = tokenResult.rows[0];
+    if (resetToken.used_at) {
+      throw new AppError('This reset code has already been used', 400);
+    }
+    if (new Date(resetToken.expires_at) < new Date()) {
+      throw new AppError('This reset code has expired', 400);
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, userId]);
+    await query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [resetToken.id]);
+    await query('UPDATE devices SET refresh_token_hash = NULL WHERE user_id = $1', [userId]);
+  }
+
+  // Reset the password using a long token (e.g. from email link / web page)
+  static async resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
+    const tokenHash = hashToken(token);
+
+    const tokenResult = await query(
+      `SELECT id, user_id, expires_at, used_at
+       FROM password_reset_tokens
+       WHERE token_hash = $1`,
+      [tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      throw new AppError('Invalid or expired reset token', 400);
+    }
+
+    const resetToken = tokenResult.rows[0];
+    if (resetToken.used_at) {
+      throw new AppError('This reset token has already been used', 400);
+    }
+    if (new Date(resetToken.expires_at) < new Date()) {
+      throw new AppError('This reset token has expired', 400);
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, resetToken.user_id]);
+    await query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [resetToken.id]);
+    await query('UPDATE devices SET refresh_token_hash = NULL WHERE user_id = $1', [resetToken.user_id]);
   }
 
   // Permanently delete the user account and all associated data

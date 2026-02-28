@@ -86,6 +86,11 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Password reset web page (linked from email)
+app.get('/reset-password', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'reset-password.html'));
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);

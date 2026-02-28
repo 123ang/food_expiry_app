@@ -34,6 +34,22 @@ export const authValidation = {
   refreshToken: [
     body('refreshToken').notEmpty().withMessage('Refresh token required'),
   ],
+  forgotPassword: [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
+  ],
+  // Reset: either (token + password) for link flow, or (email + code + password) for in-app flow
+  resetPassword: [
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('token').optional().isString().trim(),
+    body('email').optional().isEmail().normalizeEmail(),
+    body('code').optional().isString().trim().isLength({ min: 6, max: 6 }).withMessage('Code must be 6 digits'),
+    body().custom((_, { req }) => {
+      const hasToken = req.body.token && String(req.body.token).trim().length > 0;
+      const hasEmailAndCode = req.body.email && req.body.code && String(req.body.code).trim().length === 6;
+      if (hasToken || hasEmailAndCode) return true;
+      throw new Error('Provide either token or both email and code');
+    }),
+  ],
 };
 
 export const groupValidation = {

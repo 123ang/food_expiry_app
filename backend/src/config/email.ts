@@ -106,6 +106,57 @@ This invitation expires in 7 days.
     `.trim(),
   }),
 
+  // 6-digit code for in-app reset (user types code in app, no link click)
+  passwordResetCode: (code: string, userName: string) => ({
+    subject: 'Your Expiry Alert password reset code',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #22c55e; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+          .code-box { background: white; border: 2px dashed #22c55e; padding: 24px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 24px 0; border-radius: 8px; }
+          .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🍎 Expiry Alert</h1>
+          </div>
+          <div class="content">
+            <h2>Password reset code</h2>
+            <p>Hi ${userName || 'there'},</p>
+            <p>Use this code in the app to set a new password:</p>
+            <div class="code-box">${code}</div>
+            <p>If you didn't request this, you can safely ignore this email.</p>
+            <p style="font-size: 12px; color: #999;">This code expires in 1 hour.</p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Expiry Alert</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+Password reset code
+
+Hi ${userName || 'there'},
+
+Use this code in the Expiry Alert app to set a new password:
+
+${code}
+
+If you didn't request this, you can safely ignore this email.
+
+This code expires in 1 hour.
+    `.trim(),
+  }),
+
   passwordReset: (resetLink: string, userName: string) => ({
     subject: 'Reset your Expiry Alert password',
     html: `

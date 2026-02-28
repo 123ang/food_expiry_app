@@ -78,6 +78,43 @@ router.post(
   })
 );
 
+// POST /auth/forgot-password - Request a password reset email
+router.post(
+  '/forgot-password',
+  authValidation.forgotPassword,
+  validate,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    await AuthService.requestPasswordReset(email);
+
+    // Always return success to avoid leaking whether the email exists
+    res.json({
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    });
+  })
+);
+
+// POST /auth/reset-password - Reset password with token (link) or email+code (in-app)
+router.post(
+  '/reset-password',
+  authValidation.resetPassword,
+  validate,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { token, email, code, password } = req.body;
+
+    if (token) {
+      await AuthService.resetPasswordWithToken(token, password);
+    } else {
+      await AuthService.resetPasswordWithCode(email, code.trim(), password);
+    }
+
+    res.json({
+      message: 'Password has been reset successfully. Please log in with your new password.',
+    });
+  })
+);
+
 // DELETE /auth/me - Permanently delete the authenticated user's account
 router.delete(
   '/me',
