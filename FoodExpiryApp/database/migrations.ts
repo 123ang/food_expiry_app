@@ -143,7 +143,7 @@ export const prepareForSupabaseSync = async (): Promise<boolean> => {
         }
         
         // Generate UUIDs for any items that don't have cloud_ids
-        const items = await db.getAllAsync(
+        const items = await db.getAllAsync<{ id: number }>(
           `SELECT id FROM ${table} WHERE cloud_id IS NULL OR cloud_id = ''`
         );
         
@@ -195,4 +195,3 @@ export const runSyncMigrations = async (): Promise<boolean> => {
     return false;
   }
 };
-

@@ -161,11 +161,15 @@ export default function ItemDetailsScreen() {
           quantity: newQuantity,
           category_id: item.category_id,
           location_id: item.location_id,
+          group_id: item.group_id ?? null,
+          cloud_id: item.cloud_id ?? null,
           expiry_date: item.expiry_date,
           reminder_days: item.reminder_days,
           notes: item.notes,
           image_uri: item.image_uri,
           created_at: item.created_at,
+          updated_at: new Date().toISOString(),
+          sync_status: 'pending' as const,
         };
         
         await updateFoodItem(updatedItem);

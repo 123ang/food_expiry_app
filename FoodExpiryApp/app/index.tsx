@@ -61,6 +61,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
   
   const emojis = isCategory ? CATEGORY_EMOJIS : LOCATION_EMOJIS;
   const categories = isCategory ? EMOJI_CATEGORIES : [{ title: 'Locations', icon: '📍', items: LOCATION_EMOJIS }];
+  const filteredCategories: EmojiCategory[] = categories;
   
   const toggleCategory = (categoryTitle: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -221,12 +222,13 @@ export default function DashboardScreen() {
   const { 
     user, 
     isAuthenticated, 
+    isLocalMode,
+    isCloudMode,
     currentGroup, 
     userGroups, 
     createGroup,
     setCurrentGroup,
-    syncToServer,
-    loading: authLoading
+    syncToServer
   } = useApi();
   
   const {
@@ -252,12 +254,6 @@ export default function DashboardScreen() {
     getFoodItemsByGroup,
   } = useDatabase();
 
-  // Redirect to login if not authenticated (after loading is complete)
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.replace('/auth/login');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [itemName, setItemName] = useState('');
@@ -506,7 +502,7 @@ export default function DashboardScreen() {
       setActiveGroupId(selectedGroupId);
     }
     
-    if (!selectedGroupId) {
+    if (!selectedGroupId && isCloudMode) {
       Alert.alert(
         t('alert.error'), 
         'No group available. Please ensure you are signed in and have at least one group. If you just signed up, please wait a moment for your Personal group to be created.'
@@ -527,7 +523,7 @@ export default function DashboardScreen() {
         unit: 'unit', // Default unit
         image_uri: null,
         created_at: getCurrentDate(),
-        group_id: selectedGroupId, // Use selectedGroupId which is guaranteed to be non-null after validation
+        group_id: isLocalMode ? null : selectedGroupId, // Local Mode keeps food data private and ungrouped
         cloud_id: null, // New items start with no cloud_id
       };
 
@@ -538,7 +534,7 @@ export default function DashboardScreen() {
       }
 
       // If authenticated and online, sync the new/updated item to PostgreSQL
-      if (isAuthenticated && syncToServer) {
+      if (isCloudMode && isAuthenticated && syncToServer) {
         try {
           await syncToServer();
         } catch (syncError) {
@@ -572,7 +568,7 @@ export default function DashboardScreen() {
     setIsRefreshing(true);
     try {
       // If authenticated, check for internet and sync with cloud
-      if (isAuthenticated) {
+      if (isCloudMode && isAuthenticated) {
         // Check internet connectivity
         const netInfoState = await NetInfo.fetch();
         
@@ -628,11 +624,7 @@ export default function DashboardScreen() {
           );
         }
       } else {
-        Alert.alert(
-          'Sign In Required',
-          'Please sign in to your account to sync data with the cloud.',
-          [{ text: 'OK' }]
-        );
+        await refreshAll();
       }
       
       // Then refresh local data
@@ -731,6 +723,9 @@ export default function DashboardScreen() {
       flex: 1,
       padding: responsive.layout.spacing.container,
     },
+    dashboardLane: {
+      width: '100%',
+    },
     welcomeBanner: {
       backgroundColor: theme.primaryColor,
       borderRadius: responsive.getResponsiveValue({
@@ -800,6 +795,8 @@ export default function DashboardScreen() {
     statCard: {
       width: '30%',
       backgroundColor: theme.cardBackground,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
         largeTablet: 24,
@@ -881,6 +878,8 @@ export default function DashboardScreen() {
     locationCard: {
       width: '48%',
       backgroundColor: theme.cardBackground,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
         largeTablet: 24,
@@ -1124,6 +1123,7 @@ export default function DashboardScreen() {
       color: theme.successColor,
     },
     categoryList: {
+      width: '100%',
       marginBottom: 24,
     },
     categoryHeader: {
@@ -1141,6 +1141,8 @@ export default function DashboardScreen() {
     categoryCard: {
       width: '48%',
       backgroundColor: theme.cardBackground,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
       borderRadius: responsive.getResponsiveValue({
         tablet: 20,
         largeTablet: 24,
@@ -1322,12 +1324,7 @@ export default function DashboardScreen() {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      width: responsive.getResponsiveValue({
-        small: '95%',
-        default: '90%',
-        tablet: '80%',
-        largeTablet: '70%',
-      }),
+      width: '100%',
     },
     managementModalOverlay: {
       flex: 1,
@@ -1499,7 +1496,7 @@ export default function DashboardScreen() {
         <ScrollView 
           style={styles.content}
           contentContainerStyle={{
-            alignItems: 'center',
+            alignItems: 'stretch',
             paddingBottom: responsive.getResponsiveValue({
               small: 75,
               default: 85,
@@ -1508,14 +1505,7 @@ export default function DashboardScreen() {
             }),
           }}
         >
-          <View style={[styles.welcomeBanner, {
-            width: responsive.getResponsiveValue({
-              small: '95%',
-              default: '90%',
-              tablet: '80%',
-              largeTablet: '70%',
-            }),
-          }]}>
+          <View style={[styles.welcomeBanner, styles.dashboardLane]}>
             <View style={styles.welcomeText}>
               <Text style={styles.welcomeTitle}>{t('home.welcome')}</Text>
               {isAuthenticated && (
@@ -1547,14 +1537,7 @@ export default function DashboardScreen() {
 
           </View>
 
-          <View style={[styles.quickStats, {
-            width: responsive.getResponsiveValue({
-              small: '95%',
-              default: '90%',
-              tablet: '80%',
-              largeTablet: '70%',
-            }),
-          }]}>
+          <View style={[styles.quickStats, styles.dashboardLane]}>
             <TouchableOpacity 
               style={styles.statCard}
               onPress={() => router.push('/items/fresh')}
@@ -1587,14 +1570,7 @@ export default function DashboardScreen() {
               <FontAwesome name="pencil" size={20} color={theme.primaryColor} />
             </TouchableOpacity>
           </View>
-          <View style={[styles.locationGrid, {
-            width: responsive.getResponsiveValue({
-              small: '95%',
-              default: '90%',
-              tablet: '80%',
-              largeTablet: '70%',
-            }),
-          }]}>
+          <View style={[styles.locationGrid, styles.dashboardLane]}>
             {locations.map((location) => (
               <TouchableOpacity
                 key={location.id}

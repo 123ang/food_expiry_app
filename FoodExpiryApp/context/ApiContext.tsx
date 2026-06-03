@@ -12,15 +12,23 @@ import { FoodItemRepository, CategoryRepository, LocationRepository } from '../d
 import { getCurrentDateTimeISO, getCurrentDate } from '../utils/dateUtils';
 import * as FileSystem from 'expo-file-system';
 
+export type ProductMode = 'local' | 'cloud';
+
+const PRODUCT_MODE_STORAGE_KEY = 'expiry_alert_product_mode';
+
 // Define types
 interface ApiContextType {
   // Authentication - simplified for single login
   user: LocalUser | null;
   loading: boolean;
+  productMode: ProductMode;
+  isLocalMode: boolean;
+  isCloudMode: boolean;
   isAuthenticated: boolean;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  startLocalMode: () => Promise<void>;
   
   // Groups & Sync
   currentGroup: Group | null;
@@ -57,6 +65,11 @@ interface GroupMembership {
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
+
+const getStoredProductMode = async (): Promise<ProductMode | null> => {
+  const storedMode = await AsyncStorage.getItem(PRODUCT_MODE_STORAGE_KEY);
+  return storedMode === 'cloud' || storedMode === 'local' ? storedMode : null;
+};
 
 // Helper functions for session storage
 const getStoredSession = async (email: string) => {
@@ -107,6 +120,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<LocalUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [productMode, setProductModeState] = useState<ProductMode>('local');
   const [currentGroup, setCurrentGroup] = useState<Group | null>(null);
   const [userGroups, setUserGroups] = useState<GroupMembership[]>([]);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error'>('idle');
@@ -115,8 +129,14 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const database = useDatabase();
 
-  // Simplified authentication state
-  const isAuthenticated = !!user;
+  const setProductMode = async (mode: ProductMode) => {
+    setProductModeState(mode);
+    await AsyncStorage.setItem(PRODUCT_MODE_STORAGE_KEY, mode);
+  };
+
+  const isLocalMode = productMode === 'local';
+  const isCloudMode = productMode === 'cloud';
+  const isAuthenticated = isCloudMode && !!user;
 
   // Use Supabase client instead of custom API requests
 
@@ -130,6 +150,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const activeUser = await getActiveLocalUser();
       
       if (!activeUser) {
+        setProductModeState('local');
         setLoading(false);
         return;
       }
@@ -139,6 +160,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!accessToken) {
         // Clear invalid user data if no token
         await deactivateUser(activeUser.supabase_id);
+        await setProductMode('local');
         setLoading(false);
         return;
       }
@@ -160,6 +182,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             last_login: getCurrentDateTimeISO()
           };
           await saveUserToLocal(localUser);
+          await setProductMode('cloud');
           setUser(localUser);
           
           // Auto-load user data (groups, etc.)
@@ -168,11 +191,13 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // Token is invalid, clear user data
           await deactivateUser(activeUser.supabase_id);
           await apiClient.clearTokens();
+          await setProductMode('local');
         }
       } catch (tokenError) {
         // Token validation failed, clear user data
         await deactivateUser(activeUser.supabase_id);
         await apiClient.clearTokens();
+        await setProductMode('local');
       }
       
       setLoading(false);
@@ -184,6 +209,15 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        const storedProductMode = await getStoredProductMode();
+        if (storedProductMode === 'local') {
+          setProductModeState('local');
+          setLoading(false);
+          return;
+        }
+        if (storedProductMode === 'cloud') {
+          setProductModeState('cloud');
+        }
         // Check for local user - this will also load user data if found
         await checkLocalUser();
       } catch (error) {
@@ -214,6 +248,10 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Only runs after groups have been loaded
   useEffect(() => {
     const autoSyncOnGroupChange = async () => {
+      if (isLocalMode) {
+        return;
+      }
+
       // Wait until groups are loaded before syncing
       if (!currentGroup || !user || !isOnline || syncStatus === 'syncing' || userGroups.length === 0) {
         if (userGroups.length === 0) {
@@ -1107,10 +1145,10 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // Only auto-sync if we're authenticated, have a group, and groups are loaded
-    if (isAuthenticated && currentGroup && isOnline && userGroups.length > 0) {
+    if (isCloudMode && isAuthenticated && currentGroup && isOnline && userGroups.length > 0) {
       autoSyncOnGroupChange();
     }
-  }, [currentGroup?.id, isAuthenticated, isOnline, userGroups.length]); // Sync when group changes or groups are loaded
+  }, [currentGroup?.id, isAuthenticated, isCloudMode, isLocalMode, isOnline, userGroups.length]); // Sync when group changes or groups are loaded
 
   const loadUserData = async (userId: string) => {
     try {
@@ -1247,6 +1285,22 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const startLocalMode = async () => {
+    await apiClient.clearTokens();
+    setUser(null);
+    setToken(null);
+    setCurrentGroup(null);
+    setUserGroups([]);
+    setSyncStatus('idle');
+    setLastSyncTime(null);
+    await AsyncStorage.multiRemove([
+      'manually_selected_group_id',
+      'personal_group_id',
+    ]);
+    await setProductMode('local');
+    setLoading(false);
+  };
+
   const signUp = async (email: string, password: string, userData: any): Promise<void> => {
     try {
       // Sign up with PostgreSQL backend via AuthService
@@ -1282,6 +1336,8 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error('Failed to retrieve saved user');
       }
       
+      await setProductMode('cloud');
+
       // Set user state
       setUser(savedUser);
       
@@ -1346,6 +1402,8 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         throw new Error('Failed to retrieve saved user');
       }
       
+      await setProductMode('cloud');
+
       // Set user state
       setUser(savedUser);
       
@@ -1379,6 +1437,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setToken(null);
       setCurrentGroup(null);
       setUserGroups([]);
+      await setProductMode('local');
       
       // Clear manually selected group
       try {
@@ -1393,6 +1452,7 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setToken(null);
       setCurrentGroup(null);
       setUserGroups([]);
+      await setProductMode('local');
       
       // Clear manually selected group
       try {
@@ -1604,6 +1664,12 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
    * - Both directions are synchronized
    */
   const syncToServer = async (): Promise<void> => {
+    if (isLocalMode) {
+      await database.refreshAll();
+      setSyncStatus('idle');
+      return;
+    }
+
     if (!isOnline) {
       Alert.alert('Offline Mode', 'You are currently offline. Please connect to the internet to sync.');
       return;
@@ -2440,10 +2506,14 @@ export const ApiProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const value: ApiContextType = {
     user,
     loading,
+    productMode,
+    isLocalMode,
+    isCloudMode,
     isAuthenticated,
     signUp,
     signIn,
     signOut,
+    startLocalMode,
     currentGroup,
     userGroups,
     createGroup,

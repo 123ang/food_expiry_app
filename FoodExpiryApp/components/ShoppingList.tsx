@@ -52,17 +52,21 @@ const ShoppingItemComponent: React.FC<ShoppingItemProps> = ({
   const colors = theme;
 
   return (
-    <View style={styles.itemContainer}>
+    <View style={[styles.itemContainer, { backgroundColor: colors.cardBackground, borderBottomColor: colors.borderColor }]}>
       <TouchableOpacity style={styles.checkbox} onPress={onToggle}>
         <Ionicons
-          name={item.done ? 'checkbox' : 'square-outline'}
-          size={24}
+          name={item.done ? 'checkmark-circle' : 'ellipse-outline'}
+          size={26}
           color={colors.primaryColor}
         />
       </TouchableOpacity>
 
       <View style={styles.itemContent}>
-        <Text style={[styles.itemText, item.done && styles.itemTextDone, { color: colors.textColor }]}>
+        <Text style={[
+          styles.itemText,
+          item.done && styles.itemTextDone,
+          { color: item.done ? colors.textSecondary : colors.textColor },
+        ]}>
           {item.name}
         </Text>
       </View>
@@ -80,17 +84,23 @@ const ShoppingItemComponent: React.FC<ShoppingItemProps> = ({
           </TouchableOpacity>
         )}
         {item.done && (
-          <TouchableOpacity onPress={onAddToFoodItems} style={styles.actionButton}>
-            <Ionicons name="add-circle" size={20} color={colors.primaryColor} />
+          <TouchableOpacity
+            onPress={onAddToFoodItems}
+            style={[styles.rowCtaButton, { backgroundColor: `${colors.primaryColor}1F` }]}
+          >
+            <Ionicons name="add-circle" size={18} color={colors.primaryColor} />
           </TouchableOpacity>
         )}
         {!item.done && (
-          <TouchableOpacity onPress={onEdit} style={styles.actionButton}>
-            <Ionicons name="pencil" size={20} color={colors.textColor} />
+          <TouchableOpacity
+            onPress={onEdit}
+            style={[styles.rowCtaButton, { backgroundColor: `${colors.primaryColor}1F` }]}
+          >
+            <Ionicons name="pencil" size={16} color={colors.primaryColor} />
           </TouchableOpacity>
         )}
         <TouchableOpacity onPress={onDelete} style={styles.actionButton}>
-          <Ionicons name="trash-outline" size={20} color={colors.dangerColor} />
+          <Ionicons name="trash-outline" size={18} color={colors.dangerColor} />
         </TouchableOpacity>
       </View>
     </View>
@@ -241,6 +251,26 @@ export const ShoppingList: React.FC<ShoppingListProps> = ({ items, onItemsChange
         renderItem={renderItem}
         keyExtractor={item => item.id.toString()}
         style={styles.list}
+        contentContainerStyle={items.length === 0 ? styles.emptyListContent : undefined}
+        ListEmptyComponent={
+          <View style={[
+            styles.emptyState,
+            {
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.borderColor,
+            },
+          ]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: `${colors.primaryColor}18` }]}>
+              <Ionicons name="cart-outline" size={28} color={colors.primaryColor} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.textColor }]}>
+              {t('shoppingList.noItems')}
+            </Text>
+            <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
+              {t('list.tapAddToAddItem')}
+            </Text>
+          </View>
+        }
       />
 
       {/* Clear Completed Button */}
@@ -357,12 +387,45 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+  },
+  emptyState: {
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+  },
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  emptyDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 56,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   checkbox: {
     marginRight: 12,
@@ -382,12 +445,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButton: {
-    padding: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 4,
+  },
+  rowCtaButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 4,
   },
   itemThumbnail: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     marginRight: 8,
   },
   clearButton: {

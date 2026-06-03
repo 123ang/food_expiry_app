@@ -5,6 +5,8 @@ import { useApi } from '../context/ApiContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDatabase } from '../database/database';
 
+type CountRow = { count: number };
+
 const SyncDebugger: React.FC = () => {
   const [syncInfo, setSyncInfo] = useState<any>({});
   const [loading, setLoading] = useState(false);
@@ -52,9 +54,9 @@ const SyncDebugger: React.FC = () => {
     try {
       const db = await getDatabase();
       if (db) {
-        const pendingFoodItems = await db.getFirstAsync("SELECT COUNT(*) as count FROM food_items WHERE sync_status = 'pending'");
-        const pendingCategories = await db.getFirstAsync("SELECT COUNT(*) as count FROM categories WHERE sync_status = 'pending'");
-        const pendingLocations = await db.getFirstAsync("SELECT COUNT(*) as count FROM locations WHERE sync_status = 'pending'");
+        const pendingFoodItems = await db.getFirstAsync<CountRow>("SELECT COUNT(*) as count FROM food_items WHERE sync_status = 'pending'");
+        const pendingCategories = await db.getFirstAsync<CountRow>("SELECT COUNT(*) as count FROM categories WHERE sync_status = 'pending'");
+        const pendingLocations = await db.getFirstAsync<CountRow>("SELECT COUNT(*) as count FROM locations WHERE sync_status = 'pending'");
         
         info.pendingCounts = {
           foodItems: pendingFoodItems?.count || 0,
@@ -71,9 +73,9 @@ const SyncDebugger: React.FC = () => {
     try {
       const db = await getDatabase();
       if (db) {
-        const conflictFoodItems = await db.getFirstAsync("SELECT COUNT(*) as count FROM food_items WHERE sync_status = 'conflict'");
-        const conflictCategories = await db.getFirstAsync("SELECT COUNT(*) as count FROM categories WHERE sync_status = 'conflict'");
-        const conflictLocations = await db.getFirstAsync("SELECT COUNT(*) as count FROM locations WHERE sync_status = 'conflict'");
+        const conflictFoodItems = await db.getFirstAsync<CountRow>("SELECT COUNT(*) as count FROM food_items WHERE sync_status = 'conflict'");
+        const conflictCategories = await db.getFirstAsync<CountRow>("SELECT COUNT(*) as count FROM categories WHERE sync_status = 'conflict'");
+        const conflictLocations = await db.getFirstAsync<CountRow>("SELECT COUNT(*) as count FROM locations WHERE sync_status = 'conflict'");
         
         info.conflictCounts = {
           foodItems: conflictFoodItems?.count || 0,

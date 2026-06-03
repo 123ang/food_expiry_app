@@ -53,13 +53,13 @@ export function BottomNav() {
       bottom: 0,
       left: 0,
       right: 0,
-      backgroundColor: theme.cardBackground,
+      backgroundColor: theme.backgroundColor,
       borderTopWidth: 1,
       borderTopColor: theme.borderColor,
       flexDirection: 'row',
       justifyContent: 'space-around',
       paddingBottom: Platform.OS === 'ios' ? 30 : 12,
-      paddingTop: 12,
+      paddingTop: 8,
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: -2 },
       shadowOpacity: 1,
@@ -80,7 +80,7 @@ export function BottomNav() {
       borderRadius: 28,
       justifyContent: 'center',
       alignItems: 'center',
-      marginTop: -28,
+      marginTop: -20,
       shadowColor: theme.shadowColor,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 1,
@@ -99,9 +99,9 @@ export function BottomNav() {
 
   const navItems = [
     { name: t('nav.home'), icon: 'home', path: '/' },
-    { name: t('nav.list'), icon: 'list', path: '/list' },
-    { name: t('nav.add'), icon: 'plus', path: '/add' },
     { name: t('nav.calendar'), icon: 'calendar', path: '/calendar' },
+    { name: t('nav.add'), icon: 'plus', path: '/add' },
+    { name: t('nav.list'), icon: 'list', path: '/list' },
     { name: t('nav.settings'), icon: 'cog', path: '/settings' },
   ];
 

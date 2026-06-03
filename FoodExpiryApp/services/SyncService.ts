@@ -57,6 +57,11 @@ interface SyncResult {
   } | null;
 }
 
+type DeletedRecord = {
+  item_id: number;
+  table_name: 'food_items' | 'categories' | 'locations' | 'wish_items' | 'shopping_items';
+};
+
 /**
  * Service to handle synchronization between local SQLite database and cloud
  */
@@ -183,7 +188,7 @@ export class SyncService {
     const lastSync = this.lastSyncTime?.toISOString() || '1970-01-01T00:00:00Z';
     
     // Track deleted items
-    const deletedItems = {
+    const deletedItems: NonNullable<LocalChanges['deletedItems']> = {
       foodItems: [],
       categories: [],
       locations: [],
@@ -192,17 +197,17 @@ export class SyncService {
     };
     
     // Collect changes from each table
-    let categories = [];
-    let locations = [];
-    let foodItems = [];
-    let wishItems = [];
-    let shoppingItems = [];
+    let categories: any[] = [];
+    let locations: any[] = [];
+    let foodItems: any[] = [];
+    let wishItems: any[] = [];
+    let shoppingItems: any[] = [];
     
     if (db) {
       try {
         // Get deleted items from local tracking table if it exists
         try {
-          const deletedRecords = await db.getAllAsync('SELECT * FROM deleted_items WHERE deleted_at > ?', [lastSync]);
+          const deletedRecords = await db.getAllAsync<DeletedRecord>('SELECT * FROM deleted_items WHERE deleted_at > ?', [lastSync]);
           deletedRecords.forEach(record => {
             const id = record.item_id;
             switch(record.table_name) {

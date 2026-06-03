@@ -24,8 +24,8 @@ import { BottomNav } from '../components/BottomNav';
 import { Category, Location } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
+import { ThemeType } from '../theme/index';
 
-import { useResponsive } from '../hooks/useResponsive';
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
 import { getItemCategoryName, getItemLocationName } from '../utils/translationHelpers';
 
@@ -47,6 +47,112 @@ type SettingItem = {
   onValueChange?: (value: boolean) => void;
   onPress?: () => void;
 };
+
+type SettingsSection = {
+  id: string;
+  title: string;
+  items: SettingItem[];
+};
+
+type ThemeTypeOption = {
+  id: ThemeType;
+  nameKey: string;
+  descriptionKey: string;
+  fallbackName: string;
+  fallbackDescription: string;
+  colors: string[];
+};
+
+const themeOptions: ThemeTypeOption[] = [
+  {
+    id: 'original',
+    nameKey: 'settings.themeOriginal',
+    descriptionKey: 'settings.themeOriginalDesc',
+    fallbackName: 'Original',
+    fallbackDescription: 'Clean white background with dark green accents',
+    colors: ['#F8F9FA', '#2E7D32', '#FFFFFF'],
+  },
+  {
+    id: 'recycled',
+    nameKey: 'settings.themeRecycled',
+    descriptionKey: 'settings.themeRecycledDesc',
+    fallbackName: 'Recycled',
+    fallbackDescription: 'Warm eco-friendly peach and cream tones',
+    colors: ['#F3C88B', '#4CAF50', '#FDF0C0'],
+  },
+  {
+    id: 'darkBrown',
+    nameKey: 'settings.themeDarkBrown',
+    descriptionKey: 'settings.themeDarkBrownDesc',
+    fallbackName: 'Dark Brown',
+    fallbackDescription: 'Dark warm brown with green accents',
+    colors: ['#2C2417', '#4CAF50', '#3D3426'],
+  },
+  {
+    id: 'black',
+    nameKey: 'settings.themeBlack',
+    descriptionKey: 'settings.themeBlackDesc',
+    fallbackName: 'Black',
+    fallbackDescription: 'Pure black background with high contrast',
+    colors: ['#000000', '#4CAF50', '#1A1A1A'],
+  },
+  {
+    id: 'blue',
+    nameKey: 'settings.themeBlue',
+    descriptionKey: 'settings.themeBlueDesc',
+    fallbackName: 'Blue',
+    fallbackDescription: 'Cool blue tones with light backgrounds',
+    colors: ['#c1d9e3', '#5b88a8', '#edf4f7'],
+  },
+  {
+    id: 'green',
+    nameKey: 'settings.themeGreen',
+    descriptionKey: 'settings.themeGreenDesc',
+    fallbackName: 'Green',
+    fallbackDescription: 'Natural earth tones with green accents',
+    colors: ['#dbe1c0', '#3d6a28', '#fafaf0'],
+  },
+  {
+    id: 'softPink',
+    nameKey: 'settings.themeSoftPink',
+    descriptionKey: 'settings.themeSoftPinkDesc',
+    fallbackName: 'Soft Pink',
+    fallbackDescription: 'Warm and cozy pink tones',
+    colors: ['#fce7dd', '#a37d6c', '#f5d3d3'],
+  },
+  {
+    id: 'brightPink',
+    nameKey: 'settings.themeBrightPink',
+    descriptionKey: 'settings.themeBrightPinkDesc',
+    fallbackName: 'Bright Pink',
+    fallbackDescription: 'Vibrant and energetic pink theme',
+    colors: ['#fdd0d4', '#ad5b62', '#ffe5e5'],
+  },
+  {
+    id: 'naturalGreen',
+    nameKey: 'settings.themeYellow',
+    descriptionKey: 'settings.themeYellowDesc',
+    fallbackName: 'Yellow',
+    fallbackDescription: 'Warm and bright yellow tones',
+    colors: ['#fbfcee', '#3971b8', '#f6e6a5'],
+  },
+  {
+    id: 'mintRed',
+    nameKey: 'settings.themeMintRed',
+    descriptionKey: 'settings.themeMintRedDesc',
+    fallbackName: 'Mint-Red',
+    fallbackDescription: 'Fresh mint with vibrant red accents',
+    colors: ['#d8f2c9', '#ef5f5f', '#8cd1b8'],
+  },
+  {
+    id: 'darkGold',
+    nameKey: 'settings.themeDarkGold',
+    descriptionKey: 'settings.themeDarkGoldDesc',
+    fallbackName: 'Dark Gold',
+    fallbackDescription: 'Elegant dark theme with gold accents',
+    colors: ['#2c2c2c', '#b6862e', '#494949'],
+  },
+];
 
 type EditModalProps = {
   visible: boolean;
@@ -842,25 +948,38 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 16,
     // Remove paddingBottom to avoid conflicts with contentContainerStyle
+  },
+  settingsSectionWrapper: {
+    width: '100%',
+    marginBottom: 18,
+  },
+  settingsSectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.textSecondary,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   section: {
     backgroundColor: theme.cardBackground,
     borderRadius: 12,
-    marginBottom: 24,
+    marginBottom: 0,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: theme.borderColor,
-    alignSelf: 'center',
+    width: '100%',
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.borderColor,
+    minHeight: 64,
   },
   settingItemLast: {
     borderBottomWidth: 0,
@@ -1056,7 +1175,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginLeft: 8,
   },
   customHeader: {
-    backgroundColor: theme.cardBackground,
+    backgroundColor: theme.backgroundColor,
     padding: 16,
     paddingTop: 50,
     borderBottomWidth: 1,
@@ -1328,7 +1447,7 @@ export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { categories: allCategories, locations: allLocations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, deleteAllExpired, foodItems } = useDatabase();
-  const { user, isAuthenticated, signOut, currentGroup } = useApi();
+  const { user, isAuthenticated, productMode, isLocalMode, signOut, currentGroup } = useApi();
   
   // Filter categories and locations by current group (same as in home/dashboard)
   const categories = useMemo(() => {
@@ -1372,7 +1491,6 @@ export default function SettingsScreen() {
   }, [allLocations, currentGroup?.id]);
   const localUser = user; // ApiContext uses 'user' instead of 'localUser'
   // Note: isOnlineMode and isOfflineMode are not in ApiContext, and createFamilySubscription is not needed for PostgreSQL
-  const responsive = useResponsive();
   const router = useRouter();
 
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -1391,32 +1509,8 @@ export default function SettingsScreen() {
   };
 
   const getThemeDisplayName = (themeType: string) => {
-    switch (themeType) {
-      case 'original':
-        return t('settings.themeOriginal') || 'Original (White & Green)';
-      case 'recycled':
-        return t('settings.themeRecycled') || 'Recycled (Warm & Eco)';
-      case 'darkBrown':
-        return t('settings.themeDarkBrown') || 'Dark Brown Theme';
-      case 'black':
-        return t('settings.themeBlack') || 'Black Theme';
-      case 'blue':
-        return t('settings.themeBlue') || 'Blue Theme';
-      case 'green':
-        return t('settings.themeGreen') || 'Green Theme';
-      case 'softPink':
-        return t('settings.themeSoftPink') || 'Soft Pink Theme';
-      case 'brightPink':
-        return t('settings.themeBrightPink') || 'Bright Pink Theme';
-      case 'naturalGreen':
-        return t('settings.themeYellow') || 'Yellow Theme';
-      case 'mintRed':
-        return t('settings.themeMintRed') || 'Mint-Red Theme';
-      case 'darkGold':
-        return t('settings.themeDarkGold') || 'Dark Gold Theme';
-      default:
-        return themeType;
-    }
+    const option = themeOptions.find((themeOption) => themeOption.id === themeType);
+    return option ? (t(option.nameKey) || option.fallbackName) : themeType;
   };
 
   const settings: SettingItem[] = [
@@ -1429,9 +1523,26 @@ export default function SettingsScreen() {
       onPress: () => setShowLanguageModal(true),
     },
     {
+      id: 'productMode',
+      icon: 'shield',
+      title: t('settings.privateLocalMode'),
+      description: productMode === 'local'
+        ? t('settings.privateLocalModeDescription')
+        : t('settings.cloudModeDescription'),
+      type: 'navigation',
+      onPress: () => {
+        Alert.alert(
+          t('settings.localModeInfoTitle'),
+          isLocalMode
+            ? t('settings.localModeInfoMessage')
+            : t('settings.cloudModeDescription')
+        );
+      },
+    },
+    {
       id: 'account',
       icon: 'user',
-      title: isAuthenticated ? (t('settings.account') || 'Account') : 'Login',
+      title: isAuthenticated ? (t('settings.account') || 'Account') : t('settings.cloudSync'),
       description: isAuthenticated 
         ? (user?.email || localUser?.email || 'Loading...')
         : 'Sign in to sync data and access premium features',
@@ -1526,6 +1637,36 @@ export default function SettingsScreen() {
       },
     },
   ];
+
+  const getSettingById = (id: string) => settings.find((item) => item.id === id);
+  const buildSection = (id: string, title: string, itemIds: string[]): SettingsSection => ({
+    id,
+    title,
+    items: itemIds.map(getSettingById).filter((item): item is SettingItem => Boolean(item)),
+  });
+
+  const settingsSections: SettingsSection[] = [
+    buildSection(
+      'accountGroups',
+      t('settings.sectionAccountGroups') || 'Account & Groups',
+      ['productMode', 'account', 'groups']
+    ),
+    buildSection(
+      'preferences',
+      t('settings.sectionPreferences') || 'Preferences',
+      ['language', 'theme']
+    ),
+    buildSection(
+      'management',
+      t('settings.sectionManagement') || 'Management',
+      ['categories', 'locations', 'notifications']
+    ),
+    buildSection(
+      'data',
+      t('settings.sectionData') || 'Data & Inventory',
+      ['clearExpired', 'clearUsed']
+    ),
+  ].filter((section) => section.items.length > 0);
 
   // Logout button - separate from other settings for prominent display
   const logoutButton: SettingItem = {
@@ -1815,6 +1956,50 @@ export default function SettingsScreen() {
     </Modal>
   );
 
+  const renderThemeOption = (themeOption: ThemeTypeOption, index: number) => {
+    const isSelected = currentThemeType === themeOption.id;
+
+    return (
+      <TouchableOpacity
+        key={themeOption.id}
+        style={[styles.languageOption, index === themeOptions.length - 1 && styles.settingItemLast]}
+        onPress={() => {
+          setTheme(themeOption.id);
+          setShowThemeModal(false);
+        }}
+      >
+        <View style={styles.themeOption}>
+          <View style={styles.themePreview}>
+            {themeOption.colors.map((color, colorIndex) => (
+              <View
+                key={color}
+                style={[
+                  styles.themeColorBox,
+                  {
+                    backgroundColor: color,
+                    borderColor: theme.borderColor,
+                    borderWidth: colorIndex === 0 || colorIndex === themeOption.colors.length - 1 ? StyleSheet.hairlineWidth : 0,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+          <View style={styles.themeInfo}>
+            <Text style={[styles.languageText, isSelected && styles.languageSelected]}>
+              {t(themeOption.nameKey) || themeOption.fallbackName}
+            </Text>
+            <Text style={styles.themeDescription}>
+              {t(themeOption.descriptionKey) || themeOption.fallbackDescription}
+            </Text>
+          </View>
+        </View>
+        {isSelected && (
+          <FontAwesome name="check" size={16} color={theme.primaryColor} />
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   const renderThemeModal = () => (
     <Modal
       visible={showThemeModal}
@@ -1822,18 +2007,18 @@ export default function SettingsScreen() {
       animationType="fade"
       onRequestClose={() => setShowThemeModal(false)}
     >
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.modalOverlay}
         activeOpacity={1}
         onPress={() => setShowThemeModal(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.languageModal, { maxHeight: '80%', flex: 0 }]}
           activeOpacity={1}
           onPress={(e) => e.stopPropagation()}
         >
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: theme.textColor }]}>
+            <Text style={[styles.modalTitle, { color: theme.textColor }]}> 
               {t('settings.theme') || 'Choose Theme'}
             </Text>
             <TouchableOpacity
@@ -1843,354 +2028,14 @@ export default function SettingsScreen() {
               <FontAwesome name="times" size={20} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
-          
-          <ScrollView 
+
+          <ScrollView
             style={{ maxHeight: 400 }}
             contentContainerStyle={{ paddingBottom: 8 }}
             showsVerticalScrollIndicator={true}
             bounces={false}
           >
-            {/* Original Theme */}
-            <TouchableOpacity
-              style={styles.languageOption}
-            onPress={() => {
-              setTheme('original');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#F8F9FA', borderColor: '#CED4DA', borderWidth: 1 }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#2E7D32' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#FFFFFF', borderColor: '#CED4DA', borderWidth: 1 }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'original' && styles.languageSelected
-                ]}>
-                  {t('settings.themeOriginal') || 'Original'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeOriginalDesc') || 'Improved contrast white theme with better visibility'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'original' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Recycled Theme */}
-          <TouchableOpacity
-            style={styles.languageOption}
-            onPress={() => {
-              setTheme('recycled');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#F3C88B' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#4CAF50' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#FDF0C0' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'recycled' && styles.languageSelected
-                ]}>
-                  {t('settings.themeRecycled') || 'Recycled'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeRecycledDesc') || 'Warm eco-friendly peach and cream tones'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'recycled' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Dark Brown Theme */}
-          <TouchableOpacity
-            style={styles.languageOption}
-            onPress={() => {
-              setTheme('darkBrown');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#2C2417' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#4CAF50' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#3D3426' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'darkBrown' && styles.languageSelected
-                ]}>
-                  {t('settings.themeDarkBrown') || 'Dark Brown'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeDarkBrownDesc') || 'Dark warm brown with green accents'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'darkBrown' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Black Theme */}
-          <TouchableOpacity
-            style={styles.languageOption}
-            onPress={() => {
-              setTheme('black');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#000000' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#4CAF50' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#1A1A1A' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'black' && styles.languageSelected
-                ]}>
-                  {t('settings.themeBlack') || 'Black'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeBlackDesc') || 'Pure black background with high contrast'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'black' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Blue Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 0 }]}
-            onPress={() => {
-              setTheme('blue');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#c1d9e3' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#5b88a8' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#edf4f7' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'blue' && styles.languageSelected
-                ]}>
-                  {t('settings.themeBlue') || 'Blue'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeBlueDesc') || 'Cool blue tones with light backgrounds'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'blue' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Green Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
-            onPress={() => {
-              setTheme('green');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#dbe1c0' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#3d6a28' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#fafaf0' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'green' && styles.languageSelected
-                ]}>
-                  {t('settings.themeGreen') || 'Green'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeGreenDesc') || 'Natural earth tones with green accents'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'green' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Soft Pink Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
-            onPress={() => {
-              setTheme('softPink');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#fce7dd' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#a37d6c' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#f5d3d3' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'softPink' && styles.languageSelected
-                ]}>
-                  {t('settings.themeSoftPink') || 'Soft Pink'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeSoftPinkDesc') || 'Warm and cozy pink tones'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'softPink' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Bright Pink Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
-            onPress={() => {
-              setTheme('brightPink');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#fdd0d4' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#ad5b62' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#ffe5e5' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'brightPink' && styles.languageSelected
-                ]}>
-                  {t('settings.themeBrightPink') || 'Bright Pink'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeBrightPinkDesc') || 'Vibrant and energetic pink theme'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'brightPink' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Natural Green Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
-            onPress={() => {
-              setTheme('naturalGreen');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#fbfcee' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#3971b8' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#f6e6a5' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'naturalGreen' && styles.languageSelected
-                ]}>
-                  {t('settings.themeYellow') || 'Yellow'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeYellowDesc') || 'Warm and bright yellow tones'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'naturalGreen' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Mint-Red Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 1, borderBottomColor: theme.borderColor }]}
-            onPress={() => {
-              setTheme('mintRed');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#d8f2c9' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#ef5f5f' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#8cd1b8' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'mintRed' && styles.languageSelected
-                ]}>
-                  {t('settings.themeMintRed') || 'Mint-Red'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeMintRedDesc') || 'Fresh mint with vibrant red accents'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'mintRed' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-
-          {/* Dark Gold Theme */}
-          <TouchableOpacity
-            style={[styles.languageOption, { borderBottomWidth: 0 }]}
-            onPress={() => {
-              setTheme('darkGold');
-              setShowThemeModal(false);
-            }}
-          >
-            <View style={styles.themeOption}>
-              <View style={styles.themePreview}>
-                <View style={[styles.themeColorBox, { backgroundColor: '#2c2c2c' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#b6862e' }]} />
-                <View style={[styles.themeColorBox, { backgroundColor: '#494949' }]} />
-              </View>
-              <View style={styles.themeInfo}>
-                <Text style={[
-                  styles.languageText,
-                  currentThemeType === 'darkGold' && styles.languageSelected
-                ]}>
-                  {t('settings.themeDarkGold') || 'Dark Gold'}
-                </Text>
-                <Text style={styles.themeDescription}>
-                  {t('settings.themeDarkGoldDesc') || 'Elegant dark theme with gold accents'}
-                </Text>
-              </View>
-            </View>
-            {currentThemeType === 'darkGold' && (
-              <FontAwesome name="check" size={16} color={theme.primaryColor} />
-            )}
-          </TouchableOpacity>
-          
+            {themeOptions.map(renderThemeOption)}
           </ScrollView>
         </TouchableOpacity>
       </TouchableOpacity>
@@ -2415,39 +2260,25 @@ export default function SettingsScreen() {
           style={styles.content}
           contentContainerStyle={{ 
             paddingBottom: Platform.OS === 'ios' ? 120 : 100, // Sufficient space for bottom navigation
-            alignItems: 'center',
+            alignItems: 'stretch',
           }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={[
-            styles.section,
-            {
-              width: responsive.getResponsiveValue({
-                small: '95%',        // Almost full width on small screens
-                tablet: '80%',       // 80% width on tablets
-                largeTablet: '70%',  // 70% width on large tablets
-                default: '90%'       // 90% width on default phones
-              })
-            }
-          ]}>
-            {settings.map((item, index) => renderSettingItem(item, index, settings.length))}
-          </View>
+          {settingsSections.map((section) => (
+            <View key={section.id} style={styles.settingsSectionWrapper}>
+              <Text style={styles.settingsSectionTitle}>{section.title}</Text>
+              <View style={styles.section}>
+                {section.items.map((item, index) => renderSettingItem(item, index, section.items.length))}
+              </View>
+            </View>
+          ))}
 
           {/* Logout Button Section - Separate section when authenticated */}
           {isAuthenticated && (
-            <View style={[
-              styles.section,
-              {
-                width: responsive.getResponsiveValue({
-                  small: '95%',
-                  tablet: '80%',
-                  largeTablet: '70%',
-                  default: '90%'
-                }),
-                marginTop: 8, // Add some space between sections
-              }
-            ]}>
-              {renderSettingItem(logoutButton, 0, 1, true)}
+            <View style={styles.settingsSectionWrapper}>
+              <View style={styles.section}>
+                {renderSettingItem(logoutButton, 0, 1, true)}
+              </View>
             </View>
           )}
           

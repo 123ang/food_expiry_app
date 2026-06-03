@@ -222,11 +222,15 @@ export default function AddScreen() {
         quantity: parseInt(quantity) || 1,
         category_id: selectedCategory,
         location_id: selectedLocation,
+        group_id: null,
+        cloud_id: null,
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 3,
         notes: notes.trim() || null,
         image_uri: finalImageUri,
-        created_at: new Date().toISOString().split('T')[0]
+        created_at: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString(),
+        sync_status: 'pending',
       };
 
       const id = await createFoodItem(item);

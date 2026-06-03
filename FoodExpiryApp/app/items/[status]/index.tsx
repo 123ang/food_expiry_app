@@ -74,7 +74,7 @@ const FoodItemCard: React.FC<{
         />
       ) : (
         <View style={styles.placeholderImage}>
-          <CategoryIcon iconName={item.category_icon} size={32} />
+          <CategoryIcon iconName={item.category_icon} size={24} />
         </View>
       )}
       <View style={styles.foodInfo}>
@@ -302,17 +302,20 @@ export default function ItemStatusScreen() {
     },
     foodItem: {
       flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      minHeight: 64,
+      marginBottom: 8,
       borderWidth: 1,
       borderColor: theme.borderColor,
     },
     foodImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       marginRight: 12,
     },
     foodInfo: {
@@ -325,7 +328,7 @@ export default function ItemStatusScreen() {
     },
     foodName: {
       flex: 1,
-      fontSize: 18,
+      fontSize: 15,
       fontWeight: '600',
       color: theme.textColor,
     },
@@ -342,7 +345,7 @@ export default function ItemStatusScreen() {
     },
     foodMeta: {
       flexDirection: 'column',
-      gap: 8,
+      gap: 6,
     },
     metaItem: {
       flexDirection: 'row',
@@ -351,12 +354,12 @@ export default function ItemStatusScreen() {
     metaText: {
       marginLeft: 8,
       color: theme.textSecondary,
-      fontSize: 14,
+      fontSize: 12,
     },
     placeholderImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       marginRight: 12,
       backgroundColor: `${theme.primaryColor}20`,
       justifyContent: 'center',
@@ -385,9 +388,9 @@ export default function ItemStatusScreen() {
       fontWeight: '600',
     },
     emojiImageContainer: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       marginRight: 12,
       backgroundColor: `${theme.primaryColor}10`,
       justifyContent: 'center',
@@ -396,7 +399,7 @@ export default function ItemStatusScreen() {
       borderColor: theme.borderColor,
     },
     emojiImage: {
-      fontSize: 48,
+      fontSize: 24,
       textAlign: 'center',
     },
   });

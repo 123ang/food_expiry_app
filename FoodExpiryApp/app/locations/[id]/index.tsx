@@ -83,7 +83,7 @@ const FoodItemCard: React.FC<{
     <TouchableOpacity style={styles.foodItem} onPress={onPress}>
       {isEmojiImage && emojiValue ? (
         <View style={styles.placeholderImage}>
-          <Text style={{ fontSize: 40 }}>{emojiValue}</Text>
+          <Text style={{ fontSize: 24 }}>{emojiValue}</Text>
         </View>
       ) : item.image_uri && !imageError ? (
         <Image
@@ -93,7 +93,7 @@ const FoodItemCard: React.FC<{
         />
       ) : (
         <View style={styles.placeholderImage}>
-          <CategoryIcon iconName={item.category_icon} size={32} />
+          <CategoryIcon iconName={item.category_icon} size={24} />
         </View>
       )}
       <View style={styles.foodInfo}>
@@ -233,23 +233,26 @@ export default function LocationDetailScreen() {
     },
     foodItem: {
       flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: theme.cardBackground,
       borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      minHeight: 64,
+      marginBottom: 8,
       borderWidth: 1,
       borderColor: theme.borderColor,
     },
     foodImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       marginRight: 12,
     },
     placeholderImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 8,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       marginRight: 12,
       backgroundColor: `${theme.primaryColor}20`,
       justifyContent: 'center',
@@ -265,7 +268,7 @@ export default function LocationDetailScreen() {
     },
     foodName: {
       flex: 1,
-      fontSize: 18,
+      fontSize: 15,
       fontWeight: '600',
       color: theme.textColor,
     },
@@ -282,7 +285,7 @@ export default function LocationDetailScreen() {
     },
     foodMeta: {
       flexDirection: 'column',
-      gap: 8,
+      gap: 6,
     },
     metaItem: {
       flexDirection: 'row',
@@ -290,7 +293,7 @@ export default function LocationDetailScreen() {
     },
     metaText: {
       marginLeft: 8,
-      fontSize: 14,
+      fontSize: 12,
       color: theme.textSecondary,
     },
     daysNumber: {

@@ -229,6 +229,7 @@ export default function EditScreen() {
     try {
       // Image is already processed by picker functions, just use it directly
       const finalImageUri = imageUri;
+      const existingItem = foodItems.find(item => item.id === Number(id));
 
       // Update the food item directly
       await updateFoodItem({
@@ -237,11 +238,15 @@ export default function EditScreen() {
         quantity: parseInt(quantity),
         category_id: selectedCategory,
         location_id: selectedLocation,
+        group_id: existingItem?.group_id ?? null,
+        cloud_id: existingItem?.cloud_id ?? null,
         expiry_date: expiryDate.toISOString().split('T')[0],
         reminder_days: parseInt(reminderDays) || 0,
         notes: notes.trim(),
         image_uri: finalImageUri,
         created_at: getCurrentDate(),
+        updated_at: new Date().toISOString(),
+        sync_status: 'pending',
       });
       
       // Refresh data

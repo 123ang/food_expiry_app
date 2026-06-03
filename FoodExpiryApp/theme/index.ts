@@ -13,6 +13,7 @@ export interface Theme {
   borderColor: string;
   shadowColor: string;
   textSecondary: string;
+  placeholderColor: string;
   successColor: string;
   warningColor: string;
   dangerColor: string;
@@ -42,6 +43,7 @@ export const originalTheme: Theme = {
   borderColor: '#CED4DA',         // Darker gray borders for better visibility
   shadowColor: 'rgba(0, 0, 0, 0.15)', // Stronger shadow for better card definition
   textSecondary: '#9CA3AF',       // Lighter gray for inactive tabs (better contrast)
+  placeholderColor: '#6B7280',    // Match iOS placeholder token
   successColor: '#2E7D32',        // Dark green for success
   warningColor: '#FF9800',        // Orange for warnings
   dangerColor: '#F44336',         // Red for danger
@@ -69,6 +71,7 @@ export const recycledTheme: Theme = {
   borderColor: '#E8DCC6',        // Soft border color
   shadowColor: 'rgba(0, 0, 0, 0.1)',
   textSecondary: '#8A7A6B',      // Lighter brown for inactive tabs (better contrast from active)
+  placeholderColor: '#6B6348',   // Match iOS placeholder token
   successColor: '#2E7D32',       // Match new primary color
   warningColor: '#F4A460',       // Sandy brown for warnings
   dangerColor: '#CD5C5C',        // Indian red for dangers
@@ -96,6 +99,7 @@ export const darkBrownTheme: Theme = {
   borderColor: 'rgba(245, 239, 231, 0.2)',
   shadowColor: 'rgba(0, 0, 0, 0.3)',
   textSecondary: '#C0B494',      // Warm gray for secondary text
+  placeholderColor: '#C0B494',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Updated to match new accent green
   warningColor: '#F4A460',
   dangerColor: '#CD5C5C',
@@ -123,6 +127,7 @@ export const blackTheme: Theme = {
   borderColor: 'rgba(255, 255, 255, 0.1)', // Subtle white borders
   shadowColor: 'rgba(0, 0, 0, 0.5)', // Strong shadow
   textSecondary: '#B0B0B0',      // Light gray for secondary text
+  placeholderColor: '#A0A0A0',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Bright green for success
   warningColor: '#FFA726',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -150,6 +155,7 @@ export const blueTheme: Theme = {
   borderColor: '#a1c0d8',        // Light blue borders
   shadowColor: 'rgba(45, 78, 104, 0.2)', // Blue-tinted shadow
   textSecondary: '#9BB5CC',      // Lighter blue for inactive tabs
+  placeholderColor: '#4a5d6d',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -177,6 +183,7 @@ export const greenTheme: Theme = {
   borderColor: '#d8c58d',        // Golden beige borders
   shadowColor: 'rgba(61, 106, 40, 0.2)', // Green-tinted shadow
   textSecondary: '#A8B88E',      // Lighter green for inactive tabs
+  placeholderColor: '#4a5a70',   // Match iOS placeholder token
   successColor: '#2d4e20',       // Darker green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -204,6 +211,7 @@ export const softPinkTheme: Theme = {
   borderColor: '#e9c9b2',        // Light brown borders
   shadowColor: 'rgba(68, 40, 28, 0.2)', // Brown-tinted shadow
   textSecondary: '#C4A193',      // Lighter brown-pink for inactive tabs
+  placeholderColor: '#6B4A3A',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -231,6 +239,7 @@ export const brightPinkTheme: Theme = {
   borderColor: '#f2bcbc',        // Medium pink borders
   shadowColor: 'rgba(60, 29, 32, 0.2)', // Dark red-tinted shadow
   textSecondary: '#D18B94',      // Lighter pink for inactive tabs
+  placeholderColor: '#5a3a38',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -258,6 +267,7 @@ export const naturalGreenTheme: Theme = {
   borderColor: '#c8d69b',        // Light green borders
   shadowColor: 'rgba(24, 32, 32, 0.1)', // Subtle shadow with text color tint
   textSecondary: '#7A9C6E',      // Light green for inactive tabs
+  placeholderColor: '#4a5a40',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger
@@ -285,6 +295,7 @@ export const mintRedTheme: Theme = {
   borderColor: '#68b9a6',        // Teal borders
   shadowColor: 'rgba(0, 0, 0, 0.1)', // Subtle shadow
   textSecondary: '#2E5B4F',      // Darker teal for inactive tabs (better contrast)
+  placeholderColor: '#1E4A3F',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#d84444',        // Match primary for danger
@@ -312,6 +323,7 @@ export const darkGoldTheme: Theme = {
   borderColor: '#3e3e42',        // Dark gray borders
   shadowColor: 'rgba(0, 0, 0, 0.3)', // Strong shadow
   textSecondary: '#999999',      // Light gray for inactive tabs
+  placeholderColor: '#B0B0B0',   // Match iOS placeholder token
   successColor: '#4CAF50',       // Green for success
   warningColor: '#FF9800',       // Orange for warnings
   dangerColor: '#F44336',        // Red for danger

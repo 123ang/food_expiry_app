@@ -128,8 +128,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [dataVersion, setDataVersion] = useState(1);
 
   // Debounce mechanism to prevent rapid successive refresh calls
-  const refreshDebounceRef = useRef<number | null>(null);
-  const refreshAllDebounceRef = useRef<number | null>(null);
+  const refreshDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshAllDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cache refs with proper typing
   const categoriesCache = useRef<CacheEntry<Category[]> | null>(null);

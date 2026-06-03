@@ -37,6 +37,10 @@ import {
 
 type Tab = 'shopping' | 'wish';
 
+const isShoppingItem = (item: ShoppingItem | WishItem): item is ShoppingItem => {
+  return 'quantity' in item;
+};
+
 interface ListItemProps {
   item: ShoppingItem | WishItem;
   onToggle: () => void;
@@ -46,27 +50,36 @@ interface ListItemProps {
 }
 
 const ListItem: React.FC<ListItemProps> = ({ item, onToggle, onDelete, onEdit, onImagePress }) => {
-  const { colors } = useTheme();
+  const { theme } = useTheme();
+  const colors = {
+    primary: theme.primaryColor,
+    text: theme.textColor,
+    error: theme.dangerColor,
+  };
 
   return (
-    <View style={styles.itemContainer}>
+    <View style={[styles.itemContainer, { backgroundColor: theme.cardBackground, borderBottomColor: theme.borderColor }]}>
       <TouchableOpacity style={styles.checkbox} onPress={onToggle}>
         <Ionicons
-          name={item.done ? 'checkbox' : 'square-outline'}
-          size={24}
+          name={item.done ? 'checkmark-circle' : 'ellipse-outline'}
+          size={26}
           color={colors.primary}
         />
       </TouchableOpacity>
 
       <View style={styles.itemContent}>
-        <Text style={[styles.itemText, item.done && styles.itemTextDone]}>
+        <Text style={[
+          styles.itemText,
+          item.done && styles.itemTextDone,
+          { color: item.done ? theme.textSecondary : theme.textColor },
+        ]}>
           {item.name}
         </Text>
-        {item.quantity && (
-          <Text style={styles.itemQuantity}>x{item.quantity}</Text>
+        {isShoppingItem(item) && item.quantity && (
+          <Text style={[styles.itemQuantity, { color: theme.textSecondary }]}>x{item.quantity}</Text>
         )}
         {'price' in item && item.price && (
-          <Text style={styles.itemPrice}>{item.price}</Text>
+          <Text style={[styles.itemPrice, { color: theme.textSecondary }]}>{item.price}</Text>
         )}
       </View>
 
@@ -77,12 +90,15 @@ const ListItem: React.FC<ListItemProps> = ({ item, onToggle, onDelete, onEdit, o
           </TouchableOpacity>
         )}
         {!item.done && (
-          <TouchableOpacity onPress={onEdit} style={styles.actionButton}>
-            <Ionicons name="pencil" size={20} color={colors.text} />
+          <TouchableOpacity
+            onPress={onEdit}
+            style={[styles.rowCtaButton, { backgroundColor: `${theme.primaryColor}1F` }]}
+          >
+            <Ionicons name="pencil" size={16} color={colors.primary} />
           </TouchableOpacity>
         )}
         <TouchableOpacity onPress={onDelete} style={styles.actionButton}>
-          <Ionicons name="trash-outline" size={20} color={colors.error} />
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
         </TouchableOpacity>
       </View>
     </View>
@@ -90,7 +106,15 @@ const ListItem: React.FC<ListItemProps> = ({ item, onToggle, onDelete, onEdit, o
 };
 
 export const ListScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { theme } = useTheme();
+  const colors = {
+    primary: theme.primaryColor,
+    text: theme.textColor,
+    error: theme.dangerColor,
+    background: theme.backgroundColor,
+    card: theme.cardBackground,
+    border: theme.borderColor,
+  };
   const { t } = useLanguage();
   const { currentGroup } = useApi();
   const [activeTab, setActiveTab] = useState<Tab>('shopping');
@@ -196,10 +220,10 @@ export const ListScreen: React.FC = () => {
 
   const handleToggleItem = async (item: ShoppingItem | WishItem) => {
     try {
-      if ('price' in item) {
-        await toggleWishItemDone(item.id);
-      } else {
+      if (isShoppingItem(item)) {
         await toggleShoppingItemDone(item.id);
+      } else {
+        await toggleWishItemDone(item.id);
       }
       await loadItems();
     } catch (error) {
@@ -209,10 +233,10 @@ export const ListScreen: React.FC = () => {
 
   const handleDeleteItem = async (item: ShoppingItem | WishItem) => {
     try {
-      if ('price' in item) {
-        await deleteWishItem(item.id);
-      } else {
+      if (isShoppingItem(item)) {
         await deleteShoppingItem(item.id);
+      } else {
+        await deleteWishItem(item.id);
       }
       await loadItems();
     } catch (error) {
@@ -223,8 +247,8 @@ export const ListScreen: React.FC = () => {
   const handleEditItem = (item: ShoppingItem | WishItem) => {
     setEditingItem(item);
     setNewItemName(item.name);
-    setNewItemQuantity(item.quantity?.toString() || '');
-    if ('price' in item) {
+    setNewItemQuantity(isShoppingItem(item) ? item.quantity?.toString() || '' : '');
+    if (!isShoppingItem(item)) {
       setNewItemPrice(item.price || '');
     }
     setNewItemImage(item.image_uri || null);
@@ -235,19 +259,18 @@ export const ListScreen: React.FC = () => {
     if (!editingItem || !newItemName.trim()) return;
 
     try {
-      if ('price' in editingItem) {
-        await updateWishItem({
-          ...editingItem,
-          name: newItemName.trim(),
-          quantity: newItemQuantity ? parseInt(newItemQuantity, 10) : undefined,
-          price: newItemPrice.trim() || undefined,
-          image_uri: newItemImage,
-        });
-      } else {
+      if (isShoppingItem(editingItem)) {
         await updateShoppingItem({
           ...editingItem,
           name: newItemName.trim(),
           quantity: newItemQuantity ? parseInt(newItemQuantity, 10) : undefined,
+          image_uri: newItemImage,
+        });
+      } else {
+        await updateWishItem({
+          ...editingItem,
+          name: newItemName.trim(),
+          price: newItemPrice.trim() || undefined,
           image_uri: newItemImage,
         });
       }
@@ -616,9 +639,10 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 56,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   checkbox: {
     marginRight: 12,
@@ -627,12 +651,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemText: {
-    fontSize: 16,
-    color: '#212121',
+    fontSize: 15,
+    fontWeight: '600',
   },
   itemTextDone: {
     textDecorationLine: 'line-through',
-    color: '#9e9e9e',
   },
   itemQuantity: {
     fontSize: 14,
@@ -649,12 +672,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButton: {
-    padding: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 4,
+  },
+  rowCtaButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 4,
   },
   itemThumbnail: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     marginRight: 8,
   },
   clearButton: {

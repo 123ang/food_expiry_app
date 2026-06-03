@@ -49,6 +49,15 @@ interface LocalSyncData {
   images: Record<string, string>; // Base64 encoded images
 }
 
+type DeletedSyncRow = {
+  cloud_id: string | null;
+  table_name: 'categories' | 'locations' | 'food_items' | 'wish_items' | 'shopping_items';
+};
+
+type CloudIdRow = {
+  cloud_id: string | null;
+};
+
 /**
  * Service to handle synchronization between local SQLite database and Supabase
  */
@@ -96,7 +105,8 @@ export class SupabaseSyncService {
       }
     } catch (error) {
       console.error('Error updating database for sync:', error);
-      throw new Error(`Failed to update database for sync: ${error.message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to update database for sync: ${message}`);
     }
   }
   
@@ -162,10 +172,11 @@ export class SupabaseSyncService {
       };
     } catch (error) {
       console.error('Supabase sync failed:', error);
+      const message = error instanceof Error ? error.message : String(error);
       this.syncInProgress = false;
       return {
         success: false,
-        error: error.message,
+        error: message,
         syncedAt: null,
         stats: null
       };
@@ -225,13 +236,13 @@ export class SupabaseSyncService {
     
     try {
       // Get deleted items from tracking table
-      const deletedItemsResult = await db.getAllAsync(
+      const deletedItemsResult = await db.getAllAsync<DeletedSyncRow>(
         'SELECT * FROM deleted_items WHERE deleted_at > ? AND group_id = ?',
         [lastSyncTimeStr, groupId]
       );
       
       // Categorize by table
-      const result = {
+      const result: LocalSyncData['deletedItems'] = {
         categories: [],
         locations: [],
         foodItems: [],
@@ -882,7 +893,7 @@ export class SupabaseSyncService {
       // Get the cloud_id if available before tracking
       let cloudId = null;
       try {
-        const item = await db.getFirstAsync(`SELECT cloud_id FROM ${tableName} WHERE id = ?`, [itemId]);
+        const item = await db.getFirstAsync<CloudIdRow>(`SELECT cloud_id FROM ${tableName} WHERE id = ?`, [itemId]);
         if (item) {
           cloudId = item.cloud_id;
         }
@@ -940,4 +951,3 @@ export class SupabaseSyncService {
 
 // Create a singleton instance
 export const supabaseSyncService = new SupabaseSyncService();
-

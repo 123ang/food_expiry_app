@@ -15,13 +15,15 @@ import {
 import { router } from 'expo-router'
 import { useTheme } from '../../context/ThemeContext'
 import { useApi } from '../../context/ApiContext'
+import { useLanguage } from '../../context/LanguageContext'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const { theme } = useTheme()
-  const { isAuthenticated, loading: authLoading, signIn } = useApi()
+  const { t } = useLanguage()
+  const { isAuthenticated, loading: authLoading, signIn, startLocalMode } = useApi()
 
   // Redirect to home if already authenticated
   useEffect(() => {
@@ -52,6 +54,11 @@ export default function LoginScreen() {
 
   const goToSignUp = () => {
     router.push('/auth/signup' as any)
+  }
+
+  const handleStartLocalMode = async () => {
+    await startLocalMode()
+    router.replace('/')
   }
 
   // Show loading screen while checking authentication
@@ -154,6 +161,18 @@ export default function LoginScreen() {
                 Don't have an account? Sign Up
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.secondaryButton, { borderColor: theme.borderColor, backgroundColor: theme.cardBackground }]}
+              onPress={handleStartLocalMode}
+            >
+              <Text style={[styles.secondaryButtonText, { color: theme.textColor }]}>
+                {t('login.continueLocal')}
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.localModeNote, { color: theme.textSecondary }]}>
+              {t('login.localModeNote')}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -223,6 +242,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  localModeNote: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 10,
   },
   linkButton: {
     alignItems: 'center',

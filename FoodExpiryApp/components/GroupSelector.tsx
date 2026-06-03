@@ -34,6 +34,17 @@ interface GroupSelectorProps {
   isLoading?: boolean;
 }
 
+type GroupLike = Omit<Group, 'invite_code' | 'max_members'> & {
+  invite_code?: string | null;
+  max_members?: number;
+};
+
+const normalizeGroup = (group: GroupLike): Group => ({
+  ...group,
+  invite_code: group.invite_code ?? null,
+  max_members: group.max_members ?? 1,
+});
+
 export const GroupSelector: React.FC<GroupSelectorProps> = ({
   selectedGroupId,
   onGroupChange,
@@ -63,7 +74,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
       }
       
       const newGroup = await createGroup(groupName, groupDescription);
-      onGroupChange(newGroup);
+      onGroupChange(normalizeGroup(newGroup));
       setShowModal(false);
       Alert.alert('Success', `${groupName} group created successfully!`);
     } catch (error) {
@@ -258,7 +269,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                     selectedGroupId === group.id && styles.selectedGroupItem
                   ]}
                   onPress={() => {
-                    onGroupChange(group);
+                    onGroupChange(normalizeGroup(group));
                     setShowModal(false);
                   }}
                 >
