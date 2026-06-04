@@ -25,6 +25,7 @@ import { Category, Location } from '../database/models';
 import CategoryIcon from '../components/CategoryIcon';
 import LocationIcon from '../components/LocationIcon';
 import { ThemeType } from '../theme/index';
+import { writeLocalDataExportFile, importLocalDataExportFromJson } from '../services/LocalDataPortabilityService';
 
 import { CATEGORY_EMOJIS, LOCATION_EMOJIS, EMOJI_CATEGORIES, EmojiItem, EmojiCategory } from '../constants/emojis';
 import { getItemCategoryName, getItemLocationName } from '../utils/translationHelpers';
@@ -1091,6 +1092,66 @@ const createStyles = (theme: any) => StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
   },
+  importModal: {
+    backgroundColor: theme.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    width: '90%',
+    maxWidth: 520,
+    maxHeight: '82%',
+  },
+  importInstructions: {
+    color: theme.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  importTextInput: {
+    minHeight: 180,
+    maxHeight: 280,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    borderRadius: 8,
+    padding: 12,
+    color: theme.textColor,
+    backgroundColor: theme.backgroundColor,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  importActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 16,
+  },
+  importCancelButton: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importPrimaryButton: {
+    minHeight: 44,
+    minWidth: 96,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: theme.primaryColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  importCancelButtonText: {
+    color: theme.textColor,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1446,7 +1507,7 @@ const EditModal: React.FC<EditModalProps> = ({
 export default function SettingsScreen() {
   const { theme, isDark, toggleTheme, currentThemeType, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
-  const { categories: allCategories, locations: allLocations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, deleteAllExpired, foodItems } = useDatabase();
+  const { categories: allCategories, locations: allLocations, createCategory, updateCategory, deleteCategory, createLocation, updateLocation, deleteLocation, deleteAllExpired, foodItems, refreshAll } = useDatabase();
   const { user, isAuthenticated, productMode, isLocalMode, signOut, currentGroup } = useApi();
   
   // Filter categories and locations by current group (same as in home/dashboard)
@@ -1502,6 +1563,9 @@ export default function SettingsScreen() {
   const [managementModalVisible, setManagementModalVisible] = useState(false);
   const [managementModalType, setManagementModalType] = useState<'categories' | 'locations'>('categories');
   const [showGroupManagementModal, setShowGroupManagementModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [isPortabilityBusy, setIsPortabilityBusy] = useState(false);
 
   const openManagementModal = (type: 'categories' | 'locations') => {
     setManagementModalType(type);
@@ -1636,6 +1700,26 @@ export default function SettingsScreen() {
         handleClearUsedItems();
       },
     },
+    {
+      id: 'exportLocal',
+      icon: 'download',
+      title: t('settings.exportLocalData'),
+      description: t('settings.exportLocalDataDescription'),
+      type: 'navigation',
+      onPress: () => {
+        handleExportLocalData();
+      },
+    },
+    {
+      id: 'importLocal',
+      icon: 'upload',
+      title: t('settings.importLocalData'),
+      description: t('settings.importLocalDataDescription'),
+      type: 'navigation',
+      onPress: () => {
+        setShowImportModal(true);
+      },
+    },
   ];
 
   const getSettingById = (id: string) => settings.find((item) => item.id === id);
@@ -1664,7 +1748,7 @@ export default function SettingsScreen() {
     buildSection(
       'data',
       t('settings.sectionData') || 'Data & Inventory',
-      ['clearExpired', 'clearUsed']
+      ['clearExpired', 'clearUsed', 'exportLocal', 'importLocal']
     ),
   ].filter((section) => section.items.length > 0);
 
@@ -1774,6 +1858,79 @@ export default function SettingsScreen() {
   const handleClearUsedItems = async () => {
     // Navigate to a selection screen where users can select items to mark as used/removed
     router.push('/clear-items');
+  };
+
+  const handleExportLocalData = async () => {
+    if (isPortabilityBusy) {
+      return;
+    }
+
+    try {
+      setIsPortabilityBusy(true);
+      const result = await writeLocalDataExportFile();
+
+      Alert.alert(
+        t('settings.exportLocalSuccessTitle'),
+        t('settings.exportLocalSuccessMessage')
+          .replace('{path}', result.uri)
+          .replace('{items}', result.exportData.data.food_items.length.toString())
+      );
+    } catch (error) {
+      Alert.alert(
+        t('common.error'),
+        error instanceof Error ? error.message : t('settings.importLocalError')
+      );
+    } finally {
+      setIsPortabilityBusy(false);
+    }
+  };
+
+  const handleImportLocalData = async () => {
+    if (isPortabilityBusy) {
+      return;
+    }
+
+    if (!importText.trim()) {
+      Alert.alert(t('common.error'), t('settings.importLocalError'));
+      return;
+    }
+
+    Alert.alert(
+      t('settings.importLocalConfirmTitle'),
+      t('settings.importLocalConfirmMessage'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('settings.importLocalButton'),
+          onPress: async () => {
+            try {
+              setIsPortabilityBusy(true);
+              const counts = await importLocalDataExportFromJson(importText);
+              await refreshAll();
+              setShowImportModal(false);
+              setImportText('');
+              Alert.alert(
+                t('settings.importLocalSuccessTitle'),
+                t('settings.importLocalSuccessMessage')
+                  .replace('{items}', counts.food_items.toString())
+                  .replace('{shopping}', counts.shopping_items.toString())
+                  .replace('{wishlist}', counts.wish_items.toString())
+              );
+            } catch (error) {
+              Alert.alert(
+                t('common.error'),
+                error instanceof Error ? error.message : t('settings.importLocalError')
+              );
+            } finally {
+              setIsPortabilityBusy(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const styles = createStyles(theme);
@@ -2042,6 +2199,79 @@ export default function SettingsScreen() {
     </Modal>
   );
 
+  const renderImportModal = () => (
+    <Modal
+      visible={showImportModal}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setShowImportModal(false)}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={() => setShowImportModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.importModal}
+          activeOpacity={1}
+          onPress={(event) => event.stopPropagation()}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: theme.textColor, marginBottom: 0 }]}>
+              {t('settings.importLocalTitle')}
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowImportModal(false)}
+            >
+              <FontAwesome name="times" size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.importInstructions}>
+            {t('settings.importLocalInstructions')}
+          </Text>
+
+          <TextInput
+            style={styles.importTextInput}
+            placeholder={t('settings.importLocalPlaceholder')}
+            placeholderTextColor={theme.textSecondary}
+            value={importText}
+            onChangeText={setImportText}
+            multiline
+            textAlignVertical="top"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <View style={styles.importActionRow}>
+            <TouchableOpacity
+              style={styles.importCancelButton}
+              onPress={() => {
+                setShowImportModal(false);
+                setImportText('');
+              }}
+              disabled={isPortabilityBusy}
+            >
+              <Text style={styles.importCancelButtonText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.importPrimaryButton, isPortabilityBusy && { opacity: 0.65 }]}
+              onPress={handleImportLocalData}
+              disabled={isPortabilityBusy}
+            >
+              {isPortabilityBusy ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.importButtonText}>{t('settings.importLocalButton')}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   const renderAboutModal = () => (
     <Modal
       visible={showAboutModal}
@@ -2293,6 +2523,7 @@ export default function SettingsScreen() {
 
         {renderLanguageModal()}
         {renderThemeModal()}
+        {renderImportModal()}
         {renderAboutModal()}
         <BottomNav />
       </View>
