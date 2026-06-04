@@ -794,6 +794,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const rescheduleLocalNotifications = async (): Promise<void> => {
+    try {
+      const latestItems = await FoodItemRepository.getAllWithDetails();
+      await simpleNotificationService.checkAllFoodItemsForExpiry(latestItems);
+    } catch (error) {
+      // Notification refresh must not block local data writes.
+    }
+  };
+
   const createFoodItem = async (item: FoodItem): Promise<number> => {
     
     const startTime = Date.now();
@@ -817,6 +826,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       
       setTimeout(() => performRegularBackup(), 1000);
+      void rescheduleLocalNotifications();
       
       const totalTime = Date.now() - startTime;
       
@@ -851,6 +861,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       
       setTimeout(() => performRegularBackup(), 1000);
+      void rescheduleLocalNotifications();
       
       const totalTime = Date.now() - startTime;
       
@@ -875,6 +886,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     
     // Trigger backup after data modification
     setTimeout(() => performRegularBackup(), 1000);
+    void rescheduleLocalNotifications();
   };
 
   const deleteAllExpired = async (): Promise<number> => {
@@ -889,6 +901,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Increment data version to notify screens of changes
       incrementDataVersion();
+      void rescheduleLocalNotifications();
       
       return deletedCount;
     } catch (error) {
@@ -908,6 +921,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       // Increment data version to notify screens of changes
       incrementDataVersion();
+      void rescheduleLocalNotifications();
       
       return deletedCount;
     } catch (error) {

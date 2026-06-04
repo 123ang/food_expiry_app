@@ -1,4 +1,4 @@
-import { getDatabase, getCurrentDate, calculateDaysUntilExpiry, isUsingFallbackStorage, getFallbackStorage, queuedDatabaseOperation } from './database';
+import { getDatabase, getCurrentDate, calculateDaysUntilExpiry, isUsingFallbackStorage, getFallbackStorage, queuedDatabaseOperation, readFallbackData, writeFallbackData } from './database';
 import { Category, Location, FoodItem, FoodItemWithDetails, hasId } from './models';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getCurrentDateTimeISO } from '../utils/dateUtils';
@@ -192,12 +192,11 @@ export const CategoryRepository: SyncableRepository<Category> = {
       try {
         // Check if we're using fallback storage first
         if (isUsingFallbackStorage()) {
-          const fallbackData = await AsyncStorage.getItem('fallback_data');
-          const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+          const data = await readFallbackData();
           const newId = Math.max(0, ...data.categories.map((c: any) => c.id || 0)) + 1;
           const newCategory = { ...item, id: newId };
           data.categories.push(newCategory);
-          await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+          await writeFallbackData(data);
           return newId;
         }
 
@@ -206,12 +205,11 @@ export const CategoryRepository: SyncableRepository<Category> = {
         
         if (!db) {
           // If no database available, try fallback
-          const fallbackData = await AsyncStorage.getItem('fallback_data');
-          const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+          const data = await readFallbackData();
           const newId = Math.max(0, ...data.categories.map((c: any) => c.id || 0)) + 1;
           const newCategory = { ...item, id: newId };
           data.categories.push(newCategory);
-          await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+          await writeFallbackData(data);
           return newId;
         }
         

@@ -1572,6 +1572,23 @@ export default function SettingsScreen() {
     setManagementModalVisible(true);
   };
 
+  const showCloudUpgradePrompt = () => {
+    Alert.alert(
+      t('settings.cloudOnlyFeatureTitle'),
+      t('settings.cloudOnlyFeatureMessage'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('settings.upgradeToCloud'),
+          onPress: () => router.push('/auth/login' as any),
+        },
+      ]
+    );
+  };
+
   const getThemeDisplayName = (themeType: string) => {
     const option = themeOptions.find((themeOption) => themeOption.id === themeType);
     return option ? (t(option.nameKey) || option.fallbackName) : themeType;
@@ -1635,7 +1652,7 @@ export default function SettingsScreen() {
             ]
           );
         } else {
-          router.push('/auth/login' as any);
+          showCloudUpgradePrompt();
         }
       },
     },

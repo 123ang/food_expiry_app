@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { getDatabase, queuedDatabaseOperation } from '../database/database';
+import { getDatabase, isUsingFallbackStorage, queuedDatabaseOperation } from '../database/database';
+import { webIndexedDbStorage, WebFallbackData } from './WebIndexedDbStorage';
 
 export const LOCAL_EXPORT_SCHEMA_VERSION = 1;
 
@@ -52,6 +53,47 @@ const createEmptyImportCounts = (): ImportCounts => ({
   shopping_items: 0,
   wish_items: 0,
 });
+
+const createExportFromData = (data: LocalExportData): LocalDataExport => ({
+  metadata: {
+    app: LOCAL_EXPORT_APP_NAME,
+    schemaVersion: LOCAL_EXPORT_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    tables: [...LOCAL_EXPORT_TABLES],
+  },
+  data,
+});
+
+const fallbackToExportData = (fallbackData: WebFallbackData): LocalExportData => ({
+  categories: fallbackData.categories,
+  locations: fallbackData.locations,
+  food_items: fallbackData.foodItems,
+  shopping_items: fallbackData.shoppingItems,
+  wish_items: fallbackData.wishItems,
+});
+
+export const createFallbackLocalDataExport = async (): Promise<LocalDataExport> => {
+  const fallbackData = await webIndexedDbStorage.exportFallbackData();
+  return createExportFromData(fallbackToExportData(fallbackData));
+};
+
+export const importFallbackLocalDataExport = async (exportData: LocalDataExport): Promise<ImportCounts> => {
+  await webIndexedDbStorage.importFallbackData({
+    categories: exportData.data.categories,
+    locations: exportData.data.locations,
+    foodItems: exportData.data.food_items,
+    shoppingItems: exportData.data.shopping_items,
+    wishItems: exportData.data.wish_items,
+  });
+
+  return {
+    categories: exportData.data.categories.length,
+    locations: exportData.data.locations.length,
+    food_items: exportData.data.food_items.length,
+    shopping_items: exportData.data.shopping_items.length,
+    wish_items: exportData.data.wish_items.length,
+  };
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -138,6 +180,10 @@ const validateLocalDataExport = (value: unknown): LocalDataExport => {
 
 export const createLocalDataExport = async (): Promise<LocalDataExport> => (
   queuedDatabaseOperation(async () => {
+    if (isUsingFallbackStorage()) {
+      return createFallbackLocalDataExport();
+    }
+
     const database = await getRequiredDatabase();
     const data = createEmptyExportData();
 
@@ -145,15 +191,7 @@ export const createLocalDataExport = async (): Promise<LocalDataExport> => (
       data[table] = await database.getAllAsync(`SELECT * FROM ${table} ORDER BY id`) as LocalExportRow[];
     }
 
-    return {
-      metadata: {
-        app: LOCAL_EXPORT_APP_NAME,
-        schemaVersion: LOCAL_EXPORT_SCHEMA_VERSION,
-        exportedAt: new Date().toISOString(),
-        tables: [...LOCAL_EXPORT_TABLES],
-      },
-      data,
-    };
+    return createExportFromData(data);
   }, 'createLocalDataExport')
 );
 
@@ -190,6 +228,10 @@ export const importLocalDataExportFromJson = async (json: string): Promise<Impor
   }
 
   const exportData = validateLocalDataExport(parsed);
+
+  if (isUsingFallbackStorage()) {
+    return importFallbackLocalDataExport(exportData);
+  }
 
   return queuedDatabaseOperation(async () => {
     const database = await getRequiredDatabase();

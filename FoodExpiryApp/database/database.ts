@@ -6,6 +6,7 @@ import { Category, Location, User } from './models';
 import * as FileSystem from 'expo-file-system/legacy';
 import { ALL_THEMES, getTranslatedThemes as translateThemesConst } from '../constants/categoryThemes';
 import { getCurrentDateTimeISO, toGMT8ISO } from '../utils/dateUtils';
+import { webIndexedDbStorage } from '../services/WebIndexedDbStorage';
 
 // --- DEBUG LOGGING ADDED ---
 // To ensure the database is initialized, call `await initDatabase()` at the very start of your app (e.g., in App.tsx or your main entry point, before any database usage).
@@ -148,6 +149,8 @@ interface FallbackStorage {
   categories: Category[];
   locations: Location[];
   foodItems: any[];
+  shoppingItems: any[];
+  wishItems: any[];
 }
 
 let db: SQLite.SQLiteDatabase | null = null;
@@ -459,18 +462,69 @@ const initializeFallback = async (): Promise<void> => {
   }
   
   try {
-    const existing = await AsyncStorage.getItem('fallback_data');
-    if (!existing) {
+    const existing = await readFallbackData();
+    if (
+      existing.categories.length === 0 &&
+      existing.locations.length === 0 &&
+      existing.foodItems.length === 0 &&
+      existing.shoppingItems.length === 0 &&
+      existing.wishItems.length === 0
+    ) {
       const fallbackData: FallbackStorage = {
         categories: [],
         locations: [],
-        foodItems: []
+        foodItems: [],
+        shoppingItems: [],
+        wishItems: [],
       };
-      await AsyncStorage.setItem('fallback_data', JSON.stringify(fallbackData));
+      await writeFallbackData(fallbackData);
     }
   } catch (error) {
     // Silent fallback
   }
+};
+
+export const readFallbackData = async (): Promise<FallbackStorage> => {
+  if (Platform.OS === 'web') {
+    return webIndexedDbStorage.readFallbackData();
+  }
+
+  const fallbackData = await AsyncStorage.getItem('fallback_data');
+  const parsed = fallbackData ? JSON.parse(fallbackData) : {};
+
+  return {
+    categories: parsed.categories || [],
+    locations: parsed.locations || [],
+    foodItems: parsed.foodItems || [],
+    shoppingItems: parsed.shoppingItems || [],
+    wishItems: parsed.wishItems || [],
+  };
+};
+
+export const writeFallbackData = async (data: Partial<FallbackStorage>): Promise<void> => {
+  const normalized: FallbackStorage = {
+    categories: data.categories || [],
+    locations: data.locations || [],
+    foodItems: data.foodItems || [],
+    shoppingItems: data.shoppingItems || [],
+    wishItems: data.wishItems || [],
+  };
+
+  if (Platform.OS === 'web') {
+    await webIndexedDbStorage.writeFallbackData(normalized);
+    return;
+  }
+
+  await AsyncStorage.setItem('fallback_data', JSON.stringify(normalized));
+};
+
+export const clearFallbackData = async (): Promise<void> => {
+  if (Platform.OS === 'web') {
+    await webIndexedDbStorage.clearFallbackData();
+    return;
+  }
+
+  await AsyncStorage.removeItem('fallback_data');
 };
 
 const getStoredLanguage = async (): Promise<Language> => {
@@ -574,7 +628,7 @@ export const resetDatabase = async (): Promise<void> => {
     }
 
     // Also clear any fallback storage
-    await AsyncStorage.removeItem('fallback_data');
+    await clearFallbackData();
 
     // Clear versioning and other metadata from AsyncStorage
     await AsyncStorage.removeItem(VERSION_KEY);
@@ -650,12 +704,8 @@ export const getFallbackStorage = () => {
   return {
     getAllCategories: async (): Promise<Category[]> => {
       try {
-        const fallbackData = await AsyncStorage.getItem('fallback_data');
-        if (fallbackData) {
-          const data: FallbackStorage = JSON.parse(fallbackData);
-          return data.categories;
-        }
-        return [];
+        const data = await readFallbackData();
+        return data.categories;
       } catch (error) {
         return [];
       }
@@ -663,12 +713,8 @@ export const getFallbackStorage = () => {
     
     getAllLocations: async (): Promise<Location[]> => {
       try {
-        const fallbackData = await AsyncStorage.getItem('fallback_data');
-        if (fallbackData) {
-          const data: FallbackStorage = JSON.parse(fallbackData);
-          return data.locations;
-        }
-        return [];
+        const data = await readFallbackData();
+        return data.locations;
       } catch (error) {
         return [];
       }
@@ -676,12 +722,8 @@ export const getFallbackStorage = () => {
     
     getAllFoodItems: async (): Promise<any[]> => {
       try {
-        const fallbackData = await AsyncStorage.getItem('fallback_data');
-        if (fallbackData) {
-          const data: FallbackStorage = JSON.parse(fallbackData);
-          return data.foodItems;
-        }
-        return [];
+        const data = await readFallbackData();
+        return data.foodItems;
       } catch (error) {
         return [];
       }
@@ -689,12 +731,11 @@ export const getFallbackStorage = () => {
 
     addFoodItem: async (item: any): Promise<number> => {
       try {
-        const fallbackData = await AsyncStorage.getItem('fallback_data');
-        const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+        const data = await readFallbackData();
         const newId = Math.max(0, ...data.foodItems.map((item: any) => item.id || 0)) + 1;
         const newItem = { ...item, id: newId };
         data.foodItems.push(newItem);
-        await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+        await writeFallbackData(data);
         return newId;
       } catch (error) {
         throw error;
@@ -703,12 +744,11 @@ export const getFallbackStorage = () => {
 
     updateFoodItem: async (item: any): Promise<void> => {
       try {
-        const fallbackData = await AsyncStorage.getItem('fallback_data');
-        const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+        const data = await readFallbackData();
         const index = data.foodItems.findIndex((i: any) => i.id === item.id);
         if (index !== -1) {
           data.foodItems[index] = item;
-          await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+          await writeFallbackData(data);
         }
       } catch (error) {
         throw error;
@@ -717,10 +757,9 @@ export const getFallbackStorage = () => {
 
     deleteFoodItem: async (id: number): Promise<void> => {
       try {
-        const fallbackData = await AsyncStorage.getItem('fallback_data');
-        const data = fallbackData ? JSON.parse(fallbackData) : { categories: [], locations: [], foodItems: [] };
+        const data = await readFallbackData();
         data.foodItems = data.foodItems.filter((item: any) => item.id !== id);
-        await AsyncStorage.setItem('fallback_data', JSON.stringify(data));
+        await writeFallbackData(data);
       } catch (error) {
         throw error;
       }
