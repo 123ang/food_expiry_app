@@ -1,5 +1,8 @@
 // Mock implementation for expo-in-app-purchases
 // TODO: Replace with actual expo-in-app-purchases when compatible version is available
+// Canonical pricing/tiers live in ../../../expiry_alert_ios/MONETIZATION.md.
+// Personal Lifetime is local-only. Premium/Family cloud features require an active
+// subscription. Replace this mock with RevenueCat + server-side entitlements.
 import { Platform } from 'react-native';
 
 export interface PurchaseItem {
@@ -35,14 +38,39 @@ class InAppPurchaseService {
   async getProducts(): Promise<PurchaseItem[]> {
     await this.initialize();
 
-    // Mock products
+    // Mock products aligned with the canonical catalog. Store configuration is
+    // still the source of truth for localized prices at implementation time.
     return [
       {
-        id: 'premium_package_annual',
-        title: 'Premium Package Annual',
-        description: 'Unlock all premium features for one year',
-        price: '$57.92',
-        priceAmount: 57.92,
+        id: 'personal_lifetime',
+        title: 'Personal Lifetime',
+        description: 'Unlock local personal features forever; cloud services excluded',
+        price: '$29.99',
+        priceAmount: 29.99,
+        currency: 'USD'
+      },
+      {
+        id: 'premium_monthly',
+        title: 'Premium Monthly',
+        description: 'Individual cloud backup, sync, and server-side alerts',
+        price: '$1.99',
+        priceAmount: 1.99,
+        currency: 'USD'
+      },
+      {
+        id: 'premium_annual',
+        title: 'Premium Annual',
+        description: 'Recommended individual cloud subscription',
+        price: '$14.99',
+        priceAmount: 14.99,
+        currency: 'USD'
+      },
+      {
+        id: 'family_annual',
+        title: 'Family Annual',
+        description: 'Shared household cloud features for up to 6 members',
+        price: '$24.99',
+        priceAmount: 24.99,
         currency: 'USD'
       }
     ];
@@ -88,4 +116,4 @@ class InAppPurchaseService {
   }
 }
 
-export const inAppPurchaseService = new InAppPurchaseService(); 
+export const inAppPurchaseService = new InAppPurchaseService();
