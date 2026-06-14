@@ -41,12 +41,13 @@ export const errorHandler = (
     message = 'Unauthorized';
   }
 
+  const exposeDebugDetails = process.env.EXPOSE_ERROR_DETAILS === 'true';
+
   // Send error response
   res.status(statusCode).json({
     error: message,
-    ...(process.env.NODE_ENV === 'development' && {
+    ...(exposeDebugDetails && {
       stack: err.stack,
-      details: err,
     }),
   });
 
@@ -74,4 +75,3 @@ export const asyncHandler = (fn: Function) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
-

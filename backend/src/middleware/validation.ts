@@ -1,6 +1,27 @@
 import { body, param, query, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
 
+const SENSITIVE_KEYS = new Set([
+  'password',
+  'code',
+  'token',
+  'refreshToken',
+  'accessToken',
+  'authorization',
+]);
+
+function redactSensitive(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(redactSensitive);
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+      key,
+      SENSITIVE_KEYS.has(key) ? '[REDACTED]' : redactSensitive(nestedValue),
+    ]),
+  );
+}
+
 // Middleware to check validation results
 export const validate = (req: Request, res: Response, next: NextFunction): void => {
   const errors = validationResult(req);
@@ -8,7 +29,7 @@ export const validate = (req: Request, res: Response, next: NextFunction): void 
     console.error('[VALIDATION ERROR]', {
       path: req.path,
       method: req.method,
-      body: req.body,
+      body: redactSensitive(req.body),
       errors: errors.array()
     });
     res.status(400).json({ 
@@ -24,7 +45,10 @@ export const validate = (req: Request, res: Response, next: NextFunction): void 
 export const authValidation = {
   register: [
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('password')
+      .isLength({ min: 10 }).withMessage('Password must be at least 10 characters')
+      .matches(/[A-Za-z]/).withMessage('Password must include a letter')
+      .matches(/\d/).withMessage('Password must include a number'),
     body('full_name').optional().trim().isLength({ min: 1, max: 255 }),
   ],
   login: [
@@ -39,7 +63,10 @@ export const authValidation = {
   ],
   // Reset: either (token + password) for link flow, or (email + code + password) for in-app flow
   resetPassword: [
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('password')
+      .isLength({ min: 10 }).withMessage('Password must be at least 10 characters')
+      .matches(/[A-Za-z]/).withMessage('Password must include a letter')
+      .matches(/\d/).withMessage('Password must include a number'),
     body('token').optional().isString().trim(),
     body('email').optional().isEmail().normalizeEmail(),
     body('code').optional().isString().trim().isLength({ min: 6, max: 6 }).withMessage('Code must be 6 digits'),
@@ -120,4 +147,3 @@ export const analyticsValidation = {
     query('months').optional().isInt({ min: 1, max: 24 }).withMessage('Months must be between 1 and 24'),
   ],
 };
-

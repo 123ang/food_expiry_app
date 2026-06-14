@@ -1,5 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -23,45 +25,62 @@ dotenv.config();
 // Create Express app
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.WEB_APP_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 // =====================================================
 // MIDDLEWARE
 // =====================================================
 
-// CORS configuration
-// Allow mobile apps (React Native) which may not send origin header
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
+
+// CORS configuration. Mobile apps usually send no Origin; browsers must match the allowlist.
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) {
+      return callback(null, !isProduction);
+    }
+
+    const developmentOrigins = ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:19006'];
+    const effectiveOrigins = isProduction ? allowedOrigins : [...developmentOrigins, ...allowedOrigins];
+
+    if (effectiveOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
-    const allowedOrigins = process.env.NODE_ENV === 'production'
-      ? [
-          process.env.WEB_APP_URL || 'https://expiry-alert.link',
-          'https://expiry-alert.link',
-          'https://www.expiry-alert.link',
-        ]
-      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:19006'];
-    
-    if (allowedOrigins.includes(origin)) {
+
+    if (!isProduction && (origin.startsWith('exp://') || origin.startsWith('expiryalert://'))) {
       return callback(null, true);
     }
-    
-    // Allow mobile app origins (React Native sends various origins)
-    if (origin.startsWith('exp://') || origin.startsWith('expiryalert://')) {
-      return callback(null, true);
-    }
-    
-    callback(null, true); // Allow all origins for API (mobile apps need this)
+
+    return callback(null, false);
   },
-  credentials: true,
+  credentials: false,
 }));
 
 // Body parsers
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: isProduction ? 300 : 3000,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: isProduction ? 25 : 250,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api', globalLimiter);
 
 // Static files (for uploaded images)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -82,7 +101,6 @@ app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
   });
 });
 
@@ -92,7 +110,7 @@ app.get('/reset-password', (_req, res) => {
 });
 
 // API routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/invitations', invitationRoutes);
@@ -119,23 +137,18 @@ app.use(errorHandler);
 // =====================================================
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err: Error) => {
-  console.error('💥 UNHANDLED REJECTION! Shutting down...');
-  console.error(err.name, err.message);
-  process.exit(1);
+  console.error('Unhandled rejection:', err.name, err.message);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err: Error) => {
-  console.error('💥 UNCAUGHT EXCEPTION! Shutting down...');
-  console.error(err.name, err.message);
-  process.exit(1);
+  console.error('Uncaught exception:', err.name, err.message);
 });
 
 export default app;
-

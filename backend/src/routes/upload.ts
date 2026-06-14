@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { authenticateToken } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 
@@ -9,8 +10,20 @@ const router = Router();
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../../uploads');
+const resolvedUploadsDir = path.resolve(uploadsDir);
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+function isSafeUploadFilename(filename: string): boolean {
+  return /^[A-Za-z0-9._-]+$/.test(filename) && !filename.includes('..');
+}
+
+function resolveUploadPath(filename: string): string | null {
+  if (!isSafeUploadFilename(filename)) return null;
+  const resolved = path.resolve(resolvedUploadsDir, filename);
+  if (!resolved.startsWith(`${resolvedUploadsDir}${path.sep}`)) return null;
+  return resolved;
 }
 
 // Configure multer storage
@@ -20,8 +33,8 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     // Generate unique filename: timestamp_randomUUID_originalname
-    const uniqueSuffix = `${Date.now()}_${Math.round(Math.random() * 1E9)}`;
-    const ext = path.extname(file.originalname);
+    const uniqueSuffix = `${Date.now()}_${crypto.randomUUID()}`;
+    const ext = path.extname(file.originalname).toLowerCase();
     const baseName = path.basename(file.originalname, ext);
     const sanitizedName = baseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
     cb(null, `${sanitizedName}_${uniqueSuffix}${ext}`);
@@ -57,8 +70,6 @@ router.post(
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     if (!req.file) {
-      console.error(`[UPLOAD] ❌ No file received in request`);
-      console.error(`[UPLOAD] Request body:`, req.body);
       res.status(400).json({ error: 'No image file provided' });
       return;
     }
@@ -116,7 +127,11 @@ router.delete(
   authenticateToken,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { filename } = req.params;
-    const filePath = path.join(uploadsDir, filename);
+    const filePath = resolveUploadPath(filename);
+    if (!filePath) {
+      res.status(400).json({ error: 'Invalid image filename' });
+      return;
+    }
 
     // Verify file exists
     if (!fs.existsSync(filePath)) {

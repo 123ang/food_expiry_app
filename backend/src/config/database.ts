@@ -23,6 +23,9 @@ if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
 // Create PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_SSL === 'true'
+    ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
+    : undefined,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
@@ -34,7 +37,6 @@ pool.on('connect', () => {
 
 pool.on('error', (err: Error) => {
   console.error('❌ Unexpected database error:', err);
-  process.exit(-1);
 });
 
 // Helper function to execute queries
@@ -55,4 +57,3 @@ export const getClient = async (): Promise<PoolClient> => {
 
 // Export the pool for direct access if needed
 export default pool;
-
