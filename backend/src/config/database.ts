@@ -1,48 +1,87 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Validate DATABASE_URL
-if (!process.env.DATABASE_URL) {
-  console.error('❌ DATABASE_URL is not set in .env file');
-  console.error('Please set DATABASE_URL in your backend/.env file');
-  console.error('Format: postgresql://username:password@localhost:5432/database_name');
-  process.exit(1);
+export interface DatabaseAdapter {
+  query<T extends QueryResultRow = any>(
+    text: string,
+    params?: readonly unknown[]
+  ): Promise<QueryResult<T>>;
+  getClient?: () => Promise<PoolClient>;
 }
 
-// Validate DATABASE_URL format
-const dbUrl = process.env.DATABASE_URL;
-if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
-  console.error('❌ Invalid DATABASE_URL format');
-  console.error('DATABASE_URL must start with postgresql:// or postgres://');
-  console.error('Current value:', dbUrl.substring(0, 20) + '...');
-  process.exit(1);
-}
+let pool: Pool | undefined;
+let injectedDatabase: DatabaseAdapter | undefined;
 
-// Create PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_SSL === 'true'
-    ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
-    : undefined,
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+const isTestEnvironment = () => process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
 
-// Test connection on startup
-pool.on('connect', () => {
-});
+const getDatabaseUrl = (): string => {
+  const dbUrl = process.env.DATABASE_URL;
 
-pool.on('error', (err: Error) => {
-  console.error('❌ Unexpected database error:', err);
-});
+  if (!dbUrl) {
+    const message = 'DATABASE_URL is not set. Expected postgresql://username:password@localhost:5432/database_name';
+
+    if (isTestEnvironment()) {
+      throw new Error(message);
+    }
+
+    console.error(message);
+    process.exit(1);
+  }
+
+  if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
+    const message = `Invalid DATABASE_URL format: ${dbUrl.substring(0, 20)}...`;
+
+    if (isTestEnvironment()) {
+      throw new Error(message);
+    }
+
+    console.error('DATABASE_URL must start with postgresql:// or postgres://');
+    console.error(message);
+    process.exit(1);
+  }
+
+  return dbUrl;
+};
+
+const getPool = (): Pool => {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: getDatabaseUrl(),
+      ssl: process.env.DATABASE_SSL === 'true'
+        ? { rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false' }
+        : undefined,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
+
+    pool.on('error', (err: Error) => {
+      console.error('Unexpected database error:', err);
+    });
+  }
+
+  return pool;
+};
+
+export const setDatabaseForTesting = (database?: DatabaseAdapter) => {
+  if (!isTestEnvironment()) {
+    throw new Error('setDatabaseForTesting can only be used while NODE_ENV=test');
+  }
+
+  injectedDatabase = database;
+};
 
 // Helper function to execute queries
-export const query = async (text: string, params?: any[]) => {
+export const query = async <T extends QueryResultRow = any>(
+  text: string,
+  params?: readonly unknown[]
+) => {
   try {
-    const res = await pool.query(text, params);
+    const res = injectedDatabase
+      ? await injectedDatabase.query<T>(text, params)
+      : await getPool().query<T>(text, params as unknown[]);
     return res;
   } catch (error) {
     console.error('Database query error:', error);
@@ -52,8 +91,24 @@ export const query = async (text: string, params?: any[]) => {
 
 // Helper function to get a client from the pool
 export const getClient = async (): Promise<PoolClient> => {
-  return await pool.connect();
+  if (injectedDatabase?.getClient) {
+    return await injectedDatabase.getClient();
+  }
+
+  return await getPool().connect();
 };
 
-// Export the pool for direct access if needed
-export default pool;
+export const closeDatabase = async () => {
+  injectedDatabase = undefined;
+
+  if (pool) {
+    await pool.end();
+    pool = undefined;
+  }
+};
+
+export default {
+  query,
+  getClient,
+  closeDatabase,
+};

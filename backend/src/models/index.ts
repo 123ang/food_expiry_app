@@ -218,6 +218,44 @@ export interface SyncLog {
   created_at: Date;
 }
 
+export type EntitlementKey = 'personal_lifetime' | 'premium' | 'family';
+export type EntitlementStatus = 'active' | 'grace_period' | 'billing_issue' | 'expired' | 'revoked';
+export type EntitlementEnvironment = 'sandbox' | 'production';
+export type EffectivePlan = 'free_local' | EntitlementKey;
+
+export interface Entitlement {
+  id: string;
+  user_id: string;
+  entitlement_key: EntitlementKey;
+  product_id: string;
+  provider: 'revenuecat';
+  status: EntitlementStatus;
+  environment: EntitlementEnvironment;
+  original_transaction_id?: string | null;
+  expires_at?: Date | null;
+  will_renew: boolean;
+  purchased_at?: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RevenueCatEvent {
+  event_id: string;
+  event_type: string;
+  app_user_id: string;
+  environment: EntitlementEnvironment;
+  payload: unknown;
+  received_at?: Date;
+  processed_at?: Date | null;
+}
+
+export interface EntitlementAccess {
+  effective_plan: EffectivePlan;
+  active_entitlements: EntitlementKey[];
+  expires_at: Date | null;
+  will_renew: boolean;
+}
+
 // Request/Response types
 export interface AuthTokens {
   accessToken: string;
@@ -258,4 +296,3 @@ export interface SyncResponse {
     pulled: number;
   };
 }
-
