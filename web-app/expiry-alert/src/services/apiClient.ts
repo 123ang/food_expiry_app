@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = process.env.NODE_ENV === 'development'
+const API_URL = import.meta.env.DEV
   ? 'http://localhost:3000/api'  // Development - backend is on port 3000
   : 'https://api.expiry-alert.link/api';  // Production
 

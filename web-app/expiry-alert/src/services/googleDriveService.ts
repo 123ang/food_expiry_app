@@ -1,4 +1,3 @@
-import { GoogleAuth } from 'google-auth-library';
 
 // Note: For production, you'll need to set up OAuth2 properly
 // This is a simplified version for demonstration
@@ -257,7 +256,7 @@ class GoogleDriveService {
 
   // Get OAuth2 URL for authentication
   getAuthUrl(): string {
-    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.REACT_APP_GOOGLE_CLIENT_ID;
     const redirectUri = encodeURIComponent(window.location.origin + '/auth/google');
     const scope = encodeURIComponent('https://www.googleapis.com/auth/drive.file');
     
@@ -273,8 +272,8 @@ class GoogleDriveService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID!,
-          client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET!,
+          client_id: import.meta.env.REACT_APP_GOOGLE_CLIENT_ID!,
+          client_secret: import.meta.env.REACT_APP_GOOGLE_CLIENT_SECRET!,
           code,
           grant_type: 'authorization_code',
           redirect_uri: window.location.origin + '/auth/google',

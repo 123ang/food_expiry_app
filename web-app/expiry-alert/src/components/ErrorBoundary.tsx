@@ -125,7 +125,7 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
           </button>
         </div>
 
-        {process.env.NODE_ENV === 'development' && error && (
+        {import.meta.env.DEV && error && (
           <details style={{ 
             textAlign: 'left', 
             backgroundColor: '#f8f9fa', 

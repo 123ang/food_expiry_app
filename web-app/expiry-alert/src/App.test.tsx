@@ -1,9 +1,7 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+test('renders the landing page for signed-out visitors', async () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
 });
