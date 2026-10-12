@@ -37,7 +37,7 @@ const CentralizedStorageSetup: React.FC = () => {
     setIsLoading(true);
     
     // Build OAuth URL manually
-    let clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    let clientId = import.meta.env.REACT_APP_GOOGLE_CLIENT_ID;
     
     // TEMPORARY: Hard-code values if env vars don't work
     if (!clientId) {
@@ -47,8 +47,8 @@ const CentralizedStorageSetup: React.FC = () => {
     
     // Debug: Print environment variables
     console.log('🔧 Debug - Environment Variables:');
-    console.log('REACT_APP_GOOGLE_CLIENT_ID:', process.env.REACT_APP_GOOGLE_CLIENT_ID);
-    console.log('REACT_APP_GOOGLE_CLIENT_SECRET:', process.env.REACT_APP_GOOGLE_CLIENT_SECRET);
+    console.log('REACT_APP_GOOGLE_CLIENT_ID:', import.meta.env.REACT_APP_GOOGLE_CLIENT_ID);
+    console.log('REACT_APP_GOOGLE_CLIENT_SECRET:', import.meta.env.REACT_APP_GOOGLE_CLIENT_SECRET);
     console.log('Using Client ID:', clientId);
     
     if (!clientId) {

@@ -55,7 +55,7 @@ class CentralizedGoogleDriveService {
 
   // App owner authentication (one-time setup)
   private async authenticateAppOwner(): Promise<void> {
-    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.REACT_APP_GOOGLE_CLIENT_ID;
     const redirectUri = encodeURIComponent(window.location.origin + '/auth/google/owner');
     const scope = encodeURIComponent('https://www.googleapis.com/auth/drive');
     
@@ -71,8 +71,11 @@ class CentralizedGoogleDriveService {
     try {
       console.log('🔧 Starting token exchange...');
       
-      const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || '1059614977887-v6eeiahl6drcr3fp9psq1fuljoa0gl4i.apps.googleusercontent.com';
-      const clientSecret = process.env.REACT_APP_GOOGLE_CLIENT_SECRET || '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';
+      const clientId = import.meta.env.REACT_APP_GOOGLE_CLIENT_ID;
+      const clientSecret = import.meta.env.REACT_APP_GOOGLE_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error('Google OAuth is not configured (REACT_APP_GOOGLE_CLIENT_ID / REACT_APP_GOOGLE_CLIENT_SECRET)');
+      }
       
       console.log('🔧 Using Client ID:', clientId);
       console.log('🔧 Redirect URI:', window.location.origin + '/auth/google/owner');
