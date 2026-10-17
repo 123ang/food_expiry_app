@@ -24,8 +24,6 @@ const ItemDetails = lazy(() => import('./components/ItemDetails'));
 const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
 const TermsAndConditions = lazy(() => import('./components/TermsAndConditions'));
 const Settings = lazy(() => import('./components/Settings'));
-const GoogleDriveAuth = lazy(() => import('./components/GoogleDriveAuth'));
-const GoogleDriveOwnerAuth = lazy(() => import('./components/GoogleDriveOwnerAuth'));
 const Analytics = lazy(() => import('./components/Analytics'));
 const ShoppingListPage = lazy(() => import('./components/ShoppingListPage'));
 const WishListPage = lazy(() => import('./components/WishListPage'));
@@ -358,8 +356,6 @@ const AppContent: React.FC = () => {
           } />
 
           {/* OAuth callbacks */}
-          <Route path="/auth/google" element={<GoogleDriveAuth />} />
-          <Route path="/auth/google/owner" element={<GoogleDriveOwnerAuth />} />
 
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/" replace />} />

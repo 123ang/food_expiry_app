@@ -28,7 +28,7 @@ Never let food expire again! Smart expiry tracking for your kitchen with intelli
 - **Locations**: Track where items are stored (Fridge, Freezer, Pantry, etc.)
 - **Custom Icons**: Visual icons for easy identification
 - **Color Coding**: Status-based color coding for quick assessment
-- **Image Upload**: Save photos of food items using Google Drive integration
+- **Image Upload**: Save photos of food items (uploaded to the backend)
 
 ### 📱 Progressive Web App (PWA)
 - **Offline Support**: Works without internet connection
@@ -72,7 +72,6 @@ Never let food expire again! Smart expiry tracking for your kitchen with intelli
 4. **Environment Configuration**
    - Update the Firebase configuration in `src/firebase.ts`
    - For push notifications, add your VAPID key to `src/services/notificationService.ts`
-   - For image uploads, set up Google Drive integration (see `GOOGLE_DRIVE_INTEGRATION.md`)
 
 5. **Start the development server**
    ```bash
